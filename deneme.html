@@ -80,6 +80,38 @@ h1,h2{font-size:1.3rem}h3{font-size:1.05rem}
 .login-wrap{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem;gap:.4rem}
 .login-wrap>.langbar,.login-wrap>.themebar{max-width:26rem;margin:0 auto}
 .login-wrap .box{max-width:clamp(20rem,34vw,27rem)}
+/* ust serit: tema butun satiri kaplar (ustte), dil onun sag ucunda ayni hizada */
+.login-top{width:100%;max-width:clamp(20rem,34vw,27rem);margin:.2rem auto 0;display:block}
+.login-top .themebar{width:100%;flex-wrap:nowrap;margin:0 0 .5rem!important;justify-content:space-between!important}
+.login-top .themebar>small{flex:0 0 auto}
+.login-top .themebar>button{flex:0 0 auto}
+.login-top .langbar{width:100%;margin:0 0 .5rem;justify-content:flex-end}
+@media(min-width:901px) and (min-aspect-ratio:1/1){
+  .login-top{max-width:clamp(21rem,26vw,26rem)}
+}
+/* yatay telefon (kisa yukseklik): dil tema ile ayni satirda, cakisma yok */
+@media(max-height:500px) and (orientation:landscape){
+  .login-top{max-width:min(26rem,90vw)}
+  .login-top .themebar{justify-content:space-between!important;margin:0 0 .35rem!important}
+  .login-top .langbar{justify-content:flex-end;width:100%;margin:0 0 .35rem}
+  .login-wrap{padding-top:.5rem}
+}
+/* tablet / dar ekran: dil yine sagda ama tema altinda degil, ust seritte */
+@media(min-width:601px) and (max-width:1024px){
+  .login-top,.login-wrap .box{max-width:min(26rem,86vw)}
+  .login-top .langbar{top:0}
+}
+/* telefon: ust serit iki satir, cakisma yok */
+@media(max-width:600px){
+  .login-top{max-width:100%}
+  .login-top .themebar{justify-content:space-between!important;margin:0 0 .4rem!important}
+  .login-top .langbar{justify-content:flex-end;width:100%;margin:0 0 .5rem}
+}
+/* cok kucuk / yatay telefon */
+@media(max-width:360px),(max-height:430px) and (orientation:landscape){
+  .login-top .themebar button{padding:.28em .55em;font-size:.7rem}
+  .login-top .langbar button{min-height:1.9rem}
+}
 @media(min-width:901px) and (min-aspect-ratio:1/1){
   .login-wrap .box{max-width:clamp(21rem,26vw,26rem)}
   .login-wrap .box input{font-size:.98rem;padding:.62em 1em;margin:.25em 0 .7em}
@@ -227,10 +259,10 @@ html[data-orient=landscape][data-dev=phone] .center{min-height:auto;padding:1rem
 .dot span,.mini-dot{display:inline-block;min-width:1.35em;text-align:center;line-height:1.05}
 .dot small{display:block;line-height:1}
 /* ---- dokunmatikte "geri atma" (sayfa ziplamasi) engeli ---- */
-html,body{overscroll-behavior-y:contain;overflow-x:hidden}
+html,body{overscroll-behavior-y:auto;overflow-x:clip}
 body{-webkit-overflow-scrolling:touch}
-aside a,button,.dot,.mini-dot{touch-action:manipulation}
-aside{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-x pan-y}
+aside a,button,.dot,.mini-dot{touch-action:pan-y pinch-zoom}
+aside{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-x pan-y;scroll-behavior:smooth}
 main{scroll-margin-top:.5rem}
 /* mobil: dengeli satir araligi ve okunakli kucuk metin */
 @media(max-width:600px){
@@ -746,13 +778,13 @@ function renderAppOrAuth(){
   let h='';
   if(view==='welcome')h=`<div class="welcome-screen"><div class="welcome-top"><div class="brand-badge">badgalnurkan</div><div id="theme-anchor">${themePick(true)}</div></div><div class="welcome-center"><div class="langbar">${langBtns()}</div><h1 class="big">${t('welcome')}</h1><div class="row" style="justify-content:center;gap:.8rem;margin-top:.5rem"><button onclick="goTo(Object.keys(DB.accounts).length?'login':'setup','home')">${t('continue')}</button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><div style="margin-top:1rem"><a href="mailto:nurkancanbulat89@gmail.com" style="color:var(--acc);font-weight:600;text-decoration:none;font-size:.9rem">${t('contact')}</a></div></div><div class="welcome-footer-bar"><div>© 2026 nurkancanbulat — All rights reserved.</div><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">tiktok/@badgalnurkan</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">instagram/@badgalnurkann</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">x/@badgalnurk</a></div></div></div>`;
   else if(view==='login'){
-    const rem=rememberedUser(),others=Object.keys(DB.accounts).filter(k=>k!==rem);
+    const rem=(skipRem?null:rememberedUser()),others=Object.keys(DB.accounts).filter(k=>k!==rem);
     if(!loginDat.u&&rem)loginDat.u=rem;
     const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="useAccount('${esc(rem)}')">${t('useAccount')}</button></div>`:`<p class="mut" style="margin:.2rem 0 .9rem">${t('noAccountYet')}</p>`;
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
-    h=`<div class="login-wrap">`+`<div class="langbar" style="max-width:26rem;width:100%">${langBtns()}</div>`+themePick()+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${t('username')}</label><input id="u" autocomplete="username" autocapitalize="none" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
+    h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns()}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${t('username')}</label><input id="u" autocomplete="username" autocapitalize="none" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
-  else if(view==='setup')h=`<div class="login-wrap"><div class="langbar" style="max-width:26rem;width:100%">${langBtns()}</div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='setup')h=`<div class="login-wrap"><div class="login-top">${themePick()}<div class="langbar">${langBtns()}</div></div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('username')}</label><input id="u" autocapitalize="none"><div class="row"><button onclick="fSend('email')">${tr()?'E-posta ile kod gönder':'Send code by email'}</button><button onclick="fSend('phone')">${tr()?'SMS ile kod gönder':'Send code by SMS'}</button></div><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
@@ -799,9 +831,15 @@ function rememberedUser(){
   return byNick||list[0];
 }
 function useAccount(u){loginDat={u,p:''};view='login';msg='';renderAppOrAuth();const pe=$('#p');if(pe)pe.focus()}
-function otherUser(){loginDat={u:'',p:''};msg='';renderAppOrAuth();const ue=$('#u');if(ue)ue.focus()}
+let skipRem=false;
+function otherUser(){
+  /* "not you?": hatirlanan hesabi gizle, bos giris formu goster */
+  skipRem=true;loginDat={u:'',p:''};msg='';renderAppOrAuth();
+  setTimeout(()=>{const ue=$('#u');if(ue){ue.value='';ue.focus()}},30);
+}
+function backToRemembered(){skipRem=false;loginDat={u:'',p:''};msg='';renderAppOrAuth()}
 async function login(){
-  const typed=loginDat.u.trim(),u=typed||rememberedUser();
+  const typed=loginDat.u.trim(),u=typed||(skipRem?'':rememberedUser());
   loginDat.u=u;
   if(!u){msg=tr()?'Kullanıcı adını gir.':'Enter your username.';return renderAppOrAuth()}
   const key=findUser(u),k=(key||u).toLowerCase(),L=DB.lock[k]||{f:0,lv:0,until:0};
