@@ -114,6 +114,24 @@ footer{text-align:center;padding:1rem;color:var(--mut);font-size:.8rem;backgroun
 #top-date-trigger.lit{color:#7a5636;background:#f7ecdc;box-shadow:0 6px 18px #8a5a3a2a}
 #top-date-trigger small{font-size:.72rem;opacity:.85;font-weight:600}
 .mini-popup{animation:mpIn .32s cubic-bezier(.2,.7,.2,1) both}
+/* TV / uzaktan kumanda ve klavye: odak gorunur, hedefler buyuk */
+aside a:focus-visible,button:focus-visible,.dot:focus-visible,.mini-dot:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+@media(min-width:1700px) and (min-aspect-ratio:16/9){html{font-size:clamp(20px,1.05vw,30px)}aside{width:18.5rem}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+/* mobil menu: takilma/jitter yok, dokunma hedefleri buyuk, smooth kaydirma */
+aside{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x;scroll-behavior:smooth;scrollbar-width:none}
+aside::-webkit-scrollbar{display:none}
+aside a{flex:0 0 auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+@media(hover:none),(pointer:coarse){
+  aside a:hover{transform:none;background:transparent;color:var(--mut)}
+  aside a.on:hover{background:var(--acc);color:#fff}
+  aside a{padding:.55em 1.05em;min-height:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;line-height:1;font-size:.92rem}
+  aside{gap:.35rem;scroll-padding-inline:.4rem;scroll-snap-type:x proximity}
+}
+::view-transition-old(root){animation:none}
+::view-transition-new(root){animation:vtIn .28s ease both}
+@keyframes vtIn{from{opacity:.35;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){::view-transition-new(root){animation:none}}
 .mini-popup::before{content:'';position:absolute;top:-6px;right:1.6rem;width:12px;height:12px;background:var(--card);border-left:1px solid var(--ln);border-top:1px solid var(--ln);transform:rotate(45deg)}
 @media(max-width:560px){.mini-popup{width:calc(100vw - 1rem);border-radius:16px}}
 @media(max-height:520px){.mini-popup{max-height:88vh}}
@@ -166,7 +184,9 @@ main .card:nth-child(6){animation-delay:.37s}
 main .card:nth-child(n+7){animation-delay:.44s}
 @keyframes slIn{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:none}}
 /* menu alttan yukari gelir */
-aside{animation:navIn .65s cubic-bezier(.2,.7,.2,1) both}
+aside{animation:navIn .65s cubic-bezier(.2,.7,.2,1) both;will-change:transform}
+@media(max-width:900px){aside{animation:navIn .45s ease both}}
+@media(prefers-reduced-motion:reduce){aside{animation:none}}
 @keyframes navIn{from{opacity:0;transform:translateY(42px)}to{opacity:1;transform:none}}
 header.top{animation:hdrIn .5s ease both}
 @keyframes hdrIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
@@ -237,6 +257,7 @@ footer{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:c
   .remember{flex-wrap:wrap}
   .card{padding:1rem}
   .row>button{flex:1 1 auto}
+  aside a{min-height:2.9rem;height:auto;padding:.6em 1em}
   .stat{gap:.3rem .8rem}
   #top-date-trigger{font-size:.85rem}
 }
@@ -255,34 +276,107 @@ footer{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:c
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
-const store=()=>{try{return localStorage.getItem('b1ck')==='0'?sessionStorage:localStorage}catch(e){return null}};
-let DB;try{DB=JSON.parse(store().getItem('b1')||'')}catch(e){}
-let DBraw=null;try{DBraw=JSON.parse((storeAcct()||store()).getItem('b1')||'')}catch(e){}
+/* ---- kalici depo: localStorage oncelikli, olmazsa bellek ici yedek (Safari gizli mod / dosya:// ) ---- */
+const MEM={};
+const store=()=>{try{const t='__t'+Math.random();localStorage.setItem(t,'1');localStorage.removeItem(t);return localStorage}catch(e){return null}};
+const LSK='b1', OTURUM='b1s', FEEDB='b1f', LOCAL_OTURUM='b1.this';
+function getItem(k){try{const s=store();if(s){const v=s.getItem(k);if(v!==null)return v}}catch(e){}return MEM[k]===undefined?null:MEM[k]}
+function setItem(k,v){MEM[k]=v;try{const s=store();if(s){s.setItem(k,v);return true}}catch(e){}return false}
+let DB=null;
+let DBraw=null;try{DBraw=JSON.parse(getItem(LSK)||'')}catch(e){}
+/* veri kaybina karsi yedek: her acilista son iyi kayit ayri tutulur */
+let DBbak=null;try{DBbak=JSON.parse(getItem('b1.bak')||'')}catch(e){}
+if((!DBraw||!DBraw.accounts||!Object.keys(DBraw.accounts).length)&&DBbak&&DBbak.accounts&&Object.keys(DBbak.accounts).length)DBraw=DBbak;
 DB=DBraw&&DBraw.accounts?DBraw:{accounts:{},last:'',lastUser:'',lock:{},lang:'en',beige:false};
 if(!DB.lang)DB.lang='en';if(DB.beige===undefined)DB.beige=false;if(!DB.lastUser)DB.lastUser='';
 document.documentElement.lang=DB.lang;
+let pushT=null;
+function schedulePush(){try{clearTimeout(pushT)}catch(e){}pushT=setTimeout(()=>{try{sbPush()}catch(e){}},2500)}
 const save=()=>{
-  const g=storeAcct()||store();if(!g)return;
   try{
-    g.setItem('b1',JSON.stringify(DB));
-    const o=store();
-    if(o&&o!==g)o.setItem('b1',JSON.stringify({accounts:DB.accounts,last:DB.last,lastUser:DB.lastUser,lock:DB.lock,lang:DB.lang,beige:DB.beige}));
+    if(A)A.updatedAt=Date.now();
+    DB.savedAt=Date.now();
+    setItem(LSK,JSON.stringify(DB));
+    touchSession();
+    schedulePush();
   }catch(e){}
 };
-function ck(v){try{localStorage.setItem('b1ck',String(v))}catch(e){}$('#ck').hidden=true;save()}
-try{if(localStorage.getItem('b1ck')===null)$('#ck').hidden=false}catch(e){}
+/* oturum: kullanici bilgisi kucuk ve ayri tutulur -> ana kayit bozulsa da geri donus var */
+function touchSession(){
+  try{
+    const u=A?A.u:(DB.lastUser||'');if(!u)return;
+    const body=JSON.stringify({user:u,sig:signature(A||DB.accounts[u]),at:Date.now()});
+    setItem(OTURUM,body);setItem(LOCAL_OTURUM,body);
+  }catch(e){}
+}
+/* imza: menude/acik sayfada oturumu geri yuklemek icin (sifre yerine ozet) */
+const signature=a=>a?(a.pw||'').slice(0,24)+':'+String(a.u||''):'';
+function ck(v){setItem('b1ck',String(v));$('#ck').hidden=true;save()}
+/* her kayitta kucuk bir yedek tut (kaza/bug ile veri kaybini engeller) */
+function backupTick(){try{const raw=getItem(LSK);if(!raw)return;const parsed=JSON.parse(raw);if(parsed&&parsed.accounts&&Object.keys(parsed.accounts).length){setItem('b1.bak',raw);setItem('b1.bak.at',String(Date.now()))}}catch(e){}}
+setInterval(backupTick,20000);
+window.addEventListener('beforeunload',backupTick);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')backupTick()});
+try{if(getItem('b1ck')===null)$('#ck').hidden=false}catch(e){}
 const sysTheme=()=>(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
 document.documentElement.dataset.t=sysTheme();
-try{if(JSON.parse(localStorage.getItem('b1')||'{}').beige)document.documentElement.dataset.t='beige'}catch(e){}
-let A=null,A0=null,view='welcome',pg='home',calOff=0,selDay=null,msg='',codes={};
+try{if(JSON.parse(getItem(LSK)||'{}').beige)document.documentElement.dataset.t='beige'}catch(e){}
+let A=null,A0=null,view='welcome',pg='home',calOff=0,selDay=null,msg='',codes={},lastSig='';
+/* yenileme / yeni sekme: son kullanici + acik sayfa geri gelir, veriler korunur */
+function readJson(k){try{return JSON.parse(getItem(k)||'null')}catch(e){return null}}
+function restoreSession(){
+  try{
+    const cands=[readJson(OTURUM),readJson(LOCAL_OTURUM)];
+    let user='';
+    for(const c of cands){if(c&&c.user&&findUser(c.user)){user=findUser(c.user);break}}
+    if(!user&&DB.lastUser&&findUser(DB.lastUser))user=findUser(DB.lastUser);
+    if(!user){const ks=Object.keys(DB.accounts);if(ks.length===1)user=ks[0]}
+    if(!user)return false;
+    A=norm(DB.accounts[user]);lastSig=signature(A);
+    loginDat.u=user;
+    if(cloud()&&!sbSession())sbRefresh();
+    const st=history.state;
+    view='app';pg=(st&&st.v==='app'&&st.p)?st.p:'home';
+    applyTheme();touchSession();
+    return true;
+  }catch(e){return false}
+}
+/* baska sekmede yapilan degisiklik bu sekmeye de yansir (veri ayrismasi olmaz) */
+window.addEventListener('storage',e=>{
+  if(e.key!==LSK||!e.newValue)return;
+  let nd;try{nd=JSON.parse(e.newValue)}catch(_){return}
+  if(!nd||!nd.accounts)return;
+  DB=nd;
+  const u=loginDat.u||DB.lastUser;
+  if(!A&&u&&DB.accounts[u]){A=norm(DB.accounts[u]);applyTheme();if(view!=='app'){view='app';pg='home'}renderAppOrAuth();return}
+  if(A&&DB.accounts[A.u]){A=nd.accounts[A.u];applyTheme();if(document.querySelector('aside')){const m=$('#mn');const had=m?m.innerHTML:'';shell()}return}
+  renderAppOrAuth();
+});
+/* geri tusu: oturum acikken cikis ekranina dusmesin */
+
 let formDat={u:'',n:'',b:'',e:'',t:'',p:''},loginDat={u:'',p:''};
 
+function paint(){renderAppOrAuth()}
+/* yumusak sayfa gecisi: destekleyen tarayicida View Transitions, digerlerinde ayni davranis */
+function softPaint(){
+  const canVT=document.startViewTransition&&document.visibilityState==='visible'&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(canVT){
+    try{
+      const t=document.startViewTransition(()=>paint());
+      if(t&&t.finished&&t.finished.catch)t.finished.catch(()=>{});
+      if(t&&t.ready&&t.ready.catch)t.ready.catch(()=>{});
+      return;
+    }catch(e){}
+  }
+  paint();
+}
 function goTo(v,p,push=true){
   view=v;pg=p;msg='';selDay=null;
   if(push){try{history.pushState({v,p},'','')}catch(e){}}
-  renderAppOrAuth();window.scrollTo(0,0);
+  softPaint();window.scrollTo(0,0);
 }
 window.addEventListener('popstate',e=>{
+  if(A)return;
   if(e.state){view=e.state.v;pg=e.state.p}else{view='welcome';pg='home'}
   msg='';selDay=null;renderAppOrAuth();
 });
@@ -421,7 +515,7 @@ async function pwMatch(a,p){
   if(v.indexOf('p2$')===0||v.indexOf('p1$')===0){const r=await hashPw(p,v.split('$')[1]);return r.pw===v}
   return v===await sha(p);
 }
-async function setPw(a,p){const r=await hashPw(p);a.pw=r.pw;a.salt=r.salt;a.pwAt=Date.now()}
+async function setPw(a,p){const r=await hashPw(p);a.pw=r.pw;a.salt=r.salt;a.pwAt=Date.now();if(A&&a===A)lastSig=signature(a)}
 function roll(){
   const t=today();
   if(A.day!==t){
@@ -436,7 +530,7 @@ const okDay=d=>{const i=items(d);return i.length>0&&i.every(x=>x.done)};
 const succ=()=>{let n=0;Object.keys(A.hist).forEach(d=>{if(d!==today()&&okDay(d))n++});if(okDay(today()))n++;return n};
 /* %1 = 1 gun: kayit gununden bugune kadar gecen her gun bir puan. Baska kosul yok. */
 /* yuzde: bagimsiz sayac. Her takvim gunu +1; gorevlere/gecmise bagli degil, asla ziplamaz. */
-const pctStart=()=>{if(!A.pctFrom||!/^\d{4}-\d{2}-\d{2}$/.test(A.pctFrom)){A.pctFrom=today();save()}return A.pctFrom};
+const pctStart=()=>{if(!A.pctFrom||!/^\d{4}-\d{2}-\d{2}$/.test(A.pctFrom))A.pctFrom=today();return A.pctFrom};
 const pct=()=>Math.max(1,dd(pctStart(),today())+1);
 const dayCount=pct;
 const startDay=pctStart;
@@ -469,7 +563,14 @@ function renderAppOrAuth(){
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
     h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${t('username')}</label><input id="u" autocomplete="username" autocapitalize="none" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`);
   }
-  else if(view==='setup')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>${t('phone')}</label><input id="t" type="tel" inputmode="numeric" maxlength="15" placeholder="${t('digitsOnly')}" value="${esc(formDat.t)}" oninput="this.value=this.value.replace(/[^0-9]/g,'');formDat.t=this.value"><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='phone'){
+    h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${tr()?'Telefonla doğrula':'Verify by phone'}</h2>${m()}${phoneDat.err?`<div class="note" style="color:#b3261e">${esc(phoneDat.err)}</div>`:''}`+
+      (phoneDat.step===1
+        ?`<p class="mut">${tr()?'Numaranı yaz, Twilio ile SMS kodu gönderelim.':'Enter your number and we will send an SMS code via Twilio.'}</p><label>${t('phone')}</label><input id="ph" type="tel" inputmode="numeric" placeholder="905551112233" value="${esc(phoneDat.phone)}" oninput="this.value=this.value.replace(/[^0-9]/g,'');phoneDat.phone=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();phoneSend()}"><div class="row"><button onclick="phoneSend()" ${phoneDat.busy?'disabled':''}>${phoneDat.busy?(tr()?'Gönderiliyor…':'Sending…'):(tr()?'Kod gönder':'Send code')}</button><button class="g" onclick="phoneSkip()">${tr()?'Şimdilik geç':'Skip for now'}</button></div>`
+        :`<p class="mut">${tr()?'Kodu SMS ile gönderdik: ':'We sent the code by SMS to '}<b>+${esc(phoneDat.phone)}</b></p><label>${t('code')}</label><input id="c" inputmode="numeric" maxlength="6" value="${esc(phoneDat.code)}" oninput="this.value=this.value.replace(/[^0-9]/g,'');phoneDat.code=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();phoneCheck()}"><div class="row"><button onclick="phoneCheck()" ${phoneDat.busy?'disabled':''}>${phoneDat.busy?(tr()?'Kontrol…':'Checking…'):(tr()?'Doğrula ve devam et':'Verify and continue')}</button><button class="g" onclick="phoneDat.step=1;renderAppOrAuth()">${tr()?'Numarayı değiştir':'Change number'}</button></div>`)+
+      `<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('setup','home')">← ${t('newAccount')}</a></div>`);
+  }
+  else if(view==='setup')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>${t('phone')}</label><input id="t" type="tel" inputmode="numeric" maxlength="15" placeholder="${t('digitsOnly')}" value="${esc(formDat.t)}" oninput="this.value=this.value.replace(/[^0-9]/g,'');formDat.t=this.value"><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="goPhone()">${tr()?'Telefonla doğrula':'Verify by phone'}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('username')}</label><input id="u" autocapitalize="none"><div class="row"><button onclick="fSend('email')">${tr()?'E-posta ile kod gönder':'Send code by email'}</button><button onclick="fSend('phone')">${tr()?'SMS ile kod gönder':'Send code by SMS'}</button></div><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
@@ -524,8 +625,25 @@ async function login(){
   const key=findUser(u),k=(key||u).toLowerCase(),L=DB.lock[k]||{f:0,lv:0,until:0};
   if(Date.now()<L.until){msg=`${t('locked')} ${fmtMin(Math.ceil((L.until-Date.now())/60000))}.`;return renderAppOrAuth()}
   const a=key?DB.accounts[key]:null;
+  /* --- bulut girisi: her cihazda ayni hesap --- */
+  if(cloud()&&(!a||!a.pw)){
+    try{
+      const j=await sbSignIn(u,loginDat.p);
+      if(j&&j.access_token){
+        const data=await sbPull(u);
+        const acc=data||norm({u,nick:(j.user&&j.user.user_metadata&&j.user.user_metadata.nick)||u});
+        acc.u=u;await setPw(acc,loginDat.p);
+        DB.accounts[u]=acc;DB.last=acc.nick||u;DB.lastUser=u;
+        DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(acc);loginDat={u:'',p:''};lastSig=signature(acc);
+        applyTheme();save();goTo('app','home');greetThen();
+        toast(tr()?'Buluttan yüklendi.':'Loaded from the cloud.');return;
+      }
+    }catch(err){
+      if(err.status===400||err.status===401){/* sifre/hesap bulutta yok: yerel yola dus */}
+    }
+  }
   if(a&&await pwMatch(a,loginDat.p)){
-    DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(a);DB.last=a.nick;DB.lastUser=a.u;loginDat={u:'',p:''};
+    DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(a);DB.last=a.nick;DB.lastUser=a.u;lastSig=signature(a);loginDat={u:'',p:''};
     applyTheme();save();goTo('app','home');greetThen();return;
   }
   L.f++;
@@ -545,9 +663,23 @@ async function setup(){
   else if(t&&!/^[0-9]{10,15}$/.test(t))msg=t('phoneInvalid');
   else msg=pwOk(p,u);
   if(msg)return renderAppOrAuth();
+  /* --- bulut: Supabase hesabi (varsa) --- */
+  let cloudOK=false,cloudErr='';
+  if(cloud()){
+    try{
+      const j=await sbSignUp(u,p,n,t?'+'+t:'');
+      if(j&&j.access_token){sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});cloudOK=true}
+      else if(j&&j.id){/* e-posta onayi acik: oturum yok, yerel devam */}
+    }catch(err){
+      cloudErr=err.message||'';
+      if(/already|exists|registered/i.test(cloudErr)){msg=tr()?'Bu kullanıcı adı bulutta kayıtlı.':'That username is already registered in the cloud.';return renderAppOrAuth()}
+    }
+  }
   const a=newAcc(u,n,formDat.b,'',e,t);await setPw(a,p);
-  DB.accounts[u]=a;DB.last=n;DB.lastUser=u;formDat={u:'',n:'',b:'',e:'',t:'',p:''};
+  DB.accounts[u]=a;DB.last=n;DB.lastUser=u;lastSig=signature(a);formDat={u:'',n:'',b:'',e:'',t:'',p:''};
   A0=null;A=a;applyTheme();save();goTo('app','home');greetThen();
+  if(cloudOK){sbPush();toast(tr()?'Bulut hesabı oluşturuldu, verilerin eşitleniyor.':'Cloud account created, syncing your data.');}
+  else if(cloudErr){toast((tr()?'Bulut hesabı kurulamadı, veriler bu cihazda: ':'Cloud account failed, data stays on this device: ')+cloudErr);}
 }
 
 function fSend(k){
@@ -625,6 +757,7 @@ function shell(){
     if(!future&&its.length>0)cls=its.every(x=>x.done)?'ok':'miss-dot';
     if(hasNote(k))cls+=' note';
     mc+=`<button class="mini-dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="miniClick(event,'${k}')"><span>${d}</span></button>`}
+  const keepAside=document.querySelector('#nav-aside');
   $('#app').innerHTML=`<header class="top"><b role="button" tabindex="0" onclick="goTo('app','home')">Improvin' your day.</b><span id="top-date-trigger" role="button" tabindex="0" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="toggleMiniCal(event)" title="${t('calendar')}"><span>${fmt(today())}</span> ▾${DB.beige?'<small>bej</small>':''}</span><div id="mini-cal" class="mini-popup"><div style="font-family:var(--fs);font-weight:700;color:var(--acc);margin-bottom:.4rem">${monthName(mo)} ${y}</div><div class="mini-cal-grid">${mc}</div><p class="mut" style="font-size:.72rem;margin:.6rem 0 0">${tr()?'Bir güne tıkla: açık bej görünümü aç/kapat.':'Click a day to toggle the light beige look.'}</p></div></header><div class="shell"><aside><div class="lg" role="button" tabindex="0" onclick="goTo('app','set')"><small>${tr()?'Hoş geldin,':'Welcome,'}</small>${esc(A.nick)}</div>${NAV.map(([k])=>k=='logout'?`<a role="button" tabindex="0" onclick="confirmLogout()">${navLabel('logout')}</a>`:`<a role="button" tabindex="0" class="${pg==k?'on':''}" onclick="goTo('app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button id="back-welcome" class="ft-link" onclick="goHome()"><span aria-hidden="true">←</span> ${t('backWelcome')}</button><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();
@@ -807,11 +940,119 @@ async function delAcc(){
   if(!await pwMatch(A,$('#dp').value)){msg=t('wrongPw');return P.set()}
   delete DB.accounts[A.u];A=null;DB.last='';DB.lastUser=Object.keys(DB.accounts)[0]||'';save();view='welcome';goTo('welcome','home');
 }
+/* ================= Supabase (bulut hesap + senkron) ================= */
+const SUPABASE_URL='https://flcfqwndqfmbritaywfb.supabase.co';
+const SUPABASE_KEY='sb_publishable_4QTEEc6tSYV2QtNhmeP6Iw_B3sM6dtm';
+const CLOUD_KEY='b1cloud', SESS_KEY='b1sb';
+const cloud=()=>{try{return localStorage.getItem(CLOUD_KEY)!=='0'}catch(e){return true}};
+const sbSession=()=>{try{return JSON.parse(getItem(SESS_KEY)||'null')}catch(e){return null}};
+function sbSave(sess){try{setItem(SESS_KEY,JSON.stringify(sess))}catch(e){}}
+function sbClear(){try{setItem(SESS_KEY,'')}catch(e){}}
+/* tek giris noktasi: token yenileme + hata yonetimi */
+async function sb(path,opt){
+  opt=opt||{};
+  const sess=sbSession();
+  const h=Object.assign({'apikey':SUPABASE_KEY,'Content-Type':'application/json'},opt.headers||{});
+  if(sess&&sess.access_token&&!/^\/auth\/v1\/(signup|token|otp)/.test(path))h['Authorization']='Bearer '+sess.access_token;
+  const r=await fetch(SUPABASE_URL+path,{method:opt.method||'GET',headers:h,body:opt.body?JSON.stringify(opt.body):undefined});
+  let j=null;try{j=await r.json()}catch(e){}
+  if(!r.ok){
+    const em=(j&&(j.msg||j.message||j.error_description||j.error))||('HTTP '+r.status);
+    const err=new Error(em);err.status=r.status;err.code=j&&j.code;throw err;
+  }
+  return j;
+}
+/* e-posta/telefon -> supabase Auth */
+const sbEmail=u=>(u.u||'')+'@iydu.app';
+async function sbSignUp(u,pass,nick,phone){
+  const body={email:sbEmail(u),password:pass,data:{username:u,nick:nick,phone:phone||''}};
+  if(phone)body.phone=phone;
+  return sb('/auth/v1/signup',{method:'POST',body});
+}
+async function sbSignIn(u,pass){
+  const j=await sb('/auth/v1/token?grant_type=password',{method:'POST',body:{email:sbEmail(u),password:pass}});
+  if(j&&j.access_token)sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
+  return j;
+}
+async function sbRefresh(){
+  const sess=sbSession();
+  if(!sess||!sess.refresh_token)return false;
+  try{
+    const j=await sb('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:sess.refresh_token}});
+    if(j&&j.access_token){sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});return true}
+  }catch(e){}
+  return false;
+}
+/* telefon: Supabase -> Twilio SMS */
+async function sbPhoneStart(phone){
+  const j=await sb('/auth/v1/otp',{method:'POST',body:{phone:phone,create_user:true}});
+  return j;
+}
+async function sbPhoneVerify(phone,code,pass,nick,username){
+  const j=await sb('/auth/v1/verify',{method:'POST',body:{phone:phone,token:code,type:'sms'}});
+  if(j&&j.access_token)sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
+  return j;
+}
+/* bulut kaydi: kullanici basina tek satir (profil + tum uygulama verisi) */
+async function sbPush(){
+  if(!cloud()||!A||!sbSession())return false;
+  try{
+    const payload={p_username:A.u,p_nick:A.nick||A.u,p_data:JSON.parse(JSON.stringify(A))};
+    await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:payload});
+    return true;
+  }catch(e){
+    if(e.status===401&&await sbRefresh()){try{await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:A}});return true}catch(_){}}
+    return false;
+  }
+}
+async function sbPull(u){
+  if(!cloud()||!sbSession())return null;
+  try{
+    const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:u}});
+    const row=Array.isArray(rows)?rows[0]:rows;
+    if(!row||!row.data)return null;
+    return row.data;
+  }catch(e){return null}
+}
+/* ---- telefon (Twilio/Supabase) dogrulama: yeni hesap ---- */
+let phoneDat={phone:'',code:'',step:1,busy:false,err:''};
+function goPhone(){phoneDat={phone:formDat.t||'',code:'',step:1,busy:false,err:''};goTo('phone','home')}
+async function phoneSend(){
+  const ph=String(phoneDat.phone||'').replace(/[^0-9]/g,'');
+  if(!/^[1-9][0-9]{9,14}$/.test(ph)){phoneDat.err=tr()?'Ülke kodlu numara gir (örn. 905551112233).':'Enter number with country code (e.g. 905551112233).';return renderAppOrAuth()}
+  phoneDat.busy=true;phoneDat.err='';renderAppOrAuth();
+  try{
+    await sbPhoneStart('+'+ph);
+    phoneDat.step=2;phoneDat.phone=ph;phoneDat.busy=false;
+  }catch(e){phoneDat.busy=false;phoneDat.err=(tr()?'SMS gönderilemedi: ':'SMS failed: ')+e.message}
+  renderAppOrAuth();
+}
+async function phoneCheck(){
+  if(!/^[0-9]{6}$/.test(phoneDat.code||'')){phoneDat.err=tr()?'6 haneli kod gir.':'Enter the 6-digit code.';return renderAppOrAuth()}
+  phoneDat.busy=true;phoneDat.err='';renderAppOrAuth();
+  try{
+    const u=$('#u')?$('#u').value.trim():'';
+    const n=$('#n')?$('#n').value.trim():'';
+    const pass=$('#p')?$('#p').value:'';
+    if(!u||!pass){phoneDat.busy=false;phoneDat.err=tr()?'Önce kullanıcı adı ve şifre gir.':'Enter username and password first.';return renderAppOrAuth()}
+    const bad=pwOk(pass,u);
+    if(bad){phoneDat.busy=false;phoneDat.err=bad;return renderAppOrAuth()}
+    await sbPhoneVerify('+'+phoneDat.phone,phoneDat.code,pass,n,u);
+    phoneDat.busy=false;
+    await setup(); /* ayni akis: yerel hesap + bulut */
+  }catch(e){phoneDat.busy=false;phoneDat.err=(tr()?'Kod doğrulanamadı: ':'Code failed: ')+e.message;renderAppOrAuth()}
+}
+function phoneSkip(){goTo('setup','home')}
+
 function applyTheme(){if(!A)return;document.documentElement.dataset.t=DB.beige?'beige':A.theme}
 function th(t){A.theme=t;applyTheme();save();P.set()}
 function toggleBeige(){DB.beige=!DB.beige;applyTheme();save();P.pc()}
 
+const _restored=restoreSession();
 renderAppOrAuth();
+if(_restored)setTimeout(()=>{try{const c=$('#ck');if(c)c.hidden=true}catch(e){}},50);
+/* onbellekten (bfcache) geri gelince de oturum korunur */
+window.addEventListener('pageshow',e=>{if(e.persisted&&!A&&restoreSession())renderAppOrAuth()});
 </script>
 </body>
 </html>
