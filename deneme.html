@@ -114,24 +114,6 @@ footer{text-align:center;padding:1rem;color:var(--mut);font-size:.8rem;backgroun
 #top-date-trigger.lit{color:#7a5636;background:#f7ecdc;box-shadow:0 6px 18px #8a5a3a2a}
 #top-date-trigger small{font-size:.72rem;opacity:.85;font-weight:600}
 .mini-popup{animation:mpIn .32s cubic-bezier(.2,.7,.2,1) both}
-/* TV / uzaktan kumanda ve klavye: odak gorunur, hedefler buyuk */
-aside a:focus-visible,button:focus-visible,.dot:focus-visible,.mini-dot:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
-@media(min-width:1700px) and (min-aspect-ratio:16/9){html{font-size:clamp(20px,1.05vw,30px)}aside{width:18.5rem}}
-@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
-/* mobil menu: takilma/jitter yok, dokunma hedefleri buyuk, smooth kaydirma */
-aside{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x;scroll-behavior:smooth;scrollbar-width:none}
-aside::-webkit-scrollbar{display:none}
-aside a{flex:0 0 auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-@media(hover:none),(pointer:coarse){
-  aside a:hover{transform:none;background:transparent;color:var(--mut)}
-  aside a.on:hover{background:var(--acc);color:#fff}
-  aside a{padding:.55em 1.05em;min-height:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;line-height:1;font-size:.92rem}
-  aside{gap:.35rem;scroll-padding-inline:.4rem;scroll-snap-type:x proximity}
-}
-::view-transition-old(root){animation:none}
-::view-transition-new(root){animation:vtIn .28s ease both}
-@keyframes vtIn{from{opacity:.35;transform:translateY(6px)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion:reduce){::view-transition-new(root){animation:none}}
 .mini-popup::before{content:'';position:absolute;top:-6px;right:1.6rem;width:12px;height:12px;background:var(--card);border-left:1px solid var(--ln);border-top:1px solid var(--ln);transform:rotate(45deg)}
 @media(max-width:560px){.mini-popup{width:calc(100vw - 1rem);border-radius:16px}}
 @media(max-height:520px){.mini-popup{max-height:88vh}}
@@ -184,9 +166,7 @@ main .card:nth-child(6){animation-delay:.37s}
 main .card:nth-child(n+7){animation-delay:.44s}
 @keyframes slIn{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:none}}
 /* menu alttan yukari gelir */
-aside{animation:navIn .65s cubic-bezier(.2,.7,.2,1) both;will-change:transform}
-@media(max-width:900px){aside{animation:navIn .45s ease both}}
-@media(prefers-reduced-motion:reduce){aside{animation:none}}
+aside{animation:navIn .65s cubic-bezier(.2,.7,.2,1) both}
 @keyframes navIn{from{opacity:0;transform:translateY(42px)}to{opacity:1;transform:none}}
 header.top{animation:hdrIn .5s ease both}
 @keyframes hdrIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
@@ -257,7 +237,6 @@ footer{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:c
   .remember{flex-wrap:wrap}
   .card{padding:1rem}
   .row>button{flex:1 1 auto}
-  aside a{min-height:2.9rem;height:auto;padding:.6em 1em}
   .stat{gap:.3rem .8rem}
   #top-date-trigger{font-size:.85rem}
 }
@@ -276,103 +255,34 @@ footer{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:c
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
-/* ---- kalici depo: localStorage oncelikli, olmazsa bellek ici yedek (Safari gizli mod / dosya:// ) ---- */
-const MEM={};
-const store=()=>{try{const t='__t'+Math.random();localStorage.setItem(t,'1');localStorage.removeItem(t);return localStorage}catch(e){return null}};
-const LSK='b1', OTURUM='b1s', FEEDB='b1f', LOCAL_OTURUM='b1.this';
-function getItem(k){try{const s=store();if(s){const v=s.getItem(k);if(v!==null)return v}}catch(e){}return MEM[k]===undefined?null:MEM[k]}
-function setItem(k,v){MEM[k]=v;try{const s=store();if(s){s.setItem(k,v);return true}}catch(e){}return false}
-let DB=null;
-let DBraw=null;try{DBraw=JSON.parse(getItem(LSK)||'')}catch(e){}
-/* veri kaybina karsi yedek: her acilista son iyi kayit ayri tutulur */
-let DBbak=null;try{DBbak=JSON.parse(getItem('b1.bak')||'')}catch(e){}
-if((!DBraw||!DBraw.accounts||!Object.keys(DBraw.accounts).length)&&DBbak&&DBbak.accounts&&Object.keys(DBbak.accounts).length)DBraw=DBbak;
+const store=()=>{try{return localStorage.getItem('b1ck')==='0'?sessionStorage:localStorage}catch(e){return null}};
+let DB;try{DB=JSON.parse(store().getItem('b1')||'')}catch(e){}
+let DBraw=null;try{DBraw=JSON.parse((storeAcct()||store()).getItem('b1')||'')}catch(e){}
 DB=DBraw&&DBraw.accounts?DBraw:{accounts:{},last:'',lastUser:'',lock:{},lang:'en',beige:false};
 if(!DB.lang)DB.lang='en';if(DB.beige===undefined)DB.beige=false;if(!DB.lastUser)DB.lastUser='';
 document.documentElement.lang=DB.lang;
 const save=()=>{
+  const g=storeAcct()||store();if(!g)return;
   try{
-    if(A)A.updatedAt=Date.now();
-    DB.savedAt=Date.now();
-    setItem(LSK,JSON.stringify(DB));
-    touchSession();
+    g.setItem('b1',JSON.stringify(DB));
+    const o=store();
+    if(o&&o!==g)o.setItem('b1',JSON.stringify({accounts:DB.accounts,last:DB.last,lastUser:DB.lastUser,lock:DB.lock,lang:DB.lang,beige:DB.beige}));
   }catch(e){}
 };
-/* oturum: kullanici bilgisi kucuk ve ayri tutulur -> ana kayit bozulsa da geri donus var */
-function touchSession(){
-  try{
-    const u=A?A.u:(DB.lastUser||'');if(!u)return;
-    const body=JSON.stringify({user:u,sig:signature(A||DB.accounts[u]),at:Date.now()});
-    setItem(OTURUM,body);setItem(LOCAL_OTURUM,body);
-  }catch(e){}
-}
-/* imza: menude/acik sayfada oturumu geri yuklemek icin (sifre yerine ozet) */
-const signature=a=>a?(a.pw||'').slice(0,24)+':'+String(a.u||''):'';
-function ck(v){setItem('b1ck',String(v));$('#ck').hidden=true;save()}
-/* her kayitta kucuk bir yedek tut (kaza/bug ile veri kaybini engeller) */
-function backupTick(){try{const raw=getItem(LSK);if(!raw)return;const parsed=JSON.parse(raw);if(parsed&&parsed.accounts&&Object.keys(parsed.accounts).length){setItem('b1.bak',raw);setItem('b1.bak.at',String(Date.now()))}}catch(e){}}
-setInterval(backupTick,20000);
-window.addEventListener('beforeunload',backupTick);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')backupTick()});
-try{if(getItem('b1ck')===null)$('#ck').hidden=false}catch(e){}
+function ck(v){try{localStorage.setItem('b1ck',String(v))}catch(e){}$('#ck').hidden=true;save()}
+try{if(localStorage.getItem('b1ck')===null)$('#ck').hidden=false}catch(e){}
 const sysTheme=()=>(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
 document.documentElement.dataset.t=sysTheme();
-try{if(JSON.parse(getItem(LSK)||'{}').beige)document.documentElement.dataset.t='beige'}catch(e){}
-let A=null,A0=null,view='welcome',pg='home',calOff=0,selDay=null,msg='',codes={},lastSig='';
-/* yenileme / yeni sekme: son kullanici + acik sayfa geri gelir, veriler korunur */
-function readJson(k){try{return JSON.parse(getItem(k)||'null')}catch(e){return null}}
-function restoreSession(){
-  try{
-    const cands=[readJson(OTURUM),readJson(LOCAL_OTURUM)];
-    let user='';
-    for(const c of cands){if(c&&c.user&&findUser(c.user)){user=findUser(c.user);break}}
-    if(!user&&DB.lastUser&&findUser(DB.lastUser))user=findUser(DB.lastUser);
-    if(!user){const ks=Object.keys(DB.accounts);if(ks.length===1)user=ks[0]}
-    if(!user)return false;
-    A=norm(DB.accounts[user]);lastSig=signature(A);
-    loginDat.u=user;
-    const st=history.state;
-    view='app';pg=(st&&st.v==='app'&&st.p)?st.p:'home';
-    applyTheme();touchSession();
-    return true;
-  }catch(e){return false}
-}
-/* baska sekmede yapilan degisiklik bu sekmeye de yansir (veri ayrismasi olmaz) */
-window.addEventListener('storage',e=>{
-  if(e.key!==LSK||!e.newValue)return;
-  let nd;try{nd=JSON.parse(e.newValue)}catch(_){return}
-  if(!nd||!nd.accounts)return;
-  DB=nd;
-  const u=loginDat.u||DB.lastUser;
-  if(!A&&u&&DB.accounts[u]){A=norm(DB.accounts[u]);applyTheme();if(view!=='app'){view='app';pg='home'}renderAppOrAuth();return}
-  if(A&&DB.accounts[A.u]){A=nd.accounts[A.u];applyTheme();if(document.querySelector('aside')){const m=$('#mn');const had=m?m.innerHTML:'';shell()}return}
-  renderAppOrAuth();
-});
-/* geri tusu: oturum acikken cikis ekranina dusmesin */
-
+try{if(JSON.parse(localStorage.getItem('b1')||'{}').beige)document.documentElement.dataset.t='beige'}catch(e){}
+let A=null,A0=null,view='welcome',pg='home',calOff=0,selDay=null,msg='',codes={};
 let formDat={u:'',n:'',b:'',e:'',t:'',p:''},loginDat={u:'',p:''};
 
-function paint(){renderAppOrAuth()}
-/* yumusak sayfa gecisi: destekleyen tarayicida View Transitions, digerlerinde ayni davranis */
-function softPaint(){
-  const canVT=document.startViewTransition&&document.visibilityState==='visible'&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(canVT){
-    try{
-      const t=document.startViewTransition(()=>paint());
-      if(t&&t.finished&&t.finished.catch)t.finished.catch(()=>{});
-      if(t&&t.ready&&t.ready.catch)t.ready.catch(()=>{});
-      return;
-    }catch(e){}
-  }
-  paint();
-}
 function goTo(v,p,push=true){
   view=v;pg=p;msg='';selDay=null;
   if(push){try{history.pushState({v,p},'','')}catch(e){}}
-  softPaint();window.scrollTo(0,0);
+  renderAppOrAuth();window.scrollTo(0,0);
 }
 window.addEventListener('popstate',e=>{
-  if(A)return;
   if(e.state){view=e.state.v;pg=e.state.p}else{view='welcome';pg='home'}
   msg='';selDay=null;renderAppOrAuth();
 });
@@ -511,7 +421,7 @@ async function pwMatch(a,p){
   if(v.indexOf('p2$')===0||v.indexOf('p1$')===0){const r=await hashPw(p,v.split('$')[1]);return r.pw===v}
   return v===await sha(p);
 }
-async function setPw(a,p){const r=await hashPw(p);a.pw=r.pw;a.salt=r.salt;a.pwAt=Date.now();if(A&&a===A)lastSig=signature(a)}
+async function setPw(a,p){const r=await hashPw(p);a.pw=r.pw;a.salt=r.salt;a.pwAt=Date.now()}
 function roll(){
   const t=today();
   if(A.day!==t){
@@ -526,7 +436,7 @@ const okDay=d=>{const i=items(d);return i.length>0&&i.every(x=>x.done)};
 const succ=()=>{let n=0;Object.keys(A.hist).forEach(d=>{if(d!==today()&&okDay(d))n++});if(okDay(today()))n++;return n};
 /* %1 = 1 gun: kayit gununden bugune kadar gecen her gun bir puan. Baska kosul yok. */
 /* yuzde: bagimsiz sayac. Her takvim gunu +1; gorevlere/gecmise bagli degil, asla ziplamaz. */
-const pctStart=()=>{if(!A.pctFrom||!/^\d{4}-\d{2}-\d{2}$/.test(A.pctFrom))A.pctFrom=today();return A.pctFrom};
+const pctStart=()=>{if(!A.pctFrom||!/^\d{4}-\d{2}-\d{2}$/.test(A.pctFrom)){A.pctFrom=today();save()}return A.pctFrom};
 const pct=()=>Math.max(1,dd(pctStart(),today())+1);
 const dayCount=pct;
 const startDay=pctStart;
@@ -615,7 +525,7 @@ async function login(){
   if(Date.now()<L.until){msg=`${t('locked')} ${fmtMin(Math.ceil((L.until-Date.now())/60000))}.`;return renderAppOrAuth()}
   const a=key?DB.accounts[key]:null;
   if(a&&await pwMatch(a,loginDat.p)){
-    DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(a);DB.last=a.nick;DB.lastUser=a.u;lastSig=signature(a);loginDat={u:'',p:''};
+    DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(a);DB.last=a.nick;DB.lastUser=a.u;loginDat={u:'',p:''};
     applyTheme();save();goTo('app','home');greetThen();return;
   }
   L.f++;
@@ -636,7 +546,7 @@ async function setup(){
   else msg=pwOk(p,u);
   if(msg)return renderAppOrAuth();
   const a=newAcc(u,n,formDat.b,'',e,t);await setPw(a,p);
-  DB.accounts[u]=a;DB.last=n;DB.lastUser=u;lastSig=signature(a);formDat={u:'',n:'',b:'',e:'',t:'',p:''};
+  DB.accounts[u]=a;DB.last=n;DB.lastUser=u;formDat={u:'',n:'',b:'',e:'',t:'',p:''};
   A0=null;A=a;applyTheme();save();goTo('app','home');greetThen();
 }
 
@@ -715,7 +625,6 @@ function shell(){
     if(!future&&its.length>0)cls=its.every(x=>x.done)?'ok':'miss-dot';
     if(hasNote(k))cls+=' note';
     mc+=`<button class="mini-dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="miniClick(event,'${k}')"><span>${d}</span></button>`}
-  const keepAside=document.querySelector('#nav-aside');
   $('#app').innerHTML=`<header class="top"><b role="button" tabindex="0" onclick="goTo('app','home')">Improvin' your day.</b><span id="top-date-trigger" role="button" tabindex="0" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="toggleMiniCal(event)" title="${t('calendar')}"><span>${fmt(today())}</span> ▾${DB.beige?'<small>bej</small>':''}</span><div id="mini-cal" class="mini-popup"><div style="font-family:var(--fs);font-weight:700;color:var(--acc);margin-bottom:.4rem">${monthName(mo)} ${y}</div><div class="mini-cal-grid">${mc}</div><p class="mut" style="font-size:.72rem;margin:.6rem 0 0">${tr()?'Bir güne tıkla: açık bej görünümü aç/kapat.':'Click a day to toggle the light beige look.'}</p></div></header><div class="shell"><aside><div class="lg" role="button" tabindex="0" onclick="goTo('app','set')"><small>${tr()?'Hoş geldin,':'Welcome,'}</small>${esc(A.nick)}</div>${NAV.map(([k])=>k=='logout'?`<a role="button" tabindex="0" onclick="confirmLogout()">${navLabel('logout')}</a>`:`<a role="button" tabindex="0" class="${pg==k?'on':''}" onclick="goTo('app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button id="back-welcome" class="ft-link" onclick="goHome()"><span aria-hidden="true">←</span> ${t('backWelcome')}</button><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();
@@ -902,11 +811,7 @@ function applyTheme(){if(!A)return;document.documentElement.dataset.t=DB.beige?'
 function th(t){A.theme=t;applyTheme();save();P.set()}
 function toggleBeige(){DB.beige=!DB.beige;applyTheme();save();P.pc()}
 
-const _restored=restoreSession();
 renderAppOrAuth();
-if(_restored)setTimeout(()=>{try{const c=$('#ck');if(c)c.hidden=true}catch(e){}},50);
-/* onbellekten (bfcache) geri gelince de oturum korunur */
-window.addEventListener('pageshow',e=>{if(e.persisted&&!A&&restoreSession())renderAppOrAuth()});
 </script>
 </body>
 </html>
