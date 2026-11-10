@@ -1,0 +1,748 @@
+
+const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
+const TITLE="Improvin' your day";
+/* ---- kalici depo: localStorage oncelikli, olmazsa bellek ici yedek (Safari gizli mod / dosya:// ) ---- */
+const MEM={};
+const store=()=>{try{const t='__t'+Math.random();localStorage.setItem(t,'1');localStorage.removeItem(t);return localStorage}catch(e){return null}};
+const LSK='b1', OTURUM='b1s', FEEDB='b1f', LOCAL_OTURUM='b1.this';
+function getItem(k){try{const s=store();if(s){const v=s.getItem(k);if(v!==null)return v}}catch(e){}return MEM[k]===undefined?null:MEM[k]}
+function setItem(k,v){MEM[k]=v;try{const s=store();if(s){s.setItem(k,v);return true}}catch(e){}return false}
+let DB=null;
+let DBraw=null;try{DBraw=JSON.parse(getItem(LSK)||'')}catch(e){}
+/* veri kaybina karsi yedek: her acilista son iyi kayit ayri tutulur */
+let DBbak=null;try{DBbak=JSON.parse(getItem('b1.bak')||'')}catch(e){}
+if((!DBraw||!DBraw.accounts||!Object.keys(DBraw.accounts).length)&&DBbak&&DBbak.accounts&&Object.keys(DBbak.accounts).length)DBraw=DBbak;
+DB=DBraw&&DBraw.accounts?DBraw:{accounts:{},last:'',lastUser:'',lock:{},lang:'en',beige:false};
+if(!DB.lang)DB.lang='en';if(DB.beige===undefined)DB.beige=false;if(!DB.lastUser)DB.lastUser='';
+document.documentElement.lang=DB.lang;
+let pushT=null;
+function schedulePush(){try{clearTimeout(pushT)}catch(e){}pushT=setTimeout(()=>{try{sbPush()}catch(e){}},2500)}
+const save=()=>{
+  try{
+    if(A)A.updatedAt=Date.now();
+    DB.savedAt=Date.now();
+    setItem(LSK,JSON.stringify(DB));
+    touchSession();
+    schedulePush();
+  }catch(e){}
+};
+/* oturum: kullanici bilgisi kucuk ve ayri tutulur -> ana kayit bozulsa da geri donus var */
+function touchSession(){
+  try{
+    const u=A?A.u:(DB.lastUser||'');if(!u)return;
+    const body=JSON.stringify({user:u,sig:signature(A||DB.accounts[u]),at:Date.now()});
+    setItem(OTURUM,body);setItem(LOCAL_OTURUM,body);
+  }catch(e){}
+}
+/* imza: menude/acik sayfada oturumu geri yuklemek icin (sifre yerine ozet) */
+const signature=a=>a?(a.pw||'').slice(0,24)+':'+String(a.u||''):'';
+function ck(v){setItem('b1ck',String(v));$('#ck').hidden=true;save()}
+/* her kayitta kucuk bir yedek tut (kaza/bug ile veri kaybini engeller) */
+function backupTick(){try{const raw=getItem(LSK);if(!raw)return;const parsed=JSON.parse(raw);if(parsed&&parsed.accounts&&Object.keys(parsed.accounts).length){setItem('b1.bak',raw);setItem('b1.bak.at',String(Date.now()))}}catch(e){}}
+setInterval(backupTick,20000);
+window.addEventListener('beforeunload',backupTick);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')backupTick()});
+try{if(getItem('b1ck')===null)$('#ck').hidden=false}catch(e){}
+const sysTheme=()=>(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+document.documentElement.dataset.t=sysTheme();
+try{if(JSON.parse(getItem(LSK)||'{}').beige)document.documentElement.dataset.t='beige'}catch(e){}
+let A=null,A0=null,view='welcome',pg='home',calOff=0,selDay=null,msg='',codes={},lastSig='';
+/* yenileme / yeni sekme: son kullanici + acik sayfa geri gelir, veriler korunur */
+function readJson(k){try{return JSON.parse(getItem(k)||'null')}catch(e){return null}}
+function restoreSession(){
+  try{
+    const cands=[readJson(OTURUM),readJson(LOCAL_OTURUM)];
+    let user='';
+    for(const c of cands){if(c&&c.user&&findUser(c.user)){user=findUser(c.user);break}}
+    if(!user&&DB.lastUser&&findUser(DB.lastUser))user=findUser(DB.lastUser);
+    if(!user){const ks=Object.keys(DB.accounts);if(ks.length===1)user=ks[0]}
+    if(!user)return false;
+    A=norm(DB.accounts[user]);lastSig=signature(A);
+    loginDat.u=user;
+    if(cloud()&&!sbSession())sbRefresh();
+    const st=history.state;
+    view='app';pg=(st&&st.v==='app'&&st.p)?st.p:'home';
+    applyTheme();touchSession();
+    return true;
+  }catch(e){return false}
+}
+/* baska sekmede yapilan degisiklik bu sekmeye de yansir (veri ayrismasi olmaz) */
+window.addEventListener('storage',e=>{
+  if(e.key!==LSK||!e.newValue)return;
+  let nd;try{nd=JSON.parse(e.newValue)}catch(_){return}
+  if(!nd||!nd.accounts)return;
+  DB=nd;
+  const u=loginDat.u||DB.lastUser;
+  if(!A&&u&&DB.accounts[u]){A=norm(DB.accounts[u]);applyTheme();if(view!=='app'){view='app';pg='home'}renderAppOrAuth();return}
+  if(A&&DB.accounts[A.u]){A=nd.accounts[A.u];applyTheme();if(document.querySelector('aside')){const m=$('#mn');const had=m?m.innerHTML:'';shell()}return}
+  renderAppOrAuth();
+});
+/* geri tusu: oturum acikken cikis ekranina dusmesin */
+
+let formDat={u:'',n:'',b:'',e:'',t:'',p:''},loginDat={u:'',p:''};
+
+function paint(){renderAppOrAuth()}
+/* yumusak sayfa gecisi: destekleyen tarayicida View Transitions, digerlerinde ayni davranis */
+function softPaint(){
+  const canVT=document.startViewTransition&&document.visibilityState==='visible'&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(canVT){
+    try{
+      const t=document.startViewTransition(()=>paint());
+      if(t&&t.finished&&t.finished.catch)t.finished.catch(()=>{});
+      if(t&&t.ready&&t.ready.catch)t.ready.catch(()=>{});
+      return;
+    }catch(e){}
+  }
+  paint();
+}
+function goTo(v,p,push=true){
+  view=v;pg=p;msg='';selDay=null;
+  if(push){try{history.pushState({v,p},'','')}catch(e){}}
+  softPaint();window.scrollTo(0,0);
+}
+window.addEventListener('popstate',e=>{
+  if(A)return;
+  if(e.state){view=e.state.v;pg=e.state.p}else{view='welcome';pg='home'}
+  msg='';selDay=null;renderAppOrAuth();
+});
+try{if(!history.state)history.replaceState({v:view,p:pg},'','')}catch(e){}
+document.addEventListener('keydown',e=>{
+  const t=e.target;
+  if((e.key==='Enter'||e.key===' ')&&t&&t.getAttribute&&t.getAttribute('role')==='button'){e.preventDefault();t.click()}
+});
+
+const D=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>D(new Date()),fmt=s=>{const[y,m,d]=s.split('-');return d+'.'+m};
+const dd=(a,b)=>Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5);
+const sha=async s=>{try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))|0;return'f'+h}};
+const AY=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const Q_LIST=["Small steps add up to big changes.","Discipline is choosing what you want most over what you want now.","You don't have to be great to start, but you have to start to be great.","Consistency beats intensity.","Progress, not perfection.","Focus on being productive instead of busy.","Your future is created by what you do today, not tomorrow.","Action is the foundational key to all success."];
+const getDailyQuote=()=>getDailyQuoteIn(DB.lang);
+
+/* ================= i18n ================= */
+const STRS={
+en:{welcome:'WELCOME',continue:'Continue →',howItWorks:'How it works',contact:'Contact me',login:'Sign in',create:'Create account',forgot:'Forgot password',
+username:'Username',password:'Password',newAccount:'New account',today:'Today',backlog:'Backlog',projectReminders:'Project reminders',projectName:'Project name',add:'Add',
+noProjects:'No projects yet.',addTask:'Add a task.',newTask:'New task',done:'Done',notDone:'Not done',delete:'Delete',addToToday:'Add to today',
+dailyReport:'Daily report',tasksDone:'tasks done',total:'Total',level:'Level',successDays:'successful days to the next level. The look gets richer as you level up.',
+quoteOfTheDay:'Quote of the day',focus:'focus',break:'break',focusAndBreak:'Focus and break lengths',stopwatch:'Stopwatch',startPause:'Start / Pause',reset:'Reset',
+startStop:'Start / Stop',addLength:'Add a length',afterThree:'After 3 focus sessions, the longest saved break is used.',
+progress:'Progress',everyDayAdds:'Every day you complete all your tasks adds +1.',analysis:'Analysis',noRecords:'No records for this day.',
+weeklyReport:'Weekly report',monthlyReport:'Monthly report',previous:'previous',change:'change',questionsFor:'Questions for this',lockAnswers:'Lock answers',
+answersLocked:'Your answers are locked.',noQuestions:'There were no questions for this',askedNext:'; the questions below will be asked next',
+addOwnQuestion:'Add your own question',addQuestion:'Add question',randomQuestion:'🎲 Random question',opensOn:'This report opens on',daysLeft:'days left',
+account:'Account',emailAndPhone:'Email and phone',email:'Email',phone:'Phone',sendCode:'Send code',currentPassword:'Current password',newPassword:'New password',
+changePassword:'Change password',theme:'Theme',dark:'Dark',light:'Light',accounts:'Accounts',addAccount:'+ Add account',resetSystem:'Reset system',reset:'Reset',
+deleteAccount:'Delete account',displayName:'Display name',bio:'Bio',change:'Change',active:'active',switch:'Switch',verify:'Verify',
+logout:'Log out',logoutQ:'Do you want to log out?',yes:'Yes',no:'No',loginBack:'Back to sign in',welcomeBack:'Welcome back',welcomeExcl:'Welcome!',
+locked:'Temporarily locked. Time left:',wrongLogin:'Wrong username or password. Attempts left:',signOut:'Sign out',signOutQ:'Go back to the sign-in screen? Your data stays saved on this device.',
+lockedReport:'This report opens on',futureNotes:'Notes for the future',addFutureNote:'Add a note',noteSaved:'Note saved.',notePlaceholder:'What do you want to remember about this day?',
+noNote:'No note for this day yet.',editNote:'Edit note',save:'Save',cancel:'Cancel',yourNote:'Your note',futureNoteHint:'You can leave a note for any day in the calendar — even for days that have not arrived yet.',
+streak:'Daily progress',gainToday:'+1 today',earned:'earned',toNext:'to next level',selectDay:'Select a day on the calendar',calendar:'Calendar',
+lang:'Language',quoteLangNote:'Quotes are translated into your chosen language.',pomoEnds:'Ends at',alreadyEnds:'if you start now it ends at',
+session:'Session',longBreak:'Long break',pastDaysFog:'Past days you did not complete appear foggy.',futureDays:'Future days — you can add notes.',
+fogToggle:'Fog past days',on:'On',off:'Off',settings:'Settings',minutes:'min',digitsOnly:'Digits only',code:'Code',wrongCode:'Wrong code.',
+noContact:'No email or phone number is registered on this account.',phoneInvalid:'Phone must be digits only (10-15 digits).',emailInvalid:'Invalid email address.',
+emailRequired:'Enter an email or phone for verification.',usernameRules:'Username must be 3-20 letters (no digits or spaces).',usernameTaken:'That username is taken.',
+displayRequired:'Display name is required.',resetDone:'Password reset. You can sign in now.',currentWrong:'Current password is wrong.',pwChanged:'Password changed.',
+verified:'Verified.',saved:'Saved.',wrongPw:'Wrong password.',systemReset:'System reset.',accountDeleted:'Account deleted.',sendHint:'Your code:',
+takeNote:'Note',newAccountTitle:'Create account',back:'Back',signInTitle:'Sign in',
+remembered:'Remembered on this device',notYou:'Not you?',savedUsers:'Accounts on this device',useAccount:'Sign in',
+wrongLogin:'Wrong username or password. Attempts left:',wrongLoginKnown:'Password is wrong for {u}. Attempts left:',
+totalDays:'Total days',everyDayCounts:'Every day since you started counts — %1 = 1 day. Nothing else is required.',
+daysRecorded:'days recorded',pctTitle:'Daily percentage',pctHint:'Goes up by 1 every day — independent of tasks and other stats.',backWelcome:'Back to the welcome screen',beigeOn:'Light beige look is on',beigeOff:'Light beige look is off',welcomeUser:'Welcome back,',
+noAccountYet:'No account on this device yet',currentAccount:'Current account',
+},
+tr:{welcome:'HOŞ GELDİN',continue:'Devam →',howItWorks:'Nasıl çalışır',contact:'Bana ulaş',login:'Giriş yap',create:'Hesap oluştur',forgot:'Şifremi unuttum',
+username:'Kullanıcı adı',password:'Şifre',newAccount:'Yeni hesap',today:'Bugün',backlog:'Birikim',projectReminders:'Proje hatırlatıcıları',projectName:'Proje adı',add:'Ekle',
+noProjects:'Henüz proje yok.',addTask:'Bir görev ekle.',newTask:'Yeni görev',done:'Yapıldı',notDone:'Yapılmadı',delete:'Sil',addToToday:'Bugüne ekle',
+dailyReport:'Günlük rapor',tasksDone:'görev tamamlandı',total:'Toplam',level:'Seviye',successDays:'başarılı gün kaldı. Seviye yükseldikçe görünüm zenginleşir.',
+quoteOfTheDay:'Günün alıntısı',focus:'odak',break:'mola',focusAndBreak:'Odak ve mola süreleri',stopwatch:'Kronometre',startPause:'Başlat / Duraklat',reset:'Sıfırla',
+startStop:'Başlat / Durdur',addLength:'Süre ekle',afterThree:'3 odak seansından sonra kayıtlı en uzun mola kullanılır.',
+progress:'İlerleme',everyDayAdds:'Tüm görevlerini bitirdiğin her gün +1 ekler.',analysis:'Analiz',noRecords:'Bu güne ait kayıt yok.',
+weeklyReport:'Haftalık rapor',monthlyReport:'Aylık rapor',previous:'önceki',change:'değişim',questionsFor:'Sorular —',lockAnswers:'Cevapları kilitle',
+answersLocked:'Cevapların kilitli.',noQuestions:'Bu dönem için soru yoktu',askedNext:'; aşağıdaki sorular bir sonraki dönemde sorulacak',
+addOwnQuestion:'Kendi sorunu ekle',addQuestion:'Soru ekle',randomQuestion:'🎲 Rastgele soru',opensOn:'Bu rapor şu tarihte açılır:',daysLeft:'gün kaldı',
+account:'Hesap',emailAndPhone:'E-posta ve telefon',email:'E-posta',phone:'Telefon',sendCode:'Kod gönder',currentPassword:'Mevcut şifre',newPassword:'Yeni şifre',
+changePassword:'Şifreyi değiştir',theme:'Tema',dark:'Koyu',light:'Açık',accounts:'Hesaplar',addAccount:'+ Hesap ekle',resetSystem:'Sistemi sıfırla',reset:'Sıfırla',
+deleteAccount:'Hesabı sil',displayName:'Görünen ad',bio:'Hakkında',change:'Değiştir',active:'aktif',switch:'Geç',verify:'Onayla',
+logout:'Çıkış yap',logoutQ:'Çıkış yapmak istiyor musun?',yes:'Evet',no:'Hayır',loginBack:'Giriş ekranına dön',welcomeBack:'Tekrar hoş geldin',welcomeExcl:'Hoş geldin!',
+locked:'Geçici olarak kilitli. Kalan süre:',wrongLogin:'Kullanıcı adı veya şifre yanlış. Kalan deneme:',signOut:'Çıkış',signOutQ:'Giriş ekranına dönmek istiyor musun? Verilerin bu cihazda kayıtlı kalır.',
+lockedReport:'Bu rapor şu tarihte açılır:',futureNotes:'Geleceğe notlar',addFutureNote:'Not ekle',noteSaved:'Not kaydedildi.',notePlaceholder:'Bu günle ilgili neyi hatırlamak istersin?',
+noNote:'Bu gün için henüz not yok.',editNote:'Notu düzenle',save:'Kaydet',cancel:'Vazgeç',yourNote:'Notun',futureNoteHint:'Takvimde herhangi bir güne not bırakabilirsin — henüz gelmemiş günlere bile.',
+streak:'Günlük ilerleme',gainToday:'Bugün +1',earned:'kazanıldı',toNext:'sonraki seviyeye',selectDay:'Takvimden bir gün seç',calendar:'Takvim',
+lang:'Dil',quoteLangNote:'Alıntılar seçtiğin dile çevrilir.',pomoEnds:'Bitiş',alreadyEnds:'şimdi başlarsan biter',
+session:'Seans',longBreak:'Uzun mola',pastDaysFog:'Tamamlamadığın geçmiş günler sisli görünür.',futureDays:'Gelecek günler — not ekleyebilirsin.',
+fogToggle:'Geçmiş günler sisli',on:'Açık',off:'Kapalı',settings:'Ayarlar',minutes:'dk',digitsOnly:'Sadece rakam',code:'Kod',wrongCode:'Kod yanlış.',
+noContact:'Bu hesapta kayıtlı e-posta veya telefon yok.',phoneInvalid:'Telefon sadece rakamlardan oluşmalı (10-15 hane).',emailInvalid:'Geçersiz e-posta adresi.',
+emailRequired:'Doğrulama için bir e-posta veya telefon gir.',usernameRules:'Kullanıcı adı 3-20 harf olmalı (rakam ve boşluk yok).',usernameTaken:'Bu kullanıcı adı alınmış.',
+displayRequired:'Görünen ad zorunlu.',resetDone:'Şifre sıfırlandı. Artık giriş yapabilirsin.',currentWrong:'Mevcut şifre yanlış.',pwChanged:'Şifre değiştirildi.',
+verified:'Onaylandı.',saved:'Kaydedildi.',wrongPw:'Şifre yanlış.',systemReset:'Sistem sıfırlandı.',accountDeleted:'Hesap silindi.',sendHint:'Doğrulama kodun:',
+takeNote:'Not',newAccountTitle:'Hesap oluştur',back:'Geri',signInTitle:'Giriş yap',
+remembered:'Bu cihazda hatırlanıyor',notYou:'Sen değil misin?',savedUsers:'Bu cihazdaki hesaplar',useAccount:'Giriş yap',
+wrongLogin:'Kullanıcı adı veya şifre yanlış. Kalan deneme:',wrongLoginKnown:'{u} için şifre yanlış. Kalan deneme:',
+totalDays:'Toplam gün',everyDayCounts:'Başladığın günden beri her gün sayılır — %1 = 1 gün. Başka bir koşul yok.',
+daysRecorded:'kayıtlı gün',pctTitle:'Günlük yüzde',pctHint:'Her gün 1 artar — görevlerden ve diğer sayılardan bağımsızdır.',backWelcome:'Karşılama ekranına dön',beigeOn:'Açık bej görünüm açık',beigeOff:'Açık bej görünüm kapalı',welcomeUser:'Tekrar hoş geldin,',
+noAccountYet:'Bu cihazda henüz hesap yok',currentAccount:'Aktif hesap',
+}
+};
+const Q_EN=["Small steps add up to big changes.","Discipline is choosing what you want most over what you want now.","You don't have to be great to start, but you have to start to be great.","Consistency beats intensity.","Progress, not perfection.","Focus on being productive instead of busy.","Your future is created by what you do today, not tomorrow.","Action is the foundational key to all success."];
+const Q_TR=["Küçük adımlar büyük değişimlerin toplamıdır.","Disiplin, şu an istediğin şeyi değil en çok istediğin şeyi seçmektir.","Başlamak için harika olman gerekmez; harika olmak için başlaman gerekir.","İstikrar, yoğunluktan daha güçlüdür.","Mükemmellik değil, ilerleme.","Meşgul olmak yerine üretken olmaya odaklan.","Geleceğin, yarının değil bugün yaptıklarınla kurulur.","Eylem, her başarının temel anahtarıdır."];
+const RQ_EN=["What fed your mind the most today?","How satisfied are you with your main goal this period?","What is the biggest distraction you should cut out of your life?","Are you giving yourself the value you deserve in this process?","How would you rate your energy today from 1 to 10, and why?","What would you tell your future self about this week?","When did you last step outside your comfort zone?","What small detail made you proudest this week?"];
+const RQ_TR=["Bugün zihnini en çok ne besledi?","Bu dönemdeki ana hedefinden ne kadar memnunsun?","Hayatından çıkarman gereken en büyük dikkat dağıtıcı ne?","Bu süreçte kendine hak ettiğin değeri veriyor musun?","Bugünkü enerjini 1-10 arasında nasıl değerlendirirsin, neden?","Bu hafta hakkında gelecekteki kendine ne söylerdin?","En son ne zaman konfor alanının dışına çıktın?","Bu hafta seni en çok gururlandıran küçük detay neydi?"];
+const DEFQ_EN={week:["What did you move forward the most this week?","What did you struggle with?","What one thing will you do better next week?"],month:["What was your biggest win this month?","What did you neglect, and why?","What will you focus on next month?"]};
+const DEFQ_TR={week:["Bu hafta en çok neyi ilerlettin?","En çok neyle zorlandın?","Gelecek hafta daha iyi yapacağın tek şey ne?"],month:["Bu ayın en büyük kazanımı neydi?","Neyi ihmal ettin ve neden?","Gelecek ay neye odaklanacaksın?"]};
+const NAV_KEYS=[['home','Home'],['pomo','Pomodoro'],['todo','To-do list'],['pc','Progress'],['rep','Reports'],['set','Settings'],['logout','Log out']];
+const NAV_TR={home:'Ana sayfa',pomo:'Pomodoro',todo:'Yapılacaklar',pc:'İlerleme',rep:'Raporlar',set:'Ayarlar',logout:'Çıkış yap'};
+const AY_TR=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const DN_TR=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+const LANG_NAMES={en:'English',tr:'Türkçe'};
+const setLang=l=>{DB.lang=l==='tr'?'tr':'en';save();document.documentElement.lang=DB.lang};
+const tr=()=>DB.lang==='tr';
+const t=(k,lang)=>(STRS[lang||DB.lang]||STRS.en)[k]||STRS.en[k]||k;
+const monthName=mo=>tr()?AY_TR[mo]:AY[mo];
+const dayName=i=>tr()?DN_TR[i]:DAY_NAMES[i];
+const navLabel=k=>tr()?(NAV_TR[k]||k):(NAV_KEYS.find(x=>x[0]===k)||[k,k])[1];
+const quoteFor=lang=>(lang||DB.lang)==='tr'?Q_TR:Q_EN;
+const getDailyQuoteIn=lang=>{const L=quoteFor(lang),n=new Date(),s=new Date(n.getFullYear(),0,0);return L[Math.floor(((n-s)+((s.getTimezoneOffset()-n.getTimezoneOffset())*60000))/864e5)%L.length]};
+const rqFor=lang=>(lang||DB.lang)==='tr'?RQ_TR:RQ_EN;
+const defQ=(k,lang)=>(lang||DB.lang)==='tr'?DEFQ_TR[k]:DEFQ_EN[k];
+const greetKey=()=>{const h=new Date().getHours();return h>=5&&h<12?'morning':h>=12&&h<18?'afternoon':'night'};
+const greetText=()=>{const g=greetKey();return tr()?(g==='morning'?'Günaydın':g==='afternoon'?'Tünaydın':'İyi geceler'):(g==='morning'?'Good morning':g==='afternoon'?'Good afternoon':'Good night')};
+
+const RANDOM_Q=["What fed your mind the most today?","How satisfied are you with your main goal this period?","What is the biggest distraction you should cut out of your life?","Are you giving yourself the value you deserve in this process?","How would you rate your energy today from 1 to 10, and why?","What would you tell your future self about this week?","When did you last step outside your comfort zone?","What small detail made you proudest this week?"];
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
+const userRe=new RegExp('^['+LETTERS+']{3,20}$');
+function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme()})}
+function norm(a){
+  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},fog:true,pctFrom:today()};
+  for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
+  return a;
+}
+const findUser=u=>Object.keys(DB.accounts).find(k=>k.toLowerCase()===String(u).toLowerCase());
+/* hesap kaydi her zaman localStorage'da tutulur: cerez reddedilse bile kullanici hatirlanir */
+const storeAcct=()=>{try{return localStorage}catch(e){return store()}};
+const rndHex=n=>{const a=new Uint8Array(n);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(let i=0;i<n;i++)a[i]=Math.floor(Math.random()*256);return[...a].map(x=>x.toString(16).padStart(2,'0')).join('')};
+/* sifre: PBKDF2 + tuz (yeni kayitlar), eski kayitlar icin geriye donuk dogrulama */
+async function hashPw(p,salt){
+  salt=salt||rndHex(16);
+  try{
+    const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']);
+    const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:120000,hash:'SHA-256'},key,256);
+    return {pw:'p2$'+salt+'$'+[...new Uint8Array(bits)].map(x=>x.toString(16).padStart(2,'0')).join(''),salt};
+  }catch(e){return {pw:'p1$'+salt+'$'+await sha(salt+'|'+p),salt}}
+}
+async function pwMatch(a,p){
+  if(!a||!a.pw)return false;
+  const v=String(a.pw);
+  if(v.indexOf('p2$')===0||v.indexOf('p1$')===0){const r=await hashPw(p,v.split('$')[1]);return r.pw===v}
+  return v===await sha(p);
+}
+async function setPw(a,p){const r=await hashPw(p);a.pw=r.pw;a.salt=r.salt;a.pwAt=Date.now();if(A&&a===A)lastSig=signature(a)}
+function roll(){
+  const t=today();
+  if(A.day!==t){
+    A.hist[A.day]=A.tasks.map(x=>({t:x.t,done:x.s==='done'}));
+    A.tasks.filter(x=>x.s!=='done').forEach(x=>A.backlog.push(x.t));
+    while(A.backlog.length>10)A.backlog.shift();
+    A.tasks=[];A.day=t;save();
+  }
+}
+const items=d=>d===today()?A.tasks.map(x=>({t:x.t,done:x.s==='done'})):(A.hist[d]||[]);
+const okDay=d=>{const i=items(d);return i.length>0&&i.every(x=>x.done)};
+const succ=()=>{let n=0;Object.keys(A.hist).forEach(d=>{if(d!==today()&&okDay(d))n++});if(okDay(today()))n++;return n};
+/* %1 = 1 gun: kayit gununden bugune kadar gecen her gun bir puan. Baska kosul yok. */
+/* yuzde: bagimsiz sayac. Her takvim gunu +1; gorevlere/gecmise bagli degil, asla ziplamaz. */
+const pctStart=()=>{if(!A.pctFrom||!/^\d{4}-\d{2}-\d{2}$/.test(A.pctFrom))A.pctFrom=today();return A.pctFrom};
+const pct=()=>Math.max(1,dd(pctStart(),today())+1);
+const dayCount=pct;
+const startDay=pctStart;
+const lvl=()=>1+Math.floor((pct()-1)/7);
+
+function pwOk(p,u){
+  if(p.length<8)return'Password must be at least 8 characters.';
+  if(/(.)\1/.test(p))return'No repeated adjacent letters or digits.';
+  if(/0123|1234|2345|3456|4567|5678|6789|abcd|qwer|asdf/i.test(p)||/^(.)\1+$/.test(p))return'Password is too simple.';
+  if(/2007|1308|130807|0813|password|sifre/i.test(p))return'Easily guessable passwords are not allowed.';
+  if(u&&p.toLowerCase().includes(u.toLowerCase()))return'Password cannot contain your username.';
+  return'';
+}
+function mon(d){const x=new Date(d+'T00:00');x.setDate(x.getDate()-((x.getDay()+6)%7));return D(x)}
+function addD(d,n){const x=new Date(d+'T00:00');x.setDate(x.getDate()+n);return D(x)}
+const fmtMin=m=>m>=60?Math.floor(m/60)+' h '+(m%60)+' min':m+' min';
+const box=x=>`<div class="center"><div class="box card">${x}</div></div>`;
+const m=()=>msg?`<div class="note">${msg}</div>`:'';
+
+function renderAppOrAuth(){
+  if(A){shell();return}
+  document.title=TITLE;
+  if(view==='app')view=Object.keys(DB.accounts).length?'login':'welcome';
+  let h='';
+  if(view==='welcome')h=`<div class="welcome-screen"><div class="brand-badge">badgalnurkan</div><div class="welcome-center"><div class="langbar">${langBtns()}</div><h1 class="big">${t('welcome')}</h1><div class="row" style="justify-content:center;gap:.8rem;margin-top:.5rem"><button onclick="goTo(Object.keys(DB.accounts).length?'login':'setup','home')">${t('continue')}</button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><div style="margin-top:1rem"><a href="mailto:nurkancanbulat89@gmail.com" style="color:var(--acc);font-weight:600;text-decoration:none;font-size:.9rem">${t('contact')}</a></div></div><div class="welcome-footer-bar"><div>© 2026 nurkancanbulat — All rights reserved.</div><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">tiktok/@badgalnurkan</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">instagram/@badgalnurkann</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">x/@badgalnurk</a></div></div></div>`;
+  else if(view==='login'){
+    const rem=rememberedUser(),others=Object.keys(DB.accounts).filter(k=>k!==rem);
+    if(!loginDat.u&&rem)loginDat.u=rem;
+    const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="useAccount('${esc(rem)}')">${t('useAccount')}</button></div>`:`<p class="mut" style="margin:.2rem 0 .9rem">${t('noAccountYet')}</p>`;
+    const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
+    h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${t('username')}</label><input id="u" autocomplete="username" autocapitalize="none" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`);
+  }
+  else if(view==='setup')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('username')}</label><input id="u" autocapitalize="none"><div class="row"><button onclick="fSend('email')">${tr()?'E-posta ile kod gönder':'Send code by email'}</button><button onclick="fSend('phone')">${tr()?'SMS ile kod gönder':'Send code by SMS'}</button></div><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  $('#app').innerHTML=h;
+  if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
+}
+
+
+function toast(txt){let el=document.querySelector('.toast');if(!el){el=document.createElement('div');el.className='toast';document.body.appendChild(el)}el.textContent=txt;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),2200)}
+/* giris yapildiktan sonra: gunaydin/tunaydin/iyi geceler hizlica gelir, silinir, sonra welcome */
+function greetThen(cb){
+  const g=document.createElement('div');g.className='greet-screen';g.textContent=greetText();
+  document.body.appendChild(g);
+  const skip=()=>{g.remove();document.removeEventListener('keydown',skip)};
+  g.addEventListener('click',skip);
+  document.addEventListener('keydown',skip);
+  setTimeout(()=>{g.classList.add('out');setTimeout(()=>{g.remove();document.removeEventListener('keydown',skip);cb&&cb()},560)},900);
+}
+function goHome(){A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
+function backToLogin(){A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
+
+function langBtns(){return ['en','tr'].map(l=>`<button class="${DB.lang===l?'on':''}" onclick="pickLang('${l}')">${LANG_NAMES[l]}</button>`).join('')}
+function pickLang(l){setLang(l);renderAppOrAuth()}
+function openModal(id,html){
+  if(document.getElementById(id))return;
+  const d=document.createElement('div');d.id=id;d.className='modal';
+  d.innerHTML=`<div class="card" style="max-width:32rem;width:100%;max-height:85vh;overflow-y:auto">${html}</div>`;
+  d.addEventListener('click',e=>{if(e.target===d)d.remove()});
+  document.body.appendChild(d);
+}
+const closeModal=id=>{const e=document.getElementById(id);if(e)e.remove()};
+function openGuideModal(){
+  const tr2=tr();
+  const body=tr2
+    ?`<ul style="font-size:.92rem;padding-left:1.2rem;line-height:1.7"><li><b>Ana sayfa:</b> günün alıntısı, günlük rapor, seviye ve proje hatırlatıcıları.</li><li><b>Yapılacaklar:</b> görev ekle, bitince ✓, bitmediyse ✕. Kaçırdığın görevler birikime geçer (en fazla 10).</li><li><b>Pomodoro:</b> odak/mola süreleri, 3 seanstan sonra en uzun mola ve milisaniyeli kronometre.</li><li><b>İlerleme:</b> tüm görevlerini bitirdiğin her gün yüzdelik dilimini +1 artırır. Geçmişte tamamlamadığın günler sisli görünür; herhangi bir güne, gelecekteki günlere bile not ekleyebilirsin.</li><li><b>Raporlar:</b> haftalık rapor pazar günü, aylık rapor ayın son günü açılır.</li></ul><p class="mut" style="font-size:.85rem">Verilerin yalnızca bu tarayıcıda saklanır.</p>`
+    :`<p class="mut">Built to help you manage your daily discipline, tasks and focus. Your data is stored only in your own browser.</p><ul style="font-size:.92rem;padding-left:1.2rem;line-height:1.7"><li><b>Home:</b> quote of the day, daily report, level and project reminders.</li><li><b>To-do list:</b> add a task, tap ✓ when done or ✕ if not done. Missed tasks move to the backlog (max 10).</li><li><b>Pomodoro:</b> focus/break lengths, the longest break after 3 sessions, and a millisecond stopwatch.</li><li><b>Progress:</b> every day you finish all your tasks adds +1 to your percentage. Past days you did not complete appear foggy; you can leave a note on any day, even a future one.</li><li><b>Reports:</b> the weekly report opens on Sunday, the monthly report on the last day of the month.</li></ul>`;
+  openModal('guide-modal',`<h2>${t('howItWorks')}</h2>${body}<div style="text-align:center;margin-top:1.2rem"><button onclick="closeModal('guide-modal')">${tr2?'Anladım':'Got it'}</button></div>`);
+}
+
+/* bu cihazda hatirlanan kullanici (giris ekraninda otomatik dolu gelir) */
+function rememberedUser(){
+  const list=Object.keys(DB.accounts);
+  if(!list.length)return '';
+  if(DB.lastUser&&DB.accounts[DB.lastUser])return DB.lastUser;
+  const byNick=list.find(k=>DB.accounts[k].nick===DB.last);
+  return byNick||list[0];
+}
+function useAccount(u){loginDat={u,p:''};view='login';msg='';renderAppOrAuth();const pe=$('#p');if(pe)pe.focus()}
+function otherUser(){loginDat={u:'',p:''};msg='';renderAppOrAuth();const ue=$('#u');if(ue)ue.focus()}
+async function login(){
+  const typed=loginDat.u.trim(),u=typed||rememberedUser();
+  loginDat.u=u;
+  if(!u){msg=tr()?'Kullanıcı adını gir.':'Enter your username.';return renderAppOrAuth()}
+  const key=findUser(u),k=(key||u).toLowerCase(),L=DB.lock[k]||{f:0,lv:0,until:0};
+  if(Date.now()<L.until){msg=`${t('locked')} ${fmtMin(Math.ceil((L.until-Date.now())/60000))}.`;return renderAppOrAuth()}
+  const a=key?DB.accounts[key]:null;
+  /* --- bulut girisi: her cihazda ayni hesap --- */
+  if(cloud()&&(!a||!a.pw)){
+    try{
+      const mail=String(loginDat.e||(a&&a.mail)||(a&&a.email)||'').toLowerCase();
+      const j=await sbSignIn(u,loginDat.p,mail);
+      if(j&&j.access_token){
+        const data=await sbPull(u);
+        const acc=data||norm({u,nick:(j.user&&j.user.user_metadata&&j.user.user_metadata.nick)||u});
+        acc.u=u;acc.mail=mail||acc.mail;await setPw(acc,loginDat.p);
+        DB.accounts[u]=acc;DB.last=acc.nick||u;DB.lastUser=u;
+        DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(acc);loginDat={u:'',p:''};lastSig=signature(acc);
+        applyTheme();save();goTo('app','home');greetThen();
+        toast(tr()?'Buluttan yüklendi.':'Loaded from the cloud.');return;
+      }
+    }catch(err){
+      if(err.status===400||err.status===401){/* sifre/hesap bulutta yok: yerel yola dus */}
+    }
+  }
+  if(a&&await pwMatch(a,loginDat.p)){
+    DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(a);DB.last=a.nick;DB.lastUser=a.u;lastSig=signature(a);loginDat={u:'',p:''};
+    applyTheme();save();goTo('app','home');greetThen();return;
+  }
+  L.f++;
+  if(L.f>=5){const long=L.lv>0;L.until=Date.now()+(long?5*3600000:30*60000);L.lv++;L.f=0;msg=long?(tr()?'5 hatalı deneme daha. 5 saat kilitli.':'5 more failed attempts. Locked for 5 hours.'):(tr()?'5 hatalı deneme. 30 dakika kilitli.':'5 failed attempts. Locked for 30 minutes.')}
+  else msg=a?t('wrongLoginKnown').replace('{u}',a.nick||a.u)+' '+(5-L.f):`${t('wrongLogin')} ${5-L.f}`+(tr()?' (bu adda hesap yok)':' (no such account)');
+  DB.lock[k]=L;save();renderAppOrAuth();
+}
+
+async function setup(){
+  const u=$('#u').value.trim(),n=$('#n').value.trim(),e=$('#e').value.trim(),t='',p=$('#p').value;
+  formDat={u,n,b:$('#b')?$('#b').value:'',e,t,p};
+  if(!userRe.test(u))msg=t('usernameRules');
+  else if(!n)msg=t('displayRequired');
+  else if(findUser(u))msg=t('usernameTaken');
+  else if(!e)msg=tr()?'E-posta zorunlu (hesabın buna bağlı).':'Email is required (your account is tied to it).';
+  else if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))msg=t('emailInvalid');
+  else msg=pwOk(p,u);
+  if(msg)return renderAppOrAuth();
+  /* --- bulut: Supabase hesabi (varsa) --- */
+  let cloudOK=false,cloudErr='';
+  if(cloud()){
+    try{
+      const j=await sbSignUp(u,p,n,e);
+      if(j&&j.access_token){sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});cloudOK=true}
+      else if(j&&j.id){/* e-posta onayi acik: oturum yok, yerel devam */}
+    }catch(err){
+      cloudErr=err.message||'';
+      if(/already|exists|registered/i.test(cloudErr)){msg=tr()?'Bu kullanıcı adı bulutta kayıtlı.':'That username is already registered in the cloud.';return renderAppOrAuth()}
+    }
+  }
+  const a=newAcc(u,n,formDat.b,'',e,t);await setPw(a,p);
+  DB.accounts[u]=a;DB.last=n;DB.lastUser=u;lastSig=signature(a);formDat={u:'',n:'',b:'',e:'',t:'',p:''};
+  a.mail=String(e||'').toLowerCase();A0=null;A=a;applyTheme();save();goTo('app','home');greetThen();
+  if(cloudOK){sbPush();toast(tr()?'Bulut hesabı oluşturuldu, verilerin eşitleniyor.':'Cloud account created, syncing your data.');}
+  else if(cloudErr){toast((tr()?'Bulut hesabı kurulamadı, veriler bu cihazda: ':'Cloud account failed, data stays on this device: ')+cloudErr);}
+}
+
+/* gercek sifre sifirlama: Supabase kayitli e-posta adresine sifirlama baglantisi gonderir */
+async function sbRecover(email){
+  return sb('/auth/v1/recover',{method:'POST',body:{email:String(email).toLowerCase()}});
+}
+async function fSend(k){
+  const key=findUser($('#u').value.trim()),a=key&&DB.accounts[key];
+  const mail=a?String(a.mail||a.email||'').toLowerCase():'';
+  if(k==='email'&&mail){
+    msg='';
+    try{
+      await sbRecover(mail);
+      $('#fz').innerHTML=`<div class="note">${tr()?'E-posta gönderildi: ':'Email sent to '}<b>${esc(mail)}</b><br><small>${tr()?'Gelen kutunu (ve spam klasörünü) kontrol et, bağlantıya tıkla, sonra yeni şifrenle giriş yap.':'Check your inbox (and spam), open the link, then sign in with your new password.'}</small></div><button class="g" onclick="goTo('login','home')">${t('login')}</button>`;
+    }catch(err){
+      msg=(tr()?'E-posta gönderilemedi: ':'Could not send email: ')+err.message;
+      renderAppOrAuth();
+    }
+    return;
+  }
+  if(!a||!a[k]){msg=t('noContact');return renderAppOrAuth()}
+  codes[key]=String(Math.floor(100000+Math.random()*900000));
+  $('#fz').innerHTML=`<div class="note">${t('sendHint')} <b>${codes[key]}</b></div><label>${t('code')}</label><input id="c" inputmode="numeric"><label>${t('newPassword')}</label><input id="p" type="password" autocomplete="new-password"><button onclick="fReset(${JSON.stringify(key).replace(/"/g,'&quot;')})">${tr()?'Şifreyi değiştir':'Reset password'}</button>`;
+}
+async function fReset(u){
+  if($('#c').value!==codes[u]){msg=t('wrongCode');return renderAppOrAuth()}
+  const e=pwOk($('#p').value,u);if(e){msg=e;return renderAppOrAuth()}
+  await setPw(DB.accounts[u],$('#p').value);delete codes[u];DB.lock[u.toLowerCase()]={f:0,lv:0,until:0};save();
+  view='login';msg=t('resetDone');renderAppOrAuth();
+}
+
+const NAV=NAV_KEYS;
+function closeMiniCal(){const el=$('#mini-cal');if(el)el.style.display='none';const bd=$('#mini-backdrop');if(bd)bd.hidden=true}
+function placeMiniCal(){
+  const el=$('#mini-cal'),trig=$('#top-date-trigger');if(!el||!trig)return;
+  el.style.display='block';
+  const r=trig.getBoundingClientRect(),w=el.offsetWidth,h=el.offsetHeight,vw=innerWidth,vh=innerHeight,m=8;
+  let left=Math.min(Math.max(m,r.right-w),vw-w-m);
+  let top=r.bottom+8;
+  if(top+h>vh-m&&r.top-h-8>m)top=Math.max(m,r.top-h-8);
+  if(top+h>vh-m)top=Math.max(m,vh-h-m);
+  el.style.left=Math.round(left)+'px';el.style.top=Math.round(top)+'px';
+  el.style.animation='none';void el.offsetWidth;el.style.animation='';
+}
+function toggleMiniCal(e){
+  if(e){e.stopPropagation();e.preventDefault()}
+  const el=$('#mini-cal');if(!el)return;
+  if(el.style.display==='block'){closeMiniCal();return}
+  let bd=$('#mini-backdrop');
+  if(!bd){bd=document.createElement('div');bd.id='mini-backdrop';bd.onclick=ev=>{ev.stopPropagation();closeMiniCal()};document.body.appendChild(bd)}
+  bd.hidden=false;
+  placeMiniCal();
+}
+window.addEventListener('resize',()=>{const el=$('#mini-cal');if(el&&el.style.display==='block')placeMiniCal()});
+window.addEventListener('scroll',()=>{const el=$('#mini-cal');if(el&&el.style.display==='block')placeMiniCal()},true);
+/* header'daki tarih (sag ust) = 10.11: tiklaninca tum arayuzde acik bej tema */
+/* 10.11 (header sag ust tarih): sayinin uzerine gelince veya tiklaninca acik bej.
+   Tiklamada takvim ACIK kalir (arkada birakilmaz); sadece tiklanan sayi ve tum arayuz bej olur. */
+let beigeBusy=false;
+function miniClick(e,k){
+  if(e){e.stopPropagation();e.preventDefault()}
+  if(beigeBusy)return;beigeBusy=true;setTimeout(()=>beigeBusy=false,420);
+  const grid=$('#mini-cal');
+  if(!grid||grid.style.display!=='block')toggleMiniCal();
+  const el=grid?[...grid.querySelectorAll('.mini-dot')].find(x=>x.title===fmt(k)):null;
+  DB.beige=!DB.beige;applyTheme();save();
+  document.querySelectorAll('.dot').forEach(d=>{d.classList.add('lit');setTimeout(()=>d.classList.remove('lit'),650)});
+  if(el){el.classList.remove('lit');void el.offsetWidth;el.classList.add('lit');setTimeout(()=>el.classList.remove('lit'),900)}
+  toast(DB.beige?t('beigeOn'):t('beigeOff'));
+  if(A&&document.querySelector('aside')){shell();if(pg==='pc')P.pc()}
+  const g=$('#mini-cal');if(g){g.style.display='block';placeMiniCal()}
+  const again=g?[...g.querySelectorAll('.mini-dot')].find(x=>x.title===fmt(k)):null;
+  if(again){again.classList.add('lit');setTimeout(()=>again.classList.remove('lit'),900)}
+}
+function fadeDot(el,on){
+  if(!el||!el.classList)return;
+  if(on)el.classList.add('lit');else el.classList.remove('lit');
+}
+window.addEventListener('click',e=>{const mc=$('#mini-cal'),t=$('#top-date-trigger');if(mc&&mc.style.display==='block'&&t&&!t.contains(e.target)&&!mc.contains(e.target))closeMiniCal()});
+function confirmLogout(){
+  openModal('logout-modal',`<div style="text-align:center"><h2>${t('logout')}</h2><p class="mut">${t('logoutQ')}</p><div class="row" style="justify-content:center;margin-top:1.2rem"><button onclick="closeModal('logout-modal');goLogin()">${t('yes')}</button><button class="g" onclick="closeModal('logout-modal')">${t('no')}</button></div></div>`);
+}
+
+function shell(){
+  roll();
+  const L=lvl();document.documentElement.className='lv'+Math.min(L,4);
+  const n=new Date(),y=n.getFullYear(),mo=n.getMonth(),days=new Date(y,mo+1,0).getDate();
+  let mc='';
+  for(let d=1;d<=days;d++){const k=`${y}-${pad(mo+1)}-${pad(d)}`,its=items(k),future=k>today();
+    let cls=future?'future':(dayFog(k)?'fog':'');
+    if(!future&&its.length>0)cls=its.every(x=>x.done)?'ok':'miss-dot';
+    if(hasNote(k))cls+=' note';
+    mc+=`<button class="mini-dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="miniClick(event,'${k}')"><span>${d}</span></button>`}
+  const keepAside=document.querySelector('#nav-aside');
+  $('#app').innerHTML=`<header class="top"><b role="button" tabindex="0" onclick="goTo('app','home')">Improvin' your day.</b><span id="top-date-trigger" role="button" tabindex="0" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="toggleMiniCal(event)" title="${t('calendar')}"><span>${fmt(today())}</span> ▾${DB.beige?'<small>bej</small>':''}</span><div id="mini-cal" class="mini-popup"><div style="font-family:var(--fs);font-weight:700;color:var(--acc);margin-bottom:.4rem">${monthName(mo)} ${y}</div><div class="mini-cal-grid">${mc}</div><p class="mut" style="font-size:.72rem;margin:.6rem 0 0">${tr()?'Bir güne tıkla: açık bej görünümü aç/kapat.':'Click a day to toggle the light beige look.'}</p></div></header><div class="shell"><aside><div class="lg" role="button" tabindex="0" onclick="goTo('app','set')"><small>${tr()?'Hoş geldin,':'Welcome,'}</small>${esc(A.nick)}</div>${NAV.map(([k])=>k=='logout'?`<a role="button" tabindex="0" onclick="confirmLogout()">${navLabel('logout')}</a>`:`<a role="button" tabindex="0" class="${pg==k?'on':''}" onclick="goTo('app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button id="back-welcome" class="ft-link" onclick="goHome()"><span aria-hidden="true">←</span> ${t('backWelcome')}</button><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  if(pg!=='pomo'||!pm.run)document.title=TITLE;
+  renderPage();
+  const mc0=$('#mini-cal');if(mc0&&mc0.parentElement!==document.body)document.body.appendChild(mc0);
+}
+function renderPage(){const mn=$('#mn');if(mn){mn.classList.remove('an');void mn.offsetWidth;mn.classList.add('an')}(P[pg]||P.home)()}
+setInterval(()=>{if(A&&A.day!==today())shell()},60000);
+
+const P={};const M=h=>$('#mn').innerHTML=h;
+P.home=()=>{
+  const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length,g=7-succ()%7;
+  const pr=A.projects.map((p,i)=>{const d=dd(today(),p.d);return`<div class="task"><span>${esc(p.n)} — ${d>0?d+(d==1?(tr()?' gün kaldı':' day left'):(tr()?' gün kaldı':' days left')):d==0?(tr()?'son gün bugün!':'last day today!'):Math.abs(d)+(tr()?' gün gecikti':' days overdue')}</span><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`}).join('');
+  M(`<div class="card"><div class="mut" style="margin-bottom:.3rem">${t('quoteOfTheDay')}</div><h2>“${q}”</h2></div><div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut" style="margin:.6rem 0 0;font-size:.85rem">${t('everyDayCounts')}</p></div><div class="card"><h2>${t('level')} ${lvl()}</h2><p class="mut">${g} ${t('successDays')}</p><div class="bar"><i style="width:${(7-g)/7*100}%"></i></div></div><div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<div class="row" style="margin-top:.6rem"><input id="pn" maxlength="40" placeholder="${t('projectName')}" oninput="this.value=this.value.replace(/[^${LETTERS} ]/g,'')"><input id="pd" type="date" style="max-width:11rem" min="${today()}"><button onclick="addProj()">${t('add')}</button></div></div>`);
+};
+function addProj(){const n=$('#pn').value.trim(),d=$('#pd').value;if(n&&d){A.projects.push({n,d});save();P.home()}}
+
+P.todo=()=>{
+  const bl=A.backlog.map((t,i)=>`<div class="task"><span>${esc(t)}</span><button class="g s" onclick="fromBack(${i})">${t('addToToday')}</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">${t('delete')}</button></div>`).join('');
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">'+t('addTask')+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" placeholder="${t('newTask')}" onkeydown="event.key=='Enter'&&addT()"><button onclick="addT()">${t('add')}</button></div></div><div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2><p class="mut">${tr()?'Yapılmadı olarak işaretlediğin görevler burada birikir; 10\'u geçince en eski silinir.':'Tasks you miss collect here; past 10, the oldest is deleted.'}</p>${bl}</div>`);
+};
+const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}"><span>${esc(x.t)}</span><button class="ck ${x.s=='done'?'on':''}" aria-label="${t('done')}" title="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s=='miss'?'on':''}" aria-label="${t('notDone')}" title="${t('notDone')}" onclick="mk(${i},'miss')">✕</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
+function fromBack(i){A.tasks.push({t:A.backlog[i],s:''});A.backlog.splice(i,1);save();P.todo()}
+function delT(i){A.tasks.splice(i,1);save();P.todo()}
+function addT(){const v=$('#nt').value.trim();if(v){A.tasks.push({t:v,s:''});save();P.todo()}}
+function mk(i,s){const x=A.tasks[i];x.s=x.s===s?'':s;save();$('#t'+i).outerHTML=tk(x,i);if(x.s==='miss'){const e=$('#t'+i);e.classList.add('shake')}}
+
+/* sis: tamamlanmamis gecmis gunler */
+function dayFog(k){if(!A||!A.fog)return false;if(k>=today())return false;const its=items(k);return !(its.length>0&&its.every(x=>x.done))}
+function hasNote(k){return !!(A.future&&A.future[k])}
+function openDay(k){
+  selDay=k;
+  const its=items(k),note=(A.future&&A.future[k])||'',future=k>today();
+  openModal('day-modal',`<h2>${fmt(k)}${future?' · '+t('futureNotes'):''}</h2>${its.length?its.map(x=>`<div class="task ${x.done?'done':'miss'}"><span>${esc(x.t)}</span><b>${x.done?'✓ '+t('done'):'✕ '+t('notDone')}</b></div>`).join(''):'<p class="mut">'+t('noRecords')+'</p>'}
+<div style="margin-top:1rem"><h3>${t('yourNote')}</h3><textarea id="dn" rows="3" maxlength="500" placeholder="${t('notePlaceholder')}">${esc(note)}</textarea><div class="row" style="justify-content:flex-end"><button class="g" onclick="closeModal('day-modal')">${t('cancel')}</button><button onclick="saveNote('${k}')">${t('save')}</button></div></div>`);
+}
+function saveNote(k){const v=($('#dn').value||'').trim().slice(0,500);if(!A.future)A.future={};if(v)A.future[k]=v;else delete A.future[k];save();closeModal('day-modal');toast(t('noteSaved'));P.pc()}
+P.pc=()=>{
+  const n=new Date(),mn=(2026-n.getFullYear())*12+10-n.getMonth();
+  if(calOff<mn)calOff=mn;
+  const base=new Date(n.getFullYear(),n.getMonth()+calOff,1),y=base.getFullYear(),mo=base.getMonth(),days=new Date(y,mo+1,0).getDate();
+  let c='';
+  for(let d=1;d<=days;d++){
+    const k=`${y}-${pad(mo+1)}-${pad(d)}`,its=items(k),future=k>today();
+    let cls=future?'future':(dayFog(k)?'fog':'');
+    if(!future&&its.length>0)cls=its.every(x=>x.done)?'ok':'miss-dot';
+    if(hasNote(k))cls+=' note';
+    c+=`<button class="dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="openDay('${k}')"><small>${dayName(new Date(y,mo,d).getDay())}</small><span>${d}</span></button>`;
+  }
+  const noteList=Object.keys(A.future||{}).sort().map(k=>`<div class="task"><span><b>${fmt(k)}</b> — ${esc(A.future[k])}</span><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div>`).join('');
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1.2rem">${fmt(today())}</span></div><div class="stat" style="margin-top:.9rem"><span><b>%${pct()}</b> <span class="mut">${t('pctTitle')}</span></span></div><p class="mut" style="margin:.4rem 0 0;font-size:.85rem">${t('pctHint')}</p><p class="mut" style="margin:.2rem 0 0;font-size:.85rem">${t('everyDayCounts')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();P.pc()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button><button class="g s" onclick="P.pc()">${t('calendar')}</button></div></div><div class="card"><div class="row"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p>${noteList||'<p class="mut">'+t('noNote')+'</p>'}<div class="row" style="margin-top:.6rem"><input id="fnd" type="date" style="max-width:11rem"><button onclick="newNote()">${t('addFutureNote')}</button></div></div>`);
+};
+function newNote(){const d=$('#fnd').value;if(!d){toast(tr()?'Bir tarih seç.':'Pick a date.');return}openDay(d)}
+function delNote(k){delete A.future[k];save();P.pc()}
+function st(a,b){let t=0,d=0,by={};for(let x=a;x<=b;x=addD(x,1)){items(x).forEach(i=>{t++;by[i.t]=by[i.t]||[0,0];by[i.t][1]++;if(i.done){d++;by[i.t][0]++}})}return{t,d,p:t?Math.round(d/t*100):0,by}}
+const qb=(k,arr,ro)=>arr.map((x,i)=>`<label>${esc(x.q)}</label><div class="qa"><textarea rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this)">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i})">${t('delete')}</button>`}</div><div class="qcap mut">${x.a.length}/400</div>`).join('');
+function qa(k,i,el){A.qs[k][i].a=el.value.slice(0,400);save();el.parentElement.nextElementSibling.textContent=el.value.length+'/400'}
+function delQ(k,i){A.qs[k].splice(i,1);save();P.rep()}
+function addRandQ(k){const R=rqFor();A.qs[k].push({q:R[Math.floor(Math.random()*R.length)],a:''});save();P.rep()}
+function addQ(k){const e=$('#nq-'+k),v=e.value.trim().slice(0,150);if(v){A.qs[k].push({q:v,a:''});save();P.rep()}}
+function lockQ(k,b){if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent=tr()?'Emin misin? Bu işlem geri alınamaz':'Are you sure? This cannot be undone';return}A.ql[k]=1;save();P.rep()}
+
+function repCard(title,per,a,b,pa,pb,key,nk,defs){
+  const td=today();
+  if(td<b){
+    const tot=dd(a,b)+1,pass=dd(a,td)+1;
+    return`<div class="card"><h2>🔒 ${title}</h2><p class="mut">${t('opensOn')} ${fmt(b)} — ${dd(td,b)} ${t('daysLeft')}</p><div class="bar"><i style="width:${Math.min(100,pass/tot*100)}%"></i></div></div>`;
+  }
+  if(!A.qs[nk])A.qs[nk]=defs.map(q=>({q,a:''}));
+  const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p,cur=A.qs[key]||[],ro=!!A.ql[key];
+  const tr=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
+  return`<div class="card"><h2>${title}</h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${tr}
+<h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3>${cur.length?qb(key,cur,ro)+(ro?'<p class="mut">'+t('answersLocked')+'</p>':`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
+<h3 style="margin-top:1.2rem">${tr()?'Sonraki':'Next'} ${per}</h3>${qb(nk,A.qs[nk],false)}<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="${t('addOwnQuestion')}"><button class="s" onclick="addQ('${nk}')">${t('addQuestion')}</button><button class="g s" onclick="addRandQ('${nk}')">${t('randomQuestion')}</button></div></div>`;
+}
+P.rep=()=>{
+  const td=today(),wa=mon(td),wb=addD(wa,6),x=new Date();
+  const ma=D(new Date(x.getFullYear(),x.getMonth(),1)),mb=D(new Date(x.getFullYear(),x.getMonth()+1,0)),pma=D(new Date(x.getFullYear(),x.getMonth()-1,1)),pmb=D(new Date(x.getFullYear(),x.getMonth(),0));
+  const mNext=D(new Date(x.getFullYear(),x.getMonth()+1,1)).slice(0,7);
+  M(repCard(t('weeklyReport'),tr()?'hafta':'week',wa,wb,addD(wa,-7),addD(wa,-1),wa,addD(wa,7),defQ('week'))+repCard(t('monthlyReport'),tr()?'ay':'month',ma,mb,pma,pmb,ma.slice(0,7),mNext,defQ('month')));
+};
+
+let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};
+const fmtDuration=m=>{if(m<60)return m+' '+t('minutes');const h=Math.floor(m/60),r=m%60;return r===0?h+(h==1?(tr()?' saat':' hour'):(tr()?' saat':' hours')):h+(tr()?' sa ':' h ')+r+' '+t('minutes')};
+const ft=s=>pad(Math.floor(s/60))+':'+pad(s%60);
+/* kronometre: milisaniye hassasiyetinde HH:MM:SS.mmm */
+/* kronometre: toplam 3 hane (S.dss / SS.dss / M:SS.dss) - bastaki sifir yok */
+const fms=ms=>{const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000),s=Math.floor(ms%60000/1000),x=Math.floor((ms%1000)/10);const pad2=n=>String(n).padStart(2,'0');if(h)return h+':'+pad2(m)+':'+pad2(s)+'.'+pad2(x);if(m)return m+':'+pad2(s)+'.'+pad2(x);return s+'.'+pad2(x)};
+const clk=ms=>{const d=new Date(Date.now()+ms);return pad(d.getHours())+':'+pad(d.getMinutes())};
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();o.connect(c.destination);o.start();o.stop(c.currentTime+.35)}catch(e){}}
+P.pomo=()=>{
+  editIdx=-1;
+  const pr=A.presets.map((p,i)=>`<div class="tag ${pm.w==p.w&&pm.b==p.b?'on':''}"><span role="button" tabindex="0" style="cursor:pointer;flex:1" onclick="setP(${p.w},${p.b})"><b>${fmtDuration(p.w)}</b> ${t('focus')} / <b>${fmtDuration(p.b)}</b> ${t('break')}</span><span class="row" style="gap:.3rem"><button class="g s" onclick="editP(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s d" onclick="delP(${i})">${t('delete')}</button></span></div>`).join('');
+  M(`<div class="card"><div class="mut" style="text-align:center" id="pl"></div><div class="tm" id="pt">${ft(pm.left)}</div><div class="row" style="justify-content:center"><button onclick="pS()">${t('startPause')}</button><button class="g" onclick="pR()">${t('reset')}</button></div><p id="pi" class="mut" style="text-align:center"></p></div><div class="card"><h2>${t('focusAndBreak')}</h2>${pr||'<p class="mut">'+t('addLength')+'</p>'}<div class="row" style="margin-top:.7rem"><input id="cw" type="number" inputmode="numeric" min="1" max="600" placeholder="${t('focus')} (${t('minutes')})"><input id="cb" type="number" inputmode="numeric" min="1" max="600" placeholder="${t('break')} (${t('minutes')})"><button onclick="addP()">${tr()?'Ekle / Güncelle':'Add / Update'}</button></div><p class="mut" style="font-size:.85rem">${t('afterThree')}</p></div><div class="card"><h2>${t('stopwatch')}</h2><div class="tm" id="sw">${fms(pm.swT*1000)}</div><div class="row" style="justify-content:center"><button onclick="swS()">${t('startStop')}</button><button class="g" onclick="swR()">${t('reset')}</button></div></div>`);
+  pi();
+};
+function pi(){
+  const e=$('#pi'),l=$('#pl');if(!e)return;
+  l.textContent=pm.ph==='w'?`${t('session')} ${pm.n%3+1}/3 · ${fmtDuration(pm.w)}`:(pm.lg?t('longBreak'):t('break'));
+  e.textContent=pm.run?`${t('pomoEnds')}: ${clk(pm.left*1000)}`:(pm.w>60&&pm.ph==='w'?`${pm.w} ${t('minutes')} · ${t('alreadyEnds')} ${clk(pm.left*1000)}`:'');
+}
+function setP(w,b){clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,n:0,lg:0,iv:0};document.title=TITLE;P.pomo()}
+let editIdx=-1;
+function editP(i){const p=A.presets[i];$('#cw').value=p.w;$('#cb').value=p.b;editIdx=i}
+function delP(i){A.presets.splice(i,1);save();P.pomo()}
+function addP(){
+  const w=Math.round(+$('#cw').value),b=Math.round(+$('#cb').value);
+  if(w>0&&b>0&&w<=600&&b<=600){if(editIdx>=0){A.presets[editIdx]={w,b};editIdx=-1}else A.presets.push({w,b});save();setP(w,b)}
+}
+function pTick(){
+  pm.left=Math.max(0,Math.round((pm.end-Date.now())/1000));
+  const t2=$('#pt');if(t2)t2.textContent=ft(pm.left);
+  document.title=ft(pm.left)+' · '+TITLE;
+  if(pm.left<=0){
+    beep();
+    if(pm.ph==='w'){pm.n++;pm.ph='b';pm.lg=pm.n%3===0?1:0;pm.left=(pm.lg?Math.max(pm.b,...A.presets.map(p=>p.b)):pm.b)*60}
+    else{pm.ph='w';pm.lg=0;pm.left=pm.w*60}
+    pm.end=Date.now()+pm.left*1000;
+  }
+  pi();
+}
+function pS(){
+  if(pm.run){clearInterval(pm.iv);pm.run=0;pi();return}
+  pm.run=1;pm.end=Date.now()+pm.left*1000;pi();pm.iv=setInterval(pTick,500);
+}
+function pR(){clearInterval(pm.iv);pm={...pm,run:0,ph:'w',left:pm.w*60,n:0,lg:0,iv:0};document.title=TITLE;P.pomo()}
+function swS(){
+  if(pm.sw){clearInterval(pm.swI);pm.sw=0;return}
+  pm.sw=1;const start=Date.now()-pm.swT*1000;
+  pm.swI=setInterval(()=>{pm.swT=(Date.now()-start)/1000;const e=$('#sw');if(e)e.textContent=fms(Math.round(pm.swT*1000))},16);
+}
+function swR(){clearInterval(pm.swI);pm.sw=0;pm.swT=0;P.pomo()}
+
+const left=k=>{const n=Date.now();A[k]=(A[k]||[]).filter(t=>n-t<15*864e5);return 5-A[k].length};
+P.set=()=>{
+  const keys=Object.keys(DB.accounts);
+  const ac=keys.map((u,i)=>`<span class="tag ${DB.accounts[u]===A?'on':''}"><span>${esc(u)}</span>${DB.accounts[u]===A?'<span class="mut">'+t('active')+'</span>':`<button class="g s" onclick="switchAcc(${i})">${t('switch')}</button>`}</span>`).join('');
+  M(`${m()}<div class="card"><h2>${t('lang')}</h2><div class="langbar" style="justify-content:flex-start">${langBtns()}</div><p class="mut" style="font-size:.85rem">${t('quoteLangNote')}</p></div>
+<div class="card"><h2>${t('account')}</h2><label>${t('username')} <span class="mut">(${tr()?'15 günde 5 değişiklik — kalan':'5 changes per 15 days —'} ${left('uc')})</span></label><div class="row"><input id="su" maxlength="20" value="${esc(A.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'')"><button onclick="chg('u')">${t('change')}</button></div><label style="display:block;margin-top:.8rem">${t('displayName')} <span class="mut">(${left('nc')})</span></label><div class="row"><input id="sn" maxlength="30" value="${esc(A.nick)}"><button onclick="chg('n')">${t('change')}</button></div><label style="display:block;margin-top:.8rem">${t('bio')}</label><textarea id="sb" rows="2" maxlength="160" onchange="A.bio=this.value;save()">${esc(A.bio)}</textarea></div>
+<div class="card"><h2>${t('email')}</h2><label>${t('email')} ${A.ver&&A.ver.email?'✓':''}</label><div class="row" style="margin-bottom:.6rem"><input id="semail" type="email" value="${esc(A.email||'')}"><button onclick="vSend('email')">${t('sendCode')}</button></div><div id="vz"></div></div>
+<div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>
+<div class="card"><h2>${t('theme')}</h2><div class="row"><button class="${A.theme=='dark'?'':'g'}" onclick="th('dark')">${t('dark')}</button><button class="${A.theme=='light'?'':'g'}" onclick="th('light')">${t('light')}</button><button class="${DB.beige?'':'g'}" onclick="toggleBeige();P.set()">${tr()?'Bej':'Beige'}</button></div></div>
+<div class="card"><h2>${t('accounts')}</h2>${ac}<div style="margin-top:.6rem"><button class="g" onclick="A0=A;A=null;goTo('setup','home')">${t('addAccount')}</button></div></div>
+<div class="card"><h2>${t('resetSystem')}</h2><p class="mut">${tr()?'Görevler, geçmiş, ilerleme, projeler, rapor cevapları ve süreler silinir. Hesap bilgilerin kalır. Onaylamak için şifreni gir.':'Tasks, history, progress, projects, report answers and timer lengths are erased. Your account details stay. Enter your password to confirm.'}</p><input id="rp" type="password" placeholder="${t('password')}" autocomplete="current-password"><button class="d" style="background:var(--no);color:#fff" onclick="resetSys()">${t('reset')}</button></div>
+<div class="card"><h2>${t('deleteAccount')}</h2><p class="mut">${tr()?'Hesabın ve tüm verilerin bu cihazdan kalıcı olarak silinir.':'Your account and all data are permanently deleted from this device.'}</p><input id="dp" type="password" placeholder="${t('password')}" autocomplete="current-password"><button style="background:var(--no)" onclick="delAcc()">${t('deleteAccount')}</button></div>`);
+};
+function switchAcc(i){const k=Object.keys(DB.accounts)[i];A=null;loginDat={u:k,p:''};goTo('login','home')}
+function goLogin(){A=null;loginDat={u:'',p:''};goTo('login','home')}
+function chg(k){
+  const key=k=='u'?'uc':'nc';
+  if(left(key)<=0){msg=tr()?'Son 15 gündeki 5 değişiklik hakkının tamamını kullandın.':'You have used all 5 changes for the last 15 days.';return P.set()}
+  const v=$(k=='u'?'#su':'#sn').value.trim();if(!v)return;
+  if(k=='u'){
+    if(!userRe.test(v)){msg=t('usernameRules');return P.set()}
+    const ex=findUser(v);if(ex&&ex!==A.u){msg=t('usernameTaken');return P.set()}
+    if(v===A.u)return;
+    delete DB.accounts[A.u];A.u=v;DB.accounts[v]=A;
+  }else{if(v===A.nick)return;A.nick=v}
+  A[key].push(Date.now());DB.last=A.nick;save();msg=`${t('saved')} ${left(key)}`+(tr()?' değişiklik hakkı kaldı.':' changes left.');shell();
+}
+function vSend(k){
+  const v=$('#s'+k).value.trim();
+  if(k==='phone'&&!/^[0-9]{10,15}$/.test(v)){msg=t('phoneInvalid');return P.set()}
+  if(k==='email'&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){msg=t('emailInvalid');return P.set()}
+  A[k]=v;A.ver[k]=false;codes[k]=String(Math.floor(100000+Math.random()*900000));save();
+  $('#vz').innerHTML=`<div class="note">${t('sendHint')} <b>${codes[k]}</b></div><div class="row"><input id="vc" inputmode="numeric" placeholder="${t('code')}"><button onclick="vOk('${k}')">${t('verify')}</button></div>`;
+}
+function vOk(k){if($('#vc').value===codes[k]){A.ver[k]=true;save();msg=t('verified')}else msg=t('wrongCode');P.set()}
+async function chPw(){
+  if(!await pwMatch(A,$('#op').value)){msg=t('currentWrong');return P.set()}
+  const e=pwOk($('#np').value,A.u);if(e){msg=e;return P.set()}
+  await setPw(A,$('#np').value);save();msg=t('pwChanged');P.set();
+}
+async function resetSys(){
+  if(!await pwMatch(A,$('#rp').value)){msg=t('wrongPw');return P.set()}
+  clearInterval(pm.iv);const a=newAcc(A.u,A.nick,A.bio,A.pw,A.email,A.phone);
+  a.ver=A.ver;a.theme=A.theme;a.nc=A.nc;a.uc=A.uc;a.future=A.future;a.fog=A.fog;a.pctFrom=A.pctFrom;DB.accounts[A.u]=a;A=a;
+  pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,n:0,lg:0,iv:0};save();msg=t('systemReset');shell();
+}
+async function delAcc(){
+  if(!await pwMatch(A,$('#dp').value)){msg=t('wrongPw');return P.set()}
+  delete DB.accounts[A.u];A=null;DB.last='';DB.lastUser=Object.keys(DB.accounts)[0]||'';save();view='welcome';goTo('welcome','home');
+}
+/* ================= Supabase (bulut hesap + senkron) ================= */
+const SUPABASE_URL='https://flcfqwndqfmbritaywfb.supabase.co';
+const SUPABASE_KEY='sb_publishable_4QTEEc6tSYV2QtNhmeP6Iw_B3sM6dtm';
+const CLOUD_KEY='b1cloud', SESS_KEY='b1sb';
+const cloud=()=>{try{return localStorage.getItem(CLOUD_KEY)!=='0'}catch(e){return true}};
+const sbSession=()=>{try{return JSON.parse(getItem(SESS_KEY)||'null')}catch(e){return null}};
+function sbSave(sess){try{setItem(SESS_KEY,JSON.stringify(sess))}catch(e){}}
+function sbClear(){try{setItem(SESS_KEY,'')}catch(e){}}
+/* tek giris noktasi: token yenileme + hata yonetimi */
+async function sb(path,opt){
+  opt=opt||{};
+  const sess=sbSession();
+  const h=Object.assign({'apikey':SUPABASE_KEY,'Content-Type':'application/json'},opt.headers||{});
+  if(sess&&sess.access_token&&!/^\/auth\/v1\/(signup|token|otp)/.test(path))h['Authorization']='Bearer '+sess.access_token;
+  const r=await fetch(SUPABASE_URL+path,{method:opt.method||'GET',headers:h,body:opt.body?JSON.stringify(opt.body):undefined});
+  let j=null;try{j=await r.json()}catch(e){}
+  if(!r.ok){
+    const em=(j&&(j.msg||j.message||j.error_description||j.error))||('HTTP '+r.status);
+    const err=new Error(em);err.status=r.status;err.code=j&&j.code;throw err;
+  }
+  return j;
+}
+/* e-posta/telefon -> supabase Auth */
+/* e-posta: kullanicinin GERCEK adresi (yoksa kullanici adindan turetilen yerel adres) */
+const sbEmail=(u,a)=>((a&&a.email)||(u.u||'')+'@iydu.app').toLowerCase();
+async function sbSignUp(u,pass,nick,email){
+  return sb('/auth/v1/signup',{method:'POST',body:{email:String(email).toLowerCase(),password:pass,data:{username:u,nick:nick}}});
+}
+async function sbSignIn(u,pass,email){
+  const j=await sb('/auth/v1/token?grant_type=password',{method:'POST',body:{email:String(email||sbEmail(u)).toLowerCase(),password:pass}});
+  if(j&&j.access_token)sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
+  return j;
+}
+async function sbRefresh(){
+  const sess=sbSession();
+  if(!sess||!sess.refresh_token)return false;
+  try{
+    const j=await sb('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:sess.refresh_token}});
+    if(j&&j.access_token){sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});return true}
+  }catch(e){}
+  return false;
+}
+/* bulut kaydi: kullanici basina tek satir (profil + tum uygulama verisi) */
+async function sbPush(){
+  if(!cloud()||!A||!sbSession())return false;
+  try{
+    const payload={p_username:A.u,p_nick:A.nick||A.u,p_data:JSON.parse(JSON.stringify(A))};
+    await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:payload});
+    return true;
+  }catch(e){
+    if(e.status===401&&await sbRefresh()){try{await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:A}});return true}catch(_){}}
+    return false;
+  }
+}
+async function sbPull(u){
+  if(!cloud()||!sbSession())return null;
+  try{
+    const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:u}});
+    const row=Array.isArray(rows)?rows[0]:rows;
+    if(!row||!row.data)return null;
+    return row.data;
+  }catch(e){return null}
+}
+function applyTheme(){if(!A)return;document.documentElement.dataset.t=DB.beige?'beige':A.theme}
+function th(t){A.theme=t;applyTheme();save();P.set()}
+function toggleBeige(){DB.beige=!DB.beige;applyTheme();save();P.pc()}
+
+const _restored=restoreSession();
+renderAppOrAuth();
+if(_restored)setTimeout(()=>{try{const c=$('#ck');if(c)c.hidden=true}catch(e){}},50);
+/* onbellekten (bfcache) geri gelince de oturum korunur */
+window.addEventListener('pageshow',e=>{if(e.persisted&&!A&&restoreSession())renderAppOrAuth()});
