@@ -11,7 +11,10 @@
 :root[data-t=dark]{--bg:#221914;--card:#2e221b;--ink:#f3e8da;--mut:#b09a84;--acc:#d2a074;--acc2:#6b4a33;--ok:#7bbd83;--no:#d7796a;--ln:#40302a;--sh:0 12px 32px #0006;--okbg:#2a3a2c}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px);font-size:clamp(16px,.35vw + 11px,24px);overflow-y:scroll}
-@media(min-width:1600px){html{font-size:clamp(15.5px,.45vw + 11px,16px)}}
+@media(min-width:1600px){html{font-size:clamp(15.5px,.45vw + 11px,16px)}
+/* mobil: okunakli taban olcu */
+@media(max-width:600px){html{font-size:clamp(16px,4.4vw,17.5px)}}
+@media(max-width:360px){html{font-size:16px}}}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,Ubuntu,sans-serif;line-height:1.6;transition:background .4s,color .4s;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 #app{display:flex;flex-direction:column;flex:1;width:100%}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -55,6 +58,17 @@ h1,h2{font-size:1.3rem}h3{font-size:1.05rem}
 .row>input{flex:1;min-width:8rem;margin:0}
 .center{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:clamp(1rem,3vw,1.5rem);width:100%}
 .welcome-screen{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:space-between;padding:1.5rem;position:relative}
+/* ust satir: marka solda, tema sagda — mobilde ust uste binmez */
+.welcome-top{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap}
+.welcome-top .themebar{margin:0!important;justify-content:flex-end!important}
+@media(max-width:600px){
+  .welcome-screen{padding:1rem}
+  .welcome-top{gap:.35rem}
+  .welcome-top .brand-badge{font-size:1.05rem}
+  .welcome-top .themebar button{padding:.3em .7em;font-size:.72rem;min-height:2rem}
+  .welcome-top .themebar small{display:none}
+}
+@media(max-width:360px){.welcome-top .themebar button{padding:.28em .55em;font-size:.68rem}}
 .brand-badge{font-family:var(--fs);font-weight:700;font-size:1.2rem;color:var(--acc);letter-spacing:.05em}
 .welcome-center{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;margin:auto;max-width:30rem;width:100%;padding:1rem 0}
 .welcome-footer-bar{display:flex;justify-content:space-between;align-items:flex-end;width:100%;font-size:.85rem;color:var(--mut);gap:1rem}
@@ -62,6 +76,16 @@ h1,h2{font-size:1.3rem}h3{font-size:1.05rem}
 .social-links a{color:var(--mut);text-decoration:none;transition:color .2s}
 .social-links a:hover{color:var(--acc)}
 .box{max-width:26rem;width:100%;text-align:left}
+/* giris/kayit kutusu: dengeli en-boy orani (ekrani kaplamaz, kucuk de kalmaz) */
+.login-wrap{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem;gap:.4rem}
+.login-wrap>.langbar,.login-wrap>.themebar{max-width:26rem;margin:0 auto}
+.login-wrap .box{max-width:clamp(20rem,34vw,27rem)}
+@media(min-width:901px) and (min-aspect-ratio:1/1){
+  .login-wrap .box{max-width:clamp(21rem,26vw,26rem)}
+  .login-wrap .box input{font-size:.98rem;padding:.62em 1em;margin:.25em 0 .7em}
+  .login-wrap .box h2{font-size:1.2rem;margin-bottom:.6rem}
+}
+@media(max-height:640px){.login-wrap{justify-content:flex-start;padding-top:.6rem}}
 .big{font-family:var(--fs);font-size:clamp(2.2rem,7vw,4.2rem);font-weight:600;letter-spacing:.04em;line-height:1.1;text-align:center;margin:.2em 0 .4em;color:var(--ink)}
 .task{display:flex;align-items:center;gap:.7rem;padding:.8rem 1rem;background:var(--bg);border:1.5px solid var(--ln);border-radius:16px;margin:.5rem 0;transition:all .4s}
 .task span{flex:1;min-width:0;overflow-wrap:anywhere;transition:color .4s}
@@ -203,11 +227,22 @@ html[data-orient=landscape][data-dev=phone] .center{min-height:auto;padding:1rem
 .dot span,.mini-dot{display:inline-block;min-width:1.35em;text-align:center;line-height:1.05}
 .dot small{display:block;line-height:1}
 /* ---- dokunmatikte "geri atma" (sayfa ziplamasi) engeli ---- */
-html,body{overscroll-behavior-y:contain}
+html,body{overscroll-behavior-y:contain;overflow-x:hidden}
 body{-webkit-overflow-scrolling:touch}
 aside a,button,.dot,.mini-dot{touch-action:manipulation}
 aside{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-x pan-y}
 main{scroll-margin-top:.5rem}
+/* mobil: dengeli satir araligi ve okunakli kucuk metin */
+@media(max-width:600px){
+  body{line-height:1.55}
+  .mut,small,.qcap{font-size:max(.82rem,12.5px)}
+  button{font-size:1rem}
+  input,textarea,select{font-size:16px}
+  h1,h2{font-size:1.18rem}
+  h3{font-size:1.02rem}
+  .card{gap:.2rem}
+  .row{gap:.5rem}
+}
 .mini-popup::before{content:'';position:absolute;top:-6px;right:1.6rem;width:12px;height:12px;background:var(--card);border-left:1px solid var(--ln);border-top:1px solid var(--ln);transform:rotate(45deg)}
 @media(max-width:560px){.mini-popup{width:calc(100vw - 1rem);border-radius:16px}}
 @media(max-height:520px){.mini-popup{max-height:88vh}}
@@ -624,6 +659,8 @@ function mon(d){const x=new Date(d+'T00:00');x.setDate(x.getDate()-((x.getDay()+
 function addD(d,n){const x=new Date(d+'T00:00');x.setDate(x.getDate()+n);return D(x)}
 const fmtMin=m=>m>=60?Math.floor(m/60)+' h '+(m%60)+' min':m+' min';
 const box=x=>`<div class="center"><div class="box card">${x}</div></div>`;
+/* giris/kayit icin ayni kutu, dar ekranda degismez */
+const boxWide=x=>box(x);
 const m=()=>msg?`<div class="note">${msg}</div>`:'';
 
 /* giris/karsilama ekraninda tema secimi (hesap acmadan da calisir) */
@@ -679,7 +716,18 @@ function pressTo(el,fn){
   try{el.classList.add('press')}catch(e){}
   setTimeout(()=>{try{el.classList.remove('press')}catch(e){};fn()},90);
 }
-function navGo(el,v,p){pressTo(el,()=>goTo(v,p))}
+function navGo(el,v,p){
+  /* dokunulan oge gorunur alanda kalsin: menu basa atmaz */
+  const bar=el&&el.parentElement;
+  const keepX=bar?bar.scrollLeft:0,keepY=window.scrollY;
+  pressTo(el,()=>{
+    goTo(v,p);
+    /* gecis bittikten sonra kaydirma konumunu geri koy */
+    requestAnimationFrame(()=>{
+      try{if(bar)bar.scrollLeft=keepX;if(pg!=='pomo')window.scrollTo(0,0)}catch(e){}
+    });
+  });
+}
 /* header'a dokununca giris ekranina git (oturum kapatmadan) */
 function headerHome(el){
   pressTo(el,()=>{
@@ -696,15 +744,15 @@ function renderAppOrAuth(){
   document.title=TITLE;
   if(view==='app')view=Object.keys(DB.accounts).length?'login':'welcome';
   let h='';
-  if(view==='welcome')h=`<div class="welcome-screen"><div class="brand-badge">badgalnurkan</div><div id="theme-anchor" style="position:absolute;right:1rem;top:1rem">${themePick(true)}</div><div class="welcome-center"><div class="langbar">${langBtns()}</div><h1 class="big">${t('welcome')}</h1><div class="row" style="justify-content:center;gap:.8rem;margin-top:.5rem"><button onclick="goTo(Object.keys(DB.accounts).length?'login':'setup','home')">${t('continue')}</button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><div style="margin-top:1rem"><a href="mailto:nurkancanbulat89@gmail.com" style="color:var(--acc);font-weight:600;text-decoration:none;font-size:.9rem">${t('contact')}</a></div></div><div class="welcome-footer-bar"><div>© 2026 nurkancanbulat — All rights reserved.</div><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">tiktok/@badgalnurkan</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">instagram/@badgalnurkann</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">x/@badgalnurk</a></div></div></div>`;
+  if(view==='welcome')h=`<div class="welcome-screen"><div class="welcome-top"><div class="brand-badge">badgalnurkan</div><div id="theme-anchor">${themePick(true)}</div></div><div class="welcome-center"><div class="langbar">${langBtns()}</div><h1 class="big">${t('welcome')}</h1><div class="row" style="justify-content:center;gap:.8rem;margin-top:.5rem"><button onclick="goTo(Object.keys(DB.accounts).length?'login':'setup','home')">${t('continue')}</button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><div style="margin-top:1rem"><a href="mailto:nurkancanbulat89@gmail.com" style="color:var(--acc);font-weight:600;text-decoration:none;font-size:.9rem">${t('contact')}</a></div></div><div class="welcome-footer-bar"><div>© 2026 nurkancanbulat — All rights reserved.</div><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">tiktok/@badgalnurkan</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">instagram/@badgalnurkann</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">x/@badgalnurk</a></div></div></div>`;
   else if(view==='login'){
     const rem=rememberedUser(),others=Object.keys(DB.accounts).filter(k=>k!==rem);
     if(!loginDat.u&&rem)loginDat.u=rem;
     const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="useAccount('${esc(rem)}')">${t('useAccount')}</button></div>`:`<p class="mut" style="margin:.2rem 0 .9rem">${t('noAccountYet')}</p>`;
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
-    h=`<div class="langbar">${langBtns()}</div>`+themePick()+box(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${t('username')}</label><input id="u" autocomplete="username" autocapitalize="none" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`);
+    h=`<div class="login-wrap">`+`<div class="langbar" style="max-width:26rem;width:100%">${langBtns()}</div>`+themePick()+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${t('username')}</label><input id="u" autocomplete="username" autocapitalize="none" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
-  else if(view==='setup')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='setup')h=`<div class="login-wrap"><div class="langbar" style="max-width:26rem;width:100%">${langBtns()}</div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('username')}</label><input id="u" autocapitalize="none"><div class="row"><button onclick="fSend('email')">${tr()?'E-posta ile kod gönder':'Send code by email'}</button><button onclick="fSend('phone')">${tr()?'SMS ile kod gönder':'Send code by SMS'}</button></div><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
