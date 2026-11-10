@@ -100,7 +100,7 @@ async function main() {
   await evaluate('swS()');
   await sleep(400);
   const sw = await evaluate("$('#sw').textContent");
-  check('kronometre 3 haneli sifir (SS.dss)', /^\d\d:\d\d\.\d\d$/.test(sw), sw);
+  check('kronometre S.dss (bastaki sifir yok)', /^\d\d?\.\d\d$/.test(sw), sw);
   await evaluate('swR()');
 
   // 6) takvim: sis + gelecek not

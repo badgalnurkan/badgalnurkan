@@ -117,10 +117,11 @@ test('veriler localStorage üzerinden kalıcı saklanıyor', () => {
 });
 
 // --- pomodoro / kronometre
-test('kronometre 3 haneli sıfır gösteriyor (SS.dss)', () => {
+test('kronometre 3 haneli, baştaki sıfır yok (S.dss)', () => {
   const body = scriptBody();
   assert.ok(/const fms=ms=>/.test(body), 'fms yok');
-  assert.ok(/pad\(x\)/.test(body) && /ms%1000\)\/10/.test(body), 'santisecond hesabi yok');
+  assert.ok(/ms%1000\)\/10/.test(body), 'santisecond hesabi yok');
+  assert.ok(/return s\+'\.'\+pad2\(x\)/.test(body), 'ilk 10 saniyede bastaki sifir atilmali');
   assert.ok(/setInterval\(\(\)=>\{pm\.swT=\(Date\.now\(\)-start\)\/1000/.test(body));
 });
 
