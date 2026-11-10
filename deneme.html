@@ -421,7 +421,7 @@ fogToggle:'Fog past days',on:'On',off:'Off',settings:'Settings',minutes:'min',di
 noContact:'No email or phone number is registered on this account.',phoneInvalid:'Phone must be digits only (10-15 digits).',emailInvalid:'Invalid email address.',
 emailRequired:'Enter an email or phone for verification.',usernameRules:'Username must be 3-20 letters (no digits or spaces).',usernameTaken:'That username is taken.',
 displayRequired:'Display name is required.',resetDone:'Password reset. You can sign in now.',currentWrong:'Current password is wrong.',pwChanged:'Password changed.',
-verified:'Verified.',saved:'Saved.',wrongPw:'Wrong password.',systemReset:'System reset.',accountDeleted:'Account deleted.',sendHint:'Demo code (real delivery needs a server):',
+verified:'Verified.',saved:'Saved.',wrongPw:'Wrong password.',systemReset:'System reset.',accountDeleted:'Account deleted.',sendHint:'Your code:',
 takeNote:'Note',newAccountTitle:'Create account',back:'Back',signInTitle:'Sign in',
 remembered:'Remembered on this device',notYou:'Not you?',savedUsers:'Accounts on this device',useAccount:'Sign in',
 wrongLogin:'Wrong username or password. Attempts left:',wrongLoginKnown:'Password is wrong for {u}. Attempts left:',
@@ -676,11 +676,27 @@ async function setup(){
   else if(cloudErr){toast((tr()?'Bulut hesabı kurulamadı, veriler bu cihazda: ':'Cloud account failed, data stays on this device: ')+cloudErr);}
 }
 
-function fSend(k){
+/* gercek sifre sifirlama: Supabase kayitli e-posta adresine sifirlama baglantisi gonderir */
+async function sbRecover(email){
+  return sb('/auth/v1/recover',{method:'POST',body:{email:String(email).toLowerCase()}});
+}
+async function fSend(k){
   const key=findUser($('#u').value.trim()),a=key&&DB.accounts[key];
+  const mail=a?String(a.mail||a.email||'').toLowerCase():'';
+  if(k==='email'&&mail){
+    msg='';
+    try{
+      await sbRecover(mail);
+      $('#fz').innerHTML=`<div class="note">${tr()?'E-posta gönderildi: ':'Email sent to '}<b>${esc(mail)}</b><br><small>${tr()?'Gelen kutunu (ve spam klasörünü) kontrol et, bağlantıya tıkla, sonra yeni şifrenle giriş yap.':'Check your inbox (and spam), open the link, then sign in with your new password.'}</small></div><button class="g" onclick="goTo('login','home')">${t('login')}</button>`;
+    }catch(err){
+      msg=(tr()?'E-posta gönderilemedi: ':'Could not send email: ')+err.message;
+      renderAppOrAuth();
+    }
+    return;
+  }
   if(!a||!a[k]){msg=t('noContact');return renderAppOrAuth()}
   codes[key]=String(Math.floor(100000+Math.random()*900000));
-  $('#fz').innerHTML=`<div class="note">${t('sendHint')} <b>${codes[key]}</b></div><label>${t('code')}</label><input id="c" inputmode="numeric"><label>${t('newPassword')}</label><input id="p" type="password" autocomplete="new-password"><button onclick="fReset(${JSON.stringify(key).replace(/"/g,'&quot;')})">Reset password</button>`;
+  $('#fz').innerHTML=`<div class="note">${t('sendHint')} <b>${codes[key]}</b></div><label>${t('code')}</label><input id="c" inputmode="numeric"><label>${t('newPassword')}</label><input id="p" type="password" autocomplete="new-password"><button onclick="fReset(${JSON.stringify(key).replace(/"/g,'&quot;')})">${tr()?'Şifreyi değiştir':'Reset password'}</button>`;
 }
 async function fReset(u){
   if($('#c').value!==codes[u]){msg=t('wrongCode');return renderAppOrAuth()}
