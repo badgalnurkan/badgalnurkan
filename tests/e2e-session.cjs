@@ -18,9 +18,10 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  await send('Page.reload');await sleep(1200);
  await ev("goTo('setup','home')");await sleep(300);
  await ev("$('#u').value='deneme';formDat.u='deneme';$('#n').value='Deneme';formDat.n='Deneme';$('#e').value='a@b.co';formDat.e='a@b.co';$('#p').value='GuzelSafak47';formDat.p='GuzelSafak47';$('#p').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))");
- for(let i=0;i<80 && !(await ev("!!(A&&document.querySelector('aside'))"));i++) await sleep(250);
- await sleep(600);
- await ev("goTo('app','todo');$('#nt').value='kayitli gorev';addT();mk(0,'done')");await sleep(500);
+ for(let i=0;i<80 && !(await ev("!!(A&&document.querySelector('aside'))&&!document.querySelector('.greet-screen')"));i++) await sleep(250);
+ await sleep(500);
+ await ev("goTo('app','todo')");await sleep(600);
+ await ev("$('#nt').value='kayitli gorev';addT();mk(0,'done')");await sleep(500);
  ck('gorev kaydedildi', (await ev("A.tasks.length"))===1);
  const before=await ev("A.tasks[0].t+'|'+A.tasks[0].s");
  // 1) YENILEME: oturum korunur
