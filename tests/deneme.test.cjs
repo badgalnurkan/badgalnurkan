@@ -112,7 +112,8 @@ test('selamlama Türkiye saatine göre seçiliyor', () => {
 
 // --- kalıcılık
 test('veriler localStorage üzerinden kalıcı saklanıyor', () => {
-  assert.ok(/localStorage\.getItem\('b1'\)/.test(html) && /setItem\('b1',JSON\.stringify\(DB\)\)/.test(html));
+  assert.ok(/localStorage\.getItem\('b1'\)|getItem\(SKEY\)/.test(html), 'okuma yok');
+  assert.ok(/g\.setItem\(SKEY,JSON\.stringify\(DB\)\)|setItem\('b1',JSON\.stringify\(DB\)\)/.test(html), 'yazma yok');
   assert.ok(/a\.future=A\.future/.test(html), 'hesap sifirlamada gelecek notlari korunmuyor');
 });
 
@@ -198,4 +199,28 @@ test('tüm ekran boyutları için duyarlı kurallar', () => {
   assert.ok(/@media\(min-width:1400px\)/.test(html));
   assert.ok(/max-aspect-ratio:3\/4/.test(html), 'portre oran kurali yok');
   assert.ok(/max-height:520px/.test(html), 'yatay/dusuk yukseklik kurali yok');
+});
+
+test('yenileme/yeni sekmede oturum geri yüklenir', () => {
+  const body = scriptBody();
+  assert.ok(/function restoreSession\(\)/.test(body), 'restoreSession yok');
+  assert.ok(/restoreSession\(\);\nrenderAppOrAuth\(\);/.test(body), 'acilista cagrilmiyor');
+  assert.ok(/SKEY_SESSION/.test(body), 'oturum anahtari yok');
+  assert.ok(/addEventListener\('storage'/.test(body), 'sekmeler arasi senkron yok');
+});
+
+test('depo her zaman kalıcı (cerez reddi / sekme kapanması fark etmez)', () => {
+  const body = scriptBody();
+  assert.ok(/const store=\(\)=>\{try\{return localStorage\}/.test(body), 'sessionStorage hala kullaniliyor');
+});
+
+test('veri kaybına karşı yedek alınır', () => {
+  const body = scriptBody();
+  assert.ok(/b1\.bak/.test(body) && /function backupTick\(\)/.test(body));
+});
+
+test('mobil menü: dokunma hedefleri ve yatay kaydırma', () => {
+  assert.ok(/@media\(hover:none\),\(pointer:coarse\)/.test(html));
+  assert.ok(/aside\{min-height:2\.9rem/.test(html) || /aside a\{min-height:2\.9rem/.test(html), 'mobil yukseklik kurali yok');
+  assert.ok(/overscroll-behavior-x:contain/.test(html));
 });
