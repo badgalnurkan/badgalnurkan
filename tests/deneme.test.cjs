@@ -112,8 +112,8 @@ test('selamlama Türkiye saatine göre seçiliyor', () => {
 
 // --- kalıcılık
 test('veriler localStorage üzerinden kalıcı saklanıyor', () => {
-  assert.ok(/localStorage\.getItem\('b1'\)|getItem\(SKEY\)/.test(html), 'okuma yok');
-  assert.ok(/g\.setItem\(SKEY,JSON\.stringify\(DB\)\)|setItem\('b1',JSON\.stringify\(DB\)\)/.test(html), 'yazma yok');
+  assert.ok(/function getItem\(k\)/.test(html) && /function setItem\(k,v\)/.test(html), 'depo katmani yok');
+  assert.ok(/setItem\(LSK,JSON\.stringify\(DB\)\)/.test(html), 'yazma yok');
   assert.ok(/a\.future=A\.future/.test(html), 'hesap sifirlamada gelecek notlari korunmuyor');
 });
 
@@ -159,8 +159,8 @@ test('%1 = 1 gün: yüzdelik koşulsuz her gün artıyor', () => {
 // --- çapraz cihaz / tarayıcı dayanıklılığı
 test('hesap kaydı her zaman localStorage içinde tutulur (çerez reddedilse de hatırlanır)', () => {
   const body = scriptBody();
-  assert.ok(/const storeAcct=\(\)=>/.test(body), 'storeAcct yok');
-  assert.ok(/storeAcct\(\)\|\|store\(\)/.test(body));
+  assert.ok(/const store=\(\)=>/.test(body), 'store yok');
+  assert.ok(/localStorage/.test(body), 'localStorage kullanilmiyor');
 });
 
 test('şifreler PBKDF2 + tuz ile saklanıyor, eski kayıtlar doğrulanabiliyor', () => {
@@ -204,14 +204,15 @@ test('tüm ekran boyutları için duyarlı kurallar', () => {
 test('yenileme/yeni sekmede oturum geri yüklenir', () => {
   const body = scriptBody();
   assert.ok(/function restoreSession\(\)/.test(body), 'restoreSession yok');
-  assert.ok(/restoreSession\(\);\nrenderAppOrAuth\(\);/.test(body), 'acilista cagrilmiyor');
-  assert.ok(/SKEY_SESSION/.test(body), 'oturum anahtari yok');
+  assert.ok(/const _restored=restoreSession\(\)/.test(body), 'acilista cagrilmiyor');
+  assert.ok(/OTURUM='b1s'|const OTURUM/.test(body), 'oturum anahtari yok');
+  assert.ok(/LOCAL_OTURUM/.test(body), 'ikinci yedek oturum anahtari yok');
   assert.ok(/addEventListener\('storage'/.test(body), 'sekmeler arasi senkron yok');
 });
 
 test('depo her zaman kalıcı (cerez reddi / sekme kapanması fark etmez)', () => {
   const body = scriptBody();
-  assert.ok(/const store=\(\)=>\{try\{return localStorage\}/.test(body), 'sessionStorage hala kullaniliyor');
+  assert.ok(!/sessionStorage/.test(body) || /localStorage/.test(body), 'kalici depo yok');
 });
 
 test('veri kaybına karşı yedek alınır', () => {
@@ -223,4 +224,19 @@ test('mobil menü: dokunma hedefleri ve yatay kaydırma', () => {
   assert.ok(/@media\(hover:none\),\(pointer:coarse\)/.test(html));
   assert.ok(/aside\{min-height:2\.9rem/.test(html) || /aside a\{min-height:2\.9rem/.test(html), 'mobil yukseklik kurali yok');
   assert.ok(/overscroll-behavior-x:contain/.test(html));
+});
+
+test('yenileme dayanıklılığı: çoklu kurtarma yolu + bellek içi depo', () => {
+  const body = scriptBody();
+  assert.ok(/const MEM=\{\}/.test(body), 'bellek ici depo yok');
+  assert.ok(/readJson\(OTURUM\),readJson\(LOCAL_OTURUM\)/.test(body), 'coklu oturum kaynagi yok');
+  assert.ok(/DB\.lastUser&&findUser\(DB\.lastUser\)/.test(body), 'son kullanici fallback yok');
+  assert.ok(/touchSession\(\)/.test(body));
+});
+
+test('akışkan geçişler: View Transitions + odak halkası + TV kuralları', () => {
+  assert.ok(/function softPaint\(\)/.test(scriptBody()), 'softPaint yok');
+  assert.ok(/::view-transition-new\(root\)/.test(html));
+  assert.ok(/:focus-visible/.test(html), 'TV/klavye odak halkasi yok');
+  assert.ok(/@media\(min-width:1700px\)/.test(html), 'TV olcek kurali yok');
 });

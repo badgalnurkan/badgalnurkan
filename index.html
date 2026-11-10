@@ -114,6 +114,10 @@ footer{text-align:center;padding:1rem;color:var(--mut);font-size:.8rem;backgroun
 #top-date-trigger.lit{color:#7a5636;background:#f7ecdc;box-shadow:0 6px 18px #8a5a3a2a}
 #top-date-trigger small{font-size:.72rem;opacity:.85;font-weight:600}
 .mini-popup{animation:mpIn .32s cubic-bezier(.2,.7,.2,1) both}
+/* TV / uzaktan kumanda ve klavye: odak gorunur, hedefler buyuk */
+aside a:focus-visible,button:focus-visible,.dot:focus-visible,.mini-dot:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+@media(min-width:1700px) and (min-aspect-ratio:16/9){html{font-size:clamp(20px,1.05vw,30px)}aside{width:18.5rem}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 /* mobil menu: takilma/jitter yok, dokunma hedefleri buyuk, smooth kaydirma */
 aside{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x;scroll-behavior:smooth;scrollbar-width:none}
 aside::-webkit-scrollbar{display:none}
@@ -124,6 +128,10 @@ aside a{flex:0 0 auto;touch-action:manipulation;-webkit-tap-highlight-color:tran
   aside a{padding:.55em 1.05em;min-height:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;line-height:1;font-size:.92rem}
   aside{gap:.35rem;scroll-padding-inline:.4rem;scroll-snap-type:x proximity}
 }
+::view-transition-old(root){animation:none}
+::view-transition-new(root){animation:vtIn .28s ease both}
+@keyframes vtIn{from{opacity:.35;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){::view-transition-new(root){animation:none}}
 .mini-popup::before{content:'';position:absolute;top:-6px;right:1.6rem;width:12px;height:12px;background:var(--card);border-left:1px solid var(--ln);border-top:1px solid var(--ln);transform:rotate(45deg)}
 @media(max-width:560px){.mini-popup{width:calc(100vw - 1rem);border-radius:16px}}
 @media(max-height:520px){.mini-popup{max-height:88vh}}
@@ -268,76 +276,100 @@ footer{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:c
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
-const store=()=>{try{return localStorage}catch(e){return null}}; /* kalici: yeni sekme/sekme kapanmasi fark etmez */
-let DB;try{DB=JSON.parse(store().getItem('b1')||'')}catch(e){}
-let DBraw=null;try{DBraw=JSON.parse((storeAcct()||store()).getItem(SKEY)||'')}catch(e){}
+/* ---- kalici depo: localStorage oncelikli, olmazsa bellek ici yedek (Safari gizli mod / dosya:// ) ---- */
+const MEM={};
+const store=()=>{try{const t='__t'+Math.random();localStorage.setItem(t,'1');localStorage.removeItem(t);return localStorage}catch(e){return null}};
+const LSK='b1', OTURUM='b1s', FEEDB='b1f', LOCAL_OTURUM='b1.this';
+function getItem(k){try{const s=store();if(s){const v=s.getItem(k);if(v!==null)return v}}catch(e){}return MEM[k]===undefined?null:MEM[k]}
+function setItem(k,v){MEM[k]=v;try{const s=store();if(s){s.setItem(k,v);return true}}catch(e){}return false}
+let DB=null;
+let DBraw=null;try{DBraw=JSON.parse(getItem(LSK)||'')}catch(e){}
 /* veri kaybina karsi yedek: her acilista son iyi kayit ayri tutulur */
-let DBbak=null;try{DBbak=JSON.parse(localStorage.getItem('b1.bak')||'')}catch(e){}
+let DBbak=null;try{DBbak=JSON.parse(getItem('b1.bak')||'')}catch(e){}
 if((!DBraw||!DBraw.accounts||!Object.keys(DBraw.accounts).length)&&DBbak&&DBbak.accounts&&Object.keys(DBbak.accounts).length)DBraw=DBbak;
 DB=DBraw&&DBraw.accounts?DBraw:{accounts:{},last:'',lastUser:'',lock:{},lang:'en',beige:false};
 if(!DB.lang)DB.lang='en';if(DB.beige===undefined)DB.beige=false;if(!DB.lastUser)DB.lastUser='';
 document.documentElement.lang=DB.lang;
-const SKEY='b1', SKEY_SESSION='b1s'; /* b1s: yalniz oturum bilgisi (kullanici + zaman) */
 const save=()=>{
-  const g=store();if(!g)return;
   try{
     if(A)A.updatedAt=Date.now();
     DB.savedAt=Date.now();
-    g.setItem(SKEY,JSON.stringify(DB));
-    g.setItem(SKEY_SESSION,JSON.stringify({user:A?A.u:(DB.lastUser||''),sig:signature(A),at:Date.now()}));
+    setItem(LSK,JSON.stringify(DB));
+    touchSession();
   }catch(e){}
 };
+/* oturum: kullanici bilgisi kucuk ve ayri tutulur -> ana kayit bozulsa da geri donus var */
+function touchSession(){
+  try{
+    const u=A?A.u:(DB.lastUser||'');if(!u)return;
+    const body=JSON.stringify({user:u,sig:signature(A||DB.accounts[u]),at:Date.now()});
+    setItem(OTURUM,body);setItem(LOCAL_OTURUM,body);
+  }catch(e){}
+}
 /* imza: menude/acik sayfada oturumu geri yuklemek icin (sifre yerine ozet) */
 const signature=a=>a?(a.pw||'').slice(0,24)+':'+String(a.u||''):'';
-function ck(v){try{localStorage.setItem('b1ck',String(v))}catch(e){}$('#ck').hidden=true;save()}
+function ck(v){setItem('b1ck',String(v));$('#ck').hidden=true;save()}
 /* her kayitta kucuk bir yedek tut (kaza/bug ile veri kaybini engeller) */
-function backupTick(){try{const raw=localStorage.getItem('b1');if(!raw)return;const parsed=JSON.parse(raw);if(parsed&&parsed.accounts&&Object.keys(parsed.accounts).length){localStorage.setItem('b1.bak',raw);localStorage.setItem('b1.bak.at',String(Date.now()))}}catch(e){}}
+function backupTick(){try{const raw=getItem(LSK);if(!raw)return;const parsed=JSON.parse(raw);if(parsed&&parsed.accounts&&Object.keys(parsed.accounts).length){setItem('b1.bak',raw);setItem('b1.bak.at',String(Date.now()))}}catch(e){}}
 setInterval(backupTick,20000);
 window.addEventListener('beforeunload',backupTick);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')backupTick()});
-try{if(localStorage.getItem('b1ck')===null)$('#ck').hidden=false}catch(e){}
+try{if(getItem('b1ck')===null)$('#ck').hidden=false}catch(e){}
 const sysTheme=()=>(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
 document.documentElement.dataset.t=sysTheme();
-try{if(JSON.parse(localStorage.getItem('b1')||'{}').beige)document.documentElement.dataset.t='beige'}catch(e){}
+try{if(JSON.parse(getItem(LSK)||'{}').beige)document.documentElement.dataset.t='beige'}catch(e){}
 let A=null,A0=null,view='welcome',pg='home',calOff=0,selDay=null,msg='',codes={},lastSig='';
 /* yenileme / yeni sekme: son kullanici + acik sayfa geri gelir, veriler korunur */
+function readJson(k){try{return JSON.parse(getItem(k)||'null')}catch(e){return null}}
 function restoreSession(){
   try{
-    const s=JSON.parse(localStorage.getItem(SKEY_SESSION)||'null');
-    const key=s&&s.user?findUser(s.user):'';
-    if(!key||!DB.accounts[key])return false;
-    const sig=signature(DB.accounts[key]);
-    if(s.sig&&s.sig!==sig)return false;
-    A=norm(DB.accounts[key]);lastSig=sig;
+    const cands=[readJson(OTURUM),readJson(LOCAL_OTURUM)];
+    let user='';
+    for(const c of cands){if(c&&c.user&&findUser(c.user)){user=findUser(c.user);break}}
+    if(!user&&DB.lastUser&&findUser(DB.lastUser))user=findUser(DB.lastUser);
+    if(!user){const ks=Object.keys(DB.accounts);if(ks.length===1)user=ks[0]}
+    if(!user)return false;
+    A=norm(DB.accounts[user]);lastSig=signature(A);
+    loginDat.u=user;
     const st=history.state;
     view='app';pg=(st&&st.v==='app'&&st.p)?st.p:'home';
-    applyTheme();
+    applyTheme();touchSession();
     return true;
   }catch(e){return false}
 }
 /* baska sekmede yapilan degisiklik bu sekmeye de yansir (veri ayrismasi olmaz) */
 window.addEventListener('storage',e=>{
-  if(e.key!==SKEY||!e.newValue)return;
+  if(e.key!==LSK||!e.newValue)return;
   let nd;try{nd=JSON.parse(e.newValue)}catch(_){return}
   if(!nd||!nd.accounts)return;
-  const u=A?A.u:null;
   DB=nd;
-  if(u&&DB.accounts[u]){A=nd.accounts[u];applyTheme();if(document.querySelector('aside'))shell()}
-  else if(!u){renderAppOrAuth()}
+  const u=loginDat.u||DB.lastUser;
+  if(!A&&u&&DB.accounts[u]){A=norm(DB.accounts[u]);applyTheme();if(view!=='app'){view='app';pg='home'}renderAppOrAuth();return}
+  if(A&&DB.accounts[A.u]){A=nd.accounts[A.u];applyTheme();if(document.querySelector('aside')){const m=$('#mn');const had=m?m.innerHTML:'';shell()}return}
+  renderAppOrAuth();
 });
 /* geri tusu: oturum acikken cikis ekranina dusmesin */
-window.addEventListener('popstate',e=>{
-  if(A){
-    if(!e.state||e.state.v!=='app'){try{history.pushState({v:'app',p:pg},'','')}catch(_){}}
-    return;
-  }
-});
+
 let formDat={u:'',n:'',b:'',e:'',t:'',p:''},loginDat={u:'',p:''};
 
+function paint(){renderAppOrAuth()}
+/* yumusak sayfa gecisi: destekleyen tarayicida View Transitions, digerlerinde ayni davranis */
+function softPaint(){
+  const canVT=document.startViewTransition&&document.visibilityState==='visible'&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(canVT){
+    try{
+      const t=document.startViewTransition(()=>paint());
+      if(t&&t.finished&&t.finished.catch)t.finished.catch(()=>{});
+      if(t&&t.ready&&t.ready.catch)t.ready.catch(()=>{});
+      return;
+    }catch(e){}
+  }
+  paint();
+}
 function goTo(v,p,push=true){
   view=v;pg=p;msg='';selDay=null;
   if(push){try{history.pushState({v,p},'','')}catch(e){}}
-  renderAppOrAuth();window.scrollTo(0,0);
+  softPaint();window.scrollTo(0,0);
 }
 window.addEventListener('popstate',e=>{
   if(A)return;
@@ -494,7 +526,7 @@ const okDay=d=>{const i=items(d);return i.length>0&&i.every(x=>x.done)};
 const succ=()=>{let n=0;Object.keys(A.hist).forEach(d=>{if(d!==today()&&okDay(d))n++});if(okDay(today()))n++;return n};
 /* %1 = 1 gun: kayit gununden bugune kadar gecen her gun bir puan. Baska kosul yok. */
 /* yuzde: bagimsiz sayac. Her takvim gunu +1; gorevlere/gecmise bagli degil, asla ziplamaz. */
-const pctStart=()=>{if(!A.pctFrom||!/^\d{4}-\d{2}-\d{2}$/.test(A.pctFrom)){A.pctFrom=today();save()}return A.pctFrom};
+const pctStart=()=>{if(!A.pctFrom||!/^\d{4}-\d{2}-\d{2}$/.test(A.pctFrom))A.pctFrom=today();return A.pctFrom};
 const pct=()=>Math.max(1,dd(pctStart(),today())+1);
 const dayCount=pct;
 const startDay=pctStart;
@@ -870,8 +902,9 @@ function applyTheme(){if(!A)return;document.documentElement.dataset.t=DB.beige?'
 function th(t){A.theme=t;applyTheme();save();P.set()}
 function toggleBeige(){DB.beige=!DB.beige;applyTheme();save();P.pc()}
 
-restoreSession();
+const _restored=restoreSession();
 renderAppOrAuth();
+if(_restored)setTimeout(()=>{try{const c=$('#ck');if(c)c.hidden=true}catch(e){}},50);
 /* onbellekten (bfcache) geri gelince de oturum korunur */
 window.addEventListener('pageshow',e=>{if(e.persisted&&!A&&restoreSession())renderAppOrAuth()});
 </script>

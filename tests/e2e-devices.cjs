@@ -24,7 +24,8 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  ck('yuzde baslangici ayri', /^\d{4}-\d{2}-\d{2}$/.test(await ev("A.pctFrom")), await ev("A.pctFrom"));
  ck('% bugun 1', (await ev("pct()"))===1);
  // gorev bitirmek yuzdeyi DEGISTIRMEZ
- await ev("goTo('app','todo');$('#nt').value='x';addT();mk(0,'done')");await sleep(400);
+ await ev("goTo('app','todo')");await sleep(700);
+ await ev("$('#nt').value='x';addT();mk(0,'done')");await sleep(400);
  ck('gorev bitirince % degismez', (await ev("pct()"))===1, await ev("pct()"));
  // gecmis gun eklemek % degistirmez (bagimsiz)
  await ev("A.hist['2026-11-01']=[{t:'a',done:true}];save()");
