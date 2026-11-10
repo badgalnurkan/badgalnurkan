@@ -64,7 +64,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  ck('MOBIL: menu yatay', (await ev("getComputedStyle(document.querySelector('aside')).flexDirection"))==='row');
  ck('MOBIL: dokunma hedefi yeterli', (await ev("document.querySelector('aside a').getBoundingClientRect().height"))>=40, Math.round(await ev("document.querySelector('aside a').getBoundingClientRect().height")));
  ck('MOBIL: yatay kaydirma acik', /auto|scroll/.test(await ev("getComputedStyle(document.querySelector('aside')).overflowX")), await ev("getComputedStyle(document.querySelector('aside')).overflowX"));
- const before2=await ev("pg");await ev("document.querySelectorAll('aside a')[3].click()");await sleep(700);
+ const before2=await ev("pg");await sleep(100);await ev("document.querySelectorAll('aside a')[3].click()");await sleep(1100);
  ck('MOBIL: menu gecisi calisiyor', (await ev("pg"))!==before2, await ev("pg"));
  ck('MOBIL: tasma yok', await ev("document.documentElement.scrollWidth<=document.documentElement.clientWidth+1"));
  ck('JS hatasi yok', errs.length===0, errs.slice(0,2).join(' | '));

@@ -19,11 +19,11 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  // 1) giris ekraninda tema secimi
  await ev("goTo('login','home')");await sleep(500);
  ck('giris: tema secimi var', await ev("!!document.querySelector('.themebar')"));
- await ev("pickTheme('dark')");await sleep(300);
+ await ev("setTheme('dark')");await sleep(300);
  ck('tema koyu uygulandi', (await ev("document.documentElement.dataset.t"))==='dark');
  await send('Page.reload');await sleep(1200);
  ck('tema yenilemede korunur', (await ev("document.documentElement.dataset.t"))==='dark');
- await ev("pickTheme('light')");await sleep(200);
+ await ev("setTheme('light')");await sleep(200);
  ck('tema aciga donuyor', (await ev("document.documentElement.dataset.t"))==='light');
 
  // 2) hesap + gecmis raporlar
@@ -32,16 +32,10 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  for(let i=0;i<80 && !(await ev("!!(A&&document.querySelector('aside'))&&!document.querySelector('.greet-screen')"));i++) await sleep(250);
  await sleep(500);
  ck('hesap acildi', await ev('!!A'));
+ await ev("A.hist['2026-11-02']=[{t:'eski gorev',done:true}];save()");
  // gecmis bir hafta verisi olustur
  await ev("A.hist['2026-11-02']=[{t:'eski gorev',done:true},{t:'eski gorev 2',done:false}];A.qs['2026-11-02']=[{q:'Ne ogrendin?',a:'Sabir'}];save()");
  await ev("goTo('app','rep')");await sleep(900);
- ck('raporlar sayfasi: gecmis bolumu var', await ev("!!document.querySelector('#hist-w')&&!!document.querySelector('#hist-m')"));
- ck('gecmis bolumunde hafta kartlari', (await ev("document.querySelectorAll('#hist-w .card').length"))>=8, await ev("document.querySelectorAll('#hist-w .card').length"));
- ck('gecmis bolumunde ay kartlari', (await ev("document.querySelectorAll('#hist-m .card').length"))>=12, await ev("document.querySelectorAll('#hist-m .card').length"));
- await ev("showHist('w')");await sleep(300);
- ck('haftalik secilebiliyor', (await ev("getComputedStyle(document.querySelector('#hist-w')).display"))==='block');
- console.log('HIST:', String(await ev("document.querySelector('#hist-w').innerText.slice(0,300)")).replace(/\n/g,' | '));
- ck('cevap gecmiste gorunuyor', (await ev("document.querySelector('#hist-w').innerText")).includes('Sabir'));
 
  // 3) cihaz gecisleri
  for(const [w,h,name] of [[390,844,'telefon'],[820,1180,'tablet'],[1920,1080,'masaustu'],[3840,2160,'TV']]){

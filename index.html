@@ -11,7 +11,7 @@
 :root[data-t=dark]{--bg:#221914;--card:#2e221b;--ink:#f3e8da;--mut:#b09a84;--acc:#d2a074;--acc2:#6b4a33;--ok:#7bbd83;--no:#d7796a;--ln:#40302a;--sh:0 12px 32px #0006;--okbg:#2a3a2c}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px);font-size:clamp(16px,.35vw + 11px,24px);overflow-y:scroll}
-@media(min-width:1600px){html{font-size:16px}}
+@media(min-width:1600px){html{font-size:clamp(15.5px,.45vw + 11px,16px)}}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,Ubuntu,sans-serif;line-height:1.6;transition:background .4s,color .4s;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 #app{display:flex;flex-direction:column;flex:1;width:100%}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -34,6 +34,12 @@ aside .lg small{display:block;font-family:'Nunito',system-ui,sans-serif;font-siz
 aside a{padding:.7em 1rem;border-radius:999px;cursor:pointer;color:var(--mut);font-weight:600;font-size:.95rem;transition:all .25s;-webkit-tap-highlight-color:transparent}
 aside a:hover{background:var(--bg);color:var(--ink)}
 aside a.on{background:var(--acc);color:#fff;box-shadow:0 4px 14px #a9714b33}
+aside a.press{transform:scale(.96);background:color-mix(in srgb,var(--acc) 22%,transparent)}
+aside a{transition:background .22s ease,color .22s ease,transform .16s ease}
+aside a.on{font-weight:800;letter-spacing:.005em}
+@supports not (background:color-mix(in srgb,red,blue)){aside a.press{background:var(--bg)}}
+main{transition:opacity .18s ease}
+main.swap{opacity:.45}
 main{flex:1;min-width:0;padding:1.2rem 0;max-width:54rem;margin:0 auto;width:100%;animation:fi .3s ease;display:flex;flex-direction:column;gap:1.2rem}
 @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 header.top{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.9rem 1.5rem;background:var(--card);border-bottom:1px solid var(--ln);color:var(--mut);font-size:.95rem;transition:all .4s;position:relative}
@@ -165,11 +171,11 @@ aside a{flex:0 0 auto;touch-action:manipulation;-webkit-tap-highlight-color:tran
 }
 /* televizyon / cok genis ekran: uzaktan kumanda icin buyuk hedefler ve odak */
 @media(min-width:1700px){
-  button{min-height:3rem;padding:.65em 1.5em}
-  aside a{padding:.8em 1.1em}
-  .dot{width:3.4rem;height:3.4rem}
-  .shell{max-width:92rem}
-  main{max-width:60rem}
+  button{min-height:2.9rem;padding:.6em 1.45em}
+  aside a{padding:.75em 1.05em}
+  .dot{width:3.2rem;height:3.2rem}
+  .shell{max-width:84rem}
+  main{max-width:56rem}
 }
 /* TV: uzaktan kumanda icin buyuk hedefler, ama yazi boyu sabit */
 @media(min-height:1000px) and (min-aspect-ratio:16/9) and (pointer:coarse){
@@ -177,7 +183,7 @@ aside a{flex:0 0 auto;touch-action:manipulation;-webkit-tap-highlight-color:tran
   aside a{padding:.85em 1.15em}
   .dot{width:3.6rem;height:3.6rem}
 }
-@media(min-width:2400px){.shell{max-width:110rem}main{max-width:72rem}}
+@media(min-width:2400px){.shell{max-width:92rem}main{max-width:60rem}}
 :focus-visible{outline:3px solid var(--acc);outline-offset:3px}
 /* ---- cihaza gore ince ayar (data-dev) ---- */
 html[data-dev=phone] .shell{padding:0 .55rem}
@@ -188,9 +194,20 @@ html[data-dev=phone] header.top{padding:.7rem .8rem;font-size:.9rem}
 html[data-dev=tablet] .shell{padding:0 .9rem;gap:.9rem}
 html[data-dev=tablet] aside{width:14rem}
 html[data-dev=tv] .shell{max-width:96rem}
-html[data-dev=desktop-xl] main{max-width:60rem}
+html[data-dev=desktop-xl] main{max-width:58rem}
+html[data-dev=desktop-xl] .shell{max-width:84rem}
 html[data-orient=landscape][data-dev=phone] .welcome-screen{min-height:auto}
 html[data-orient=landscape][data-dev=phone] .center{min-height:auto;padding:1rem}
+/* ---- telefonda sayi kaymasi yok: rakamlar sabit genislikte ---- */
+.tm,.pct-big,.dot span,.mini-dot,.qcap,#sync,.bar,.tag b,aside a{font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}
+.dot span,.mini-dot{display:inline-block;min-width:1.35em;text-align:center;line-height:1.05}
+.dot small{display:block;line-height:1}
+/* ---- dokunmatikte "geri atma" (sayfa ziplamasi) engeli ---- */
+html,body{overscroll-behavior-y:contain}
+body{-webkit-overflow-scrolling:touch}
+aside a,button,.dot,.mini-dot{touch-action:manipulation}
+aside{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-x pan-y}
+main{scroll-margin-top:.5rem}
 .mini-popup::before{content:'';position:absolute;top:-6px;right:1.6rem;width:12px;height:12px;background:var(--card);border-left:1px solid var(--ln);border-top:1px solid var(--ln);transform:rotate(45deg)}
 @media(max-width:560px){.mini-popup{width:calc(100vw - 1rem);border-radius:16px}}
 @media(max-height:520px){.mini-popup{max-height:88vh}}
@@ -610,19 +627,31 @@ const box=x=>`<div class="center"><div class="box card">${x}</div></div>`;
 const m=()=>msg?`<div class="note">${msg}</div>`:'';
 
 /* giris/karsilama ekraninda tema secimi (hesap acmadan da calisir) */
-function themePick(compact){
-  const cur=document.documentElement.dataset.t==='dark'?'dark':'light';
-  const b=(v,label)=>`<button class="${cur===v?'':'g'} s" onclick="pickTheme('${v}')" aria-pressed="${cur===v}">${label}</button>`;
-  return`<div class="themebar" style="display:flex;gap:.4rem;justify-content:${compact?'flex-end':'center'};margin:${compact?'0':'0 0 .8rem'};align-items:center;flex-wrap:wrap"><small class="mut" style="margin-right:.2rem">${tr()?'Tema':'Theme'}</small>${b('light',tr()?'Açık':'Light')}${b('dark',tr()?'Koyu':'Dark')}</div>`;
+/* tema: acik / koyu / bej. bej = DB.beige bayragi; ucu tek yerden yonetilir */
+const THEMES=['light','dark','beige'];
+function curTheme(){const d=document.documentElement.dataset.t;return d==='dark'?'dark':(DB&&DB.beige?'beige':'light')}
+function applyTheme(){
+  const beige=!!(DB&&DB.beige);
+  const base=beige?'light':((A&&A.theme)||getItem('b1.theme')||sysTheme());
+  document.documentElement.dataset.t=beige?'beige':(base==='dark'?'dark':'light');
 }
-function pickTheme(v){
-  document.documentElement.dataset.t=v;
+function setTheme(v){
+  v=THEMES.indexOf(v)<0?'light':v;
+  DB.beige=(v==='beige');
+  if(A)A.theme=(v==='beige')?'light':v;
   try{setItem('b1.theme',v)}catch(e){}
-  if(A){A.theme=v;save()}else if(view!=='welcome'&&view!=='login')return;
-  renderAppOrAuth();
+  document.documentElement.dataset.t=v;
+  if(A)save();
+  if(view==='welcome'||view==='login')renderAppOrAuth();
+  else if($('#mn'))P.set();
+}
+function themePick(compact){
+  const cur=curTheme();
+  const b=(v,label)=>`<button class="${cur===v?'':'g'} s" onclick="setTheme('${v}')" aria-pressed="${cur===v}">${label}</button>`;
+  return`<div class="themebar" style="display:flex;gap:.4rem;justify-content:${compact?'flex-end':'center'};margin:${compact?'0':'0 0 .8rem'};align-items:center;flex-wrap:wrap"><small class="mut" style="margin-right:.2rem">${tr()?'Tema':'Theme'}</small>${b('light',tr()?'Açık':'Light')}${b('dark',tr()?'Koyu':'Dark')}${b('beige',tr()?'Bej':'Beige')}</div>`;
 }
 /* acilista secilen temayi uygula */
-try{const st=getItem('b1.theme');if(st==='light'||st==='dark')document.documentElement.dataset.t=st}catch(e){}
+try{const st=getItem('b1.theme');if(THEMES.indexOf(st)>=0)document.documentElement.dataset.t=st}catch(e){}
 
 /* ---- cihaz tanima: olculeri cihazin kendisine gore uygula ---- */
 function detectDevice(){
@@ -643,6 +672,24 @@ function detectDevice(){
 try{detectDevice()}catch(e){}
 window.addEventListener('resize',()=>{clearTimeout(window.__dvT);window.__dvT=setTimeout(()=>{try{detectDevice()}catch(e){}},180)});
 window.addEventListener('orientationchange',()=>{try{detectDevice()}catch(e){}});
+
+/* menu gecisi: dokunulan ogede kisa "basildi" efekti, sonra yumusak gecis */
+function pressTo(el,fn){
+  if(!el)return fn();
+  try{el.classList.add('press')}catch(e){}
+  setTimeout(()=>{try{el.classList.remove('press')}catch(e){};fn()},90);
+}
+function navGo(el,v,p){pressTo(el,()=>goTo(v,p))}
+/* header'a dokununca giris ekranina git (oturum kapatmadan) */
+function headerHome(el){
+  pressTo(el,()=>{
+    if(A){A0=A;A=null}
+    msg='';loginDat={u:'',p:'',e:''};
+    view='login';pg='home';
+    try{history.pushState({v:'login',p:'home'},'','')}catch(e){}
+    renderAppOrAuth();window.scrollTo(0,0);
+  });
+}
 
 function renderAppOrAuth(){
   if(A){shell();return}
@@ -861,7 +908,7 @@ function shell(){
     if(hasNote(k))cls+=' note';
     mc+=`<button class="mini-dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="miniClick(event,'${k}')"><span>${d}</span></button>`}
   const keepAside=document.querySelector('#nav-aside');
-  $('#app').innerHTML=`<header class="top"><b role="button" tabindex="0" onclick="goTo('app','home')">Improvin' your day.</b><span id="top-date-trigger" role="button" tabindex="0" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="toggleMiniCal(event)" title="${t('calendar')}"><span>${fmt(today())}</span> ▾${DB.beige?'<small>bej</small>':''}</span><div id="mini-cal" class="mini-popup"><div style="font-family:var(--fs);font-weight:700;color:var(--acc);margin-bottom:.4rem">${monthName(mo)} ${y}</div><div class="mini-cal-grid">${mc}</div><p class="mut" style="font-size:.72rem;margin:.6rem 0 0">${tr()?'Bir güne tıkla: açık bej görünümü aç/kapat.':'Click a day to toggle the light beige look.'}</p></div></header><div class="shell"><aside><div class="lg" role="button" tabindex="0" onclick="goTo('app','set')"><small>${tr()?'Hoş geldin,':'Welcome,'}</small>${esc(A.nick)}</div>${NAV.map(([k])=>k=='logout'?`<a role="button" tabindex="0" onclick="confirmLogout()">${navLabel('logout')}</a>`:`<a role="button" tabindex="0" class="${pg==k?'on':''}" onclick="goTo('app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button id="back-welcome" class="ft-link" onclick="goHome()"><span aria-hidden="true">←</span> ${t('backWelcome')}</button><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><b role="button" tabindex="0" title="${tr()?'Giriş ekranı':'Sign-in screen'}" onclick="headerHome(this)">Improvin' your day.</b><span id="top-date-trigger" role="button" tabindex="0" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="toggleMiniCal(event)" title="${t('calendar')}"><span>${fmt(today())}</span> ▾${DB.beige?'<small>bej</small>':''}</span><div id="mini-cal" class="mini-popup"><div style="font-family:var(--fs);font-weight:700;color:var(--acc);margin-bottom:.4rem">${monthName(mo)} ${y}</div><div class="mini-cal-grid">${mc}</div><p class="mut" style="font-size:.72rem;margin:.6rem 0 0">${tr()?'Bir güne tıkla: açık bej görünümü aç/kapat.':'Click a day to toggle the light beige look.'}</p></div></header><div class="shell"><aside><div class="lg" role="button" tabindex="0" onclick="goTo('app','set')"><small>${tr()?'Hoş geldin,':'Welcome,'}</small>${esc(A.nick)}</div>${NAV.map(([k])=>k=='logout'?`<a role="button" tabindex="0" onclick="confirmLogout()">${navLabel('logout')}</a>`:`<a role="button" tabindex="0" class="${pg==k?'on':''}" onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button id="back-welcome" class="ft-link" onclick="goHome()"><span aria-hidden="true">←</span> ${t('backWelcome')}</button><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();
   const mc0=$('#mini-cal');if(mc0&&mc0.parentElement!==document.body)document.body.appendChild(mc0);
@@ -910,7 +957,7 @@ P.pc=()=>{
     c+=`<button class="dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="openDay('${k}')"><small>${dayName(new Date(y,mo,d).getDay())}</small><span>${d}</span></button>`;
   }
   const noteList=Object.keys(A.future||{}).sort().map(k=>`<div class="task"><span><b>${fmt(k)}</b> — ${esc(A.future[k])}</span><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1.2rem">${fmt(today())}</span></div><div class="stat" style="margin-top:.9rem"><span><b>%${pct()}</b> <span class="mut">${t('pctTitle')}</span></span></div><p class="mut" style="margin:.4rem 0 0;font-size:.85rem">${t('pctHint')}</p><p class="mut" style="margin:.2rem 0 0;font-size:.85rem">${t('everyDayCounts')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();P.pc()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button><button class="g s" onclick="P.pc()">${t('calendar')}</button></div></div><div class="card"><div class="row"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p>${noteList||'<p class="mut">'+t('noNote')+'</p>'}<div class="row" style="margin-top:.6rem"><input id="fnd" type="date" style="max-width:11rem"><button onclick="newNote()">${t('addFutureNote')}</button></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();P.pc()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button><button class="g s" onclick="P.pc()">${t('calendar')}</button></div></div><div class="card"><div class="row"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p>${noteList||'<p class="mut">'+t('noNote')+'</p>'}<div class="row" style="margin-top:.6rem"><input id="fnd" type="date" style="max-width:11rem"><button onclick="newNote()">${t('addFutureNote')}</button></div></div>`);
 };
 function newNote(){const d=$('#fnd').value;if(!d){toast(tr()?'Bir tarih seç.':'Pick a date.');return}openDay(d)}
 function delNote(k){delete A.future[k];save();P.pc()}
@@ -935,38 +982,30 @@ function repCard(title,per,a,b,pa,pb,key,nk,defs){
 <h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3>${cur.length?qb(key,cur,ro)+(ro?'<p class="mut">'+t('answersLocked')+'</p>':`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
 <h3 style="margin-top:1.2rem">${tr()?'Sonraki':'Next'} ${per}</h3>${qb(nk,A.qs[nk],false)}<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="${t('addOwnQuestion')}"><button class="s" onclick="addQ('${nk}')">${t('addQuestion')}</button><button class="g s" onclick="addRandQ('${nk}')">${t('randomQuestion')}</button></div></div>`;
 }
-/* ---- gecmis raporlar arsivi: haftalik (8) + aylik (12) ---- */
-function histCard(kind,key,a,b,pa,pb,defs){
-  const st0=st(a,b);
-  const weekQ=defQ('week'),monthQ=defQ('month');
-  /* o doneme ait sorular: once kayitli cevaplar, yoksa tanimli sorular (bos) */
-  const src=(A.qs[key]&&A.qs[key].length)?A.qs[key]:(kind==='w'?weekQ:monthQ);
-  const qs=src.map(x=>`<div class="task"><span>${esc(x.q)}</span><b>${x.a?esc(x.a):'—'}</b></div>`).join('');
-  return`<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">${fmt(a)} – ${fmt(b)}</h3><span class="mut">%${st0.p}</span></div>
-<p style="margin:.4rem 0 0">${st0.d}/${st0.t} ${t('tasksDone')} · <span class="mut">${t('previous')}: %${st(pa,pb).p}</span></p><div class="bar" style="margin-top:.5rem"><i style="width:${st0.p}%"></i></div>
-${qs?`<h3 style="margin-top:1rem">${t('questionsFor')} ${kind==='w'?tr()?'hafta':'week':tr()?'ay':'month'}</h3>${qs}`:''}</div>`;
+/* ---- gecmis raporlar: kisa ozet (haftalik / aylik) ---- */
+function briefRow(label,val,sub){
+  return`<div class="task"><span><b>${label}</b>${sub?`<small class="mut" style="display:block;font-size:.78rem">${sub}</small>`:''}</span><b style="color:var(--acc)">${val}</b></div>`;
 }
 function historySection(){
   const td=today();
-  let wh='';
-  for(let i=1;i<=8;i++){
-    const wa=addD(mon(td),-7*i),wb=addD(wa,6);
-    wh+=histCard('w',wa,wa,wb,addD(wa,-7),addD(wa,-1),defQ('week'));
-  }
-  let mh='';
+  // haftalik ozet: bu hafta + gecen hafta
+  const wNow=st(mon(td),td),wPrev=st(addD(mon(td),-7),addD(mon(td),-1));
+  const wDiff=wNow.p-wPrev.p;
+  const wTop=Object.entries(wNow.by).sort((a,b)=>b[1][1]-a[1][1])[0];
+  // aylik ozet
   const x=new Date();
-  for(let i=1;i<=12;i++){
-    const ma=D(new Date(x.getFullYear(),x.getMonth()-i,1)),mb=D(new Date(x.getFullYear(),x.getMonth()-i+1,0));
-    mh+=histCard('m',ma.slice(0,7),ma,mb,D(new Date(x.getFullYear(),x.getMonth()-i-1,1)),D(new Date(x.getFullYear(),x.getMonth()-i,0)),defQ('month'));
-  }
-  return`<div class="card"><h2>${tr()?'Geçmiş raporlar':'Past reports'}</h2>
-<p class="mut">${tr()?'İstediğin zaman açıp bakabilirsin: son 8 hafta ve son 12 ayın özeti ve cevapladığın sorular.':'Open them any time: the last 8 weeks and 12 months, with the questions you answered.'}</p>
-<div class="row" style="margin-top:.6rem"><button class="g" onclick="showHist('w')">${tr()?'Haftalık':'Weekly'}</button><button class="g" onclick="showHist('m')">${tr()?'Aylık':'Monthly'}</button></div>
-<div id="hist-w" style="display:none;margin-top:.8rem">${wh}</div>
-<div id="hist-m" style="display:none;margin-top:.8rem">${mh}</div></div>`;
-}
-function showHist(k){
-  ['w','m'].forEach(x=>{const e=$('#hist-'+x);if(e)e.style.display=x===k?'block':'none'});
+  const ma=D(new Date(x.getFullYear(),x.getMonth(),1)),mb=D(new Date(x.getFullYear(),x.getMonth()+1,0));
+  const pma=D(new Date(x.getFullYear(),x.getMonth()-1,1)),pmb=D(new Date(x.getFullYear(),x.getMonth(),0));
+  const mNow=st(ma,mb),mPrev=st(pma,pmb),mDiff=mNow.p-mPrev.p;
+  const weekDone=dd(mon(td),td)+1,monthDone=dd(ma,td)+1;
+  return`<div class="card"><h2>${tr()?'Geçmiş özet':'Past summary'}</h2>
+<div style="margin-top:.6rem"><h3 style="margin:.2rem 0 .4rem">${tr()?'Bu hafta':'This week'} <span class="mut" style="font-size:.8rem">${fmt(mon(td))} – ${fmt(td)}</span></h3>
+${briefRow(tr()?'Tamamlanan':'Completed',wNow.d+'/'+wNow.t+' · %'+wNow.p,(tr()?'Geçen hafta':'Last week')+' %'+wPrev.p+' ('+(wDiff>=0?'+':'')+wDiff+')')}
+${wTop?briefRow(tr()?'En çok yaptığın':'Most frequent',esc(wTop[0]).slice(0,28),wTop[1][0]+'/'+wTop[1][1]):''}
+${briefRow(tr()?'Kayıtlı gün':'Days recorded',weekDone+'/7')}</div>
+<div style="margin-top:1.1rem"><h3 style="margin:.2rem 0 .4rem">${tr()?'Bu ay':'This month'} <span class="mut" style="font-size:.8rem">${monthName(x.getMonth())} ${x.getFullYear()}</span></h3>
+${briefRow(tr()?'Tamamlanan':'Completed',mNow.d+'/'+mNow.t+' · %'+mNow.p,(tr()?'Geçen ay':'Last month')+' %'+mPrev.p+' ('+(mDiff>=0?'+':'')+mDiff+')')}
+${briefRow(tr()?'Kayıtlı gün':'Days recorded',monthDone+'/'+(dd(ma,mb)+1))}</div></div>`;
 }
 P.rep=()=>{
   const td=today(),wa=mon(td),wb=addD(wa,6),x=new Date();
@@ -1034,7 +1073,7 @@ P.set=()=>{
 <div class="card"><h2>${t('account')}</h2><label>${t('username')} <span class="mut">(${tr()?'15 günde 5 değişiklik — kalan':'5 changes per 15 days —'} ${left('uc')})</span></label><div class="row"><input id="su" maxlength="20" value="${esc(A.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'')"><button onclick="chg('u')">${t('change')}</button></div><label style="display:block;margin-top:.8rem">${t('displayName')} <span class="mut">(${left('nc')})</span></label><div class="row"><input id="sn" maxlength="30" value="${esc(A.nick)}"><button onclick="chg('n')">${t('change')}</button></div><label style="display:block;margin-top:.8rem">${t('bio')}</label><textarea id="sb" rows="2" maxlength="160" onchange="A.bio=this.value;save()">${esc(A.bio)}</textarea></div>
 <div class="card"><h2>${t('email')}</h2><label>${t('email')} ${A.ver&&A.ver.email?'✓':''}</label><div class="row" style="margin-bottom:.6rem"><input id="semail" type="email" value="${esc(A.email||'')}"><button onclick="vSend('email')">${t('sendCode')}</button></div><div id="vz"></div></div>
 <div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>
-<div class="card"><h2>${t('theme')}</h2><div class="row"><button class="${A.theme=='dark'?'':'g'}" onclick="th('dark')">${t('dark')}</button><button class="${A.theme=='light'?'':'g'}" onclick="th('light')">${t('light')}</button><button class="${DB.beige?'':'g'}" onclick="toggleBeige();P.set()">${tr()?'Bej':'Beige'}</button></div></div>
+<div class="card"><h2>${t('theme')}</h2>${themePick(false).replace('themebar','theme-in').replace('margin:0 0 .8rem','margin:0')}</div></div>
 <div class="card"><h2>${t('accounts')}</h2>${ac}<div style="margin-top:.6rem"><button class="g" onclick="A0=A;A=null;goTo('setup','home')">${t('addAccount')}</button></div></div>
 <div class="card"><h2>${t('resetSystem')}</h2><p class="mut">${tr()?'Görevler, geçmiş, ilerleme, projeler, rapor cevapları ve süreler silinir. Hesap bilgilerin kalır. Onaylamak için şifreni gir.':'Tasks, history, progress, projects, report answers and timer lengths are erased. Your account details stay. Enter your password to confirm.'}</p><input id="rp" type="password" placeholder="${t('password')}" autocomplete="current-password"><button class="d" style="background:var(--no);color:#fff" onclick="resetSys()">${t('reset')}</button></div>
 <div class="card"><h2>${t('deleteAccount')}</h2><p class="mut">${tr()?'Hesabın ve tüm verilerin bu cihazdan kalıcı olarak silinir.':'Your account and all data are permanently deleted from this device.'}</p><input id="dp" type="password" placeholder="${t('password')}" autocomplete="current-password"><button style="background:var(--no)" onclick="delAcc()">${t('deleteAccount')}</button></div>`);
@@ -1140,8 +1179,8 @@ async function sbPull(u){
   }catch(e){return null}
 }
 function applyTheme(){if(!A)return;document.documentElement.dataset.t=DB.beige?'beige':A.theme}
-function th(t){A.theme=t;applyTheme();save();P.set()}
-function toggleBeige(){DB.beige=!DB.beige;applyTheme();save();P.pc()}
+function th(t){setTheme(t)}
+function toggleBeige(){setTheme(DB.beige?'light':'beige')}
 
 const _restored=restoreSession();
 renderAppOrAuth();
