@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Improvin' your day</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6eee3">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap">
+<style>
+:root{--bg:#f6eee3;--card:#fffaf3;--ink:#4a3426;--mut:#9a8068;--acc:#a9714b;--acc2:#e3c3a1;--ok:#6fa876;--no:#c76b5a;--ln:#ecdcc8;--sh:0 12px 32px #8a5a3a16;--fs:'Fraunces',Georgia,'Times New Roman',serif;--okbg:#e6f1e6}
+:root[data-t=dark]{--bg:#221914;--card:#2e221b;--ink:#f3e8da;--mut:#b09a84;--acc:#d2a074;--acc2:#6b4a33;--ok:#7bbd83;--no:#d7796a;--ln:#40302a;--sh:0 12px 32px #0006;--okbg:#2a3a2c}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px);font-size:clamp(16px,.35vw + 11px,24px);overflow-y:scroll}
+@media(min-width:1600px){html{font-size:clamp(20px,1.05vw,36px)}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,Ubuntu,sans-serif;line-height:1.6;transition:background .4s,color .4s;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+#app{display:flex;flex-direction:column;flex:1;width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--acc);color:#fff;border:0;border-radius:999px;padding:.6em 1.4em;min-height:2.75rem;font-weight:600;cursor:pointer;box-shadow:0 4px 14px #a9714b33;transition:transform .2s,box-shadow .2s,background .3s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:hover{transform:translateY(-1px);box-shadow:0 6px 18px #a9714b44}
+button.g{background:transparent;border:1.5px solid var(--ln);color:var(--ink);box-shadow:none}
+button.g:hover{border-color:var(--acc)}
+button.s{min-height:2.2rem;padding:.25em .9em;font-size:.82rem}
+button.d{color:var(--no);border-color:var(--no)}
+button:disabled{opacity:.35;cursor:not-allowed;transform:none}
+input,select,textarea{background:var(--bg);border:1.5px solid var(--ln);border-radius:16px;padding:.7em 1.1em;width:100%;margin:.3em 0 .8em;font-size:max(16px,1rem);transition:border .3s}
+textarea{resize:vertical}
+input:focus,textarea:focus{outline:0;border-color:var(--acc)}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+label{font-size:.9rem;font-weight:600}
+.shell{display:flex;flex:1;max-width:80rem;margin:0 auto;width:100%;align-items:flex-start;padding:0 1rem;gap:1.2rem}
+aside{width:16rem;background:var(--card);margin:1.2rem 0;border-radius:24px;box-shadow:var(--sh);padding:1.4rem 1rem;display:flex;flex-direction:column;gap:.3rem;transition:background .4s;flex-shrink:0;position:sticky;top:1rem}
+aside .lg{font-family:var(--fs);font-weight:700;font-size:1.4rem;line-height:1.2;color:var(--acc);margin-bottom:1rem;word-break:break-word;cursor:pointer;padding:0 .5rem}
+aside .lg small{display:block;font-family:'Nunito',system-ui,sans-serif;font-size:.8rem;font-weight:600;color:var(--mut);margin-bottom:.2rem}
+aside a{padding:.7em 1rem;border-radius:999px;cursor:pointer;color:var(--mut);font-weight:600;font-size:.95rem;transition:all .25s;-webkit-tap-highlight-color:transparent}
+aside a:hover{background:var(--bg);color:var(--ink)}
+aside a.on{background:var(--acc);color:#fff;box-shadow:0 4px 14px #a9714b33}
+main{flex:1;min-width:0;padding:1.2rem 0;max-width:54rem;margin:0 auto;width:100%;animation:fi .3s ease;display:flex;flex-direction:column;gap:1.2rem}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+header.top{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.9rem 1.5rem;background:var(--card);border-bottom:1px solid var(--ln);color:var(--mut);font-size:.95rem;transition:all .4s;position:relative}
+header.top b{font-family:var(--fs);font-size:1.15rem;color:var(--acc);cursor:pointer}
+.lv2 header.top,.lv3 header.top,.lv4 header.top{background:linear-gradient(90deg,var(--card),var(--bg));border-bottom:2px solid var(--acc)}
+.lv3 .card,.lv4 .card{box-shadow:0 14px 40px #8a5a3a2a}
+.lv4 aside .lg{letter-spacing:.06em}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:24px;box-shadow:var(--sh);padding:1.5rem;transition:all .3s}
+h1,h2,h3{font-family:var(--fs);font-weight:600;margin:.2em 0 .5em}
+h1,h2{font-size:1.3rem}h3{font-size:1.05rem}
+.mut{color:var(--mut)}
+.row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.row>input{flex:1;min-width:8rem;margin:0}
+.center{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:1.5rem}
+.welcome-screen{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:space-between;padding:1.5rem;position:relative}
+.brand-badge{font-family:var(--fs);font-weight:700;font-size:1.2rem;color:var(--acc);letter-spacing:.05em}
+.welcome-center{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;margin:auto;max-width:30rem;width:100%;padding:1rem 0}
+.welcome-footer-bar{display:flex;justify-content:space-between;align-items:flex-end;width:100%;font-size:.85rem;color:var(--mut);gap:1rem}
+.social-links{display:flex;flex-direction:column;text-align:right;gap:.2rem}
+.social-links a{color:var(--mut);text-decoration:none;transition:color .2s}
+.social-links a:hover{color:var(--acc)}
+.box{max-width:26rem;width:100%;text-align:left}
+.big{font-family:var(--fs);font-size:clamp(2.2rem,7vw,4.2rem);font-weight:600;letter-spacing:.04em;line-height:1.1;text-align:center;margin:.2em 0 .4em;color:var(--ink)}
+.task{display:flex;align-items:center;gap:.7rem;padding:.8rem 1rem;background:var(--bg);border:1.5px solid var(--ln);border-radius:16px;margin:.5rem 0;transition:all .4s}
+.task span{flex:1;min-width:0;overflow-wrap:anywhere;transition:color .4s}
+.task.done{background:var(--okbg);border-color:var(--ok)}
+@supports(background:color-mix(in srgb,red,blue)){.task.done{background:color-mix(in srgb,var(--ok) 16%,var(--card))}}
+.task.done span{color:var(--ok);text-decoration:line-through}
+.task.miss{border-color:var(--no);opacity:.85}
+.task.shake{animation:sh .45s}
+@keyframes sh{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.ck,.xx{width:2.5rem;height:2.5rem;min-height:0;padding:0;border-radius:50%;background:transparent;border:2px solid var(--ln);color:var(--mut);box-shadow:none;transition:all .35s;flex-shrink:0}
+.ck.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.xx.on{background:var(--no);border-color:var(--no);color:#fff}
+.cal{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem;justify-content:center}
+.dot{width:3.2rem;height:3.2rem;border-radius:16px;background:var(--ln);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.65rem;cursor:pointer;transition:all .25s;color:var(--mut);gap:1px;border:0;padding:0;min-height:0;box-shadow:none}
+.dot span{font-size:.9rem;font-weight:700}
+.dot small{font-size:.55rem;opacity:.85;text-transform:uppercase}
+.dot.ok{background:var(--ok);color:#fff}
+.dot.miss-dot{background:var(--mut);color:#fff;opacity:.75}
+.dot.td{outline:2px solid var(--acc);outline-offset:2px}
+.dot:hover{transform:scale(1.08)}
+.bar{height:.65rem;background:var(--ln);border-radius:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok);transition:width .6s}
+.tm{font-family:var(--fs);font-size:clamp(2.6rem,8vw,5rem);font-weight:600;color:var(--acc);text-align:center;font-variant-numeric:tabular-nums}
+.tag{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;background:var(--bg);border:1.5px solid var(--ln);border-radius:14px;padding:.5rem 1rem;margin:.3rem 0;font-size:.95rem}
+.tag.on{border-color:var(--acc)}
+.note{background:var(--bg);border:1px dashed var(--acc);border-radius:12px;padding:.6em 1em;margin:.5em 0;font-size:.9rem}
+.qa{display:flex;gap:.5rem;align-items:flex-start}
+.qa textarea{margin:0;flex:1}
+.qcap{text-align:right;font-size:.78rem;margin:.2rem 0 .8rem}
+.pct-big{font-family:var(--fs);font-size:clamp(2.4rem,8vw,4rem);font-weight:700;color:var(--acc);line-height:1}
+footer{text-align:center;padding:1rem;color:var(--mut);font-size:.8rem;background:var(--card);border-top:1px solid var(--ln);width:100%;margin-top:auto}
+#ck[hidden]{display:none}
+#ck{position:fixed;left:1rem;right:1rem;bottom:calc(1rem + env(safe-area-inset-bottom,0px));z-index:99;background:var(--card);border:1px solid var(--acc);border-radius:14px;padding:1rem;display:flex;gap:.8rem;flex-wrap:wrap;align-items:center;justify-content:space-between;max-width:42rem;margin:auto;box-shadow:var(--sh)}
+.mini-popup{display:none;position:absolute;right:1rem;top:100%;background:var(--card);border:1px solid var(--ln);border-radius:18px;padding:1rem;box-shadow:var(--sh);z-index:99;width:min(18rem,calc(100vw - 2rem));text-align:center}
+.mini-cal-grid{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.5rem;justify-content:center}
+.mini-dot{position:relative;width:2rem;height:2rem;border-radius:50%;background:var(--ln);display:grid;place-items:center;font-size:.7rem;color:var(--mut)}
+.mini-dot.td{outline:2px solid var(--acc);font-weight:700;color:var(--acc)}
+.mini-dot::after{content:attr(data-day);position:absolute;bottom:125%;left:50%;transform:translateX(-50%) translateY(4px);background:var(--ink);color:var(--bg);font-size:.65rem;padding:3px 7px;border-radius:6px;white-space:nowrap;opacity:0;visibility:hidden;transition:opacity .25s,transform .25s,visibility .25s;pointer-events:none;z-index:100}
+.mini-dot:hover::after{opacity:1;visibility:visible;transform:translateX(-50%)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;z-index:9999;padding:1rem;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+@media(max-width:900px){
+.shell{flex-direction:column;padding:0 .8rem;gap:0}
+aside{width:100%;margin:.8rem 0 0;flex-direction:row;overflow-x:auto;padding:.5rem;align-items:center;gap:.3rem;position:static;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+aside::-webkit-scrollbar{display:none}
+aside .lg{display:none}
+aside a{white-space:nowrap;padding:.55em .95em;font-size:.9rem}
+main{padding:1rem 0}
+.card{padding:1.2rem}
+header.top{padding:.8rem 1rem}
+.welcome-footer-bar{flex-direction:column;align-items:center;text-align:center;gap:.8rem}
+.social-links{text-align:center}
+}
+@media(max-width:480px){.task{flex-wrap:wrap}.dot{width:2.8rem;height:2.8rem}.qa{flex-direction:column}.qa button{align-self:flex-end}}
+@media(max-height:480px) and (orientation:landscape){.welcome-screen,.center{min-height:auto}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="ck" hidden>
+  <span>Do you accept cookies? If you accept, your data is stored on this device permanently; if you decline, it is kept only while this tab stays open.</span>
+  <span class="row"><button onclick="ck(1)">Accept</button><button class="g" onclick="ck(0)">Decline</button></span>
+</div>
+<script>
+const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
+const TITLE="Improvin' your day";
+const store=()=>{try{return localStorage.getItem('b1ck')==='0'?sessionStorage:localStorage}catch(e){return null}};
+let DB;try{DB=JSON.parse(store().getItem('b1')||'')}catch(e){}
+DB=DB&&DB.accounts?DB:{accounts:{},last:'',lock:{}};
+const save=()=>{try{store().setItem('b1',JSON.stringify(DB))}catch(e){}};
+function ck(v){try{localStorage.setItem('b1ck',String(v))}catch(e){}$('#ck').hidden=true;save()}
+try{if(localStorage.getItem('b1ck')===null)$('#ck').hidden=false}catch(e){}
+const sysTheme=()=>(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+document.documentElement.dataset.t=sysTheme();
+let A=null,A0=null,view='welcome',pg='home',calOff=0,selDay=null,msg='',codes={};
+let formDat={u:'',n:'',b:'',e:'',t:'',p:''},loginDat={u:'',p:''};
+
+function goTo(v,p,push=true){
+  view=v;pg=p;msg='';selDay=null;
+  if(push){try{history.pushState({v,p},'','')}catch(e){}}
+  renderAppOrAuth();window.scrollTo(0,0);
+}
+window.addEventListener('popstate',e=>{
+  if(e.state){view=e.state.v;pg=e.state.p}else{view='welcome';pg='home'}
+  msg='';selDay=null;renderAppOrAuth();
+});
+try{if(!history.state)history.replaceState({v:view,p:pg},'','')}catch(e){}
+document.addEventListener('keydown',e=>{
+  const t=e.target;
+  if((e.key==='Enter'||e.key===' ')&&t&&t.getAttribute&&t.getAttribute('role')==='button'){e.preventDefault();t.click()}
+});
+
+const D=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>D(new Date()),fmt=s=>{const[y,m,d]=s.split('-');return d+'.'+m};
+const dd=(a,b)=>Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5);
+const sha=async s=>{try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))|0;return'f'+h}};
+const AY=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const Q_LIST=["Small steps add up to big changes.","Discipline is choosing what you want most over what you want now.","You don't have to be great to start, but you have to start to be great.","Consistency beats intensity.","Progress, not perfection.","Focus on being productive instead of busy.","Your future is created by what you do today, not tomorrow.","Action is the foundational key to all success."];
+const getDailyQuote=()=>{const n=new Date(),s=new Date(n.getFullYear(),0,0);return Q_LIST[Math.floor(((n-s)+((s.getTimezoneOffset()-n.getTimezoneOffset())*60000))/864e5)%Q_LIST.length]};
+const RANDOM_Q=["What fed your mind the most today?","How satisfied are you with your main goal this period?","What is the biggest distraction you should cut out of your life?","Are you giving yourself the value you deserve in this process?","How would you rate your energy today from 1 to 10, and why?","What would you tell your future self about this week?","When did you last step outside your comfort zone?","What small detail made you proudest this week?"];
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
+const userRe=new RegExp('^['+LETTERS+']{3,20}$');
+function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme()})}
+function norm(a){
+  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:''};
+  for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
+  return a;
+}
+const findUser=u=>Object.keys(DB.accounts).find(k=>k.toLowerCase()===String(u).toLowerCase());
+function roll(){
+  const t=today();
+  if(A.day!==t){
+    A.hist[A.day]=A.tasks.map(x=>({t:x.t,done:x.s==='done'}));
+    A.tasks.filter(x=>x.s!=='done').forEach(x=>A.backlog.push(x.t));
+    while(A.backlog.length>10)A.backlog.shift();
+    A.tasks=[];A.day=t;save();
+  }
+}
+const items=d=>d===today()?A.tasks.map(x=>({t:x.t,done:x.s==='done'})):(A.hist[d]||[]);
+const okDay=d=>{const i=items(d);return i.length>0&&i.every(x=>x.done)};
+const succ=()=>{let n=0;Object.keys(A.hist).forEach(d=>{if(d!==today()&&okDay(d))n++});if(okDay(today()))n++;return n};
+const pct=()=>1+succ(),lvl=()=>1+Math.floor(succ()/7);
+
+function pwOk(p,u){
+  if(p.length<8)return'Password must be at least 8 characters.';
+  if(/(.)\1/.test(p))return'No repeated adjacent letters or digits.';
+  if(/0123|1234|2345|3456|4567|5678|6789|abcd|qwer|asdf/i.test(p)||/^(.)\1+$/.test(p))return'Password is too simple.';
+  if(/2007|1308|130807|0813|password|sifre/i.test(p))return'Easily guessable passwords are not allowed.';
+  if(u&&p.toLowerCase().includes(u.toLowerCase()))return'Password cannot contain your username.';
+  return'';
+}
+function mon(d){const x=new Date(d+'T00:00');x.setDate(x.getDate()-((x.getDay()+6)%7));return D(x)}
+function addD(d,n){const x=new Date(d+'T00:00');x.setDate(x.getDate()+n);return D(x)}
+const fmtMin=m=>m>=60?Math.floor(m/60)+' h '+(m%60)+' min':m+' min';
+const box=x=>`<div class="center"><div class="box card">${x}</div></div>`;
+const m=()=>msg?`<div class="note">${msg}</div>`:'';
+
+function renderAppOrAuth(){
+  if(A){shell();return}
+  document.title=TITLE;
+  if(view==='app')view=Object.keys(DB.accounts).length?'login':'welcome';
+  let h='';
+  if(view==='welcome')h=`<div class="welcome-screen"><div class="brand-badge">badgalnurkan</div><div class="welcome-center"><h1 class="big">WELCOME</h1><div class="row" style="justify-content:center;gap:.8rem;margin-top:.5rem"><button onclick="goTo(Object.keys(DB.accounts).length?'login':'setup','home')">Continue →</button><button class="g" onclick="openGuideModal()">How it works</button></div><div style="margin-top:1rem"><a href="mailto:nurkancanbulat89@gmail.com" style="color:var(--acc);font-weight:600;text-decoration:none;font-size:.9rem">Contact me</a></div></div><div class="welcome-footer-bar"><div>© 2026 nurkancanbulat — All rights reserved.</div><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">tiktok/@badgalnurkan</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">instagram/@badgalnurkann</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">x/@badgalnurk</a></div></div></div>`;
+  else if(view==='login')h=box(`<h2>Sign in</h2>${m()}<label>Username</label><input id="u" autocomplete="username" autocapitalize="none" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value"><label>Password</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="event.key=='Enter'&&login()"><div class="row"><button onclick="login()">Sign in</button><button class="g" onclick="goTo('forgot','home')">Forgot password</button><button class="g" onclick="goTo('setup','home')">New account</button></div>`);
+  else if(view==='setup')h=box(`<h2>Create account</h2>${m()}<label>Username (3-20 letters)</label><input id="u" maxlength="20" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>Display name</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>Bio</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>Email</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>Phone</label><input id="t" type="tel" inputmode="numeric" maxlength="15" placeholder="Digits only" value="${esc(formDat.t)}" oninput="this.value=this.value.replace(/[^0-9]/g,'');formDat.t=this.value"><label>Password (min 8 characters)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value"><div class="row"><button onclick="setup()">Create</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">Back</button></div>`);
+  else if(view==='forgot')h=box(`<h2>Forgot password</h2>${m()}<label>Username</label><input id="u" autocapitalize="none"><div class="row"><button onclick="fSend('email')">Send code by email</button><button onclick="fSend('phone')">Send code by SMS</button></div><div id="fz"></div><button class="g" style="margin-top:.6rem" onclick="goTo('login','home')">Back</button>`);
+  $('#app').innerHTML=h;
+  if(view==='login'){const pe=$('#p');if(pe&&loginDat.u){pe.focus()}}
+}
+
+function openModal(id,html){
+  if(document.getElementById(id))return;
+  const d=document.createElement('div');d.id=id;d.className='modal';
+  d.innerHTML=`<div class="card" style="max-width:32rem;width:100%;max-height:85vh;overflow-y:auto">${html}</div>`;
+  d.addEventListener('click',e=>{if(e.target===d)d.remove()});
+  document.body.appendChild(d);
+}
+const closeModal=id=>{const e=document.getElementById(id);if(e)e.remove()};
+function openGuideModal(){
+  openModal('guide-modal',`<h2>How it works</h2><p class="mut">Built to help you manage your daily discipline, tasks and focus. Your data is stored only in your own browser.</p><ul style="font-size:.92rem;padding-left:1.2rem;line-height:1.7"><li><b>Home:</b> quote of the day, daily report, level and project reminders.</li><li><b>To-do list:</b> add a task, tap ✓ when done or ✕ if not done. Missed tasks move to the backlog (max 10).</li><li><b>Pomodoro:</b> focus/break lengths, the longest break after 3 sessions, and a stopwatch.</li><li><b>Progress:</b> every day you finish all your tasks adds +1. Green on the calendar means done, grey means not done.</li><li><b>Reports:</b> the weekly report opens on Sunday, the monthly report on the last day of the month.</li></ul><div style="text-align:center;margin-top:1.2rem"><button onclick="closeModal('guide-modal')">Got it</button></div>`);
+}
+
+async function login(){
+  const u=loginDat.u.trim(),key=findUser(u),k=(key||u).toLowerCase(),L=DB.lock[k]||{f:0,lv:0,until:0};
+  if(Date.now()<L.until){msg=`Temporarily locked. Time left: ${fmtMin(Math.ceil((L.until-Date.now())/60000))}.`;return renderAppOrAuth()}
+  const a=key?DB.accounts[key]:null;
+  if(a&&a.pw===await sha(loginDat.p)){
+    DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(a);DB.last=a.nick;loginDat={u:'',p:''};
+    document.documentElement.dataset.t=A.theme;save();goTo('app','home');return;
+  }
+  L.f++;
+  if(L.f>=5){const long=L.lv>0;L.until=Date.now()+(long?5*3600000:30*60000);L.lv++;L.f=0;msg=long?'5 more failed attempts. Locked for 5 hours.':'5 failed attempts. Locked for 30 minutes.'}
+  else msg=`Wrong username or password. Attempts left: ${5-L.f}`;
+  DB.lock[k]=L;save();renderAppOrAuth();
+}
+
+async function setup(){
+  const u=$('#u').value.trim(),n=$('#n').value.trim(),e=$('#e').value.trim(),t=$('#t').value.trim(),p=$('#p').value;
+  formDat={u,n,b:$('#b')?$('#b').value:'',e,t,p};
+  if(!userRe.test(u))msg='Username must be 3-20 letters (no digits or spaces).';
+  else if(!n)msg='Display name is required.';
+  else if(findUser(u))msg='That username is taken.';
+  else if(!e&&!t)msg='Enter an email or phone for verification.';
+  else if(e&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))msg='Invalid email address.';
+  else if(t&&!/^[0-9]{10,15}$/.test(t))msg='Phone must be digits only (10-15 digits).';
+  else msg=pwOk(p,u);
+  if(msg)return renderAppOrAuth();
+  const a=newAcc(u,n,formDat.b,await sha(p),e,t);
+  DB.accounts[u]=a;DB.last=n;formDat={u:'',n:'',b:'',e:'',t:'',p:''};
+  A0=null;A=a;document.documentElement.dataset.t=A.theme;save();goTo('app','home');
+}
+
+function fSend(k){
+  const key=findUser($('#u').value.trim()),a=key&&DB.accounts[key];
+  if(!a||!a[k]){msg='No '+(k=='email'?'email':'phone number')+' is registered on this account.';return renderAppOrAuth()}
+  codes[key]=String(Math.floor(100000+Math.random()*900000));
+  $('#fz').innerHTML=`<div class="note">Demo code (real delivery needs a server): <b>${codes[key]}</b></div><label>Code</label><input id="c" inputmode="numeric"><label>New password</label><input id="p" type="password" autocomplete="new-password"><button onclick="fReset(${JSON.stringify(key).replace(/"/g,'&quot;')})">Reset password</button>`;
+}
+async function fReset(u){
+  if($('#c').value!==codes[u]){msg='Wrong code.';return renderAppOrAuth()}
+  const e=pwOk($('#p').value,u);if(e){msg=e;return renderAppOrAuth()}
+  DB.accounts[u].pw=await sha($('#p').value);delete codes[u];DB.lock[u.toLowerCase()]={f:0,lv:0,until:0};save();
+  view='login';msg='Password reset. You can sign in now.';renderAppOrAuth();
+}
+
+const NAV=[['home','Home'],['pomo','Pomodoro'],['todo','To-do list'],['pc','Progress'],['rep','Reports'],['set','Settings'],['logout','Log out']];
+function toggleMiniCal(e){if(e)e.stopPropagation();const el=$('#mini-cal');if(el)el.style.display=el.style.display==='block'?'none':'block'}
+window.addEventListener('click',e=>{const mc=$('#mini-cal'),t=$('#top-date-trigger');if(mc&&mc.style.display==='block'&&t&&!t.contains(e.target)&&!mc.contains(e.target))mc.style.display='none'});
+function confirmLogout(){
+  openModal('logout-modal',`<div style="text-align:center"><h2>Log out</h2><p class="mut">Do you want to log out?</p><div class="row" style="justify-content:center;margin-top:1.2rem"><button onclick="A=null;closeModal('logout-modal');goTo('login','home')">Yes</button><button class="g" onclick="closeModal('logout-modal')">No</button></div></div>`);
+}
+
+function shell(){
+  roll();
+  const L=lvl();document.documentElement.className='lv'+Math.min(L,4);
+  const n=new Date(),y=n.getFullYear(),mo=n.getMonth(),days=new Date(y,mo+1,0).getDate();
+  let mc='';
+  for(let d=1;d<=days;d++){const k=`${y}-${pad(mo+1)}-${pad(d)}`;mc+=`<div class="mini-dot ${k==today()?'td':''}" data-day="${DAY_NAMES[new Date(y,mo,d).getDay()]}">${d}</div>`}
+  $('#app').innerHTML=`<header class="top"><b role="button" tabindex="0" onclick="goTo('app','home')">Improvin' your day.</b><span id="top-date-trigger" role="button" tabindex="0" style="cursor:pointer;font-weight:600" onclick="toggleMiniCal(event)" title="Open calendar">${fmt(today())} ▾</span><div id="mini-cal" class="mini-popup"><div style="font-family:var(--fs);font-weight:700;color:var(--acc);margin-bottom:.4rem">${AY[mo]} ${y}</div><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><aside><div class="lg" role="button" tabindex="0" onclick="goTo('app','set')"><small>Welcome,</small>${esc(A.nick)}</div>${NAV.map(([k,v])=>k=='logout'?`<a role="button" tabindex="0" onclick="confirmLogout()">Log out</a>`:`<a role="button" tabindex="0" class="${pg==k?'on':''}" onclick="goTo('app','${k}')">${v}</a>`).join('')}</aside><main id="mn"></main></div><footer>© 2026 nurkancanbulat — All rights reserved.</footer>`;
+  if(pg!=='pomo'||!pm.run)document.title=TITLE;
+  (P[pg]||P.home)();
+}
+setInterval(()=>{if(A&&A.day!==today())shell()},60000);
+
+const P={};const M=h=>$('#mn').innerHTML=h;
+P.home=()=>{
+  const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length,g=7-succ()%7;
+  const pr=A.projects.map((p,i)=>{const d=dd(today(),p.d);return`<div class="task"><span>${esc(p.n)} — ${d>0?d+(d==1?' day left':' days left'):d==0?'last day today!':Math.abs(d)+(Math.abs(d)==1?' day overdue':' days overdue')}</span><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">Delete</button></div>`}).join('');
+  M(`<div class="card"><div class="mut" style="margin-bottom:.3rem">Quote of the day</div><h2>“${q}”</h2></div><div class="card"><h2>Daily report — ${fmt(today())}</h2><p>${dn}/${it.length} tasks done · Total <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div></div><div class="card"><h2>Level ${lvl()}</h2><p class="mut">${g} successful days to the next level. The look gets richer as you level up.</p><div class="bar"><i style="width:${(7-g)/7*100}%"></i></div></div><div class="card"><h2>Project reminders</h2>${pr||'<p class="mut">No projects yet.</p>'}<div class="row" style="margin-top:.6rem"><input id="pn" maxlength="40" placeholder="Project name" oninput="this.value=this.value.replace(/[^${LETTERS} ]/g,'')"><input id="pd" type="date" style="max-width:11rem" min="${today()}"><button onclick="addProj()">Add</button></div></div>`);
+};
+function addProj(){const n=$('#pn').value.trim(),d=$('#pd').value;if(n&&d){A.projects.push({n,d});save();P.home()}}
+
+P.todo=()=>{
+  const bl=A.backlog.map((t,i)=>`<div class="task"><span>${esc(t)}</span><button class="g s" onclick="fromBack(${i})">Add to today</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">Delete</button></div>`).join('');
+  M(`<div class="card"><h2>Today — ${fmt(today())}</h2><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">Add a task.</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" placeholder="New task" onkeydown="event.key=='Enter'&&addT()"><button onclick="addT()">Add</button></div></div><div class="card"><h2>Backlog (${A.backlog.length}/10)</h2><p class="mut">Tasks you miss collect here; past 10, the oldest is deleted.</p>${bl}</div>`);
+};
+const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}"><span>${esc(x.t)}</span><button class="ck ${x.s=='done'?'on':''}" aria-label="Done" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s=='miss'?'on':''}" aria-label="Not done" onclick="mk(${i},'miss')">✕</button><button class="g s" onclick="delT(${i})">Delete</button></div>`;
+function fromBack(i){A.tasks.push({t:A.backlog[i],s:''});A.backlog.splice(i,1);save();P.todo()}
+function delT(i){A.tasks.splice(i,1);save();P.todo()}
+function addT(){const v=$('#nt').value.trim();if(v){A.tasks.push({t:v,s:''});save();P.todo()}}
+function mk(i,s){const x=A.tasks[i];x.s=x.s===s?'':s;save();$('#t'+i).outerHTML=tk(x,i);if(x.s==='miss'){const e=$('#t'+i);e.classList.add('shake')}}
+
+P.pc=()=>{
+  const n=new Date(),mn=(2026-n.getFullYear())*12+10-n.getMonth();
+  if(calOff<mn)calOff=mn;
+  const base=new Date(n.getFullYear(),n.getMonth()+calOff,1),y=base.getFullYear(),mo=base.getMonth(),days=new Date(y,mo+1,0).getDate();
+  let c='';
+  for(let d=1;d<=days;d++){
+    const k=`${y}-${pad(mo+1)}-${pad(d)}`,its=items(k);let cls='';
+    if(its.length>0)cls=its.every(x=>x.done)?'ok':'miss-dot';
+    c+=`<button class="dot ${cls} ${k==today()?'td':''}" onclick="selDay='${k}';P.pc()"><small>${DAY_NAMES[new Date(y,mo,d).getDay()]}</small><span>${d}</span></button>`;
+  }
+  let an='';
+  if(selDay){const it=items(selDay);an=`<div class="card"><h2>Analysis — ${fmt(selDay)}</h2>${it.length?it.map(x=>`<div class="task ${x.done?'done':'miss'}"><span>${esc(x.t)}</span><b>${x.done?'✓ Done':'✕ Not done'}</b></div>`).join(''):'<p class="mut">No records for this day.</p>'}</div>`}
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1.2rem">${fmt(today())}</span></div><p class="mut" style="margin:.6rem 0 0">Every day you complete all your tasks adds +1. Today: ${okDay(today())?'✓ +1 added':'complete all tasks for +1'}.</p></div><div class="card"><div class="row"><button class="g" ${calOff<=mn?'disabled':''} aria-label="Previous month" onclick="calOff--;P.pc()">‹</button><h2 style="margin:0;flex:1;text-align:center">${AY[mo]} ${y}</h2><button class="g" aria-label="Next month" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div></div>${an}`);
+};
+
+function st(a,b){let t=0,d=0,by={};for(let x=a;x<=b;x=addD(x,1)){items(x).forEach(i=>{t++;by[i.t]=by[i.t]||[0,0];by[i.t][1]++;if(i.done){d++;by[i.t][0]++}})}return{t,d,p:t?Math.round(d/t*100):0,by}}
+const qb=(k,arr,ro)=>arr.map((x,i)=>`<label>${esc(x.q)}</label><div class="qa"><textarea rows="2" maxlength="400" ${ro?'readonly':''} placeholder="Short answer (max 400 characters)" oninput="qa('${k}',${i},this)">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i})">Delete</button>`}</div><div class="qcap mut">${x.a.length}/400</div>`).join('');
+function qa(k,i,el){A.qs[k][i].a=el.value.slice(0,400);save();el.parentElement.nextElementSibling.textContent=el.value.length+'/400'}
+function delQ(k,i){A.qs[k].splice(i,1);save();P.rep()}
+function addRandQ(k){A.qs[k].push({q:RANDOM_Q[Math.floor(Math.random()*RANDOM_Q.length)],a:''});save();P.rep()}
+function addQ(k){const e=$('#nq-'+k),v=e.value.trim().slice(0,150);if(v){A.qs[k].push({q:v,a:''});save();P.rep()}}
+function lockQ(k,b){if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent='Are you sure? This cannot be undone';return}A.ql[k]=1;save();P.rep()}
+
+function repCard(title,per,a,b,pa,pb,key,nk,defs){
+  const t=today();
+  if(t<b){
+    const tot=dd(a,b)+1,pass=dd(a,t)+1;
+    return`<div class="card"><h2>🔒 ${title}</h2><p class="mut">This report opens on ${fmt(b)} — ${dd(t,b)} days left.</p><div class="bar"><i style="width:${Math.min(100,pass/tot*100)}%"></i></div></div>`;
+  }
+  if(!A.qs[nk])A.qs[nk]=defs.map(q=>({q,a:''}));
+  const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p,cur=A.qs[key]||[],ro=!!A.ql[key];
+  const tr=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
+  return`<div class="card"><h2>${title}</h2><p>${s.d}/${s.t} tasks done — <b>%${s.p}</b> <span class="mut">(previous ${per}: %${pv.p}, change ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${tr}
+<h3 style="margin-top:1.2rem">Questions for this ${per} ${ro?'🔒':''}</h3>${cur.length?qb(key,cur,ro)+(ro?'<p class="mut">Your answers are locked.</p>':`<button class="g s" onclick="lockQ('${key}',this)">Lock answers</button>`):`<p class="mut">There were no questions for this ${per}; the questions below will be asked next ${per}.</p>`}
+<h3 style="margin-top:1.2rem">Questions for next ${per}</h3>${qb(nk,A.qs[nk],false)}<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="Add your own question"><button class="s" onclick="addQ('${nk}')">Add question</button><button class="g s" onclick="addRandQ('${nk}')">🎲 Random question</button></div></div>`;
+}
+P.rep=()=>{
+  const t=today(),wa=mon(t),wb=addD(wa,6),x=new Date();
+  const ma=D(new Date(x.getFullYear(),x.getMonth(),1)),mb=D(new Date(x.getFullYear(),x.getMonth()+1,0)),pma=D(new Date(x.getFullYear(),x.getMonth()-1,1)),pmb=D(new Date(x.getFullYear(),x.getMonth(),0));
+  const mNext=D(new Date(x.getFullYear(),x.getMonth()+1,1)).slice(0,7);
+  M(repCard('Weekly report','week',wa,wb,addD(wa,-7),addD(wa,-1),wa,addD(wa,7),["What did you move forward the most this week?","What did you struggle with?","What one thing will you do better next week?"])+repCard('Monthly report','month',ma,mb,pma,pmb,ma.slice(0,7),mNext,["What was your biggest win this month?","What did you neglect, and why?","What will you focus on next month?"]));
+};
+
+let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0};
+const fmtDuration=m=>{if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return r===0?h+(h==1?' hour':' hours'):h+' h '+r+' min'};
+const ft=s=>pad(Math.floor(s/60))+':'+pad(s%60);
+const clk=ms=>{const d=new Date(Date.now()+ms);return pad(d.getHours())+':'+pad(d.getMinutes())};
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();o.connect(c.destination);o.start();o.stop(c.currentTime+.35)}catch(e){}}
+P.pomo=()=>{
+  editIdx=-1;
+  const pr=A.presets.map((p,i)=>`<div class="tag ${pm.w==p.w&&pm.b==p.b?'on':''}"><span role="button" tabindex="0" style="cursor:pointer;flex:1" onclick="setP(${p.w},${p.b})"><b>${fmtDuration(p.w)}</b> focus / <b>${fmtDuration(p.b)}</b> break</span><span class="row" style="gap:.3rem"><button class="g s" onclick="editP(${i})">Edit</button><button class="g s d" onclick="delP(${i})">Delete</button></span></div>`).join('');
+  M(`<div class="card"><div class="mut" style="text-align:center" id="pl"></div><div class="tm" id="pt">${ft(pm.left)}</div><div class="row" style="justify-content:center"><button onclick="pS()">Start / Pause</button><button class="g" onclick="pR()">Reset</button></div><p id="pi" class="mut" style="text-align:center"></p></div><div class="card"><h2>Focus and break lengths</h2>${pr||'<p class="mut">Add a length.</p>'}<div class="row" style="margin-top:.7rem"><input id="cw" type="number" inputmode="numeric" min="1" max="600" placeholder="Focus min"><input id="cb" type="number" inputmode="numeric" min="1" max="600" placeholder="Break min"><button onclick="addP()">Add / Update</button></div><p class="mut" style="font-size:.85rem">After 3 focus sessions, the longest saved break is used.</p></div><div class="card"><h2>Stopwatch</h2><div class="tm" id="sw">${ft(pm.swT)}</div><div class="row" style="justify-content:center"><button onclick="swS()">Start / Stop</button><button class="g" onclick="clearInterval(pm.swI);pm.sw=0;pm.swT=0;P.pomo()">Reset</button></div></div>`);
+  pi();
+};
+function pi(){
+  const e=$('#pi'),l=$('#pl');if(!e)return;
+  l.textContent=pm.ph==='w'?`Session ${pm.n%3+1}/3 · ${fmtDuration(pm.w)}`:(pm.lg?'Long break':'Break');
+  e.textContent=pm.run?`Ends at: ${clk(pm.left*1000)}`:(pm.w>60&&pm.ph==='w'?`${pm.w} min = ${fmtDuration(pm.w)} · if you start now it ends at ${clk(pm.left*1000)}`:'');
+}
+function setP(w,b){clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,n:0,lg:0,iv:0};document.title=TITLE;P.pomo()}
+let editIdx=-1;
+function editP(i){const p=A.presets[i];$('#cw').value=p.w;$('#cb').value=p.b;editIdx=i}
+function delP(i){A.presets.splice(i,1);save();P.pomo()}
+function addP(){
+  const w=Math.round(+$('#cw').value),b=Math.round(+$('#cb').value);
+  if(w>0&&b>0&&w<=600&&b<=600){if(editIdx>=0){A.presets[editIdx]={w,b};editIdx=-1}else A.presets.push({w,b});save();setP(w,b)}
+}
+function pTick(){
+  pm.left=Math.max(0,Math.round((pm.end-Date.now())/1000));
+  const t=$('#pt');if(t)t.textContent=ft(pm.left);
+  document.title=ft(pm.left)+' · '+TITLE;
+  if(pm.left<=0){
+    beep();
+    if(pm.ph==='w'){pm.n++;pm.ph='b';pm.lg=pm.n%3===0?1:0;pm.left=(pm.lg?Math.max(pm.b,...A.presets.map(p=>p.b)):pm.b)*60}
+    else{pm.ph='w';pm.lg=0;pm.left=pm.w*60}
+    pm.end=Date.now()+pm.left*1000;
+  }
+  pi();
+}
+function pS(){
+  if(pm.run){clearInterval(pm.iv);pm.run=0;pi();return}
+  pm.run=1;pm.end=Date.now()+pm.left*1000;pi();pm.iv=setInterval(pTick,500);
+}
+function pR(){clearInterval(pm.iv);pm={...pm,run:0,ph:'w',left:pm.w*60,n:0,lg:0,iv:0};document.title=TITLE;P.pomo()}
+function swS(){
+  if(pm.sw){clearInterval(pm.swI);pm.sw=0;return}
+  pm.sw=1;const s=Date.now()-pm.swT*1000;
+  pm.swI=setInterval(()=>{pm.swT=Math.floor((Date.now()-s)/1000);const e=$('#sw');if(e)e.textContent=ft(pm.swT)},300);
+}
+
+const left=k=>{const n=Date.now();A[k]=(A[k]||[]).filter(t=>n-t<15*864e5);return 5-A[k].length};
+P.set=()=>{
+  const keys=Object.keys(DB.accounts);
+  const ac=keys.map((u,i)=>`<span class="tag ${DB.accounts[u]===A?'on':''}"><span>${esc(u)}</span>${DB.accounts[u]===A?'<span class="mut">active</span>':`<button class="g s" onclick="switchAcc(${i})">Switch</button>`}</span>`).join('');
+  M(`${m()}<div class="card"><h2>Account</h2><label>Username <span class="mut">(5 changes per 15 days — ${left('uc')} left)</span></label><div class="row"><input id="su" maxlength="20" value="${esc(A.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'')"><button onclick="chg('u')">Change</button></div><label style="display:block;margin-top:.8rem">Display name <span class="mut">(${left('nc')} left)</span></label><div class="row"><input id="sn" maxlength="30" value="${esc(A.nick)}"><button onclick="chg('n')">Change</button></div><label style="display:block;margin-top:.8rem">Bio</label><textarea id="sb" rows="2" maxlength="160" onchange="A.bio=this.value;save()">${esc(A.bio)}</textarea></div>
+<div class="card"><h2>Email and phone</h2>${['email','phone'].map(k=>`<label>${k=='email'?'Email':'Phone'} ${A.ver[k]?'✓ verified':''}</label><div class="row" style="margin-bottom:.6rem"><input id="s${k}" value="${esc(A[k]||'')}" ${k=='phone'?'inputmode="numeric" maxlength="15" oninput="this.value=this.value.replace(/[^0-9]/g,\'\')"':'type="email"'}><button onclick="vSend('${k}')">Send code</button></div>`).join('')}<div id="vz"></div></div>
+<div class="card"><h2>Password</h2><label>Current password</label><input id="op" type="password" autocomplete="current-password"><label>New password</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">Change password</button></div>
+<div class="card"><h2>Theme</h2><div class="row"><button class="${A.theme=='dark'?'':'g'}" onclick="th('dark')">Dark</button><button class="${A.theme=='light'?'':'g'}" onclick="th('light')">Light</button></div></div>
+<div class="card"><h2>Accounts</h2>${ac}<div style="margin-top:.6rem"><button class="g" onclick="A0=A;A=null;goTo('setup','home')">+ Add account</button></div></div>
+<div class="card"><h2>Reset system</h2><p class="mut">Tasks, history, progress, projects, report answers and timer lengths are erased. Your account details stay. Enter your password to confirm.</p><input id="rp" type="password" placeholder="Password" autocomplete="current-password"><button class="d" style="background:var(--no);color:#fff" onclick="resetSys()">Reset</button></div>
+<div class="card"><h2>Delete account</h2><p class="mut">Your account and all data are permanently deleted from this device.</p><input id="dp" type="password" placeholder="Password" autocomplete="current-password"><button style="background:var(--no)" onclick="delAcc()">Delete account</button></div>`);
+};
+function switchAcc(i){const k=Object.keys(DB.accounts)[i];A=null;loginDat={u:k,p:''};goTo('login','home')}
+function chg(k){
+  const key=k=='u'?'uc':'nc';
+  if(left(key)<=0){msg='You have used all 5 changes for the last 15 days.';return P.set()}
+  const v=$(k=='u'?'#su':'#sn').value.trim();if(!v)return;
+  if(k=='u'){
+    if(!userRe.test(v)){msg='Username must be 3-20 letters.';return P.set()}
+    const ex=findUser(v);if(ex&&ex!==A.u){msg='That username is taken.';return P.set()}
+    if(v===A.u)return;
+    delete DB.accounts[A.u];A.u=v;DB.accounts[v]=A;
+  }else{if(v===A.nick)return;A.nick=v}
+  A[key].push(Date.now());DB.last=A.nick;save();msg=`Saved. ${left(key)} changes left.`;shell();
+}
+function vSend(k){
+  const v=$('#s'+k).value.trim();
+  if(k==='phone'&&!/^[0-9]{10,15}$/.test(v)){msg='Phone must be digits only (10-15 digits).';return P.set()}
+  if(k==='email'&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){msg='Invalid email address.';return P.set()}
+  A[k]=v;A.ver[k]=false;codes[k]=String(Math.floor(100000+Math.random()*900000));save();
+  $('#vz').innerHTML=`<div class="note">Demo code (real delivery needs a server): <b>${codes[k]}</b></div><div class="row"><input id="vc" inputmode="numeric" placeholder="Code"><button onclick="vOk('${k}')">Onayla</button></div>`;
+}
+function vOk(k){if($('#vc').value===codes[k]){A.ver[k]=true;save();msg='Verified.'}else msg='Wrong code.';P.set()}
+async function chPw(){
+  if(A.pw!==await sha($('#op').value)){msg='Current password is wrong.';return P.set()}
+  const e=pwOk($('#np').value,A.u);if(e){msg=e;return P.set()}
+  A.pw=await sha($('#np').value);save();msg='Password changed.';P.set();
+}
+async function resetSys(){
+  if(A.pw!==await sha($('#rp').value)){msg='Wrong password; nothing was reset.';return P.set()}
+  clearInterval(pm.iv);const a=newAcc(A.u,A.nick,A.bio,A.pw,A.email,A.phone);
+  a.ver=A.ver;a.theme=A.theme;a.nc=A.nc;a.uc=A.uc;DB.accounts[A.u]=a;A=a;
+  pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,n:0,lg:0,iv:0};save();msg='System reset.';shell();
+}
+async function delAcc(){
+  if(A.pw!==await sha($('#dp').value)){msg='Wrong password; account not deleted.';return P.set()}
+  delete DB.accounts[A.u];A=null;DB.last='';save();view='welcome';goTo('welcome','home');
+}
+function th(t){A.theme=t;document.documentElement.dataset.t=t;save();P.set()}
+
+renderAppOrAuth();
+</script>
+</body>
+</html>
