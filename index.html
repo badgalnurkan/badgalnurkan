@@ -563,14 +563,7 @@ function renderAppOrAuth(){
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
     h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${t('username')}</label><input id="u" autocomplete="username" autocapitalize="none" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`);
   }
-  else if(view==='phone'){
-    h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${tr()?'Telefonla doğrula':'Verify by phone'}</h2>${m()}${phoneDat.err?`<div class="note" style="color:#b3261e">${esc(phoneDat.err)}</div>`:''}`+
-      (phoneDat.step===1
-        ?`<p class="mut">${tr()?'Numaranı yaz, Twilio ile SMS kodu gönderelim.':'Enter your number and we will send an SMS code via Twilio.'}</p><label>${t('phone')}</label><input id="ph" type="tel" inputmode="numeric" placeholder="905551112233" value="${esc(phoneDat.phone)}" oninput="this.value=this.value.replace(/[^0-9]/g,'');phoneDat.phone=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();phoneSend()}"><div class="row"><button onclick="phoneSend()" ${phoneDat.busy?'disabled':''}>${phoneDat.busy?(tr()?'Gönderiliyor…':'Sending…'):(tr()?'Kod gönder':'Send code')}</button><button class="g" onclick="phoneSkip()">${tr()?'Şimdilik geç':'Skip for now'}</button></div>`
-        :`<p class="mut">${tr()?'Kodu SMS ile gönderdik: ':'We sent the code by SMS to '}<b>+${esc(phoneDat.phone)}</b></p><label>${t('code')}</label><input id="c" inputmode="numeric" maxlength="6" value="${esc(phoneDat.code)}" oninput="this.value=this.value.replace(/[^0-9]/g,'');phoneDat.code=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();phoneCheck()}"><div class="row"><button onclick="phoneCheck()" ${phoneDat.busy?'disabled':''}>${phoneDat.busy?(tr()?'Kontrol…':'Checking…'):(tr()?'Doğrula ve devam et':'Verify and continue')}</button><button class="g" onclick="phoneDat.step=1;renderAppOrAuth()">${tr()?'Numarayı değiştir':'Change number'}</button></div>`)+
-      `<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('setup','home')">← ${t('newAccount')}</a></div>`);
-  }
-  else if(view==='setup')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>${t('phone')}</label><input id="t" type="tel" inputmode="numeric" maxlength="15" placeholder="${t('digitsOnly')}" value="${esc(formDat.t)}" oninput="this.value=this.value.replace(/[^0-9]/g,'');formDat.t=this.value"><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="goPhone()">${tr()?'Telefonla doğrula':'Verify by phone'}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='setup')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>${t('phone')}</label><input id="t" type="tel" inputmode="numeric" maxlength="15" placeholder="${t('digitsOnly')}" value="${esc(formDat.t)}" oninput="this.value=this.value.replace(/[^0-9]/g,'');formDat.t=this.value"><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('username')}</label><input id="u" autocapitalize="none"><div class="row"><button onclick="fSend('email')">${tr()?'E-posta ile kod gönder':'Send code by email'}</button><button onclick="fSend('phone')">${tr()?'SMS ile kod gönder':'Send code by SMS'}</button></div><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
@@ -628,11 +621,12 @@ async function login(){
   /* --- bulut girisi: her cihazda ayni hesap --- */
   if(cloud()&&(!a||!a.pw)){
     try{
-      const j=await sbSignIn(u,loginDat.p);
+      const mail=String(loginDat.e||(a&&a.mail)||(a&&a.email)||'').toLowerCase();
+      const j=await sbSignIn(u,loginDat.p,mail);
       if(j&&j.access_token){
         const data=await sbPull(u);
         const acc=data||norm({u,nick:(j.user&&j.user.user_metadata&&j.user.user_metadata.nick)||u});
-        acc.u=u;await setPw(acc,loginDat.p);
+        acc.u=u;acc.mail=mail||acc.mail;await setPw(acc,loginDat.p);
         DB.accounts[u]=acc;DB.last=acc.nick||u;DB.lastUser=u;
         DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(acc);loginDat={u:'',p:''};lastSig=signature(acc);
         applyTheme();save();goTo('app','home');greetThen();
@@ -658,8 +652,8 @@ async function setup(){
   if(!userRe.test(u))msg=t('usernameRules');
   else if(!n)msg=t('displayRequired');
   else if(findUser(u))msg=t('usernameTaken');
-  else if(!e&&!t)msg=t('emailRequired');
-  else if(e&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))msg=t('emailInvalid');
+  else if(!e)msg=tr()?'E-posta zorunlu (hesabın buna bağlı).':'Email is required (your account is tied to it).';
+  else if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))msg=t('emailInvalid');
   else if(t&&!/^[0-9]{10,15}$/.test(t))msg=t('phoneInvalid');
   else msg=pwOk(p,u);
   if(msg)return renderAppOrAuth();
@@ -667,7 +661,7 @@ async function setup(){
   let cloudOK=false,cloudErr='';
   if(cloud()){
     try{
-      const j=await sbSignUp(u,p,n,t?'+'+t:'');
+      const j=await sbSignUp(u,p,n,e);
       if(j&&j.access_token){sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});cloudOK=true}
       else if(j&&j.id){/* e-posta onayi acik: oturum yok, yerel devam */}
     }catch(err){
@@ -677,7 +671,7 @@ async function setup(){
   }
   const a=newAcc(u,n,formDat.b,'',e,t);await setPw(a,p);
   DB.accounts[u]=a;DB.last=n;DB.lastUser=u;lastSig=signature(a);formDat={u:'',n:'',b:'',e:'',t:'',p:''};
-  A0=null;A=a;applyTheme();save();goTo('app','home');greetThen();
+  a.mail=String(e||'').toLowerCase();A0=null;A=a;applyTheme();save();goTo('app','home');greetThen();
   if(cloudOK){sbPush();toast(tr()?'Bulut hesabı oluşturuldu, verilerin eşitleniyor.':'Cloud account created, syncing your data.');}
   else if(cloudErr){toast((tr()?'Bulut hesabı kurulamadı, veriler bu cihazda: ':'Cloud account failed, data stays on this device: ')+cloudErr);}
 }
@@ -963,14 +957,13 @@ async function sb(path,opt){
   return j;
 }
 /* e-posta/telefon -> supabase Auth */
-const sbEmail=u=>(u.u||'')+'@iydu.app';
-async function sbSignUp(u,pass,nick,phone){
-  const body={email:sbEmail(u),password:pass,data:{username:u,nick:nick,phone:phone||''}};
-  if(phone)body.phone=phone;
-  return sb('/auth/v1/signup',{method:'POST',body});
+/* e-posta: kullanicinin GERCEK adresi (yoksa kullanici adindan turetilen yerel adres) */
+const sbEmail=(u,a)=>((a&&a.email)||(u.u||'')+'@iydu.app').toLowerCase();
+async function sbSignUp(u,pass,nick,email){
+  return sb('/auth/v1/signup',{method:'POST',body:{email:String(email).toLowerCase(),password:pass,data:{username:u,nick:nick}}});
 }
-async function sbSignIn(u,pass){
-  const j=await sb('/auth/v1/token?grant_type=password',{method:'POST',body:{email:sbEmail(u),password:pass}});
+async function sbSignIn(u,pass,email){
+  const j=await sb('/auth/v1/token?grant_type=password',{method:'POST',body:{email:String(email||sbEmail(u)).toLowerCase(),password:pass}});
   if(j&&j.access_token)sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
   return j;
 }
@@ -982,16 +975,6 @@ async function sbRefresh(){
     if(j&&j.access_token){sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});return true}
   }catch(e){}
   return false;
-}
-/* telefon: Supabase -> Twilio SMS */
-async function sbPhoneStart(phone){
-  const j=await sb('/auth/v1/otp',{method:'POST',body:{phone:phone,create_user:true}});
-  return j;
-}
-async function sbPhoneVerify(phone,code,pass,nick,username){
-  const j=await sb('/auth/v1/verify',{method:'POST',body:{phone:phone,token:code,type:'sms'}});
-  if(j&&j.access_token)sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
-  return j;
 }
 /* bulut kaydi: kullanici basina tek satir (profil + tum uygulama verisi) */
 async function sbPush(){
@@ -1014,36 +997,6 @@ async function sbPull(u){
     return row.data;
   }catch(e){return null}
 }
-/* ---- telefon (Twilio/Supabase) dogrulama: yeni hesap ---- */
-let phoneDat={phone:'',code:'',step:1,busy:false,err:''};
-function goPhone(){phoneDat={phone:formDat.t||'',code:'',step:1,busy:false,err:''};goTo('phone','home')}
-async function phoneSend(){
-  const ph=String(phoneDat.phone||'').replace(/[^0-9]/g,'');
-  if(!/^[1-9][0-9]{9,14}$/.test(ph)){phoneDat.err=tr()?'Ülke kodlu numara gir (örn. 905551112233).':'Enter number with country code (e.g. 905551112233).';return renderAppOrAuth()}
-  phoneDat.busy=true;phoneDat.err='';renderAppOrAuth();
-  try{
-    await sbPhoneStart('+'+ph);
-    phoneDat.step=2;phoneDat.phone=ph;phoneDat.busy=false;
-  }catch(e){phoneDat.busy=false;phoneDat.err=(tr()?'SMS gönderilemedi: ':'SMS failed: ')+e.message}
-  renderAppOrAuth();
-}
-async function phoneCheck(){
-  if(!/^[0-9]{6}$/.test(phoneDat.code||'')){phoneDat.err=tr()?'6 haneli kod gir.':'Enter the 6-digit code.';return renderAppOrAuth()}
-  phoneDat.busy=true;phoneDat.err='';renderAppOrAuth();
-  try{
-    const u=$('#u')?$('#u').value.trim():'';
-    const n=$('#n')?$('#n').value.trim():'';
-    const pass=$('#p')?$('#p').value:'';
-    if(!u||!pass){phoneDat.busy=false;phoneDat.err=tr()?'Önce kullanıcı adı ve şifre gir.':'Enter username and password first.';return renderAppOrAuth()}
-    const bad=pwOk(pass,u);
-    if(bad){phoneDat.busy=false;phoneDat.err=bad;return renderAppOrAuth()}
-    await sbPhoneVerify('+'+phoneDat.phone,phoneDat.code,pass,n,u);
-    phoneDat.busy=false;
-    await setup(); /* ayni akis: yerel hesap + bulut */
-  }catch(e){phoneDat.busy=false;phoneDat.err=(tr()?'Kod doğrulanamadı: ':'Code failed: ')+e.message;renderAppOrAuth()}
-}
-function phoneSkip(){goTo('setup','home')}
-
 function applyTheme(){if(!A)return;document.documentElement.dataset.t=DB.beige?'beige':A.theme}
 function th(t){A.theme=t;applyTheme();save();P.set()}
 function toggleBeige(){DB.beige=!DB.beige;applyTheme();save();P.pc()}
