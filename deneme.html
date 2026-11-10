@@ -11,7 +11,7 @@
 :root[data-t=dark]{--bg:#221914;--card:#2e221b;--ink:#f3e8da;--mut:#b09a84;--acc:#d2a074;--acc2:#6b4a33;--ok:#7bbd83;--no:#d7796a;--ln:#40302a;--sh:0 12px 32px #0006;--okbg:#2a3a2c}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px);font-size:clamp(16px,.35vw + 11px,24px);overflow-y:scroll}
-@media(min-width:1600px){html{font-size:clamp(20px,1.05vw,36px)}}
+@media(min-width:1600px){html{font-size:16px}}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,Ubuntu,sans-serif;line-height:1.6;transition:background .4s,color .4s;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 #app{display:flex;flex-direction:column;flex:1;width:100%}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -116,7 +116,8 @@ footer{text-align:center;padding:1rem;color:var(--mut);font-size:.8rem;backgroun
 .mini-popup{animation:mpIn .32s cubic-bezier(.2,.7,.2,1) both}
 /* TV / uzaktan kumanda ve klavye: odak gorunur, hedefler buyuk */
 aside a:focus-visible,button:focus-visible,.dot:focus-visible,.mini-dot:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
-@media(min-width:1700px) and (min-aspect-ratio:16/9){html{font-size:clamp(20px,1.05vw,30px)}aside{width:18.5rem}}
+@media(min-width:1700px) and (min-aspect-ratio:16/9){
+html{font-size:16px}html{font-size:16px}aside{width:18.5rem}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 /* mobil menu: takilma/jitter yok, dokunma hedefleri buyuk, smooth kaydirma */
 aside{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x;scroll-behavior:smooth;scrollbar-width:none}
@@ -156,19 +157,40 @@ aside a{flex:0 0 auto;touch-action:manipulation;-webkit-tap-highlight-color:tran
   .qa{flex-direction:column}.qa button{align-self:flex-end}
   .dot{width:clamp(2.4rem,15vw,3rem);height:clamp(2.4rem,15vw,3rem)}
 }
-/* tablet */
+/* tablet: kendi olcusu */
 @media(min-width:601px) and (max-width:1024px){
   aside{width:13.5rem}
   main{max-width:44rem}
+  html{font-size:16px}
 }
 /* televizyon / cok genis ekran: uzaktan kumanda icin buyuk hedefler ve odak */
-@media(min-width:1700px),(min-height:1000px) and (min-aspect-ratio:16/9){
+@media(min-width:1700px){
+  button{min-height:3rem;padding:.65em 1.5em}
+  aside a{padding:.8em 1.1em}
+  .dot{width:3.4rem;height:3.4rem}
+  .shell{max-width:92rem}
+  main{max-width:60rem}
+}
+/* TV: uzaktan kumanda icin buyuk hedefler, ama yazi boyu sabit */
+@media(min-height:1000px) and (min-aspect-ratio:16/9) and (pointer:coarse){
   button{min-height:3.25rem;padding:.7em 1.6em}
   aside a{padding:.85em 1.15em}
   .dot{width:3.6rem;height:3.6rem}
 }
 @media(min-width:2400px){.shell{max-width:110rem}main{max-width:72rem}}
 :focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+/* ---- cihaza gore ince ayar (data-dev) ---- */
+html[data-dev=phone] .shell{padding:0 .55rem}
+html[data-dev=phone] .card{padding:.95rem;border-radius:18px}
+html[data-dev=phone] .big{font-size:clamp(2rem,9vw,3rem)}
+html[data-dev=phone] .dot{width:clamp(2.3rem,14vw,2.9rem);height:clamp(2.3rem,14vw,2.9rem)}
+html[data-dev=phone] header.top{padding:.7rem .8rem;font-size:.9rem}
+html[data-dev=tablet] .shell{padding:0 .9rem;gap:.9rem}
+html[data-dev=tablet] aside{width:14rem}
+html[data-dev=tv] .shell{max-width:96rem}
+html[data-dev=desktop-xl] main{max-width:60rem}
+html[data-orient=landscape][data-dev=phone] .welcome-screen{min-height:auto}
+html[data-orient=landscape][data-dev=phone] .center{min-height:auto;padding:1rem}
 .mini-popup::before{content:'';position:absolute;top:-6px;right:1.6rem;width:12px;height:12px;background:var(--card);border-left:1px solid var(--ln);border-top:1px solid var(--ln);transform:rotate(45deg)}
 @media(max-width:560px){.mini-popup{width:calc(100vw - 1rem);border-radius:16px}}
 @media(max-height:520px){.mini-popup{max-height:88vh}}
@@ -601,6 +623,26 @@ function pickTheme(v){
 }
 /* acilista secilen temayi uygula */
 try{const st=getItem('b1.theme');if(st==='light'||st==='dark')document.documentElement.dataset.t=st}catch(e){}
+
+/* ---- cihaz tanima: olculeri cihazin kendisine gore uygula ---- */
+function detectDevice(){
+  const w=innerWidth,h=innerHeight,coarse=window.matchMedia('(pointer:coarse)').matches||(navigator.maxTouchPoints||0)>1;
+  const short=Math.min(w,h),long=Math.max(w,h);
+  let dev='desktop';
+  /* telefon/tablet: kisa kenar + dokunmatik; TV: buyuk ekran; masaustu: geri kalan */
+  if(short<=600&&(coarse||short<=480))dev='phone';
+  else if(short<=900&&coarse)dev='tablet';
+  else if(short<=1024&&long<=1400)dev='tablet';
+  else if(coarse&&long>1024)dev='tv';
+  else if(long>=1700)dev='desktop-xl';
+  else if(long<=900)dev='mobile-narrow';
+  document.documentElement.dataset.dev=dev;
+  document.documentElement.dataset.orient=h>=w?'portrait':'landscape';
+  return dev;
+}
+try{detectDevice()}catch(e){}
+window.addEventListener('resize',()=>{clearTimeout(window.__dvT);window.__dvT=setTimeout(()=>{try{detectDevice()}catch(e){}},180)});
+window.addEventListener('orientationchange',()=>{try{detectDevice()}catch(e){}});
 
 function renderAppOrAuth(){
   if(A){shell();return}
