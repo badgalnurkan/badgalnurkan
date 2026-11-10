@@ -31,17 +31,11 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  await ev("swS()");await sleep(300);const sw1=await ev("$('#sw').textContent");await ev("swR()");
  ck('calisirken S.dss', /^\d\d?\.\d\d$/.test(sw1), sw1);
  // FOOTER
- ck('footer: giris butonu', await ev("!!document.querySelector('#back-login')"));
- ck('footer: welcome butonu', await ev("!!document.querySelector('#back-welcome')"));
- const label=await ev("document.querySelector('#back-login').textContent");
+ ck('footer: tek buton', (await ev("document.querySelectorAll('footer button').length"))===1, await ev("document.querySelectorAll('footer button').length"));
+ const label=await ev("document.querySelector('#back-welcome').textContent.trim()");
  ck('cift ok yok', !label.includes('← ←') && (label.match(/←/g)||[]).length===1, JSON.stringify(label));
- await ev("document.querySelector('#back-login').click()");await sleep(700);
- ck('giris ekranina gitti', (await ev("view"))==='login' && /Giriş yap|Sign in/.test(await ev("document.body.innerText")), await ev("view"));
- // giris ekranindaki "welcome" baglantisi
- await ev("goTo('app','home')").catch(()=>{});
- await ev("A=norm(DB.accounts['deneme']);goTo('app','home')");await sleep(500);
  await ev("document.querySelector('#back-welcome').click()");await sleep(700);
- ck('welcome ekranina gitti', (await ev("view"))==='welcome' && /HOŞ GELDİN|WELCOME/.test(await ev("document.body.innerText")), await ev("view"));
+ ck('footer welcome ekranina gitti', (await ev("view"))==='welcome' && /HOŞ GELDİN|WELCOME/.test(await ev("document.body.innerText")), await ev("view"));
  // welcome -> giris -> hesap hatirlama
  await ev("goTo('login','home')");await sleep(400);
  ck('giris ekraninda kullanici hatirlandi', (await ev("$('#u').value"))==='deneme', await ev("$('#u').value"));

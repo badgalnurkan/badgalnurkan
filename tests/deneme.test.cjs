@@ -151,6 +151,51 @@ test('giriş ekranına dönüş butonu var', () => {
 // --- yüzdelik
 test('%1 = 1 gün: yüzdelik koşulsuz her gün artıyor', () => {
   const body = scriptBody();
-  assert.ok(/const dayCount=\(\)=>Math\.max\(1,dd\(startDay\(\),today\(\)\)\+1\)/.test(body), 'gun sayisi hesabi yok');
-  assert.ok(/const pct=\(\)=>dayCount\(\)/.test(body), 'pct gun sayisina bagli degil');
+  assert.ok(/const pct=\(\)=>Math\.max\(1,dd\(pctStart\(\),today\(\)\)\+1\)/.test(body), 'yuzde her gun +1 hesabi yok');
+  assert.ok(/pctFrom/.test(body), 'yuzde baslangici ayri tutulmuyor');
+});
+
+// --- çapraz cihaz / tarayıcı dayanıklılığı
+test('hesap kaydı her zaman localStorage içinde tutulur (çerez reddedilse de hatırlanır)', () => {
+  const body = scriptBody();
+  assert.ok(/const storeAcct=\(\)=>/.test(body), 'storeAcct yok');
+  assert.ok(/storeAcct\(\)\|\|store\(\)/.test(body));
+});
+
+test('şifreler PBKDF2 + tuz ile saklanıyor, eski kayıtlar doğrulanabiliyor', () => {
+  const body = scriptBody();
+  assert.ok(/async function hashPw\(p,salt\)/.test(body));
+  assert.ok(/PBKDF2/.test(body) && /iterations:120000/.test(body));
+  assert.ok(/async function pwMatch\(a,p\)/.test(body));
+  assert.ok(!/a\.pw===await sha\(loginDat\.p\)/.test(body), 'eski duz hash karsilastirmasi kalmis');
+});
+
+test('takvim sabit konumlu katman: portal + z-index + konumlama', () => {
+  const body = scriptBody();
+  assert.ok(/\.mini-popup\{display:none;position:fixed/.test(html), 'position:fixed yok');
+  assert.ok(/z-index:99999/.test(html));
+  assert.ok(/function placeMiniCal\(\)/.test(body), 'konumlama yok');
+  assert.ok(/parentElement!==document\.body\)document\.body\.appendChild\(mc0\)/.test(body), 'portal yok');
+  assert.ok(/addEventListener\('resize'/.test(body) && /addEventListener\('scroll'/.test(body));
+});
+
+test('footer tek buton ve karşılama ekranına gidiyor', () => {
+  assert.ok((html.match(/<footer>/g) || []).length === 1);
+  assert.ok(/id="back-welcome"[^>]*onclick="goHome\(\)"/.test(html));
+  assert.ok(!/id="back-login"/.test(html), 'ikinci buton kalmis');
+  assert.ok(!/loginBack:'←/.test(html), 'metinde cift ok kalmis');
+});
+
+test('yüzde görevlere/geçmişe bağlı değil, ayrı sayaç', () => {
+  const body = scriptBody();
+  assert.ok(/const pctStart=\(\)=>/.test(body));
+  assert.ok(!/const pct=\(\)=>1\+succ\(\)/.test(body), 'yuzde hala gorevlere bagli');
+  assert.ok(/pctFrom/.test(body));
+});
+
+test('tüm ekran boyutları için duyarlı kurallar', () => {
+  assert.ok(/@media\(max-width:900px\)/.test(html) && /@media\(max-width:560px\)/.test(html));
+  assert.ok(/@media\(min-width:1400px\)/.test(html));
+  assert.ok(/max-aspect-ratio:3\/4/.test(html), 'portre oran kurali yok');
+  assert.ok(/max-height:520px/.test(html), 'yatay/dusuk yukseklik kurali yok');
 });

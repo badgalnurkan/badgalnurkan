@@ -89,7 +89,9 @@ h1,h2{font-size:1.3rem}h3{font-size:1.05rem}
 footer{text-align:center;padding:1rem;color:var(--mut);font-size:.8rem;background:var(--card);border-top:1px solid var(--ln);width:100%;margin-top:auto}
 #ck[hidden]{display:none}
 #ck{position:fixed;left:1rem;right:1rem;bottom:calc(1rem + env(safe-area-inset-bottom,0px));z-index:99;background:var(--card);border:1px solid var(--acc);border-radius:14px;padding:1rem;display:flex;gap:.8rem;flex-wrap:wrap;align-items:center;justify-content:space-between;max-width:42rem;margin:auto;box-shadow:var(--sh)}
-.mini-popup{display:none;position:absolute;right:1rem;top:100%;background:var(--card);border:1px solid var(--ln);border-radius:18px;padding:1rem;box-shadow:var(--sh);z-index:99;width:min(18rem,calc(100vw - 2rem));text-align:center}
+.mini-popup{display:none;position:fixed;top:0;left:0;right:auto;background:var(--card);border:1px solid var(--ln);border-radius:18px;padding:clamp(.7rem,2vw,1rem);box-shadow:0 18px 50px #00000055;z-index:99999;width:min(20rem,calc(100vw - 1.2rem));max-height:min(78vh,34rem);overflow:auto;text-align:center;-webkit-overflow-scrolling:touch;touch-action:manipulation}
+#mini-backdrop{position:fixed;inset:0;background:transparent;z-index:99998}
+#mini-backdrop[hidden]{display:none}
 .mini-cal-grid{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.5rem;justify-content:center}
 .mini-dot{position:relative;width:2rem;height:2rem;border-radius:50%;background:var(--ln);display:grid;place-items:center;font-size:.7rem;color:var(--mut)}
 .mini-dot.td{outline:2px solid var(--acc);font-weight:700;color:var(--acc)}
@@ -112,6 +114,12 @@ footer{text-align:center;padding:1rem;color:var(--mut);font-size:.8rem;backgroun
 #top-date-trigger.lit{color:#7a5636;background:#f7ecdc;box-shadow:0 6px 18px #8a5a3a2a}
 #top-date-trigger small{font-size:.72rem;opacity:.85;font-weight:600}
 .mini-popup{animation:mpIn .32s cubic-bezier(.2,.7,.2,1) both}
+.mini-popup::before{content:'';position:absolute;top:-6px;right:1.6rem;width:12px;height:12px;background:var(--card);border-left:1px solid var(--ln);border-top:1px solid var(--ln);transform:rotate(45deg)}
+@media(max-width:560px){.mini-popup{width:calc(100vw - 1rem);border-radius:16px}}
+@media(max-height:520px){.mini-popup{max-height:88vh}}
+.ft-link{display:inline-flex;align-items:center;gap:.4em;min-height:2.4rem;padding:.45em 1.1em;border-radius:999px;border:1.5px solid var(--ln);background:transparent;color:var(--acc);font-weight:600;font-size:.85rem;cursor:pointer;transition:transform .25s,border-color .25s,background .25s,color .25s}
+.ft-link:hover{border-color:var(--acc);background:var(--card);transform:translateY(-1px) scale(1.04)}
+.ft-link:active{transform:scale(.97)}
 @keyframes mpIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
 .mini-cal-grid .mini-dot{cursor:pointer;border:0;padding:0;font:inherit;min-height:0;box-shadow:none;display:grid;place-items:center;width:2rem;height:2rem;border-radius:50%}
 :root[data-t=beige] #top-date-trigger.lit{background:#efe0c9!important;color:#5c3f28!important}
@@ -249,10 +257,18 @@ const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
 const store=()=>{try{return localStorage.getItem('b1ck')==='0'?sessionStorage:localStorage}catch(e){return null}};
 let DB;try{DB=JSON.parse(store().getItem('b1')||'')}catch(e){}
-DB=DB&&DB.accounts?DB:{accounts:{},last:'',lastUser:'',lock:{},lang:'en',beige:false};
+let DBraw=null;try{DBraw=JSON.parse((storeAcct()||store()).getItem('b1')||'')}catch(e){}
+DB=DBraw&&DBraw.accounts?DBraw:{accounts:{},last:'',lastUser:'',lock:{},lang:'en',beige:false};
 if(!DB.lang)DB.lang='en';if(DB.beige===undefined)DB.beige=false;if(!DB.lastUser)DB.lastUser='';
 document.documentElement.lang=DB.lang;
-const save=()=>{try{store().setItem('b1',JSON.stringify(DB))}catch(e){}};
+const save=()=>{
+  const g=storeAcct()||store();if(!g)return;
+  try{
+    g.setItem('b1',JSON.stringify(DB));
+    const o=store();
+    if(o&&o!==g)o.setItem('b1',JSON.stringify({accounts:DB.accounts,last:DB.last,lastUser:DB.lastUser,lock:DB.lock,lang:DB.lang,beige:DB.beige}));
+  }catch(e){}
+};
 function ck(v){try{localStorage.setItem('b1ck',String(v))}catch(e){}$('#ck').hidden=true;save()}
 try{if(localStorage.getItem('b1ck')===null)$('#ck').hidden=false}catch(e){}
 const sysTheme=()=>(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
@@ -316,7 +332,7 @@ takeNote:'Note',newAccountTitle:'Create account',back:'Back',signInTitle:'Sign i
 remembered:'Remembered on this device',notYou:'Not you?',savedUsers:'Accounts on this device',useAccount:'Sign in',
 wrongLogin:'Wrong username or password. Attempts left:',wrongLoginKnown:'Password is wrong for {u}. Attempts left:',
 totalDays:'Total days',everyDayCounts:'Every day since you started counts — %1 = 1 day. Nothing else is required.',
-daysRecorded:'days recorded',beigeOn:'Light beige look is on',beigeOff:'Light beige look is off',welcomeUser:'Welcome back,',
+daysRecorded:'days recorded',pctTitle:'Daily percentage',pctHint:'Goes up by 1 every day — independent of tasks and other stats.',backWelcome:'Back to the welcome screen',beigeOn:'Light beige look is on',beigeOff:'Light beige look is off',welcomeUser:'Welcome back,',
 noAccountYet:'No account on this device yet',currentAccount:'Current account',
 },
 tr:{welcome:'HOŞ GELDİN',continue:'Devam →',howItWorks:'Nasıl çalışır',contact:'Bana ulaş',login:'Giriş yap',create:'Hesap oluştur',forgot:'Şifremi unuttum',
@@ -348,7 +364,7 @@ takeNote:'Not',newAccountTitle:'Hesap oluştur',back:'Geri',signInTitle:'Giriş 
 remembered:'Bu cihazda hatırlanıyor',notYou:'Sen değil misin?',savedUsers:'Bu cihazdaki hesaplar',useAccount:'Giriş yap',
 wrongLogin:'Kullanıcı adı veya şifre yanlış. Kalan deneme:',wrongLoginKnown:'{u} için şifre yanlış. Kalan deneme:',
 totalDays:'Toplam gün',everyDayCounts:'Başladığın günden beri her gün sayılır — %1 = 1 gün. Başka bir koşul yok.',
-daysRecorded:'kayıtlı gün',beigeOn:'Açık bej görünüm açık',beigeOff:'Açık bej görünüm kapalı',welcomeUser:'Tekrar hoş geldin,',
+daysRecorded:'kayıtlı gün',pctTitle:'Günlük yüzde',pctHint:'Her gün 1 artar — görevlerden ve diğer sayılardan bağımsızdır.',backWelcome:'Karşılama ekranına dön',beigeOn:'Açık bej görünüm açık',beigeOff:'Açık bej görünüm kapalı',welcomeUser:'Tekrar hoş geldin,',
 noAccountYet:'Bu cihazda henüz hesap yok',currentAccount:'Aktif hesap',
 }
 };
@@ -382,11 +398,30 @@ const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
 const userRe=new RegExp('^['+LETTERS+']{3,20}$');
 function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme()})}
 function norm(a){
-  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},fog:true};
+  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},fog:true,pctFrom:today()};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
   return a;
 }
 const findUser=u=>Object.keys(DB.accounts).find(k=>k.toLowerCase()===String(u).toLowerCase());
+/* hesap kaydi her zaman localStorage'da tutulur: cerez reddedilse bile kullanici hatirlanir */
+const storeAcct=()=>{try{return localStorage}catch(e){return store()}};
+const rndHex=n=>{const a=new Uint8Array(n);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(let i=0;i<n;i++)a[i]=Math.floor(Math.random()*256);return[...a].map(x=>x.toString(16).padStart(2,'0')).join('')};
+/* sifre: PBKDF2 + tuz (yeni kayitlar), eski kayitlar icin geriye donuk dogrulama */
+async function hashPw(p,salt){
+  salt=salt||rndHex(16);
+  try{
+    const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']);
+    const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:120000,hash:'SHA-256'},key,256);
+    return {pw:'p2$'+salt+'$'+[...new Uint8Array(bits)].map(x=>x.toString(16).padStart(2,'0')).join(''),salt};
+  }catch(e){return {pw:'p1$'+salt+'$'+await sha(salt+'|'+p),salt}}
+}
+async function pwMatch(a,p){
+  if(!a||!a.pw)return false;
+  const v=String(a.pw);
+  if(v.indexOf('p2$')===0||v.indexOf('p1$')===0){const r=await hashPw(p,v.split('$')[1]);return r.pw===v}
+  return v===await sha(p);
+}
+async function setPw(a,p){const r=await hashPw(p);a.pw=r.pw;a.salt=r.salt;a.pwAt=Date.now()}
 function roll(){
   const t=today();
   if(A.day!==t){
@@ -400,9 +435,12 @@ const items=d=>d===today()?A.tasks.map(x=>({t:x.t,done:x.s==='done'})):(A.hist[d
 const okDay=d=>{const i=items(d);return i.length>0&&i.every(x=>x.done)};
 const succ=()=>{let n=0;Object.keys(A.hist).forEach(d=>{if(d!==today()&&okDay(d))n++});if(okDay(today()))n++;return n};
 /* %1 = 1 gun: kayit gununden bugune kadar gecen her gun bir puan. Baska kosul yok. */
-const startDay=()=>{const ks=Object.keys(A.hist||{}).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();return ks.length?ks[0]:today()};
-const dayCount=()=>Math.max(1,dd(startDay(),today())+1);
-const pct=()=>dayCount(),lvl=()=>1+Math.floor((dayCount()-1)/7);
+/* yuzde: bagimsiz sayac. Her takvim gunu +1; gorevlere/gecmise bagli degil, asla ziplamaz. */
+const pctStart=()=>{if(!A.pctFrom||!/^\d{4}-\d{2}-\d{2}$/.test(A.pctFrom)){A.pctFrom=today();save()}return A.pctFrom};
+const pct=()=>Math.max(1,dd(pctStart(),today())+1);
+const dayCount=pct;
+const startDay=pctStart;
+const lvl=()=>1+Math.floor((pct()-1)/7);
 
 function pwOk(p,u){
   if(p.length<8)return'Password must be at least 8 characters.';
@@ -486,7 +524,7 @@ async function login(){
   const key=findUser(u),k=(key||u).toLowerCase(),L=DB.lock[k]||{f:0,lv:0,until:0};
   if(Date.now()<L.until){msg=`${t('locked')} ${fmtMin(Math.ceil((L.until-Date.now())/60000))}.`;return renderAppOrAuth()}
   const a=key?DB.accounts[key]:null;
-  if(a&&a.pw===await sha(loginDat.p)){
+  if(a&&await pwMatch(a,loginDat.p)){
     DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(a);DB.last=a.nick;DB.lastUser=a.u;loginDat={u:'',p:''};
     applyTheme();save();goTo('app','home');greetThen();return;
   }
@@ -507,7 +545,7 @@ async function setup(){
   else if(t&&!/^[0-9]{10,15}$/.test(t))msg=t('phoneInvalid');
   else msg=pwOk(p,u);
   if(msg)return renderAppOrAuth();
-  const a=newAcc(u,n,formDat.b,await sha(p),e,t);
+  const a=newAcc(u,n,formDat.b,'',e,t);await setPw(a,p);
   DB.accounts[u]=a;DB.last=n;DB.lastUser=u;formDat={u:'',n:'',b:'',e:'',t:'',p:''};
   A0=null;A=a;applyTheme();save();goTo('app','home');greetThen();
 }
@@ -521,12 +559,34 @@ function fSend(k){
 async function fReset(u){
   if($('#c').value!==codes[u]){msg=t('wrongCode');return renderAppOrAuth()}
   const e=pwOk($('#p').value,u);if(e){msg=e;return renderAppOrAuth()}
-  DB.accounts[u].pw=await sha($('#p').value);delete codes[u];DB.lock[u.toLowerCase()]={f:0,lv:0,until:0};save();
+  await setPw(DB.accounts[u],$('#p').value);delete codes[u];DB.lock[u.toLowerCase()]={f:0,lv:0,until:0};save();
   view='login';msg=t('resetDone');renderAppOrAuth();
 }
 
 const NAV=NAV_KEYS;
-function toggleMiniCal(e){if(e)e.stopPropagation();const el=$('#mini-cal');if(el){const open=el.style.display==='block';el.style.display=open?'none':'block';if(!open){el.style.animation='none';void el.offsetWidth;el.style.animation=''}}}
+function closeMiniCal(){const el=$('#mini-cal');if(el)el.style.display='none';const bd=$('#mini-backdrop');if(bd)bd.hidden=true}
+function placeMiniCal(){
+  const el=$('#mini-cal'),trig=$('#top-date-trigger');if(!el||!trig)return;
+  el.style.display='block';
+  const r=trig.getBoundingClientRect(),w=el.offsetWidth,h=el.offsetHeight,vw=innerWidth,vh=innerHeight,m=8;
+  let left=Math.min(Math.max(m,r.right-w),vw-w-m);
+  let top=r.bottom+8;
+  if(top+h>vh-m&&r.top-h-8>m)top=Math.max(m,r.top-h-8);
+  if(top+h>vh-m)top=Math.max(m,vh-h-m);
+  el.style.left=Math.round(left)+'px';el.style.top=Math.round(top)+'px';
+  el.style.animation='none';void el.offsetWidth;el.style.animation='';
+}
+function toggleMiniCal(e){
+  if(e){e.stopPropagation();e.preventDefault()}
+  const el=$('#mini-cal');if(!el)return;
+  if(el.style.display==='block'){closeMiniCal();return}
+  let bd=$('#mini-backdrop');
+  if(!bd){bd=document.createElement('div');bd.id='mini-backdrop';bd.onclick=ev=>{ev.stopPropagation();closeMiniCal()};document.body.appendChild(bd)}
+  bd.hidden=false;
+  placeMiniCal();
+}
+window.addEventListener('resize',()=>{const el=$('#mini-cal');if(el&&el.style.display==='block')placeMiniCal()});
+window.addEventListener('scroll',()=>{const el=$('#mini-cal');if(el&&el.style.display==='block')placeMiniCal()},true);
 /* header'daki tarih (sag ust) = 10.11: tiklaninca tum arayuzde acik bej tema */
 /* 10.11 (header sag ust tarih): sayinin uzerine gelince veya tiklaninca acik bej.
    Tiklamada takvim ACIK kalir (arkada birakilmaz); sadece tiklanan sayi ve tum arayuz bej olur. */
@@ -542,7 +602,7 @@ function miniClick(e,k){
   if(el){el.classList.remove('lit');void el.offsetWidth;el.classList.add('lit');setTimeout(()=>el.classList.remove('lit'),900)}
   toast(DB.beige?t('beigeOn'):t('beigeOff'));
   if(A&&document.querySelector('aside')){shell();if(pg==='pc')P.pc()}
-  const g=$('#mini-cal');if(g)g.style.display='block';
+  const g=$('#mini-cal');if(g){g.style.display='block';placeMiniCal()}
   const again=g?[...g.querySelectorAll('.mini-dot')].find(x=>x.title===fmt(k)):null;
   if(again){again.classList.add('lit');setTimeout(()=>again.classList.remove('lit'),900)}
 }
@@ -550,7 +610,7 @@ function fadeDot(el,on){
   if(!el||!el.classList)return;
   if(on)el.classList.add('lit');else el.classList.remove('lit');
 }
-window.addEventListener('click',e=>{const mc=$('#mini-cal'),t=$('#top-date-trigger');if(mc&&mc.style.display==='block'&&t&&!t.contains(e.target)&&!mc.contains(e.target))mc.style.display='none'});
+window.addEventListener('click',e=>{const mc=$('#mini-cal'),t=$('#top-date-trigger');if(mc&&mc.style.display==='block'&&t&&!t.contains(e.target)&&!mc.contains(e.target))closeMiniCal()});
 function confirmLogout(){
   openModal('logout-modal',`<div style="text-align:center"><h2>${t('logout')}</h2><p class="mut">${t('logoutQ')}</p><div class="row" style="justify-content:center;margin-top:1.2rem"><button onclick="closeModal('logout-modal');goLogin()">${t('yes')}</button><button class="g" onclick="closeModal('logout-modal')">${t('no')}</button></div></div>`);
 }
@@ -565,9 +625,10 @@ function shell(){
     if(!future&&its.length>0)cls=its.every(x=>x.done)?'ok':'miss-dot';
     if(hasNote(k))cls+=' note';
     mc+=`<button class="mini-dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="miniClick(event,'${k}')"><span>${d}</span></button>`}
-  $('#app').innerHTML=`<header class="top"><b role="button" tabindex="0" onclick="goTo('app','home')">Improvin' your day.</b><span id="top-date-trigger" role="button" tabindex="0" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="toggleMiniCal(event)" title="${t('calendar')}"><span>${fmt(today())}</span> ▾${DB.beige?'<small>bej</small>':''}</span><div id="mini-cal" class="mini-popup"><div style="font-family:var(--fs);font-weight:700;color:var(--acc);margin-bottom:.4rem">${monthName(mo)} ${y}</div><div class="mini-cal-grid">${mc}</div><p class="mut" style="font-size:.72rem;margin:.6rem 0 0">${tr()?'Bir güne tıkla: açık bej görünümü aç/kapat.':'Click a day to toggle the light beige look.'}</p></div></header><div class="shell"><aside><div class="lg" role="button" tabindex="0" onclick="goTo('app','set')"><small>${tr()?'Hoş geldin,':'Welcome,'}</small>${esc(A.nick)}</div>${NAV.map(([k])=>k=='logout'?`<a role="button" tabindex="0" onclick="confirmLogout()">${navLabel('logout')}</a>`:`<a role="button" tabindex="0" class="${pg==k?'on':''}" onclick="goTo('app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button id="back-login" onclick="backToLogin()">← ${t('loginBack')}</button><button id="back-welcome" class="g s" onclick="goHome()">← ${t('welcome')}</button><div style="margin-top:.6rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><b role="button" tabindex="0" onclick="goTo('app','home')">Improvin' your day.</b><span id="top-date-trigger" role="button" tabindex="0" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="toggleMiniCal(event)" title="${t('calendar')}"><span>${fmt(today())}</span> ▾${DB.beige?'<small>bej</small>':''}</span><div id="mini-cal" class="mini-popup"><div style="font-family:var(--fs);font-weight:700;color:var(--acc);margin-bottom:.4rem">${monthName(mo)} ${y}</div><div class="mini-cal-grid">${mc}</div><p class="mut" style="font-size:.72rem;margin:.6rem 0 0">${tr()?'Bir güne tıkla: açık bej görünümü aç/kapat.':'Click a day to toggle the light beige look.'}</p></div></header><div class="shell"><aside><div class="lg" role="button" tabindex="0" onclick="goTo('app','set')"><small>${tr()?'Hoş geldin,':'Welcome,'}</small>${esc(A.nick)}</div>${NAV.map(([k])=>k=='logout'?`<a role="button" tabindex="0" onclick="confirmLogout()">${navLabel('logout')}</a>`:`<a role="button" tabindex="0" class="${pg==k?'on':''}" onclick="goTo('app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button id="back-welcome" class="ft-link" onclick="goHome()"><span aria-hidden="true">←</span> ${t('backWelcome')}</button><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();
+  const mc0=$('#mini-cal');if(mc0&&mc0.parentElement!==document.body)document.body.appendChild(mc0);
 }
 function renderPage(){const mn=$('#mn');if(mn){mn.classList.remove('an');void mn.offsetWidth;mn.classList.add('an')}(P[pg]||P.home)()}
 setInterval(()=>{if(A&&A.day!==today())shell()},60000);
@@ -613,7 +674,7 @@ P.pc=()=>{
     c+=`<button class="dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="openDay('${k}')"><small>${dayName(new Date(y,mo,d).getDay())}</small><span>${d}</span></button>`;
   }
   const noteList=Object.keys(A.future||{}).sort().map(k=>`<div class="task"><span><b>${fmt(k)}</b> — ${esc(A.future[k])}</span><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1.2rem">${fmt(today())}</span></div><div class="stat" style="margin-top:.8rem"><span><b>${dayCount()}</b> <span class="mut">${t('totalDays')}</span></span><span><b>%${pct()}</b> <span class="mut">%1 = 1 ${t('totalDays').toLowerCase()}</span></span><span class="mut">${fmt(startDay())} → ${fmt(today())} · ${dayCount()} ${t('daysRecorded')}</span></div><p class="mut" style="margin:.6rem 0 0">${t('everyDayCounts')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();P.pc()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button><button class="g s" onclick="P.pc()">${t('calendar')}</button></div></div><div class="card"><div class="row"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p>${noteList||'<p class="mut">'+t('noNote')+'</p>'}<div class="row" style="margin-top:.6rem"><input id="fnd" type="date" style="max-width:11rem"><button onclick="newNote()">${t('addFutureNote')}</button></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1.2rem">${fmt(today())}</span></div><div class="stat" style="margin-top:.9rem"><span><b>%${pct()}</b> <span class="mut">${t('pctTitle')}</span></span></div><p class="mut" style="margin:.4rem 0 0;font-size:.85rem">${t('pctHint')}</p><p class="mut" style="margin:.2rem 0 0;font-size:.85rem">${t('everyDayCounts')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();P.pc()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button><button class="g s" onclick="P.pc()">${t('calendar')}</button></div></div><div class="card"><div class="row"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p>${noteList||'<p class="mut">'+t('noNote')+'</p>'}<div class="row" style="margin-top:.6rem"><input id="fnd" type="date" style="max-width:11rem"><button onclick="newNote()">${t('addFutureNote')}</button></div></div>`);
 };
 function newNote(){const d=$('#fnd').value;if(!d){toast(tr()?'Bir tarih seç.':'Pick a date.');return}openDay(d)}
 function delNote(k){delete A.future[k];save();P.pc()}
@@ -732,18 +793,18 @@ function vSend(k){
 }
 function vOk(k){if($('#vc').value===codes[k]){A.ver[k]=true;save();msg=t('verified')}else msg=t('wrongCode');P.set()}
 async function chPw(){
-  if(A.pw!==await sha($('#op').value)){msg=t('currentWrong');return P.set()}
+  if(!await pwMatch(A,$('#op').value)){msg=t('currentWrong');return P.set()}
   const e=pwOk($('#np').value,A.u);if(e){msg=e;return P.set()}
-  A.pw=await sha($('#np').value);save();msg=t('pwChanged');P.set();
+  await setPw(A,$('#np').value);save();msg=t('pwChanged');P.set();
 }
 async function resetSys(){
-  if(A.pw!==await sha($('#rp').value)){msg=t('wrongPw');return P.set()}
+  if(!await pwMatch(A,$('#rp').value)){msg=t('wrongPw');return P.set()}
   clearInterval(pm.iv);const a=newAcc(A.u,A.nick,A.bio,A.pw,A.email,A.phone);
-  a.ver=A.ver;a.theme=A.theme;a.nc=A.nc;a.uc=A.uc;a.future=A.future;a.fog=A.fog;DB.accounts[A.u]=a;A=a;
+  a.ver=A.ver;a.theme=A.theme;a.nc=A.nc;a.uc=A.uc;a.future=A.future;a.fog=A.fog;a.pctFrom=A.pctFrom;DB.accounts[A.u]=a;A=a;
   pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,n:0,lg:0,iv:0};save();msg=t('systemReset');shell();
 }
 async function delAcc(){
-  if(A.pw!==await sha($('#dp').value)){msg=t('wrongPw');return P.set()}
+  if(!await pwMatch(A,$('#dp').value)){msg=t('wrongPw');return P.set()}
   delete DB.accounts[A.u];A=null;DB.last='';DB.lastUser=Object.keys(DB.accounts)[0]||'';save();view='welcome';goTo('welcome','home');
 }
 function applyTheme(){if(!A)return;document.documentElement.dataset.t=DB.beige?'beige':A.theme}

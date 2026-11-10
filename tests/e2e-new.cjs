@@ -25,27 +25,34 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  // %1 = 1 gun
  ck('%1 gun sayisina esit', (await ev("pct()"))===1 && (await ev("dayCount()"))===1);
  await ev("A.hist['2026-11-05']=[{t:'x',done:false}];save();goTo('app','pc')");await sleep(600);
- ck('%1 = gecen gun sayisi', (await ev("pct()"))===6, await ev("pct()"));
- ck('ilerleme kartinda gun sayisi', /Toplam gün|Total days/.test(await ev("document.body.innerText")), (await ev("document.body.innerText")).slice(0,0));
+ ck('gecmis verisi % yi degistirmez', (await ev("pct()"))===1, await ev("pct()"));
+ await ev("A.pctFrom='2026-11-05';save()");
+ ck('% her gun +1 (5 gun once -> 6)', (await ev("pct()"))===6, await ev("pct()"));
+ await ev("A.pctFrom=today();save();P.pc()");await sleep(400);
+ ck('ilerleme kartinda yuzde', /Günlük yüzde|Daily percentage/.test(await ev("document.body.innerText")));
  // kronometre 3 hane
  await ev("goTo('app','pomo')");await sleep(400);
  await ev("swS()");await sleep(350);
  const sw=await ev("$('#sw').textContent");await ev("swR()");
  ck('kronometre S.dss (bastaki sifir yok)', /^\d\d?\.\d\d$/.test(sw), sw);
  // footer -> giris ekrani
- ck('footer butonu var', await ev("!!document.querySelector('#back-login')"));
- await ev("document.querySelector('#back-login').click()");await sleep(700);
- ck('footer giris ekranina goturdu', /Giriş yap|Sign in/.test(await ev("document.body.innerText")) && !(await ev("!!A")), await ev("view"));
+ ck('footer butonu var', await ev("!!document.querySelector('#back-welcome')"));
+ await ev("document.querySelector('#back-welcome').click()");await sleep(700);
+ ck('footer welcome ekranina goturdu', /HOŞ GELDİN|WELCOME/.test(await ev("document.body.innerText")) && !(await ev("!!A")), await ev("view"));
+ 
+ await ev("goTo('login','home')");await sleep(500);
+ 
  // hatirlanan kullanici: alan otomatik dolu + karsilama karti
  ck('kullanici adi otomatik dolu', (await ev("$('#u').value"))==='deneme', await ev("$('#u').value"));
  ck('hatirlanan kullanici karti', await ev("!!document.querySelector('.remember')"));
  // sadece sifre ile Enter -> giris
  await ev("$('#p').value='GuzelSafak47';loginDat.p='GuzelSafak47';$('#p').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))");
- for(let i=0;i<60 && !(await ev("!!(A&&document.querySelector('aside'))"));i++) await sleep(250);
+ for(let i=0;i<80 && !(await ev("!!(A&&document.querySelector('aside'))&&!document.querySelector('.greet-screen')"));i++) await sleep(250);
  await sleep(400);
  ck('sadece sifre ile giris', await ev("!!A"), await ev("typeof A"));
  // yanlis sifre mesaji: kullaniciyi taniyor
- await ev("document.querySelector('#back-login').click()");await sleep(600);
+ await ev("A=null;loginDat={u:'',p:''};msg='';view='login';renderAppOrAuth()");await sleep(600);
+ 
  await ev("$('#p').value='YanlisSifre99';loginDat.p='YanlisSifre99';login();");
  await sleep(700);
  const txt=await ev("document.body.innerText");
