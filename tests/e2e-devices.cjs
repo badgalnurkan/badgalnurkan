@@ -31,7 +31,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  await ev("A.hist['2026-11-01']=[{t:'a',done:true}];save()");
  ck('gecmis verisi % degistirmez', (await ev("pct()"))===1, await ev("pct()"));
  // % her gun +1 (simule)
- await ev("A.pctFrom='2026-11-05';save()");
+ await ev("A.pctFrom=addD(today(),-5);save()");
  ck('5 gun once -> %6', (await ev("pct()"))===6, await ev("pct()"));
  await ev("A.pctFrom=today();save()");
  // FOOTER tek buton
