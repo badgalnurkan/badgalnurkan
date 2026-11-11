@@ -204,7 +204,7 @@ test('tüm ekran boyutları için duyarlı kurallar', () => {
 test('yenileme/yeni sekmede oturum geri yüklenir', () => {
   const body = scriptBody();
   assert.ok(/function restoreSession\(\)/.test(body), 'restoreSession yok');
-  assert.ok(/const _restored=restoreSession\(\)/.test(body), 'acilista cagrilmiyor');
+  assert.ok(/const _restored=(_lastAuth\?false:)?restoreSession\(\)/.test(body), 'acilista cagrilmiyor');
   assert.ok(/OTURUM='b1s'|const OTURUM/.test(body), 'oturum anahtari yok');
   assert.ok(/LOCAL_OTURUM/.test(body), 'ikinci yedek oturum anahtari yok');
   assert.ok(/addEventListener\('storage'/.test(body), 'sekmeler arasi senkron yok');

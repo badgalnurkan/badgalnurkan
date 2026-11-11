@@ -33,7 +33,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
    ck(name+' ('+w+'x'+h+'): ust serit var', !!g && !!g.th && !!g.lb);
    if(!g) continue;
    ck(name+': dil ve tema cakismiyor', !g.overlap);
-   ck(name+': tema ustte', g.th.b<=g.lb.t+2, 'temaAlt='+g.th.b+' dilUst='+g.lb.t);
+   ck(name+': tema ve dil ayni satirda', Math.abs((g.th.t+g.th.b)/2-(g.lb.t+g.lb.b)/2)<=3, 'tema='+g.th.t+' dil='+g.lb.t);
    ck(name+': dil sag ust kosede', g.lb.r>=g.th.r-2, 'dilSag='+g.lb.r+' temaSag='+g.th.r);
 
    const nearRight=(g.lb.r>=g.th.r-2)||(g.lb.r>=g.vw/2 && g.lb.r>=g.bx.r-8);
