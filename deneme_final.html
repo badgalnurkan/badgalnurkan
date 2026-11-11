@@ -797,7 +797,7 @@ function renderAppOrAuth(){
     if(!loginDat.u&&rem)loginDat.u=rem;
     const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="useAccount('${esc(rem)}')">${t('useAccount')}</button></div>`:`<p class="mut" style="margin:.2rem 0 .9rem">${t('noAccountYet')}</p>`;
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
-    h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${t('username')}</label><input id="u" autocomplete="username" autocapitalize="none" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
+    h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
   else if(view==='setup')h=`<div class="login-wrap"><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('username')}</label><input id="u" autocapitalize="none"><div class="row"><button onclick="fSend('email')">${tr()?'E-posta ile kod gönder':'Send code by email'}</button><button onclick="fSend('phone')">${tr()?'SMS ile kod gönder':'Send code by SMS'}</button></div><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
@@ -854,7 +854,16 @@ function otherUser(){
 }
 function backToRemembered(){skipRem=false;loginDat={u:'',p:''};msg='';renderAppOrAuth()}
 async function login(){
-  const typed=loginDat.u.trim(),u=typed||(skipRem?'':rememberedUser());
+  let typed=loginDat.u.trim();
+  /* e-posta ile giris: baska cihaz/tarayicida hesap bulutten bulunur */
+  let typedMail='';
+  if(typed.indexOf('@')>0){
+    typedMail=typed.toLowerCase();
+    const loc=Object.keys(DB.accounts).find(k=>String(DB.accounts[k].mail||DB.accounts[k].email||'').toLowerCase()===typedMail);
+    typed=loc||typed.split('@')[0];
+    loginDat.e=typedMail;
+  }
+  let u=typed||(skipRem?'':rememberedUser());
   loginDat.u=u;
   if(!u){msg=tr()?'Kullanıcı adını gir.':'Enter your username.';return renderAppOrAuth()}
   const key=findUser(u),k=(key||u).toLowerCase(),L=DB.lock[k]||{f:0,lv:0,until:0};
@@ -863,9 +872,13 @@ async function login(){
   /* --- bulut girisi: her cihazda ayni hesap --- */
   if(cloud()&&(!a||!a.pw)){
     try{
-      const mail=String(loginDat.e||(a&&a.mail)||(a&&a.email)||'').toLowerCase();
+      let mail=String(loginDat.e||(a&&a.mail)||(a&&a.email)||'').toLowerCase();
+      if(!mail){try{const r=await sb('/rest/v1/rpc/iydu_email',{method:'POST',body:{p_username:u}});if(typeof r==='string'&&r.indexOf('@')>0)mail=r.toLowerCase()}catch(_){}}
       const j=await sbSignIn(u,loginDat.p,mail);
       if(j&&j.access_token){
+        const md=(j.user&&j.user.user_metadata)||{};
+        if(md.username&&!a){const lu=findUser(md.username);u=lu||md.username}
+        if(!mail&&j.user&&j.user.email)mail=String(j.user.email).toLowerCase();
         const data=await sbPull(u);
         const acc=data||norm({u,nick:(j.user&&j.user.user_metadata&&j.user.user_metadata.nick)||u});
         acc.u=u;acc.mail=mail||acc.mail;await setPw(acc,loginDat.p);
@@ -884,7 +897,8 @@ async function login(){
   }
   L.f++;
   if(L.f>=5){const long=L.lv>0;L.until=Date.now()+(long?5*3600000:30*60000);L.lv++;L.f=0;msg=long?(tr()?'5 hatalı deneme daha. 5 saat kilitli.':'5 more failed attempts. Locked for 5 hours.'):(tr()?'5 hatalı deneme. 30 dakika kilitli.':'5 failed attempts. Locked for 30 minutes.')}
-  else msg=a?t('wrongLoginKnown').replace('{u}',a.nick||a.u)+' '+(5-L.f):`${t('wrongLogin')} ${5-L.f}`+(tr()?' (bu adda hesap yok)':' (no such account)');
+  else msg=a?t('wrongLoginKnown').replace('{u}',a.nick||a.u)+' '+(5-L.f):`${t('wrongLogin')} ${5-L.f}`+(typedMail?'':(tr()?' — başka cihazda açtığın hesapsa e-postanla giriş yap.':' — if you created it on another device, sign in with your email.'));
+  loginDat.e='';
   DB.lock[k]=L;save();renderAppOrAuth();
 }
 
