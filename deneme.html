@@ -903,8 +903,8 @@ async function login(){
 }
 
 async function setup(){
-  const u=$('#u').value.trim(),n=$('#n').value.trim(),e=$('#e').value.trim(),t='',p=$('#p').value;
-  formDat={u,n,b:$('#b')?$('#b').value:'',e,t,p};
+  const u=$('#u').value.trim(),n=$('#n').value.trim(),e=$('#e').value.trim(),ph='',p=$('#p').value;
+  formDat={u,n,b:$('#b')?$('#b').value:'',e,t:ph,p};
   if(!userRe.test(u))msg=t('usernameRules');
   else if(!n)msg=t('displayRequired');
   else if(findUser(u))msg=t('usernameTaken');
@@ -924,7 +924,7 @@ async function setup(){
       if(/already|exists|registered/i.test(cloudErr)){msg=tr()?'Bu kullanıcı adı bulutta kayıtlı.':'That username is already registered in the cloud.';return renderAppOrAuth()}
     }
   }
-  const a=newAcc(u,n,formDat.b,'',e,t);await setPw(a,p);
+  const a=newAcc(u,n,formDat.b,'',e,ph);await setPw(a,p);
   DB.accounts[u]=a;DB.last=n;DB.lastUser=u;lastSig=signature(a);formDat={u:'',n:'',b:'',e:'',t:'',p:''};
   a.mail=String(e||'').toLowerCase();A0=null;A=a;applyTheme();save();goTo('app','home');greetThen();
   if(cloudOK){sbPush();toast(tr()?'Bulut hesabı oluşturuldu, verilerin eşitleniyor.':'Cloud account created, syncing your data.');}
@@ -1041,7 +1041,7 @@ P.home=()=>{
 function addProj(){const n=$('#pn').value.trim(),d=$('#pd').value;if(n&&d){A.projects.push({n,d});save();P.home()}}
 
 P.todo=()=>{
-  const bl=A.backlog.map((t,i)=>`<div class="task"><span>${esc(t)}</span><button class="g s" onclick="fromBack(${i})">${t('addToToday')}</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">${t('delete')}</button></div>`).join('');
+  const bl=A.backlog.map((bt,i)=>`<div class="task"><span>${esc(bt)}</span><button class="g s" onclick="fromBack(${i})">${t('addToToday')}</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">${t('delete')}</button></div>`).join('');
   M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">'+t('addTask')+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" placeholder="${t('newTask')}" onkeydown="event.key=='Enter'&&addT()"><button onclick="addT()">${t('add')}</button></div></div><div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2><p class="mut">${tr()?'Yapılmadı olarak işaretlediğin görevler burada birikir; 10\'u geçince en eski silinir.':'Tasks you miss collect here; past 10, the oldest is deleted.'}</p>${bl}</div>`);
 };
 const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}"><span>${esc(x.t)}</span><button class="ck ${x.s=='done'?'on':''}" aria-label="${t('done')}" title="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s=='miss'?'on':''}" aria-label="${t('notDone')}" title="${t('notDone')}" onclick="mk(${i},'miss')">✕</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;

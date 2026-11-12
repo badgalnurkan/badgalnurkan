@@ -1,0 +1,46 @@
+const { spawn } = require('child_process');const fs=require('fs'),path=require('path'),os=require('os');
+const BROWSER='C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
+const FILE='file:///'+path.resolve(process.argv[2]||'deneme.html').replace(/\\/g,'/');
+const PORT=9700+Math.floor(Math.random()*40);const profile=fs.mkdtempSync(path.join(os.tmpdir(),'ep-'));
+const proc=spawn(BROWSER,['--headless=new','--disable-gpu','--no-first-run','--remote-debugging-port='+PORT,'--user-data-dir='+profile,'about:blank'],{stdio:'ignore'});
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{
+ let wsu;for(let i=0;i<60;i++){try{const l=await (await fetch('http://127.0.0.1:'+PORT+'/json/list')).json();const p=l.find(t=>t.type==='page');if(p){wsu=p.webSocketDebuggerUrl;break}}catch(e){}await sleep(250)}
+ const ws=new WebSocket(wsu);await new Promise(r=>ws.onopen=r);let id=0;const pend=new Map();const errs=[];
+ ws.onmessage=ev=>{const m=JSON.parse(ev.data);if(m.id&&pend.has(m.id)){pend.get(m.id)(m);pend.delete(m.id)}if(m.method==='Runtime.exceptionThrown')errs.push(m.params.exceptionDetails.exception&&m.params.exceptionDetails.exception.description)};
+ const send=(m,p={})=>new Promise(r=>{const i=++id;pend.set(i,r);ws.send(JSON.stringify({id:i,method:m,params:p}))});
+ const ev=async e=>{const r=await send('Runtime.evaluate',{expression:e,returnByValue:true,awaitPromise:true});if(!r||!r.result)return null;if(r.result.exceptionDetails)return 'ERR:'+(r.result.exceptionDetails.exception&&r.result.exceptionDetails.exception.description);return r.result.result&&r.result.result.value};
+ const out=[];const ck=(n,o,x)=>out.push((o?'✔ ':'✖ ')+n+(x!==undefined&&x!==null&&x!==''?' ['+x+']':''));
+ await send('Runtime.enable');await send('Page.navigate',{url:FILE});await sleep(1500);
+ await ev("localStorage.clear();sessionStorage.clear();localStorage.setItem('b1cloud','0')");await send('Page.reload');await sleep(1300);
+ await ev("goTo('setup','home')");await sleep(300);
+ await ev("$('#u').value='todobir';formDat.u='todobir';$('#n').value='T';formDat.n='T';$('#e').value='t@x.co';formDat.e='t@x.co';$('#p').value='GuzelSafak47';formDat.p='GuzelSafak47';setup()");
+ for(let i=0;i<80&&!(await ev("!!(A&&document.querySelector('aside'))&&!document.querySelector('.greet-screen')"));i++)await sleep(250);
+ await ev("document.querySelector('aside a[data-k=todo]').click()");await sleep(700);
+ const add=async v=>{await ev(`$('#nt').value='${v}';addT()`);await sleep(150)};
+ await add('Kitap oku');await add('Spor');await add('Su iç');
+ ck('3 gorev eklendi',(await ev("document.querySelectorAll('#tl .task').length"))===3);
+ await ev("$('#nt').value='Enter';$('#nt').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}))");await sleep(200);
+ ck('Enter ile ekleme',(await ev("A.tasks.length"))===4);
+ await ev("$('#nt').value='   ';addT()");ck('bos gorev eklenmez',(await ev("A.tasks.length"))===4);
+ await ev("mk(0,'done')");ck('yapildi isareti',(await ev("A.tasks[0].s"))==='done'&&(await ev("$('#t0').classList.contains('done')")));
+ await ev("mk(0,'done')");ck('yapildi geri alinir',(await ev("A.tasks[0].s"))==='');
+ await ev("mk(1,'miss')");ck('yapilmadi isareti',(await ev("A.tasks[1].s"))==='miss');
+ await ev("delT(3)");await sleep(150);ck('silme',(await ev("A.tasks.length"))===3);
+ // gun devri -> backlog
+ await ev("mk(0,'done');A.day=addD(today(),-1);roll();save();P.todo()");await sleep(300);
+ ck('gun devri: bitmeyenler bekleyenlere',(await ev("A.backlog.length"))===2,await ev("A.backlog.join(',')"));
+ ck('bekleyenler listesi cizildi (cokme yok)',(await ev("document.querySelectorAll('#mn .card')[1].querySelectorAll('.task').length"))===2);
+ ck('bekleyen buton metni cevrildi',(await ev("document.querySelectorAll('#mn .card')[1].querySelector('.task button').textContent.trim().length>2")));
+ await ev("fromBack(0)");await sleep(150);ck('bugune ekle',(await ev("A.tasks.length"))===1&&(await ev("A.backlog.length"))===1);
+ await ev("document.querySelectorAll('#mn .card')[1].querySelectorAll('.task button')[1].click()");await sleep(150);
+ ck('bekleyen silme',(await ev("A.backlog.length"))===0);
+ await ev("for(let i=0;i<12;i++)A.backlog.push('b'+i);A.day=addD(today(),-1);roll();P.todo()");await sleep(200);
+ ck('bekleyen sinir 10',(await ev("A.backlog.length"))===10);
+ ck('ozel karakter guvenli',(await ev("$('#nt').value='<b>x</b>';addT();!document.querySelector('#tl b')&&A.tasks.some(x=>x.t==='<b>x</b>')")));
+ await send('Page.reload');await sleep(1700);
+ ck('yenileme sonrasi gorevler duruyor',(await ev("A&&A.tasks.length"))>=1);
+ ck('JS hatasi yok',errs.length===0,errs.slice(0,2).join(' | '));
+ console.log(out.join('\n'));console.log('\n'+out.filter(x=>x.startsWith('✔')).length+'/'+out.length+' gecti');
+ ws.close();proc.kill();process.exit(0);
+})().catch(e=>{console.error('HATA:',e.message);proc.kill();process.exit(1)});
