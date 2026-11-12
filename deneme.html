@@ -682,6 +682,7 @@ async function pwMatch(a,p){
 async function setPw(a,p){const r=await hashPw(p);a.pw=r.pw;a.salt=r.salt;a.pwAt=Date.now();if(A&&a===A)lastSig=signature(a)}
 function roll(){
   const t=today();
+  try{fixTodoData()}catch(e){}
   if(A.day!==t){
     A.hist[A.day]=A.tasks.map(x=>({t:x.t,done:x.s==='done'}));
     A.tasks.filter(x=>x.s!=='done').forEach(x=>A.backlog.push(x.t));
@@ -1029,7 +1030,7 @@ function shell(){
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),700)}
   const mc0=$('#mini-cal');if(mc0&&mc0.parentElement!==document.body)document.body.appendChild(mc0);
 }
-function renderPage(){const mn=$('#mn');if(mn){mn.classList.remove('an');void mn.offsetWidth;mn.classList.add('an')}(P[pg]||P.home)()}
+function renderPage(){const mn=$('#mn');if(mn){mn.classList.remove('an');void mn.offsetWidth;mn.classList.add('an')}try{(P[pg]||P.home)()}catch(e){try{console.warn(e);if(pg==='todo'){A.tasks=[];A.backlog=A.backlog||[];fixTodoData();P.todo()}else if(mn)mn.innerHTML='<div class="card"><p>'+(tr()?'Sayfa yüklenemedi, tekrar dene.':'Page failed to load, try again.')+'</p></div>'}catch(_){}}}
 setInterval(()=>{if(A&&A.day!==today())shell()},60000);
 
 const P={};const M=h=>$('#mn').innerHTML=h;
@@ -1040,7 +1041,17 @@ P.home=()=>{
 };
 function addProj(){const n=$('#pn').value.trim(),d=$('#pd').value;if(n&&d){A.projects.push({n,d});save();P.home()}}
 
+/* eski/bozuk kayitlar (telefonda eski surumden kalan veri) To-do'yu cokertmesin */
+function fixTodoData(){
+  const txt=x=>typeof x==='string'?x:(x&&typeof x==='object'?String(x.t||x.text||x.title||''):String(x==null?'':x));
+  if(!Array.isArray(A.tasks))A.tasks=A.tasks&&typeof A.tasks==='object'?Object.values(A.tasks):[];
+  A.tasks=A.tasks.filter(x=>x!=null).map(x=>typeof x==='object'?{...x,t:txt(x),s:(x.s==='done'||x.s==='miss')?x.s:(x.done?'done':'')}:{t:txt(x),s:''}).filter(x=>x.t);
+  if(!Array.isArray(A.backlog))A.backlog=A.backlog&&typeof A.backlog==='object'?Object.values(A.backlog):[];
+  A.backlog=A.backlog.map(txt).filter(Boolean).slice(-10);
+  if(!A.hist||typeof A.hist!=='object')A.hist={};
+}
 P.todo=()=>{
+  try{fixTodoData()}catch(e){A.tasks=[];A.backlog=[]}
   const bl=A.backlog.map((bt,i)=>`<div class="task"><span>${esc(bt)}</span><button class="g s" onclick="fromBack(${i})">${t('addToToday')}</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">${t('delete')}</button></div>`).join('');
   M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">'+t('addTask')+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" placeholder="${t('newTask')}" onkeydown="event.key=='Enter'&&addT()"><button onclick="addT()">${t('add')}</button></div></div><div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2><p class="mut">${tr()?'Yapılmadı olarak işaretlediğin görevler burada birikir; 10\'u geçince en eski silinir.':'Tasks you miss collect here; past 10, the oldest is deleted.'}</p>${bl}</div>`);
 };
