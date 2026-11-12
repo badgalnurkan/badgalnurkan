@@ -701,11 +701,11 @@ const startDay=pctStart;
 const lvl=()=>1+Math.floor((pct()-1)/7);
 
 function pwOk(p,u){
-  if(p.length<8)return'Password must be at least 8 characters.';
-  if(/(.)\1/.test(p))return'No repeated adjacent letters or digits.';
-  if(/0123|1234|2345|3456|4567|5678|6789|abcd|qwer|asdf/i.test(p)||/^(.)\1+$/.test(p))return'Password is too simple.';
-  if(/2007|1308|130807|0813|password|sifre/i.test(p))return'Easily guessable passwords are not allowed.';
-  if(u&&p.toLowerCase().includes(u.toLowerCase()))return'Password cannot contain your username.';
+  if(p.length<8)return tr()?'Şifre en az 8 karakter olmalı.':'Password must be at least 8 characters.';
+  if(/(.)\1/.test(p))return tr()?'Yan yana aynı harf veya rakam olamaz.':'No repeated adjacent letters or digits.';
+  if(/0123|1234|2345|3456|4567|5678|6789|abcd|qwer|asdf/i.test(p)||/^(.)\1+$/.test(p))return tr()?'Şifre çok basit.':'Password is too simple.';
+  if(/2007|1308|130807|0813|password|sifre/i.test(p))return tr()?'Kolay tahmin edilen şifreler kullanılamaz.':'Easily guessable passwords are not allowed.';
+  if(u&&p.toLowerCase().includes(u.toLowerCase()))return tr()?'Şifre kullanıcı adını içeremez.':'Password cannot contain your username.';
   return'';
 }
 function mon(d){const x=new Date(d+'T00:00');x.setDate(x.getDate()-((x.getDay()+6)%7));return D(x)}
@@ -816,8 +816,8 @@ function greetThen(cb){
   document.addEventListener('keydown',skip);
   setTimeout(()=>{g.classList.add('out');setTimeout(()=>{g.remove();document.removeEventListener('keydown',skip);cb&&cb()},560)},900);
 }
-function goHome(){A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
-function backToLogin(){A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
+function goHome(){stopTimers();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
+function backToLogin(){stopTimers();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 
 function langBtns(short){return ['en','tr'].map(l=>`<button class="${DB.lang===l?'on':''}" onclick="pickLang('${l}')" title="${LANG_NAMES[l]}" aria-label="${LANG_NAMES[l]}">${short?l.toUpperCase():LANG_NAMES[l]}</button>`).join('')}
 function pickLang(l){setLang(l);renderAppOrAuth()}
@@ -1161,7 +1161,7 @@ function addP(){
 function pTick(){
   pm.left=Math.max(0,Math.round((pm.end-Date.now())/1000));
   const t2=$('#pt');if(t2)t2.textContent=ft(pm.left);
-  document.title=ft(pm.left)+' · '+TITLE;
+  if(A)document.title=ft(pm.left)+' · '+TITLE;
   if(pm.left<=0){
     beep();
     if(pm.ph==='w'){pm.n++;pm.ph='b';pm.lg=pm.n%3===0?1:0;pm.left=(pm.lg?Math.max(pm.b,...A.presets.map(p=>p.b)):pm.b)*60}
@@ -1195,8 +1195,10 @@ P.set=()=>{
 <div class="card"><h2>${t('resetSystem')}</h2><p class="mut">${tr()?'Görevler, geçmiş, ilerleme, projeler, rapor cevapları ve süreler silinir. Hesap bilgilerin kalır. Onaylamak için şifreni gir.':'Tasks, history, progress, projects, report answers and timer lengths are erased. Your account details stay. Enter your password to confirm.'}</p><input id="rp" type="password" placeholder="${t('password')}" autocomplete="current-password"><button class="d" style="background:var(--no);color:#fff" onclick="resetSys()">${t('reset')}</button></div>
 <div class="card"><h2>${t('deleteAccount')}</h2><p class="mut">${tr()?'Hesabın ve tüm verilerin bu cihazdan kalıcı olarak silinir.':'Your account and all data are permanently deleted from this device.'}</p><input id="dp" type="password" placeholder="${t('password')}" autocomplete="current-password"><button style="background:var(--no)" onclick="delAcc()">${t('deleteAccount')}</button></div>`);
 };
-function switchAcc(i){const k=Object.keys(DB.accounts)[i];A=null;loginDat={u:k,p:''};goTo('login','home')}
-function goLogin(){A=null;loginDat={u:'',p:''};goTo('login','home')}
+function switchAcc(i){stopTimers();const k=Object.keys(DB.accounts)[i];A=null;loginDat={u:k,p:''};goTo('login','home')}
+/* oturum kapaninca sayac ve kronometre durur, sonraki kullaniciya gecmez */
+function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0};document.title=TITLE}catch(e){}}
+function goLogin(){stopTimers();A=null;loginDat={u:'',p:''};goTo('login','home')}
 function chg(k){
   const key=k=='u'?'uc':'nc';
   if(left(key)<=0){msg=tr()?'Son 15 gündeki 5 değişiklik hakkının tamamını kullandın.':'You have used all 5 changes for the last 15 days.';return P.set()}
