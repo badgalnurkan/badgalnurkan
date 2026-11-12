@@ -11,12 +11,13 @@
 :root[data-t=dark]{--bg:#221914;--card:#2e221b;--ink:#f3e8da;--mut:#b09a84;--acc:#d2a074;--acc2:#6b4a33;--ok:#7bbd83;--no:#d7796a;--ln:#40302a;--sh:0 12px 32px #0006;--okbg:#2a3a2c}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px);font-size:clamp(16px,.35vw + 11px,24px);overflow-y:scroll}
-@media(min-width:1600px){html{font-size:clamp(15.5px,.45vw + 11px,16px)}
+@media(min-width:1600px){html{font-size:clamp(15.5px,.45vw + 11px,16px)}}
 /* mobil: okunakli taban olcu */
 @media(max-width:600px){html{font-size:clamp(16px,4.4vw,17.5px)}}
-@media(max-width:360px){html{font-size:16px}}}
+@media(max-width:360px){html{font-size:16px}}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,Ubuntu,sans-serif;line-height:1.6;transition:background .4s,color .4s;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
-#app{display:flex;flex-direction:column;flex:1;width:100%}
+#app{display:flex;flex-direction:column;flex:1;width:100%;transition:opacity .22s ease}
+#app.soft-out{opacity:0}
 button,input,select,textarea{font:inherit;color:inherit}
 button{background:var(--acc);color:#fff;border:0;border-radius:999px;padding:.6em 1.4em;min-height:2.75rem;font-weight:600;cursor:pointer;box-shadow:0 4px 14px #a9714b33;transition:transform .2s,box-shadow .2s,background .3s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 button:hover{transform:translateY(-1px);box-shadow:0 6px 18px #a9714b44}
@@ -42,7 +43,7 @@ aside a{transition:background .22s ease,color .22s ease,transform .16s ease}
 aside a.on{font-weight:800;letter-spacing:.005em}
 @supports not (background:color-mix(in srgb,red,blue)){aside a.press{background:var(--bg)}}
 main{transition:opacity .18s ease}
-main.swap{opacity:.45}
+main.swap{opacity:0}
 main.an{animation:pgIn .32s cubic-bezier(.2,.7,.2,1) both}
 @keyframes pgIn{from{opacity:0;transform:translate3d(0,var(--pg-dy,8px),0)}to{opacity:1;transform:none}}
 @media(max-aspect-ratio:3/4){main{--pg-dy:10px}}
@@ -193,9 +194,10 @@ aside a{flex:0 0 auto;touch-action:manipulation;-webkit-tap-highlight-color:tran
   aside a{padding:.55em 1.05em;min-height:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;line-height:1;font-size:.92rem}
   aside{gap:.35rem;scroll-padding-inline:.4rem;scroll-snap-type:x proximity}
 }
-::view-transition-old(root){animation:none}
+::view-transition-old(root){animation:vtOut .28s ease both}
 ::view-transition-new(root){animation:vtIn .28s ease both}
-@keyframes vtIn{from{opacity:.35;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes vtOut{to{opacity:0}}
+@keyframes vtIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){::view-transition-new(root){animation:none}}
 /* ---- tum cihazlarda ayni gecisler: TV, telefon, tablet, dokunmatik ---- */
 .emenv{display:flex;justify-content:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem}
@@ -461,7 +463,8 @@ function ck(v){setItem('b1ck',String(v));$('#ck').hidden=true;save()}
 function backupTick(){try{const raw=getItem(LSK);if(!raw)return;const parsed=JSON.parse(raw);if(parsed&&parsed.accounts&&Object.keys(parsed.accounts).length){setItem('b1.bak',raw);setItem('b1.bak.at',String(Date.now()))}}catch(e){}}
 setInterval(backupTick,20000);
 window.addEventListener('beforeunload',backupTick);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')backupTick()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){backupTick();if(A&&pm.run)persistPomodoroState()}else if(A&&pm.run)pTick(true)});
+window.addEventListener('pagehide',()=>{if(A&&pm.run)persistPomodoroState()});
 try{if(getItem('b1ck')===null)$('#ck').hidden=false}catch(e){}
 const sysTheme=()=>(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
 document.documentElement.dataset.t=sysTheme();
@@ -477,7 +480,7 @@ function restoreSession(){
     if(!user&&DB.lastUser&&findUser(DB.lastUser))user=findUser(DB.lastUser);
     if(!user){const ks=Object.keys(DB.accounts);if(ks.length===1)user=ks[0]}
     if(!user)return false;
-    A=norm(DB.accounts[user]);lastSig=signature(A);
+    A=norm(DB.accounts[user]);lastSig=signature(A);restorePomodoroState();
     loginDat.u=user;
     if(cloud()&&!sbSession())sbRefresh();
     const st=history.state;
@@ -494,7 +497,7 @@ window.addEventListener('storage',e=>{
   DB=nd;
   const u=loginDat.u||DB.lastUser;
   if(!A&&u&&DB.accounts[u]){A=norm(DB.accounts[u]);applyTheme();if(view!=='app'){view='app';pg='home'}renderAppOrAuth();return}
-  if(A&&DB.accounts[A.u]){A=nd.accounts[A.u];applyTheme();if(document.querySelector('aside')){const m=$('#mn');const had=m?m.innerHTML:'';shell()}return}
+  if(A&&DB.accounts[A.u]){A=nd.accounts[A.u];restorePomodoroState();applyTheme();if(document.querySelector('aside')){const m=$('#mn');const had=m?m.innerHTML:'';shell()}return}
   renderAppOrAuth();
 });
 /* geri tusu: oturum acikken cikis ekranina dusmesin */
@@ -503,9 +506,13 @@ let formDat={u:'',n:'',b:'',e:'',t:'',p:''},loginDat={u:'',p:''};
 
 function paint(){renderAppOrAuth()}
 /* yumusak sayfa gecisi: destekleyen tarayicida View Transitions, digerlerinde ayni davranis */
+let softPaintTimer=0;
 function softPaint(){
-  const canVT=document.startViewTransition&&document.visibilityState==='visible'&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const canVT=document.startViewTransition&&document.visibilityState==='visible'&&!reduced;
   if(canVT){
+    clearTimeout(softPaintTimer);softPaintTimer=0;
+    const existing=$('#app');if(existing)existing.classList.remove('soft-out');
     try{
       const t=document.startViewTransition(()=>paint());
       if(t&&t.finished&&t.finished.catch)t.finished.catch(()=>{});
@@ -513,7 +520,17 @@ function softPaint(){
       return;
     }catch(e){}
   }
-  paint();
+  const root=$('#app');
+  if(!root||reduced){paint();return;}
+  clearTimeout(softPaintTimer);
+  root.classList.add('soft-out');
+  softPaintTimer=setTimeout(()=>{
+    paint();
+    requestAnimationFrame(()=>{
+      const current=$('#app');if(current)current.classList.remove('soft-out');
+      softPaintTimer=0;
+    });
+  },140);
 }
 function goTo(v,p,push=true){
   const same=A&&v==='app'&&view==='app'&&document.getElementById('mn')&&document.querySelector('#nav-aside,aside');
@@ -527,10 +544,16 @@ function swapPage(){
   const aside=document.querySelector('aside');
   if(aside){aside.querySelectorAll('a[data-k]').forEach(a=>{const on=a.dataset.k===pg;a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')})}
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
-  const y=window.scrollY;
-  renderPage();
-  if(pg!=='pomo'&&y>0){try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){window.scrollTo(0,0)}}
-  centerNav();
+  const y=window.scrollY,main=document.querySelector('main');
+  const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finish=()=>{
+    renderPage();
+    if(main)main.classList.remove('swap');
+    if(pg!=='pomo'&&y>0){try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){window.scrollTo(0,0)}}
+    centerNav();
+  };
+  if(main&&!reduced){main.classList.add('swap');setTimeout(finish,180)}
+  else finish();
 }
 /* mobil/tablet: secilen sekme yatay menude ortalanir, sayfa ziplamaz */
 function centerNav(){
@@ -656,7 +679,7 @@ const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
 const userRe=new RegExp('^['+LETTERS+']{3,20}$');
 function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme()})}
 function norm(a){
-  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},fog:true,pctFrom:today()};
+  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},pomo:null,fog:true,pctFrom:today()};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
   return a;
 }
@@ -884,7 +907,7 @@ async function login(){
         const acc=data||norm({u,nick:(j.user&&j.user.user_metadata&&j.user.user_metadata.nick)||u});
         acc.u=u;acc.mail=mail||acc.mail;await setPw(acc,loginDat.p);
         DB.accounts[u]=acc;DB.last=acc.nick||u;DB.lastUser=u;
-        DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(acc);loginDat={u:'',p:''};lastSig=signature(acc);
+        DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(acc);restorePomodoroState();loginDat={u:'',p:''};lastSig=signature(acc);
         applyTheme();save();goTo('app','home');greetThen();
         toast(tr()?'Buluttan yüklendi.':'Loaded from the cloud.');return;
       }
@@ -893,7 +916,7 @@ async function login(){
     }
   }
   if(a&&await pwMatch(a,loginDat.p)){
-    DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(a);DB.last=a.nick;DB.lastUser=a.u;lastSig=signature(a);loginDat={u:'',p:''};
+    DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(a);restorePomodoroState();DB.last=a.nick;DB.lastUser=a.u;lastSig=signature(a);loginDat={u:'',p:''};
     applyTheme();save();goTo('app','home');greetThen();return;
   }
   L.f++;
@@ -927,7 +950,7 @@ async function setup(){
   }
   const a=newAcc(u,n,formDat.b,'',e,ph);await setPw(a,p);
   DB.accounts[u]=a;DB.last=n;DB.lastUser=u;lastSig=signature(a);formDat={u:'',n:'',b:'',e:'',t:'',p:''};
-  a.mail=String(e||'').toLowerCase();A0=null;A=a;applyTheme();save();goTo('app','home');greetThen();
+  a.mail=String(e||'').toLowerCase();A0=null;A=a;restorePomodoroState();applyTheme();save();goTo('app','home');greetThen();
   if(cloudOK){sbPush();toast(tr()?'Bulut hesabı oluşturuldu, verilerin eşitleniyor.':'Cloud account created, syncing your data.');}
   else if(cloudErr){toast((tr()?'Bulut hesabı kurulamadı, veriler bu cihazda: ':'Cloud account failed, data stays on this device: ')+cloudErr);}
 }
@@ -1084,7 +1107,8 @@ P.pc=()=>{
     const dp=(!future&&its.length)?Math.round(its.filter(x=>x.done).length/its.length*100):null;
     c+=`<button class="dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}${dp!==null?' — %'+dp:''}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="openDay('${k}')"><small>${dayName(new Date(y,mo,d).getDay())}</small><span>${d}</span><em class="dpct">${dp!==null?'%'+dp:'&nbsp;'}</em></button>`;
   }
-  const noteList=Object.keys(A.future||{}).sort().map(k=>`<div class="task"><span><b>${fmt(k)}</b> — ${esc(A.future[k])}</span><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div>`).join('');
+  const monthKey=`${y}-${pad(mo+1)}`;
+  const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<div class="task"><span><b>${fmt(k)}</b> — ${esc(A.future[k])}</span><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div>`).join('');
   M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();P.pc()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button><button class="g s" onclick="P.pc()">${t('calendar')}</button></div></div><div class="card"><div class="row"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p>${noteList||'<p class="mut">'+t('noNote')+'</p>'}<div class="row" style="margin-top:.6rem"><input id="fnd" type="date" style="max-width:11rem"><button onclick="newNote()">${t('addFutureNote')}</button></div></div>`);
 };
 function newNote(){const d=$('#fnd').value;if(!d){toast(tr()?'Bir tarih seç.':'Pick a date.');return}openDay(d)}
@@ -1143,6 +1167,44 @@ P.rep=()=>{
 };
 
 let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};
+function persistPomodoroState(){
+  if(!A)return;
+  A.pomo={
+    w:pm.w,b:pm.b,ph:pm.ph,
+    left:pm.run?Math.max(0,Math.ceil((pm.end-Date.now())/1000)):pm.left,
+    run:!!pm.run,end:pm.run?pm.end:0,n:pm.n,lg:pm.lg,updatedAt:Date.now()
+  };
+  save();
+}
+function restorePomodoroState(){
+  if(pm.iv)clearInterval(pm.iv);
+  pm.iv=0;
+  const saved=A&&A.pomo;
+  const first=(A&&Array.isArray(A.presets)&&A.presets.length)?A.presets[0]:{w:25,b:5};
+  const defaultW=Number(first.w)>0&&Number(first.w)<=600?Number(first.w):25;
+  const defaultB=Number(first.b)>0&&Number(first.b)<=600?Number(first.b):5;
+  if(!saved||typeof saved!=='object'){
+    pm={...pm,w:defaultW,b:defaultB,ph:'w',left:defaultW*60,run:0,end:0,n:0,lg:0,iv:0};
+    return;
+  }
+  const w=Number(saved.w),b=Number(saved.b),left=Number(saved.left),end=Number(saved.end);
+  pm={...pm,
+    w:Number.isFinite(w)&&w>0&&w<=600?w:defaultW,
+    b:Number.isFinite(b)&&b>0&&b<=600?b:defaultB,
+    ph:saved.ph==='b'?'b':'w',
+    left:Number.isFinite(left)&&left>=0?left:defaultW*60,
+    run:saved.run?1:0,
+    end:Number.isFinite(end)&&end>0?end:0,
+    n:Number.isFinite(Number(saved.n))?Math.max(0,Math.floor(Number(saved.n))):0,
+    lg:saved.lg?1:0,iv:0
+  };
+  if(pm.run&&pm.end){
+    pTick(true);
+    if(pm.run)pm.iv=setInterval(pTick,500);
+  }else{
+    pm.run=0;pm.end=0;
+  }
+}
 const fmtDuration=m=>{if(m<60)return m+' '+t('minutes');const h=Math.floor(m/60),r=m%60;return r===0?h+(h==1?(tr()?' saat':' hour'):(tr()?' saat':' hours')):h+(tr()?' sa ':' h ')+r+' '+t('minutes')};
 const ft=s=>pad(Math.floor(s/60))+':'+pad(s%60);
 /* kronometre: milisaniye hassasiyetinde HH:MM:SS.mmm */
@@ -1161,7 +1223,7 @@ function pi(){
   l.textContent=pm.ph==='w'?`${t('session')} ${pm.n%3+1}/3 · ${fmtDuration(pm.w)}`:(pm.lg?t('longBreak'):t('break'));
   e.textContent=pm.run?`${t('pomoEnds')}: ${clk(pm.left*1000)}`:(pm.w>60&&pm.ph==='w'?`${pm.w} ${t('minutes')} · ${t('alreadyEnds')} ${clk(pm.left*1000)}`:'');
 }
-function setP(w,b){clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,n:0,lg:0,iv:0};document.title=TITLE;P.pomo()}
+function setP(w,b){clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,end:0,n:0,lg:0,iv:0};persistPomodoroState();document.title=TITLE;P.pomo()}
 let editIdx=-1;
 function editP(i){const p=A.presets[i];$('#cw').value=p.w;$('#cb').value=p.b;editIdx=i}
 function delP(i){A.presets.splice(i,1);save();P.pomo()}
@@ -1169,23 +1231,44 @@ function addP(){
   const w=Math.round(+$('#cw').value),b=Math.round(+$('#cb').value);
   if(w>0&&b>0&&w<=600&&b<=600){if(editIdx>=0){A.presets[editIdx]={w,b};editIdx=-1}else A.presets.push({w,b});save();setP(w,b)}
 }
-function pTick(){
-  pm.left=Math.max(0,Math.round((pm.end-Date.now())/1000));
+function pTick(silent=false){
+  if(!pm.run||!pm.end)return;
+  const now=Date.now();let transitions=0,changed=false;
+  while(pm.end<=now&&transitions<1000000){
+    if(!silent&&transitions===0)beep();
+    let nextMinutes;
+    if(pm.ph==='w'){
+      pm.n++;pm.ph='b';pm.lg=pm.n%3===0?1:0;
+      const breaks=Array.isArray(A&&A.presets)?A.presets.map(p=>Number(p.b)).filter(v=>Number.isFinite(v)&&v>0):[];
+      nextMinutes=pm.lg?Math.max(pm.b,...breaks):pm.b;
+    }else{
+      pm.ph='w';pm.lg=0;nextMinutes=pm.w;
+    }
+    pm.end+=Math.max(1,nextMinutes)*60000;
+    transitions++;changed=true;
+  }
+  if(pm.end<=now)pm.end=now+1000;
+  pm.left=Math.max(0,Math.ceil((pm.end-now)/1000));
   const t2=$('#pt');if(t2)t2.textContent=ft(pm.left);
   if(A)document.title=ft(pm.left)+' · '+TITLE;
-  if(pm.left<=0){
-    beep();
-    if(pm.ph==='w'){pm.n++;pm.ph='b';pm.lg=pm.n%3===0?1:0;pm.left=(pm.lg?Math.max(pm.b,...A.presets.map(p=>p.b)):pm.b)*60}
-    else{pm.ph='w';pm.lg=0;pm.left=pm.w*60}
-    pm.end=Date.now()+pm.left*1000;
-  }
+  if(changed)persistPomodoroState();
   pi();
 }
 function pS(){
-  if(pm.run){clearInterval(pm.iv);pm.run=0;pi();return}
-  pm.run=1;pm.end=Date.now()+pm.left*1000;pi();pm.iv=setInterval(pTick,500);
+  if(pm.run){
+    pTick(true);
+    clearInterval(pm.iv);pm.iv=0;pm.run=0;pm.end=0;
+  }else{
+    pm.run=1;pm.end=Date.now()+Math.max(0,pm.left)*1000;
+    clearInterval(pm.iv);pm.iv=setInterval(pTick,500);
+  }
+  persistPomodoroState();pi();
 }
-function pR(){clearInterval(pm.iv);pm={...pm,run:0,ph:'w',left:pm.w*60,n:0,lg:0,iv:0};document.title=TITLE;P.pomo()}
+function pR(){
+  clearInterval(pm.iv);
+  pm={...pm,run:0,ph:'w',left:pm.w*60,end:0,n:0,lg:0,iv:0};
+  persistPomodoroState();document.title=TITLE;P.pomo();
+}
 function swS(){
   if(pm.sw){clearInterval(pm.swI);pm.sw=0;return}
   pm.sw=1;const start=Date.now()-pm.swT*1000;
@@ -1208,7 +1291,7 @@ P.set=()=>{
 };
 function switchAcc(i){stopTimers();const k=Object.keys(DB.accounts)[i];A=null;loginDat={u:k,p:''};goTo('login','home')}
 /* oturum kapaninca sayac ve kronometre durur, sonraki kullaniciya gecmez */
-function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0};document.title=TITLE}catch(e){}}
+function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,end:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0};persistPomodoroState();document.title=TITLE}catch(e){}}
 function goLogin(){stopTimers();A=null;loginDat={u:'',p:''};goTo('login','home')}
 function chg(k){
   const key=k=='u'?'uc':'nc';
@@ -1237,9 +1320,13 @@ async function chPw(){
 }
 async function resetSys(){
   if(!await pwMatch(A,$('#rp').value)){msg=t('wrongPw');return P.set()}
-  clearInterval(pm.iv);const a=newAcc(A.u,A.nick,A.bio,A.pw,A.email,A.phone);
-  a.ver=A.ver;a.theme=A.theme;a.nc=A.nc;a.uc=A.uc;a.future=A.future;a.fog=A.fog;a.pctFrom=A.pctFrom;DB.accounts[A.u]=a;A=a;
-  pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,n:0,lg:0,iv:0};save();msg=t('systemReset');shell();
+  clearInterval(pm.iv);clearInterval(pm.swI);
+  const a=newAcc(A.u,A.nick,A.bio,A.pw,A.email,A.phone);
+  a.ver=A.ver;a.theme=A.theme;a.nc=A.nc;a.uc=A.uc;a.fog=A.fog;
+  a.future={};a.pctFrom=today();a.pomo=null;
+  DB.accounts[A.u]=a;A=a;
+  pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,lg:0,iv:0,sw:0,swT:0,swI:0};
+  save();msg=t('systemReset');shell();
 }
 async function delAcc(){
   if(!await pwMatch(A,$('#dp').value)){msg=t('wrongPw');return P.set()}
@@ -1325,7 +1412,7 @@ if(_lastAuth){view=_lastAuth;pg='home'}
 renderAppOrAuth();
 if(_restored)setTimeout(()=>{try{const c=$('#ck');if(c)c.hidden=true}catch(e){}},50);
 /* onbellekten (bfcache) geri gelince de oturum korunur */
-window.addEventListener('pageshow',e=>{if(e.persisted&&!A&&restoreSession())renderAppOrAuth()});
+window.addEventListener('pageshow',e=>{if(e.persisted&&!A&&restoreSession())renderAppOrAuth();else if(e.persisted&&A&&pm.run)pTick(true)});
 </script>
 </body>
 </html>
