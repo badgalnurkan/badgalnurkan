@@ -1105,8 +1105,8 @@ function repCard(title,per,a,b,pa,pb,key,nk,defs){
   }
   if(!A.qs[nk])A.qs[nk]=defs.map(q=>({q,a:''}));
   const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p,cur=A.qs[key]||[],ro=!!A.ql[key];
-  const tr=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
-  return`<div class="card"><h2>${title}</h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${tr}
+  const rows=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
+  return`<div class="card"><h2>${title}</h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}
 <h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3>${cur.length?qb(key,cur,ro)+(ro?'<p class="mut">'+t('answersLocked')+'</p>':`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
 <h3 style="margin-top:1.2rem">${tr()?'Sonraki':'Next'} ${per}</h3>${qb(nk,A.qs[nk],false)}<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="${t('addOwnQuestion')}"><button class="s" onclick="addQ('${nk}')">${t('addQuestion')}</button><button class="g s" onclick="addRandQ('${nk}')">${t('randomQuestion')}</button></div></div>`;
 }
