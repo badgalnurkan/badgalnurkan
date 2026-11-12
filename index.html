@@ -564,9 +564,11 @@ function restoreSession(){
     if(!user&&DB.lastUser&&findUser(DB.lastUser))user=findUser(DB.lastUser);
     if(!user){const ks=Object.keys(DB.accounts);if(ks.length===1)user=ks[0]}
     if(!user)return false;
-    A=norm(DB.accounts[user]);lastSig=signature(A);restorePomodoroState();
+    const savedAccount=DB.accounts[user];
+    /* Bulut hesabı, Supabase oturumu yoksa yalnızca yerel önbellekle açılmaz. */
+    if(savedAccount&&savedAccount.authUid&&!sbSession())return false;
+    A=norm(savedAccount);lastSig=signature(A);restorePomodoroState();
     loginDat.u=user;
-    if(cloud()&&!sbSession())sbRefresh();
     const st=history.state;
     view='app';pg=(st&&st.v==='app'&&st.p)?st.p:'home';
     applyTheme();touchSession();
@@ -909,13 +911,21 @@ function renderAppOrAuth(){
   if(view==='welcome')h=`<div class="welcome-screen"><div class="welcome-top"><div class="brand-badge">badgalnurkan</div><div id="theme-anchor">${themePick(true)}</div></div><div class="welcome-center"><div class="langbar">${langBtns()}</div><h1 class="big">${t('welcome')}</h1><div class="row" style="justify-content:center;gap:.8rem;margin-top:.5rem"><button onclick="goTo(Object.keys(DB.accounts).length?'login':'setup','home')">${t('continue')}</button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><div style="margin-top:1rem"><a href="mailto:nurkancanbulat89@gmail.com" style="color:var(--acc);font-weight:600;text-decoration:none;font-size:.9rem">${t('contact')}</a></div></div><div class="welcome-footer-bar"><div>© 2026 nurkancanbulat — All rights reserved.</div><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">tiktok/@badgalnurkan</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">instagram/@badgalnurkann</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">x/@badgalnurk</a></div></div></div>`;
   else if(view==='login'){
     const rem=(skipRem?null:rememberedUser()),others=Object.keys(DB.accounts).filter(k=>k!==rem);
-    if(!loginDat.u&&rem)loginDat.u=rem;
+    if(!loginDat.u&&rem){
+      const remembered=DB.accounts[rem];
+      loginDat.u=String(DB.lastEmail||(remembered&&(remembered.mail||remembered.email))||rem);
+    }
     const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="useAccount('${esc(rem)}')">${t('useAccount')}</button></div>`:`<p class="mut" style="margin:.2rem 0 .9rem">${t('noAccountYet')}</p>`;
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
-    h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
+    h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${tr()?'E-posta veya bu cihazdaki kullanıcı adı':'Email or a username saved on this device'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
   else if(view==='setup')h=`<div class="login-wrap"><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
-  else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('username')}</label><input id="u" autocapitalize="none"><div class="row"><button onclick="fSend('email')">${tr()?'E-posta ile kod gönder':'Send code by email'}</button><button onclick="fSend('phone')">${tr()?'SMS ile kod gönder':'Send code by SMS'}</button></div><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='verify'){
+    const pending=readJson(PENDING_SIGNUP_KEY)||{};
+    h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${tr()?'E-postanı doğrula':'Verify your email'}</h2>${m()}<p class="mut">${tr()?'Kayıt bağlantısını şu adrese gönderdik:':'We sent a confirmation link to:'}</p><p><b>${esc(pending.email||loginDat.e||DB.lastEmail||'')}</b></p><p class="mut">${tr()?'Gelen kutunu ve spam klasörünü kontrol et. Bağlantıyı açtıktan sonra hesabın etkinleşecek.':'Check your inbox and spam folder. Your account will activate after you open the link.'}</p><div class="row"><button onclick="resendSignupConfirmation()">${tr()?'Doğrulama e-postasını yeniden gönder':'Resend confirmation email'}</button><button class="g" onclick="goTo('login','home')">${t('login')}</button></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('setup','home')">${tr()?'Başka e-posta kullan':'Use another email'}</a></div>`);
+  }
+  else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="reset-email" type="email" autocomplete="email" autocapitalize="none" value="${esc(DB.lastEmail||loginDat.e||'')}" placeholder="name@example.com"><div class="row"><button onclick="fSendEmail()">${tr()?'Sıfırlama bağlantısı gönder':'Send reset link'}</button></div><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='recover')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${tr()?'Yeni şifre belirle':'Choose a new password'}</h2>${m()}<label>${t('newPassword')}</label><input id="recovery-password" type="password" autocomplete="new-password"><label>${tr()?'Yeni şifreyi tekrar yaz':'Confirm new password'}</label><input id="recovery-password-confirm" type="password" autocomplete="new-password"><button onclick="completePasswordRecovery()">${tr()?'Şifreyi kaydet':'Save password'}</button>`);
   $('#app').innerHTML=h;
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
 }
@@ -969,59 +979,62 @@ function otherUser(){
 }
 function backToRemembered(){skipRem=false;loginDat={u:'',p:''};msg='';renderAppOrAuth()}
 async function login(){
-  let typed=loginDat.u.trim();
-  /* e-posta ile giris: baska cihaz/tarayicida hesap bulutten bulunur */
-  let typedMail='';
-  if(typed.indexOf('@')>0){
-    typedMail=typed.toLowerCase();
-    const loc=Object.keys(DB.accounts).find(k=>String(DB.accounts[k].mail||DB.accounts[k].email||'').toLowerCase()===typedMail);
-    typed=loc||typed.split('@')[0];
-    loginDat.e=typedMail;
-  }
-  let u=typed||(skipRem?'':rememberedUser());
-  loginDat.u=u;
-  if(!u){msg=tr()?'Kullanıcı adını gir.':'Enter your username.';return renderAppOrAuth()}
-  /* Bos sifre, yanlis sifre denemesi sayilmaz; kilit/deneme sayacini etkilemez. */
+  const raw=String(loginDat.u||'').trim();
+  const typedMail=raw.includes('@')?raw.toLowerCase():'';
+  const localKey=typedMail
+    ?Object.keys(DB.accounts).find(k=>String(DB.accounts[k].mail||DB.accounts[k].email||'').toLowerCase()===typedMail)
+    :findUser(raw);
+  const u=localKey||(!typedMail?raw:'');
+  const a=localKey?DB.accounts[localKey]:null;
+  if(!raw){msg=tr()?'Kullanıcı adı veya e-posta adresini gir.':'Enter your username or email.';return renderAppOrAuth()}
   if(!loginDat.p){msg=tr()?'Şifreni gir.':'Enter your password.';return renderAppOrAuth()}
-  const key=findUser(u),k=(key||u).toLowerCase(),L=DB.lock[k]||{f:0,lv:0,until:0};
+  const k=(localKey||raw).toLowerCase(),L=DB.lock[k]||{f:0,lv:0,until:0};
   if(Date.now()<L.until){msg=`${t('locked')} ${fmtMin(Math.ceil((L.until-Date.now())/60000))}.`;return renderAppOrAuth()}
-  const a=key?DB.accounts[key]:null;
-  /* --- bulut girisi: her cihazda ayni hesap --- */
-  if(cloud()&&(!a||!a.pw)){
+
+  /* Yeni bulut hesaplarında e-posta ve parola Supabase Auth ile doğrulanır. */
+  const cloudEmail=typedMail||(a&&String(a.mail||a.email||'').toLowerCase())||'';
+  if(cloud()&&cloudEmail){
     try{
-      let mail=String(loginDat.e||(a&&a.mail)||(a&&a.email)||'').toLowerCase();
-      if(!mail){try{const r=await sb('/rest/v1/rpc/iydu_email',{method:'POST',body:{p_username:u}});if(typeof r==='string'&&r.indexOf('@')>0)mail=r.toLowerCase()}catch(_){}}
-      const j=await sbSignIn(u,loginDat.p,mail);
-      if(j&&j.access_token){
-        const md=(j.user&&j.user.user_metadata)||{};
-        if(md.username&&!a){const lu=findUser(md.username);u=lu||md.username}
-        if(!mail&&j.user&&j.user.email)mail=String(j.user.email).toLowerCase();
-        const data=await sbPull(u);
-        const acc=data||norm({u,nick:(j.user&&j.user.user_metadata&&j.user.user_metadata.nick)||u});
-        acc.u=u;acc.mail=mail||acc.mail;await setPw(acc,loginDat.p);
-        DB.accounts[u]=acc;DB.last=acc.nick||u;DB.lastUser=u;
-        DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(acc);restorePomodoroState();loginDat={u:'',p:''};lastSig=signature(acc);
-        applyTheme();save();goTo('app','home');greetThen();
-        toast(tr()?'Buluttan yüklendi.':'Loaded from the cloud.');return;
+      const j=await sbSignIn(cloudEmail,loginDat.p);
+      const user=j.user||await sbCurrentUser();
+      if(!user||!user.id)throw new Error(tr()?'Supabase kullanıcı bilgisi alınamadı.':'Could not read the Supabase user.');
+      if(user.email_confirmed_at===null||user.email_confirmed_at===undefined&&!user.confirmed_at){
+        /* Supabase normalde doğrulanmamış e-postayla parola girişini reddeder. */
+        throw new Error(tr()?'E-posta adresin henüz doğrulanmamış.':'Your email address has not been confirmed yet.');
       }
+      await activateCloudUser(user,a);
+      DB.lock[k]={f:0,lv:L.lv,until:0};
+      loginDat={u:'',p:'',e:''};
+      applyTheme();save();goTo('app','home');greetThen();
+      toast(tr()?'Bulut hesabın yüklendi.':'Your cloud account is ready.');return;
     }catch(err){
-      if(err.status===400||err.status===401){/* sifre/hesap bulutta yok: yerel yola dus */}
+      /* Önceden bu cihazda açılmış yerel hesaplar eski parolalarıyla çalışmaya devam eder. */
+      if(a&&a.authUid){
+        msg=tr()?'E-posta veya şifre doğrulanamadı. E-postanı doğruladığından emin ol.':'Email or password could not be verified. Make sure your email is confirmed.';
+        return renderAppOrAuth();
+      }
+      if(!(a&&a.pw)){
+        msg=tr()?'Giriş başarısız. E-posta ve şifreni kontrol et.':'Sign-in failed. Check your email and password.';
+        return renderAppOrAuth();
+      }
     }
   }
-  if(a&&await pwMatch(a,loginDat.p)){
-    DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(a);restorePomodoroState();DB.last=a.nick;DB.lastUser=a.u;lastSig=signature(a);loginDat={u:'',p:''};
+
+  /* Eski, yalnızca bu cihazda kayıtlı hesaplar için geriye dönük giriş. */
+  if(a&&!a.authUid&&a.pw&&await pwMatch(a,loginDat.p)){
+    DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(a);restorePomodoroState();
+    DB.last=a.nick;DB.lastUser=a.u;DB.lastEmail=a.mail||a.email||'';lastSig=signature(a);loginDat={u:'',p:''};
     applyTheme();save();goTo('app','home');greetThen();return;
   }
   L.f++;
   if(L.f>=5){const long=L.lv>0;L.until=Date.now()+(long?5*3600000:30*60000);L.lv++;L.f=0;msg=long?(tr()?'5 hatalı deneme daha. 5 saat kilitli.':'5 more failed attempts. Locked for 5 hours.'):(tr()?'5 hatalı deneme. 30 dakika kilitli.':'5 failed attempts. Locked for 30 minutes.')}
-  else msg=a?t('wrongLoginKnown').replace('{u}',a.nick||a.u)+' '+(5-L.f):`${t('wrongLogin')} ${5-L.f}`+(typedMail?'':(tr()?' — başka cihazda açtığın hesapsa e-postanla giriş yap.':' — if you created it on another device, sign in with your email.'));
-  loginDat.e='';
+  else msg=tr()?'Kullanıcı adı/e-posta veya şifre yanlış.':'Username/email or password is incorrect.';
   DB.lock[k]=L;save();renderAppOrAuth();
 }
 
 async function setup(){
-  const u=$('#u').value.trim(),n=$('#n').value.trim(),e=$('#e').value.trim(),ph='',p=$('#p').value;
-  formDat={u,n,b:$('#b')?$('#b').value:'',e,t:ph,p};
+  const u=$('#u').value.trim(),n=$('#n').value.trim(),e=$('#e').value.trim().toLowerCase(),p=$('#p').value;
+  formDat={u,n,b:$('#b')?$('#b').value:'',e,t:'',p};
   if(!userRe.test(u))msg=t('usernameRules');
   else if(!n)msg=t('displayRequired');
   else if(findUser(u))msg=t('usernameTaken');
@@ -1029,52 +1042,78 @@ async function setup(){
   else if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))msg=t('emailInvalid');
   else msg=pwOk(p,u);
   if(msg)return renderAppOrAuth();
-  /* --- bulut: Supabase hesabi (varsa) --- */
-  let cloudOK=false,cloudErr='';
-  if(cloud()){
-    try{
-      const j=await sbSignUp(u,p,n,e);
-      if(j&&j.access_token){sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});cloudOK=true}
-      else if(j&&j.id){/* e-posta onayi acik: oturum yok, yerel devam */}
-    }catch(err){
-      cloudErr=err.message||'';
-      if(/already|exists|registered/i.test(cloudErr)){msg=tr()?'Bu kullanıcı adı bulutta kayıtlı.':'That username is already registered in the cloud.';return renderAppOrAuth()}
-    }
+  if(!cloud()){
+    msg=tr()?'Gerçek üyelik için bulut bağlantısı etkin olmalı.':'Cloud sign-up must be enabled for real accounts.';
+    return renderAppOrAuth();
   }
-  const a=newAcc(u,n,formDat.b,'',e,ph);await setPw(a,p);
-  DB.accounts[u]=a;DB.last=n;DB.lastUser=u;lastSig=signature(a);formDat={u:'',n:'',b:'',e:'',t:'',p:''};
-  a.mail=String(e||'').toLowerCase();A0=null;A=a;restorePomodoroState();applyTheme();save();goTo('app','home');greetThen();
-  if(cloudOK){sbPush();toast(tr()?'Bulut hesabı oluşturuldu, verilerin eşitleniyor.':'Cloud account created, syncing your data.');}
-  else if(cloudErr){toast((tr()?'Bulut hesabı kurulamadı, veriler bu cihazda: ':'Cloud account failed, data stays on this device: ')+cloudErr);}
+  try{
+    const j=await sbSignUp(u,p,n,e,formDat.b);
+    const user=j.user||j;
+    if(j.access_token&&j.refresh_token){
+      sbSave({...j,user});
+      await activateCloudUser(user,null);
+      formDat={u:'',n:'',b:'',e:'',t:'',p:''};
+      A0=null;applyTheme();save();goTo('app','home');greetThen();
+      toast(tr()?'Hesabın oluşturuldu.':'Your account has been created.');return;
+    }
+    if(user&&user.id){
+      /* E-posta onayı açıkken oturum null döner; bu durumda uygulamaya giriş VERİLMEZ. */
+      setItem(PENDING_SIGNUP_KEY,JSON.stringify({email:e,username:u,createdAt:Date.now()}));
+      DB.lastEmail=e;formDat={u:'',n:'',b:'',e:'',t:'',p:''};loginDat={u:e,p:'',e};
+      view='verify';msg='';renderAppOrAuth();return;
+    }
+    throw new Error(tr()?'Kayıt yanıtı beklenen biçimde değil.':'Unexpected sign-up response.');
+  }catch(err){
+    msg=(tr()?'Kayıt oluşturulamadı: ':'Could not create account: ')+String(err.message||err);
+    renderAppOrAuth();
+  }
 }
 
-/* gercek sifre sifirlama: Supabase kayitli e-posta adresine sifirlama baglantisi gonderir */
-async function sbRecover(email){
-  return sb('/auth/v1/recover',{method:'POST',body:{email:String(email).toLowerCase()}});
-}
-async function fSend(k){
-  const key=findUser($('#u').value.trim()),a=key&&DB.accounts[key];
-  const mail=a?String(a.mail||a.email||'').toLowerCase():'';
-  if(k==='email'&&mail){
-    msg='';
-    try{
-      await sbRecover(mail);
-      $('#fz').innerHTML=`<div class="note">${tr()?'E-posta gönderildi: ':'Email sent to '}<b>${esc(mail)}</b><br><small>${tr()?'Gelen kutunu (ve spam klasörünü) kontrol et, bağlantıya tıkla, sonra yeni şifrenle giriş yap.':'Check your inbox (and spam), open the link, then sign in with your new password.'}</small></div><button class="g" onclick="goTo('login','home')">${t('login')}</button>`;
-    }catch(err){
-      msg=(tr()?'E-posta gönderilemedi: ':'Could not send email: ')+err.message;
-      renderAppOrAuth();
-    }
-    return;
+/* Supabase e-posta doğrulama ve parola kurtarma akışları */
+async function fSendEmail(){
+  const email=String($('#reset-email')?.value||'').trim().toLowerCase();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg=t('emailInvalid');return renderAppOrAuth()}
+  try{
+    await sbRecover(email);
+    DB.lastEmail=email;save();
+    const boxEl=$('#fz');
+    if(boxEl)boxEl.innerHTML=`<div class="note">${tr()?'Bu adres için bir hesap varsa şifre sıfırlama bağlantısı gönderildi. Gelen kutunu ve spam klasörünü kontrol et.':'If an account exists for this address, a password reset link has been sent. Check your inbox and spam folder.'}</div><button class="g" onclick="goTo('login','home')">${t('login')}</button>`;
+  }catch(err){
+    msg=(tr()?'E-posta gönderilemedi: ':'Could not send email: ')+String(err.message||err);
+    renderAppOrAuth();
   }
-  if(!a||!a[k]){msg=t('noContact');return renderAppOrAuth()}
-  codes[key]=String(Math.floor(100000+Math.random()*900000));
-  $('#fz').innerHTML=`<div class="note">${t('sendHint')} <b>${codes[key]}</b></div><label>${t('code')}</label><input id="c" inputmode="numeric"><label>${t('newPassword')}</label><input id="p" type="password" autocomplete="new-password"><button onclick="fReset(${JSON.stringify(key).replace(/"/g,'&quot;')})">${tr()?'Şifreyi değiştir':'Reset password'}</button>`;
 }
-async function fReset(u){
-  if($('#c').value!==codes[u]){msg=t('wrongCode');return renderAppOrAuth()}
-  const e=pwOk($('#p').value,u);if(e){msg=e;return renderAppOrAuth()}
-  await setPw(DB.accounts[u],$('#p').value);delete codes[u];DB.lock[u.toLowerCase()]={f:0,lv:0,until:0};save();
-  view='login';msg=t('resetDone');renderAppOrAuth();
+async function completePasswordRecovery(){
+  const pass=$('#recovery-password')?.value||'';
+  const confirm=$('#recovery-password-confirm')?.value||'';
+  const user=recoveryUser||await sbCurrentUser();
+  const username=String(user&&(user.user_metadata||{}).username||'');
+  const validation=pwOk(pass,username);
+  if(validation){msg=validation;return renderAppOrAuth()}
+  if(pass!==confirm){msg=tr()?'Şifreler eşleşmiyor.':'The passwords do not match.';return renderAppOrAuth()}
+  try{
+    await sbUpdatePassword(pass);
+    const refreshedUser=await sbCurrentUser();
+    await activateCloudUser(refreshedUser||user,null);
+    recoveryUser=null;msg='';view='app';pg='home';
+    save();renderAppOrAuth();greetThen();
+    toast(tr()?'Şifren güncellendi.':'Your password has been updated.');
+  }catch(err){
+    msg=(tr()?'Şifre güncellenemedi: ':'Could not update password: ')+String(err.message||err);
+    renderAppOrAuth();
+  }
+}
+async function resendSignupConfirmation(){
+  const pending=readJson(PENDING_SIGNUP_KEY)||{};
+  const email=String(pending.email||loginDat.e||'').trim().toLowerCase();
+  if(!email){msg=tr()?'Doğrulanacak e-posta bulunamadı.':'No pending email address was found.';return renderAppOrAuth()}
+  try{
+    await sbResendSignup(email);
+    toast(tr()?'Doğrulama e-postası yeniden gönderildi.':'Confirmation email resent.');
+  }catch(err){
+    msg=(tr()?'E-posta gönderilemedi: ':'Could not resend email: ')+String(err.message||err);
+    renderAppOrAuth();
+  }
 }
 
 const NAV=NAV_KEYS;
@@ -1375,7 +1414,7 @@ P.set=()=>{
   const ac=keys.map((u,i)=>`<span class="tag ${DB.accounts[u]===A?'on':''}"><span>${esc(u)}</span>${DB.accounts[u]===A?'<span class="mut">'+t('active')+'</span>':`<button class="g s" onclick="switchAcc(${i})">${t('switch')}</button>`}</span>`).join('');
   M(`${m()}<div class="card"><h2>${t('lang')}</h2><div class="langbar" style="justify-content:flex-start">${langBtns()}</div><p class="mut" style="font-size:.85rem">${t('quoteLangNote')}</p></div>
 <div class="card"><h2>${t('account')}</h2><label>${t('username')} <span class="mut">(${tr()?'15 günde 5 değişiklik — kalan':'5 changes per 15 days —'} ${left('uc')})</span></label><div class="row"><input id="su" maxlength="20" value="${esc(A.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'')"><button onclick="chg('u')">${t('change')}</button></div><label style="display:block;margin-top:.8rem">${t('displayName')} <span class="mut">(${left('nc')})</span></label><div class="row"><input id="sn" maxlength="30" value="${esc(A.nick)}"><button onclick="chg('n')">${t('change')}</button></div><label style="display:block;margin-top:.8rem">${t('bio')}</label><textarea id="sb" rows="2" maxlength="160" onchange="A.bio=this.value;save()">${esc(A.bio)}</textarea></div>
-<div class="card"><h2>${t('email')}</h2><label>${t('email')} ${A.ver&&A.ver.email?'✓':''}</label><div class="row" style="margin-bottom:.6rem"><input id="semail" type="email" value="${esc(A.email||'')}"><button onclick="vSend('email')">${t('sendCode')}</button></div><div id="vz"></div></div>
+<div class="card"><h2>${t('email')}</h2><label>${t('email')} ${A.authUid?'✓':''}</label><div class="row" style="margin-bottom:.6rem"><input id="semail" type="email" value="${esc(A.email||A.mail||'')}"><button onclick="vSend('email')">${tr()?'Doğrulama bağlantısı gönder':'Send confirmation link'}</button></div><div id="vz"></div><p class="mut" style="font-size:.8rem">${tr()?'E-posta değişikliği Supabase üzerinden doğrulanır.':'Email changes are verified through Supabase.'}</p></div>
 <div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>
 <div class="card"><h2>${t('theme')}</h2>${themePick(false).replace('themebar','theme-in').replace('margin:0 0 .8rem','margin:0')}</div></div>
 <div class="card"><h2>${t('accounts')}</h2>${ac}<div style="margin-top:.6rem"><button class="g" onclick="A0=A;A=null;goTo('setup','home')">${t('addAccount')}</button></div></div>
@@ -1398,96 +1437,202 @@ function chg(k){
   }else{if(v===A.nick)return;A.nick=v}
   A[key].push(Date.now());DB.last=A.nick;save();msg=`${t('saved')} ${left(key)}`+(tr()?' değişiklik hakkı kaldı.':' changes left.');shell();
 }
-function vSend(k){
-  const v=$('#s'+k).value.trim();
-  if(k==='phone'&&!/^[0-9]{10,15}$/.test(v)){msg=t('phoneInvalid');return P.set()}
-  if(k==='email'&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){msg=t('emailInvalid');return P.set()}
-  A[k]=v;A.ver[k]=false;codes[k]=String(Math.floor(100000+Math.random()*900000));save();
-  $('#vz').innerHTML=`<div class="note">${t('sendHint')} <b>${codes[k]}</b></div><div class="row"><input id="vc" inputmode="numeric" placeholder="${t('code')}"><button onclick="vOk('${k}')">${t('verify')}</button></div>`;
+async function vSend(k){
+  if(k!=='email'||!A||!A.authUid){
+    msg=tr()?'E-posta değiştirmek için doğrulanmış bir bulut oturumu gerekli.':'A verified cloud session is required to change the email.';
+    return P.set();
+  }
+  const v=String($('#s'+k)?.value||'').trim().toLowerCase();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){msg=t('emailInvalid');return P.set()}
+  try{
+    await sb('/auth/v1/user',{method:'PATCH',body:{email:v}});
+    $('#vz').innerHTML=`<div class="note">${tr()?'Yeni e-posta adresine doğrulama bağlantısı gönderildi. Onaylandıktan sonra adresin güncellenecek.':'A confirmation link has been sent. Your email will update after confirmation.'}</div>`;
+  }catch(err){
+    msg=(tr()?'E-posta değiştirilemedi: ':'Could not update email: ')+String(err.message||err);
+    P.set();
+  }
 }
-function vOk(k){if($('#vc').value===codes[k]){A.ver[k]=true;save();msg=t('verified')}else msg=t('wrongCode');P.set()}
+
 async function chPw(){
-  if(!await pwMatch(A,$('#op').value)){msg=t('currentWrong');return P.set()}
-  const e=pwOk($('#np').value,A.u);if(e){msg=e;return P.set()}
-  await setPw(A,$('#np').value);save();msg=t('pwChanged');P.set();
+  const current=$('#op')?.value||'',next=$('#np')?.value||'';
+  const e=pwOk(next,A.u);if(e){msg=e;return P.set()}
+  if(A.authUid){
+    try{
+      if(!current){msg=tr()?'Mevcut şifreni gir.':'Enter your current password.';return P.set()}
+      await sbSignIn(A.email||A.mail,current);
+      await sbUpdatePassword(next);
+      msg=t('pwChanged');P.set();toast(t('saved'));return;
+    }catch(err){msg=tr()?'Şifre değiştirilemedi. Mevcut şifreni kontrol et.':'Password could not be changed. Check your current password.';return P.set()}
+  }
+  if(!await pwMatch(A,current)){msg=t('currentWrong');return P.set()}
+  await setPw(A,next);save();msg=t('pwChanged');P.set();
 }
+
 async function resetSys(){
-  if(!await pwMatch(A,$('#rp').value)){msg=t('wrongPw');return P.set()}
+  const password=$('#rp')?.value||'';
+  if(A&&A.authUid){
+    try{if(!password)throw new Error('password required');await sbSignIn(A.email||A.mail,password)}
+    catch(e){msg=t('wrongPw');return P.set()}
+  }else if(!await pwMatch(A,password)){msg=t('wrongPw');return P.set()}
   clearInterval(pm.iv);clearInterval(pm.swI);
-  const a=newAcc(A.u,A.nick,A.bio,A.pw,A.email,A.phone);
-  a.ver=A.ver;a.theme=A.theme;a.nc=A.nc;a.uc=A.uc;a.fog=A.fog;
+  const previous=A;
+  const a=newAcc(previous.u,previous.nick,previous.bio,previous.pw,previous.email,previous.phone);
+  a.ver=previous.ver;a.theme=previous.theme;a.nc=previous.nc;a.uc=previous.uc;a.fog=previous.fog;
+  if(previous.authUid){a.authUid=previous.authUid;a.email=previous.email;a.mail=previous.mail;a.pw=''}
   a.future={};a.pctFrom=today();a.pomo=null;
-  DB.accounts[A.u]=a;A=a;
+  DB.accounts[previous.u]=a;A=a;
   pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,lg:0,iv:0,sw:0,swT:0,swI:0};
   save();msg=t('systemReset');shell();
 }
 async function delAcc(){
+  if(A&&A.authUid){
+    msg=tr()?'Bulut hesabının kalıcı silinmesi için sunucu tarafında güvenli hesap silme işlevi henüz kurulmadı. Şimdilik bu düğme bulut hesabını silmez.':'Secure server-side deletion for cloud accounts has not been configured yet. This button will not delete your cloud account.';
+    return P.set();
+  }
   if(!await pwMatch(A,$('#dp').value)){msg=t('wrongPw');return P.set()}
   delete DB.accounts[A.u];A=null;DB.last='';DB.lastUser=Object.keys(DB.accounts)[0]||'';save();view='welcome';goTo('welcome','home');
 }
-/* ================= Supabase (bulut hesap + senkron) ================= */
+/* ================= Supabase Auth + bulut senkron ================= */
 const SUPABASE_URL='https://flcfqwndqfmbritaywfb.supabase.co';
 const SUPABASE_KEY='sb_publishable_4QTEEc6tSYV2QtNhmeP6Iw_B3sM6dtm';
-const CLOUD_KEY='b1cloud', SESS_KEY='b1sb';
+const SITE_URL='https://badgalnurkan.vercel.app/';
+const CLOUD_KEY='b1cloud', SESS_KEY='b1sb', PENDING_SIGNUP_KEY='b1.pending.signup';
+let recoveryUser=null;
 const cloud=()=>{try{return localStorage.getItem(CLOUD_KEY)!=='0'}catch(e){return true}};
 const sbSession=()=>{try{return JSON.parse(getItem(SESS_KEY)||'null')}catch(e){return null}};
-function sbSave(sess){try{setItem(SESS_KEY,JSON.stringify(sess))}catch(e){}}
+function sbSave(sess){
+  if(!sess||!sess.access_token)return;
+  const saved={
+    access_token:sess.access_token,
+    refresh_token:sess.refresh_token||'',
+    token_type:sess.token_type||'bearer',
+    expires_in:sess.expires_in||3600,
+    expires_at:sess.expires_at||Date.now()+Number(sess.expires_in||3600)*1000,
+    user:sess.user||null,
+    at:Date.now()
+  };
+  setItem(SESS_KEY,JSON.stringify(saved));
+}
 function sbClear(){try{setItem(SESS_KEY,'')}catch(e){}}
-/* tek giris noktasi: token yenileme + hata yonetimi */
-async function sb(path,opt){
+const sbRedirect=()=>SITE_URL;
+/* REST isteği: 401 alınırsa refresh token ile bir kez yenile ve isteği tekrarla. */
+async function sb(path,opt,retry=true){
   opt=opt||{};
   const sess=sbSession();
-  const h=Object.assign({'apikey':SUPABASE_KEY,'Content-Type':'application/json'},opt.headers||{});
-  if(sess&&sess.access_token&&!/^\/auth\/v1\/(signup|token|otp)/.test(path))h['Authorization']='Bearer '+sess.access_token;
-  const r=await fetch(SUPABASE_URL+path,{method:opt.method||'GET',headers:h,body:opt.body?JSON.stringify(opt.body):undefined});
-  let j=null;try{j=await r.json()}catch(e){}
-  if(!r.ok){
-    const em=(j&&(j.msg||j.message||j.error_description||j.error))||('HTTP '+r.status);
-    const err=new Error(em);err.status=r.status;err.code=j&&j.code;throw err;
+  const headers=Object.assign({'apikey':SUPABASE_KEY,'Content-Type':'application/json'},opt.headers||{});
+  if(sess&&sess.access_token&&!/^\/auth\/v1\/(signup|token|otp|resend|recover)(?:\?|$)/.test(path))headers['Authorization']='Bearer '+sess.access_token;
+  const response=await fetch(SUPABASE_URL+path,{method:opt.method||'GET',headers,body:opt.body!==undefined?JSON.stringify(opt.body):undefined});
+  let payload=null;try{payload=await response.json()}catch(e){}
+  if(response.status===401&&retry&&sess&&sess.refresh_token&&!/^\/auth\/v1\/token/.test(path)){
+    if(await sbRefresh())return sb(path,opt,false);
   }
-  return j;
+  if(!response.ok){
+    const message=(payload&&(payload.msg||payload.message||payload.error_description||payload.error))||('HTTP '+response.status);
+    const error=new Error(message);error.status=response.status;error.code=payload&&payload.code;throw error;
+  }
+  return payload;
 }
-/* e-posta/telefon -> supabase Auth */
-/* e-posta: kullanicinin GERCEK adresi (yoksa kullanici adindan turetilen yerel adres) */
-const sbEmail=(u,a)=>((a&&a.email)||(u.u||'')+'@iydu.app').toLowerCase();
-async function sbSignUp(u,pass,nick,email){
-  return sb('/auth/v1/signup',{method:'POST',body:{email:String(email).toLowerCase(),password:pass,data:{username:u,nick:nick}}});
+async function sbSignUp(username,password,nick,email,bio){
+  const url='/auth/v1/signup?redirect_to='+encodeURIComponent(sbRedirect());
+  return sb(url,{method:'POST',body:{email:String(email).trim().toLowerCase(),password,
+    data:{username,nick,bio:bio||''}}});
 }
-async function sbSignIn(u,pass,email){
-  const j=await sb('/auth/v1/token?grant_type=password',{method:'POST',body:{email:String(email||sbEmail(u)).toLowerCase(),password:pass}});
-  if(j&&j.access_token)sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
+async function sbSignIn(email,password){
+  const j=await sb('/auth/v1/token?grant_type=password',{method:'POST',body:{email:String(email).trim().toLowerCase(),password}});
+  if(j&&j.access_token)sbSave(j);
   return j;
 }
 async function sbRefresh(){
-  const sess=sbSession();
-  if(!sess||!sess.refresh_token)return false;
+  const session=sbSession();if(!session||!session.refresh_token)return false;
   try{
-    const j=await sb('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:sess.refresh_token}});
-    if(j&&j.access_token){sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});return true}
+    const j=await sb('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:session.refresh_token}},false);
+    if(j&&j.access_token){sbSave(j);return true}
   }catch(e){}
   return false;
 }
-/* bulut kaydi: kullanici basina tek satir (profil + tum uygulama verisi) */
-async function sbPush(){
-  if(!cloud()||!A||!sbSession())return false;
+async function sbCurrentUser(){
+  const user=await sb('/auth/v1/user',{method:'GET'});
+  const session=sbSession();if(session&&session.access_token)sbSave({...session,user});
+  return user;
+}
+async function sbUpdatePassword(password){return await sb('/auth/v1/user',{method:'PATCH',body:{password}})}
+async function sbRecover(email){
+  const url='/auth/v1/recover?redirect_to='+encodeURIComponent(sbRedirect());
+  return sb(url,{method:'POST',body:{email:String(email).trim().toLowerCase()}});
+}
+async function sbResendSignup(email){
+  const url='/auth/v1/resend?redirect_to='+encodeURIComponent(sbRedirect());
+  return sb(url,{method:'POST',body:{type:'signup',email:String(email).trim().toLowerCase()}});
+}
+async function activateCloudUser(user,fallbackAccount){
+  if(!user||!user.id||!user.email)throw new Error('Supabase user information is incomplete.');
+  const meta=user.user_metadata||{};
+  const email=String(user.email).toLowerCase();
+  const localKey=Object.keys(DB.accounts).find(k=>String(DB.accounts[k].mail||DB.accounts[k].email||'').toLowerCase()===email);
+  const remoteData=await sbPull('');
+  const base=remoteData||(fallbackAccount|| (localKey?DB.accounts[localKey]:null))||{};
+  let username=String(meta.username||base.u||(localKey||'')).trim();
+  if(!userRe.test(username))username='user'+String(user.id).replace(/-/g,'').slice(0,12);
+  /* Auth dönüşündeki kullanıcı kimliğini oturum kaydına da yaz. */
+  sbSave({...sbSession(),user});
+  const account=norm(base);
+  account.u=username;
+  account.nick=String(account.nick||meta.nick||username);
+  if(!account.bio&&meta.bio)account.bio=String(meta.bio).slice(0,160);
+  account.email=email;account.mail=email;account.authUid=user.id;
+  /* Supabase Auth parolayı yönetir; yerel hesapta parola özeti tutulmaz. */
+  account.pw='';
+  DB.accounts[username]=account;
+  if(localKey&&localKey!==username)delete DB.accounts[localKey];
+  DB.last=account.nick;DB.lastUser=username;DB.lastEmail=email;
+  A=account;lastSig=signature(account);restorePomodoroState();applyTheme();save();
+  return account;
+}
+async function handleAuthRedirect(){
+  const hashText=String(window.location.hash||'');
+  const params=new URLSearchParams(hashText.startsWith('#')?hashText.slice(1):hashText);
+  const errorText=params.get('error_description')||params.get('error');
+  const access=params.get('access_token'),refresh=params.get('refresh_token'),type=params.get('type')||'';
+  if(errorText){
+    try{history.replaceState({},document.title,location.pathname+location.search)}catch(e){}
+    msg=decodeURIComponent(errorText.replace(/\+/g,' '));view='login';renderAppOrAuth();return true;
+  }
+  if(!access||!refresh)return false;
+  /* Token'ları URL'den hemen çıkar; geçmişte ve adres çubuğunda bırakma. */
+  sbSave({access_token:access,refresh_token:refresh,token_type:params.get('token_type')||'bearer',expires_in:Number(params.get('expires_in')||3600)});
+  try{history.replaceState({},document.title,location.pathname+location.search)}catch(e){}
   try{
-    const payload={p_username:A.u,p_nick:A.nick||A.u,p_data:JSON.parse(JSON.stringify(A))};
-    await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:payload});
+    const user=await sbCurrentUser();
+    sbSave({...sbSession(),user});
+    if(type==='recovery'){
+      recoveryUser=user;view='recover';msg='';renderAppOrAuth();return true;
+    }
+    await activateCloudUser(user,null);
+    setItem(PENDING_SIGNUP_KEY,'');formDat={u:'',n:'',b:'',e:'',t:'',p:''};
+    view='app';pg='home';msg='';renderAppOrAuth();greetThen();
+    toast(tr()?'E-posta doğrulandı, hesabın hazır.':'Email confirmed. Your account is ready.');
     return true;
-  }catch(e){
-    if(e.status===401&&await sbRefresh()){try{await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:A}});return true}catch(_){}}
-    return false;
+  }catch(err){
+    A=null;view='login';msg=(tr()?'Doğrulama bağlantısı işlenemedi: ':'Could not complete the authentication link: ')+String(err.message||err);
+    renderAppOrAuth();return true;
   }
 }
-async function sbPull(u){
-  if(!cloud()||!sbSession())return null;
+/* Bulut kaydı yalnızca aktif Supabase kimliğiyle eşleşen yerel hesapta yapılır. */
+async function sbPush(){
+  const session=sbSession();
+  if(!cloud()||!A||!A.authUid||!session||!session.access_token||!session.user||session.user.id!==A.authUid)return false;
   try{
-    const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:u}});
-    const row=Array.isArray(rows)?rows[0]:rows;
-    if(!row||!row.data)return null;
-    return row.data;
-  }catch(e){return null}
+    const payload={p_username:A.u,p_nick:A.nick||A.u,p_data:JSON.parse(JSON.stringify(A))};
+    await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:payload});return true;
+  }catch(e){return false}
 }
+async function sbPull(u){
+  if(!cloud()||!sbSession())throw new Error('A valid Supabase session is required to load cloud data.');
+  const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:u||''}});
+  const row=Array.isArray(rows)?rows[0]:rows;
+  return row&&row.data?row.data:null;
+}
+
 function applyTheme(){if(!A)return;document.documentElement.dataset.t=DB.beige?'beige':A.theme}
 function th(t){setTheme(t)}
 function toggleBeige(){setTheme(DB.beige?'light':'beige')}
@@ -1497,13 +1642,31 @@ function lastAuthView(){
   let v='';
   try{v=sessionStorage.getItem('b1.view')||''}catch(e){}
   if(!v){try{const st=history.state;if(st&&st.v)v=st.v}catch(e){}}
-  return ['login','setup','forgot','welcome'].indexOf(v)>=0?v:'';
+  return ['login','setup','forgot','verify','recover','welcome'].indexOf(v)>=0?v:'';
 }
-const _lastAuth=lastAuthView();
-const _restored=_lastAuth?false:restoreSession();
-if(_lastAuth){view=_lastAuth;pg='home'}
-renderAppOrAuth();
-if(_restored)setTimeout(()=>{try{const c=$('#ck');if(c)c.hidden=true}catch(e){}},50);
+async function bootstrapApp(){
+  const callbackHandled=await handleAuthRedirect();
+  if(callbackHandled)return;
+  const lastAuth=lastAuthView();
+  const restored=lastAuth?false:restoreSession();
+  if(lastAuth){view=lastAuth;pg='home'}
+  if(restored&&A&&A.authUid){
+    try{
+      let user;
+      try{user=await sbCurrentUser()}catch(e){
+        if(await sbRefresh())user=await sbCurrentUser();
+        else throw e;
+      }
+      await activateCloudUser(user,A);
+    }catch(e){
+      A=null;view='login';pg='home';loginDat={u:DB.lastEmail||DB.lastUser||'',p:'',e:DB.lastEmail||''};
+      msg=tr()?'Oturumun sona ermiş. E-posta ve şifrenle yeniden giriş yap.':'Your session has expired. Sign in again with your email and password.';
+    }
+  }
+  renderAppOrAuth();
+  if(restored)setTimeout(()=>{try{const c=$('#ck');if(c)c.hidden=true}catch(e){}},50);
+}
+bootstrapApp().catch(err=>{console.error('Application startup failed:',err);renderAppOrAuth()});
 /* onbellekten (bfcache) geri gelince de oturum korunur */
 window.addEventListener('pageshow',e=>{if(e.persisted&&!A&&restoreSession())renderAppOrAuth();else if(e.persisted&&A&&pm.run)pTick(true)});
 </script>
