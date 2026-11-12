@@ -412,6 +412,66 @@ footer{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:c
 @media(min-aspect-ratio:16/9) and (min-width:1200px){aside{width:17.5rem}}
 @media(max-aspect-ratio:3/4){.cal{justify-content:flex-start}.dot{width:clamp(2.2rem,13vw,3rem);height:clamp(2.2rem,13vw,3rem)}}
 
+
+/* ==== mobile polish: compact typography, smooth horizontal navigation, month and brand fit ==== */
+.top-brand{min-width:0;max-width:none}
+.month-title{min-width:0;white-space:nowrap;word-break:normal;overflow-wrap:normal;hyphens:none}
+@media(max-width:900px){
+  .shell{padding-inline:clamp(.55rem,2.8vw,.85rem)}
+  .shell aside{
+    width:100%;max-width:100%;margin:.65rem 0 .25rem;padding:.4rem;
+    display:flex;flex-wrap:nowrap;justify-content:flex-start;align-items:center;
+    gap:.35rem;overflow-x:auto;overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
+    scroll-behavior:smooth;scroll-snap-type:x proximity;
+    scroll-padding-inline:.5rem;scrollbar-width:none;
+    border:1px solid var(--ln);box-shadow:0 5px 18px #8a5a3a10;
+  }
+  .shell aside::-webkit-scrollbar{display:none}
+  .shell aside a{
+    flex:0 0 auto;scroll-snap-align:center;white-space:nowrap;
+    min-height:2.55rem;height:auto;padding:.55rem .82rem;
+    font-size:clamp(.78rem,2.6vw,.9rem);line-height:1.15;
+    transition:background .28s ease,color .28s ease,transform .28s cubic-bezier(.2,.7,.2,1),box-shadow .28s ease;
+  }
+  .shell aside a.on{transform:translateY(-1px);box-shadow:0 4px 12px #a9714b2b}
+  main{gap:clamp(.75rem,2.4vw,1rem)}
+  .card{padding:clamp(.9rem,3.8vw,1.15rem);border-radius:clamp(16px,4vw,20px)}
+  .card h2{font-size:clamp(1.02rem,4.2vw,1.18rem);line-height:1.25;letter-spacing:0}
+  .card h3{font-size:clamp(.94rem,3.8vw,1.04rem);line-height:1.3}
+  .mut,small,.qcap{font-size:clamp(.76rem,2.9vw,.84rem)}
+  .row{gap:.45rem}
+  .month-nav{flex-wrap:nowrap;gap:clamp(.25rem,1.5vw,.5rem)}
+  .month-nav>button{flex:0 0 auto;min-width:2.45rem;padding:.35rem .72rem}
+  .month-title{flex:1 1 auto;font-size:clamp(.92rem,4.3vw,1.12rem);line-height:1.15;letter-spacing:0;text-align:center;overflow:visible}
+  header.top{
+    display:flex;flex-wrap:nowrap;align-items:center;gap:.4rem;
+    padding:.68rem clamp(.65rem,3vw,.9rem);
+  }
+  header.top .top-brand{
+    flex:1 1 auto;min-width:0;max-width:none!important;
+    overflow:visible!important;text-overflow:clip!important;white-space:nowrap;
+    font-size:clamp(.82rem,4.05vw,1.04rem)!important;
+    line-height:1.2;letter-spacing:0;
+  }
+  #top-date-trigger{flex:0 0 auto;font-size:clamp(.72rem,3vw,.84rem);padding:.22em .48em;gap:.22em}
+  #top-date-trigger small{font-size:.68rem}
+  .pct-big{font-size:clamp(2rem,9vw,2.8rem)}
+  .tm{font-size:clamp(2.3rem,10vw,3.8rem)}
+}
+@media(max-width:380px){
+  header.top{gap:.28rem;padding-inline:.55rem}
+  header.top .top-brand{font-size:clamp(.78rem,3.9vw,.92rem)!important}
+  #top-date-trigger{font-size:.7rem;padding:.2em .38em}
+  .month-nav>button{min-width:2.25rem;padding:.3rem .6rem}
+  .month-title{font-size:clamp(.86rem,4vw,1rem)}
+  .shell aside a{padding:.52rem .72rem;font-size:.78rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .shell aside{scroll-behavior:auto;scroll-snap-type:none}
+  .shell aside a{transition:none}
+}
+
 </style>
 </head>
 <body>
@@ -559,8 +619,15 @@ function swapPage(){
 function centerNav(){
   const aside=document.querySelector('aside'),on=aside&&aside.querySelector('a.on');
   if(!aside||!on||aside.scrollWidth<=aside.clientWidth+2)return;
-  const left=on.offsetLeft-(aside.clientWidth-on.offsetWidth)/2;
-  try{aside.scrollTo({left:Math.max(0,left),behavior:'smooth'})}catch(e){aside.scrollLeft=Math.max(0,left)}
+  /* Use visible rectangles rather than offsetLeft: mobile browsers can report
+     offsetLeft relative to the page when the horizontal nav is not positioned. */
+  const navRect=aside.getBoundingClientRect(),itemRect=on.getBoundingClientRect();
+  const itemCenter=(itemRect.left-navRect.left)+aside.scrollLeft+(itemRect.width/2);
+  const target=itemCenter-(aside.clientWidth/2);
+  const max=Math.max(0,aside.scrollWidth-aside.clientWidth);
+  const left=Math.max(0,Math.min(max,target));
+  const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  try{aside.scrollTo({left,behavior:reduced?'auto':'smooth'})}catch(e){aside.scrollLeft=left}
 }
 window.addEventListener('popstate',e=>{
   if(A)return;
@@ -589,7 +656,7 @@ username:'Username',password:'Password',newAccount:'New account',today:'Today',b
 noProjects:'No projects yet.',addTask:'Add a task.',newTask:'New task',done:'Done',notDone:'Not done',delete:'Delete',addToToday:'Add to today',
 dailyReport:'Daily report',tasksDone:'tasks done',total:'Total',level:'Level',successDays:'successful days to the next level. The look gets richer as you level up.',
 quoteOfTheDay:'Quote of the day',focus:'focus',break:'break',focusAndBreak:'Focus and break lengths',stopwatch:'Stopwatch',startPause:'Start / Pause',reset:'Reset',
-startStop:'Start / Stop',addLength:'Add a length',afterThree:'After 3 focus sessions, the longest saved break is used.',
+startStop:'Start / Stop',addLength:'Add a length',afterFive:'After 5 focus sessions, the longest saved break is used.',
 progress:'Progress',everyDayAdds:'Every day you complete all your tasks adds +1.',analysis:'Analysis',noRecords:'No records for this day.',
 weeklyReport:'Weekly report',monthlyReport:'Monthly report',previous:'previous',change:'change',questionsFor:'Questions for this',lockAnswers:'Lock answers',
 answersLocked:'Your answers are locked.',noQuestions:'There were no questions for this',askedNext:'; the questions below will be asked next',
@@ -621,7 +688,7 @@ username:'Kullanıcı adı',password:'Şifre',newAccount:'Yeni hesap',today:'Bug
 noProjects:'Henüz proje yok.',addTask:'Bir görev ekle.',newTask:'Yeni görev',done:'Yapıldı',notDone:'Yapılmadı',delete:'Sil',addToToday:'Bugüne ekle',
 dailyReport:'Günlük rapor',tasksDone:'görev tamamlandı',total:'Toplam',level:'Seviye',successDays:'başarılı gün kaldı. Seviye yükseldikçe görünüm zenginleşir.',
 quoteOfTheDay:'Günün alıntısı',focus:'odak',break:'mola',focusAndBreak:'Odak ve mola süreleri',stopwatch:'Kronometre',startPause:'Başlat / Duraklat',reset:'Sıfırla',
-startStop:'Başlat / Durdur',addLength:'Süre ekle',afterThree:'3 odak seansından sonra kayıtlı en uzun mola kullanılır.',
+startStop:'Başlat / Durdur',addLength:'Süre ekle',afterFive:'5 odak seansından sonra kayıtlı en uzun mola kullanılır.',
 progress:'İlerleme',everyDayAdds:'Tüm görevlerini bitirdiğin her gün +1 ekler.',analysis:'Analiz',noRecords:'Bu güne ait kayıt yok.',
 weeklyReport:'Haftalık rapor',monthlyReport:'Aylık rapor',previous:'önceki',change:'değişim',questionsFor:'Sorular —',lockAnswers:'Cevapları kilitle',
 answersLocked:'Cevapların kilitli.',noQuestions:'Bu dönem için soru yoktu',askedNext:'; aşağıdaki sorular bir sonraki dönemde sorulacak',
@@ -856,8 +923,8 @@ const closeModal=id=>{const e=document.getElementById(id);if(e)e.remove()};
 function openGuideModal(){
   const tr2=tr();
   const body=tr2
-    ?`<ul style="font-size:.92rem;padding-left:1.2rem;line-height:1.7"><li><b>Ana sayfa:</b> günün alıntısı, günlük rapor, seviye ve proje hatırlatıcıları.</li><li><b>Yapılacaklar:</b> görev ekle, bitince ✓, bitmediyse ✕. Kaçırdığın görevler birikime geçer (en fazla 10).</li><li><b>Pomodoro:</b> odak/mola süreleri, 3 seanstan sonra en uzun mola ve milisaniyeli kronometre.</li><li><b>İlerleme:</b> tüm görevlerini bitirdiğin her gün yüzdelik dilimini +1 artırır. Geçmişte tamamlamadığın günler sisli görünür; herhangi bir güne, gelecekteki günlere bile not ekleyebilirsin.</li><li><b>Raporlar:</b> haftalık rapor pazar günü, aylık rapor ayın son günü açılır.</li></ul><p class="mut" style="font-size:.85rem">Verilerin yalnızca bu tarayıcıda saklanır.</p>`
-    :`<p class="mut">Built to help you manage your daily discipline, tasks and focus. Your data is stored only in your own browser.</p><ul style="font-size:.92rem;padding-left:1.2rem;line-height:1.7"><li><b>Home:</b> quote of the day, daily report, level and project reminders.</li><li><b>To-do list:</b> add a task, tap ✓ when done or ✕ if not done. Missed tasks move to the backlog (max 10).</li><li><b>Pomodoro:</b> focus/break lengths, the longest break after 3 sessions, and a millisecond stopwatch.</li><li><b>Progress:</b> every day you finish all your tasks adds +1 to your percentage. Past days you did not complete appear foggy; you can leave a note on any day, even a future one.</li><li><b>Reports:</b> the weekly report opens on Sunday, the monthly report on the last day of the month.</li></ul>`;
+    ?`<ul style="font-size:.92rem;padding-left:1.2rem;line-height:1.7"><li><b>Ana sayfa:</b> günün alıntısı, günlük rapor, seviye ve proje hatırlatıcıları.</li><li><b>Yapılacaklar:</b> görev ekle, bitince ✓, bitmediyse ✕. Kaçırdığın görevler birikime geçer (en fazla 10).</li><li><b>Pomodoro:</b> odak/mola süreleri, 5 seanstan sonra en uzun mola ve milisaniyeli kronometre.</li><li><b>İlerleme:</b> tüm görevlerini bitirdiğin her gün yüzdelik dilimini +1 artırır. Geçmişte tamamlamadığın günler sisli görünür; herhangi bir güne, gelecekteki günlere bile not ekleyebilirsin.</li><li><b>Raporlar:</b> haftalık rapor pazar günü, aylık rapor ayın son günü açılır.</li></ul><p class="mut" style="font-size:.85rem">Verilerin yalnızca bu tarayıcıda saklanır.</p>`
+    :`<p class="mut">Built to help you manage your daily discipline, tasks and focus. Your data is stored only in your own browser.</p><ul style="font-size:.92rem;padding-left:1.2rem;line-height:1.7"><li><b>Home:</b> quote of the day, daily report, level and project reminders.</li><li><b>To-do list:</b> add a task, tap ✓ when done or ✕ if not done. Missed tasks move to the backlog (max 10).</li><li><b>Pomodoro:</b> focus/break lengths, the longest break after 5 sessions, and a millisecond stopwatch.</li><li><b>Progress:</b> every day you finish all your tasks adds +1 to your percentage. Past days you did not complete appear foggy; you can leave a note on any day, even a future one.</li><li><b>Reports:</b> the weekly report opens on Sunday, the monthly report on the last day of the month.</li></ul>`;
   openModal('guide-modal',`<h2>${t('howItWorks')}</h2>${body}<div style="text-align:center;margin-top:1.2rem"><button onclick="closeModal('guide-modal')">${tr2?'Anladım':'Got it'}</button></div>`);
 }
 
@@ -1047,7 +1114,7 @@ function shell(){
     if(hasNote(k))cls+=' note';
     mc+=`<button class="mini-dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="miniClick(event,'${k}')"><span>${d}</span></button>`}
   const keepAside=document.querySelector('#nav-aside'),firstShell=!document.querySelector('.shell aside');
-  $('#app').innerHTML=`<header class="top"><b role="button" tabindex="0" title="${tr()?'Giriş ekranı':'Sign-in screen'}" onclick="headerHome(this)">Improvin' your day.</b><span id="top-date-trigger" role="button" tabindex="0" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="toggleMiniCal(event)" title="${t('calendar')}"><span>${fmt(today())}</span> ▾${DB.beige?'<small>bej</small>':''}</span><div id="mini-cal" class="mini-popup"><div style="font-family:var(--fs);font-weight:700;color:var(--acc);margin-bottom:.4rem">${monthName(mo)} ${y}</div><div class="mini-cal-grid">${mc}</div><p class="mut" style="font-size:.72rem;margin:.6rem 0 0">${tr()?'Bir güne tıkla: açık bej görünümü aç/kapat.':'Click a day to toggle the light beige look.'}</p></div></header><div class="shell"><aside class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="goTo('app','set')"><small>${tr()?'Hoş geldin,':'Welcome,'}</small>${esc(A.nick)}</div>${NAV.map(([k])=>k=='logout'?`<a role="button" tabindex="0" onclick="confirmLogout()">${navLabel('logout')}</a>`:`<a role="button" tabindex="0" data-k="${k}" class="${pg==k?'on':''}" ${pg==k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button id="back-welcome" class="ft-link" onclick="goHome()"><span aria-hidden="true">←</span> ${t('backWelcome')}</button><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><b class="top-brand" role="button" tabindex="0" title="${tr()?'Giriş ekranı':'Sign-in screen'}" onclick="headerHome(this)">Improvin' your day.</b><span id="top-date-trigger" role="button" tabindex="0" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="toggleMiniCal(event)" title="${t('calendar')}"><span>${fmt(today())}</span> ▾${DB.beige?'<small>bej</small>':''}</span><div id="mini-cal" class="mini-popup"><div style="font-family:var(--fs);font-weight:700;color:var(--acc);margin-bottom:.4rem">${monthName(mo)} ${y}</div><div class="mini-cal-grid">${mc}</div><p class="mut" style="font-size:.72rem;margin:.6rem 0 0">${tr()?'Bir güne tıkla: açık bej görünümü aç/kapat.':'Click a day to toggle the light beige look.'}</p></div></header><div class="shell"><aside class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="goTo('app','set')"><small>${tr()?'Hoş geldin,':'Welcome,'}</small>${esc(A.nick)}</div>${NAV.map(([k])=>k=='logout'?`<a role="button" tabindex="0" onclick="confirmLogout()">${navLabel('logout')}</a>`:`<a role="button" tabindex="0" data-k="${k}" class="${pg==k?'on':''}" ${pg==k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button id="back-welcome" class="ft-link" onclick="goHome()"><span aria-hidden="true">←</span> ${t('backWelcome')}</button><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),700)}
@@ -1109,7 +1176,7 @@ P.pc=()=>{
   }
   const monthKey=`${y}-${pad(mo+1)}`;
   const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<div class="task"><span><b>${fmt(k)}</b> — ${esc(A.future[k])}</span><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();P.pc()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button><button class="g s" onclick="P.pc()">${t('calendar')}</button></div></div><div class="card"><div class="row"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p>${noteList||'<p class="mut">'+t('noNote')+'</p>'}<div class="row" style="margin-top:.6rem"><input id="fnd" type="date" style="max-width:11rem"><button onclick="newNote()">${t('addFutureNote')}</button></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();P.pc()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button><button class="g s" onclick="P.pc()">${t('calendar')}</button></div></div><div class="card"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p>${noteList||'<p class="mut">'+t('noNote')+'</p>'}<div class="row" style="margin-top:.6rem"><input id="fnd" type="date" style="max-width:11rem"><button onclick="newNote()">${t('addFutureNote')}</button></div></div>`);
 };
 function newNote(){const d=$('#fnd').value;if(!d){toast(tr()?'Bir tarih seç.':'Pick a date.');return}openDay(d)}
 function delNote(k){delete A.future[k];save();P.pc()}
@@ -1215,12 +1282,12 @@ function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)(
 P.pomo=()=>{
   editIdx=-1;
   const pr=A.presets.map((p,i)=>`<div class="tag ${pm.w==p.w&&pm.b==p.b?'on':''}"><span role="button" tabindex="0" style="cursor:pointer;flex:1" onclick="setP(${p.w},${p.b})"><b>${fmtDuration(p.w)}</b> ${t('focus')} / <b>${fmtDuration(p.b)}</b> ${t('break')}</span><span class="row" style="gap:.3rem"><button class="g s" onclick="editP(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s d" onclick="delP(${i})">${t('delete')}</button></span></div>`).join('');
-  M(`<div class="card"><div class="mut" style="text-align:center" id="pl"></div><div class="tm" id="pt">${ft(pm.left)}</div><div class="row" style="justify-content:center"><button onclick="pS()">${t('startPause')}</button><button class="g" onclick="pR()">${t('reset')}</button></div><p id="pi" class="mut" style="text-align:center"></p></div><div class="card"><h2>${t('focusAndBreak')}</h2>${pr||'<p class="mut">'+t('addLength')+'</p>'}<div class="row" style="margin-top:.7rem"><input id="cw" type="number" inputmode="numeric" min="1" max="600" placeholder="${t('focus')} (${t('minutes')})"><input id="cb" type="number" inputmode="numeric" min="1" max="600" placeholder="${t('break')} (${t('minutes')})"><button onclick="addP()">${tr()?'Ekle / Güncelle':'Add / Update'}</button></div><p class="mut" style="font-size:.85rem">${t('afterThree')}</p></div><div class="card"><h2>${t('stopwatch')}</h2><div class="tm" id="sw">${fms(pm.swT*1000)}</div><div class="row" style="justify-content:center"><button onclick="swS()">${t('startStop')}</button><button class="g" onclick="swR()">${t('reset')}</button></div></div>`);
+  M(`<div class="card"><div class="mut" style="text-align:center" id="pl"></div><div class="tm" id="pt">${ft(pm.left)}</div><div class="row" style="justify-content:center"><button onclick="pS()">${t('startPause')}</button><button class="g" onclick="pR()">${t('reset')}</button></div><p id="pi" class="mut" style="text-align:center"></p></div><div class="card"><h2>${t('focusAndBreak')}</h2>${pr||'<p class="mut">'+t('addLength')+'</p>'}<div class="row" style="margin-top:.7rem"><input id="cw" type="number" inputmode="numeric" min="1" max="600" placeholder="${t('focus')} (${t('minutes')})"><input id="cb" type="number" inputmode="numeric" min="1" max="600" placeholder="${t('break')} (${t('minutes')})"><button onclick="addP()">${tr()?'Ekle / Güncelle':'Add / Update'}</button></div><p class="mut" style="font-size:.85rem">${t('afterFive')}</p></div><div class="card"><h2>${t('stopwatch')}</h2><div class="tm" id="sw">${fms(pm.swT*1000)}</div><div class="row" style="justify-content:center"><button onclick="swS()">${t('startStop')}</button><button class="g" onclick="swR()">${t('reset')}</button></div></div>`);
   pi();
 };
 function pi(){
   const e=$('#pi'),l=$('#pl');if(!e)return;
-  l.textContent=pm.ph==='w'?`${t('session')} ${pm.n%3+1}/3 · ${fmtDuration(pm.w)}`:(pm.lg?t('longBreak'):t('break'));
+  l.textContent=pm.ph==='w'?`${t('session')} ${pm.n%5+1}/5 · ${fmtDuration(pm.w)}`:(pm.lg?t('longBreak'):t('break'));
   e.textContent=pm.run?`${t('pomoEnds')}: ${clk(pm.left*1000)}`:(pm.w>60&&pm.ph==='w'?`${pm.w} ${t('minutes')} · ${t('alreadyEnds')} ${clk(pm.left*1000)}`:'');
 }
 function setP(w,b){clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,end:0,n:0,lg:0,iv:0};persistPomodoroState();document.title=TITLE;P.pomo()}
@@ -1238,7 +1305,7 @@ function pTick(silent=false){
     if(!silent&&transitions===0)beep();
     let nextMinutes;
     if(pm.ph==='w'){
-      pm.n++;pm.ph='b';pm.lg=pm.n%3===0?1:0;
+      pm.n++;pm.ph='b';pm.lg=pm.n%5===0?1:0;
       const breaks=Array.isArray(A&&A.presets)?A.presets.map(p=>Number(p.b)).filter(v=>Number.isFinite(v)&&v>0):[];
       nextMinutes=pm.lg?Math.max(pm.b,...breaks):pm.b;
     }else{
