@@ -981,6 +981,8 @@ async function login(){
   let u=typed||(skipRem?'':rememberedUser());
   loginDat.u=u;
   if(!u){msg=tr()?'Kullanıcı adını gir.':'Enter your username.';return renderAppOrAuth()}
+  /* Bos sifre, yanlis sifre denemesi sayilmaz; kilit/deneme sayacini etkilemez. */
+  if(!loginDat.p){msg=tr()?'Şifreni gir.':'Enter your password.';return renderAppOrAuth()}
   const key=findUser(u),k=(key||u).toLowerCase(),L=DB.lock[k]||{f:0,lv:0,until:0};
   if(Date.now()<L.until){msg=`${t('locked')} ${fmtMin(Math.ceil((L.until-Date.now())/60000))}.`;return renderAppOrAuth()}
   const a=key?DB.accounts[key]:null;
