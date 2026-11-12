@@ -472,6 +472,30 @@ footer{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:c
   .shell aside a{transition:none}
 }
 
+/* ==== mobile nav: native horizontal swipe, no snap resistance ==== */
+@media(max-width:900px){
+  .shell aside{
+    overflow-x:auto!important;overflow-y:hidden!important;
+    touch-action:pan-x pan-y pinch-zoom!important;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+    scroll-snap-type:none!important;
+    scroll-behavior:smooth;
+    scrollbar-width:none;
+    cursor:grab;
+  }
+  .shell aside:active{cursor:grabbing}
+  .shell aside a{
+    touch-action:pan-x pan-y pinch-zoom!important;
+    scroll-snap-align:none!important;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;-webkit-user-select:none;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .shell aside{scroll-behavior:auto}
+}
+
 </style>
 </head>
 <body>
