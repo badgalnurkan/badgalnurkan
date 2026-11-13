@@ -822,6 +822,126 @@ main .card{animation-duration:.25s;animation-delay:0s!important}
 .modal,.modal .card{animation-duration:.22s}
 @media(prefers-reduced-motion:reduce){button,aside a,.lg-link,.ft-link,main .card,.mini-popup{animation:none!important;transition:none!important}}
 
+\n/* V7: Pomodoro focus mode remains readable in narrow desktop windows and landscape phones. */
+.pomo-overlay{
+  box-sizing:border-box;
+  background:color-mix(in srgb,var(--bg) 98%,transparent);
+  padding:clamp(.65rem,2.2vmin,1.6rem);
+  min-height:0;
+  max-height:100dvh;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  align-items:safe center;
+}
+.pomo-panel{
+  box-sizing:border-box;
+  flex:0 1 auto;
+  min-width:0;
+  max-width:min(100%,34rem);
+  gap:clamp(.4rem,1.65dvh,.85rem);
+  padding-block:.2rem;
+}
+.pomo-ring{
+  box-sizing:border-box;
+  width:min(82vw,53dvh,24rem)!important;
+  height:auto!important;
+  aspect-ratio:1;
+  min-width:0;
+  flex:none;
+  padding:clamp(.45rem,1.8vmin,.9rem);
+}
+.pomo-ring-inner{
+  box-sizing:border-box;
+  min-width:0;
+  overflow:hidden;
+  padding:clamp(.25rem,1.8vmin,.8rem);
+  gap:clamp(.1rem,.8vmin,.35rem);
+}
+.pomo-ring-inner .tm{
+  display:block;
+  width:100%;
+  font-size:clamp(1.5rem,min(8.8vw,7.3dvh),3.6rem)!important;
+  line-height:1.09;
+  letter-spacing:-.035em;
+  white-space:nowrap!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  hyphens:none!important;
+  font-variant-numeric:tabular-nums;
+}
+.pomo-ring-inner .pomo-meta{
+  font-size:clamp(.68rem,min(2.4vw,2.2dvh),.92rem);
+  line-height:1.2;
+  max-width:100%;
+  overflow-wrap:normal;
+}
+.pomo-ring-inner .pomo-meta:last-child{
+  white-space:nowrap;
+  font-size:clamp(.62rem,min(2vw,1.9dvh),.83rem);
+  letter-spacing:-.01em;
+}
+.pomo-actions{
+  width:100%;
+  display:flex;
+  flex-wrap:nowrap!important;
+  justify-content:center;
+  gap:clamp(.45rem,2vw,.85rem);
+  padding:0 .25rem;
+}
+.pomo-actions button{
+  flex:0 1 auto;
+  min-width:0;
+  padding:.5rem clamp(.65rem,3.5vw,1.3rem);
+  white-space:nowrap;
+}
+.pomo-panel>small{
+  max-width:100%;
+  text-align:center;
+  font-size:clamp(.72rem,1.9vw,.85rem);
+  line-height:1.35;
+}
+@media(max-width:365px), (max-height:440px){
+ .pomo-ring-inner .pomo-meta:last-child{display:none}
+ .pomo-panel{gap:.4rem}
+}
+@media(max-height:540px) and (orientation:landscape){
+ .pomo-overlay{padding:.35rem}
+ .pomo-ring{width:min(48vw,46dvh,18rem)!important}
+ .pomo-ring-inner .tm{font-size:clamp(1.25rem,min(6vw,7dvh),2.6rem)!important}
+ .pomo-ring-inner .pomo-meta:last-child{display:none}
+ .pomo-actions button{min-height:2.35rem}
+}
+/* V7: A single transparent, quick sign-in transition. No expanding circle or long hold. */
+#login-portal{background:transparent}
+#login-portal .portal-disc{
+  background:color-mix(in srgb,var(--bg) 27%,transparent);
+  clip-path:none!important;
+  animation:portalSoftVeil .30s ease-out both!important;
+  -webkit-backdrop-filter:blur(2px);
+  backdrop-filter:blur(2px);
+}
+#login-portal .portal-ring{
+  width:3.3rem;
+  height:3.3rem;
+  border-width:2px;
+  animation:portalSoftRing .30s ease-out both!important;
+}
+@keyframes portalSoftVeil{0%{opacity:0}30%{opacity:.92}100%{opacity:0}}
+@keyframes portalSoftRing{0%{opacity:0;transform:rotate(0) scale(.85)}30%{opacity:1;transform:rotate(140deg) scale(1)}100%{opacity:0;transform:rotate(270deg) scale(.95)}}
+.login-busy-overlay{-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);background:color-mix(in srgb,var(--bg) 80%,transparent)}
+/* V7: clear contact options; one opens a mail app, one opens Gmail in browser. */
+.contact-actions{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.55rem;margin-top:1rem}
+.contact-actions a{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:.9rem;font-weight:700;min-height:2.6rem;padding:.5rem 1rem;border:1px solid var(--ln);border-radius:999px;transition:background .16s,color .16s,border-color .16s,transform .16s}
+.contact-actions .contact-primary{color:var(--on-acc,#fff);background:var(--acc);border-color:var(--acc)}
+.contact-actions .contact-gmail{color:var(--acc);background:var(--card)}
+.contact-actions a:hover{transform:translateY(-1px);border-color:var(--acc)}
+.contact-actions a:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){
+ #login-portal .portal-disc,#login-portal .portal-ring{animation:none!important}
+ .contact-actions a{transition:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -981,7 +1101,7 @@ const dd=(a,b)=>Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5);
 const sha=async s=>{try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))|0;return'f'+h}};
 const AY=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const Q_LIST=["Small steps add up to big changes.","Discipline is choosing what you want most over what you want now.","You don't have to be great to start, but you have to start to be great.","Consistency beats intensity.","Progress, not perfection.","Focus on being productive instead of busy.","Your future is created by what you do today, not tomorrow.","Action is the foundational key to all success."];
+const Q_LIST=["You don't have to do it all today. Just take the next step.","A little progress still counts.","Some days are for big wins. Others are for showing up.","Keep the plan simple enough to actually use.","One finished task beats a dozen perfect plans.","Need a reset? You can start fresh right now.","Your pace can change. You're still moving forward.","Pick one thing that matters and give it your attention.","A short break can make the next step easier.","It's fine to adjust the plan as you go.","Notice what's working, not just what's left to do.","You made time for yourself today. That matters."];
 const getDailyQuote=()=>getDailyQuoteIn(DB.lang);
 
 /* ================= i18n ================= */
@@ -990,9 +1110,9 @@ en:{welcome:'WELCOME',continue:'Continue →',howItWorks:'How it works',contact:
 username:'Username',password:'Password',newAccount:'New account',today:'Today',backlog:'Backlog',projectReminders:'Project reminders',projectName:'Project name',add:'Add',
 noProjects:'No projects yet.',addTask:'Add a task.',newTask:'New task',done:'Done',notDone:'Not done',delete:'Delete',addToToday:'Add to today',
 dailyReport:'Daily report',tasksDone:'tasks done',total:'Total',level:'Level',successDays:'successful days to the next level. The look gets richer as you level up.',
-quoteOfTheDay:'Quote of the day',focus:'focus',break:'break',focusAndBreak:'Focus and break lengths',stopwatch:'Stopwatch',startPause:'Start / Pause',reset:'Reset',
-startStop:'Start / Stop',addLength:'Add a length',afterFive:'After 5 focus sessions, the longest saved break is used.',
-progress:'Progress',everyDayAdds:'Every day you complete all your tasks adds +1.',analysis:'Analysis',noRecords:'No records for this day.',
+quoteOfTheDay:'A little motivation',focus:'focus',break:'break',focusAndBreak:'Focus and break times',stopwatch:'Stopwatch',startPause:'Start / Pause',reset:'Reset',
+startStop:'Start / Stop',addLength:'Add a length',afterFive:'After five focus sessions, take your longest saved break.',
+progress:'Progress',everyDayAdds:'Every day you complete all your tasks adds +1.',analysis:'Analysis',noRecords:'Nothing logged for this day yet.',
 weeklyReport:'Weekly report',monthlyReport:'Monthly report',previous:'previous',change:'change',questionsFor:'Questions for this',lockAnswers:'Lock answers',
 answersLocked:'Your answers are locked.',noQuestions:'There were no questions for this',askedNext:'; the questions below will be asked next',
 addOwnQuestion:'Add your own question',addQuestion:'Add question',randomQuestion:'🎲 Random question',opensOn:'This report opens on',daysLeft:'days left',
@@ -1001,8 +1121,8 @@ changePassword:'Change password',theme:'Theme',dark:'Dark',light:'Light',account
 deleteAccount:'Delete account',displayName:'Display name',bio:'Bio',change:'Change',active:'active',switch:'Switch',verify:'Verify',
 logout:'Log out',logoutQ:'Do you want to log out?',yes:'Yes',no:'No',loginBack:'Back to sign in',welcomeBack:'Welcome back',welcomeExcl:'Welcome!',
 locked:'Temporarily locked. Time left:',wrongLogin:'Wrong username or password. Attempts left:',signOut:'Sign out',signOutQ:'Go back to the sign-in screen? Your data stays saved on this device.',
-lockedReport:'This report opens on',futureNotes:'Notes for the future',addFutureNote:'Add a note',noteSaved:'Note saved.',notePlaceholder:'What do you want to remember about this day?',
-noNote:'No note for this day yet.',editNote:'Edit note',save:'Save',cancel:'Cancel',yourNote:'Your note',futureNoteHint:'You can leave a note for any day in the calendar — even for days that have not arrived yet.',
+lockedReport:'This report opens on',futureNotes:'Notes for the future',addFutureNote:'Add a note',noteSaved:'Note saved.',notePlaceholder:'Anything you want to remember about today?',
+noNote:'No note for this day yet.',editNote:'Edit note',save:'Save',cancel:'Cancel',yourNote:'Your note',futureNoteHint:'Leave a note for any date, even one that’s still coming up.',
 streak:'Daily progress',gainToday:'+1 today',earned:'earned',toNext:'to next level',selectDay:'Select a day on the calendar',calendar:'Calendar',
 lang:'Language',quoteLangNote:'Quotes are translated into your chosen language.',pomoEnds:'Ends at',alreadyEnds:'if you start now it ends at',
 session:'Session',longBreak:'Long break',pastDaysFog:'Past days you did not complete appear foggy.',futureDays:'Future days — you can add notes.',
@@ -1014,9 +1134,9 @@ verified:'Verified.',saved:'Saved.',wrongPw:'Wrong password.',systemReset:'Syste
 takeNote:'Note',newAccountTitle:'Create account',back:'Back',signInTitle:'Sign in',
 remembered:'Remembered on this device',notYou:'Not you?',savedUsers:'Accounts on this device',useAccount:'Sign in',
 wrongLogin:'Wrong username or password. Attempts left:',wrongLoginKnown:'Password is wrong for {u}. Attempts left:',
-totalDays:'Total days',everyDayCounts:'Progress advances only on days when you interact with tasks, notes or focus.',
-daysRecorded:'days recorded',pctTitle:'Daily percentage',pctHint:'Older progress is preserved; future progress counts active days only.',backWelcome:'Back to the welcome screen',beigeOn:'Light beige look is on',beigeOff:'Light beige look is off',welcomeUser:'Welcome back,',
-noAccountYet:'No account on this device yet',currentAccount:'Current account',
+totalDays:'Total days',everyDayCounts:'Your progress grows on days you work on tasks, write notes, or focus.',
+daysRecorded:'days logged',pctTitle:'Daily percentage',pctHint:'Your past progress stays put. Going forward, only active days count.',backWelcome:'Back to the welcome screen',beigeOn:'Light beige look is on',beigeOff:'Light beige look is off',welcomeUser:'Welcome back,',
+noAccountYet:'No saved accounts on this device yet.',currentAccount:'Current account',
 },
 tr:{welcome:'HOŞ GELDİN',continue:'Devam →',howItWorks:'Nasıl çalışır',contact:'Bana ulaş',login:'Giriş yap',create:'Hesap oluştur',forgot:'Şifremi unuttum',
 username:'Kullanıcı adı',password:'Şifre',newAccount:'Yeni hesap',today:'Bugün',backlog:'Birikim',projectReminders:'Proje hatırlatıcıları',projectName:'Proje adı',add:'Ekle',
@@ -1051,8 +1171,8 @@ daysRecorded:'kayıtlı gün',pctTitle:'Günlük yüzde',pctHint:'Eski ilerlemen
 noAccountYet:'Bu cihazda henüz hesap yok',currentAccount:'Aktif hesap',
 }
 };
-const Q_EN=["Small steps add up to big changes.","Discipline is choosing what you want most over what you want now.","You don't have to be great to start, but you have to start to be great.","Consistency beats intensity.","Progress, not perfection.","Focus on being productive instead of busy.","Your future is created by what you do today, not tomorrow.","Action is the foundational key to all success."];
-const Q_TR=["Küçük adımlar büyük değişimlerin toplamıdır.","Disiplin, şu an istediğin şeyi değil en çok istediğin şeyi seçmektir.","Başlamak için harika olman gerekmez; harika olmak için başlaman gerekir.","İstikrar, yoğunluktan daha güçlüdür.","Mükemmellik değil, ilerleme.","Meşgul olmak yerine üretken olmaya odaklan.","Geleceğin, yarının değil bugün yaptıklarınla kurulur.","Eylem, her başarının temel anahtarıdır."];
+const Q_EN=["You don't have to do it all today. Just take the next step.","A little progress still counts.","Some days are for big wins. Others are for showing up.","Keep the plan simple enough to actually use.","One finished task beats a dozen perfect plans.","Need a reset? You can start fresh right now.","Your pace can change. You're still moving forward.","Pick one thing that matters and give it your attention.","A short break can make the next step easier.","It's fine to adjust the plan as you go.","Notice what's working, not just what's left to do.","You made time for yourself today. That matters."];
+const Q_TR=["Bugün her şeyi bitirmek zorunda değilsin. Sıradaki adıma odaklan.","Küçük bir ilerleme de ilerlemedir.","Bazı günler büyük başarılar getirir, bazı günler sadece devam etmeyi.","Planını gerçekten uygulayabileceğin kadar sade tut.","Bitirdiğin tek bir iş, kusursuz on plandan iyidir.","Yeniden başlamak mı istiyorsun? Tam zamanı.","Hızın değişebilir. Yine de ilerliyorsun.","Senin için önemli olan bir şey seç ve ona odaklan.","Kısa bir mola, sonraki adımı kolaylaştırabilir.","İlerlerken planını değiştirmende sorun yok.","Sadece kalan işlere değil, yolunda gidenlere de bak.","Bugün kendine zaman ayırdın. Bu önemli."];
 const RQ_EN=["What fed your mind the most today?","How satisfied are you with your main goal this period?","What is the biggest distraction you should cut out of your life?","Are you giving yourself the value you deserve in this process?","How would you rate your energy today from 1 to 10, and why?","What would you tell your future self about this week?","When did you last step outside your comfort zone?","What small detail made you proudest this week?"];
 const RQ_TR=["Bugün zihnini en çok ne besledi?","Bu dönemdeki ana hedefinden ne kadar memnunsun?","Hayatından çıkarman gereken en büyük dikkat dağıtıcı ne?","Bu süreçte kendine hak ettiğin değeri veriyor musun?","Bugünkü enerjini 1-10 arasında nasıl değerlendirirsin, neden?","Bu hafta hakkında gelecekteki kendine ne söylerdin?","En son ne zaman konfor alanının dışına çıktın?","Bu hafta seni en çok gururlandıran küçük detay neydi?"];
 const DEFQ_EN={week:["What did you move forward the most this week?","What did you struggle with?","What one thing will you do better next week?"],month:["What was your biggest win this month?","What did you neglect, and why?","What will you focus on next month?"]};
@@ -1264,7 +1384,7 @@ function renderAppOrAuth(){
   document.title=TITLE;
   if(view==='app')view=Object.keys(DB.accounts).length?'login':'welcome';
   let h='';
-  if(view==='welcome')h=`<div class="welcome-screen"><div class="welcome-top"><div class="brand-badge">badgalnurkan</div><div id="theme-anchor">${themePick(true)}</div></div><div class="welcome-center"><div class="langbar">${langBtns()}</div><h1 class="big">${welcomeDisplayName()}</h1><div class="row" style="justify-content:center;gap:.8rem;margin-top:.5rem"><button onclick="goTo('login','home')">${t('continue')}</button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><div style="margin-top:1rem"><a href="mailto:nurkancanbulat89@gmail.com" style="color:var(--acc);font-weight:600;text-decoration:none;font-size:.9rem">${t('contact')}</a></div></div><div class="welcome-footer-bar"><div>© 2026 nurkancanbulat — All rights reserved.</div><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">tiktok/@badgalnurkan</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">instagram/@badgalnurkann</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">x/@badgalnurk</a></div></div></div>`;
+  if(view==='welcome')h=`<div class="welcome-screen"><div class="welcome-top"><div class="brand-badge">badgalnurkan</div><div id="theme-anchor">${themePick(true)}</div></div><div class="welcome-center"><div class="langbar">${langBtns()}</div><h1 class="big">${welcomeDisplayName()}</h1><div class="row" style="justify-content:center;gap:.8rem;margin-top:.5rem"><button onclick="goTo('login','home')">${t('continue')}</button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><div class="contact-actions"><a class="contact-primary" href="mailto:nurkancanbulat89@gmail.com?subject=Improvin%27%20your%20day%20-%20Hello">${t('contact')}</a><a class="contact-gmail" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=nurkancanbulat89%40gmail.com&amp;su=Improvin%27%20your%20day%20-%20Hello" target="_blank" rel="noopener noreferrer">${tr()?'Gmail’de yaz':'Write in Gmail'}</a></div></div><div class="welcome-footer-bar"><div>© 2026 nurkancanbulat — All rights reserved.</div><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">tiktok/@badgalnurkan</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">instagram/@badgalnurkann</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">x/@badgalnurk</a></div></div></div>`;
   else if(view==='login'){
     const rem=(skipRem?null:rememberedUser()),others=Object.keys(DB.accounts).filter(k=>k!==rem);
     if(!loginDat.u&&rem)loginDat.u=rem;
@@ -1290,7 +1410,7 @@ function greetThen(cb){
   document.body.appendChild(root);
   let cleaned=false;const cleanup=()=>{if(cleaned)return;cleaned=true;root.remove();if(cb)cb()};
   root.addEventListener('animationend',e=>{if(e.target.classList.contains('portal-disc'))cleanup()},{once:true});
-  setTimeout(()=>{if(root.isConnected)cleanup()},720);
+  setTimeout(()=>{if(root.isConnected)cleanup()},380);
 }
 function goHome(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 function backToLogin(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
@@ -1930,7 +2050,7 @@ function updatePomoOverlay(){
 function openPomoOverlay(){
   if($('#pomo-overlay')){updatePomoOverlay();return}
   const overlay=document.createElement('div');overlay.id='pomo-overlay';overlay.className='pomo-overlay';
-  overlay.innerHTML=`<div class="pomo-panel" role="dialog" aria-label="Pomodoro"><div class="pomo-ring" id="pomo-ring"><div class="pomo-ring-inner"><div id="pomo-overlay-phase" class="pomo-meta">${pomoPhaseLabel()}</div><div class="tm" id="pomo-overlay-time">${ft(pm.left)}</div><div class="pomo-meta">${tr()?'Improvin’ your day.':'Improvin’ your day.'}</div></div></div><div class="row" style="justify-content:center"><button id="pomo-overlay-toggle" onclick="pS()">${tr()?'Duraklat':'Pause'}</button><button class="g" onclick="closePomoOverlay()">${tr()?'Küçült':'Minimize'}</button></div><small class="mut">${tr()?'Küçülttikten sonra sayaç çalışmaya devam eder.':'Timer keeps running when minimized.'}</small></div>`;
+  overlay.innerHTML=`<div class="pomo-panel" role="dialog" aria-label="Pomodoro"><div class="pomo-ring" id="pomo-ring"><div class="pomo-ring-inner"><div id="pomo-overlay-phase" class="pomo-meta">${pomoPhaseLabel()}</div><div class="tm" id="pomo-overlay-time">${ft(pm.left)}</div><div class="pomo-meta">${tr()?'Improvin’ your day.':'Improvin’ your day.'}</div></div></div><div class="row pomo-actions" style="justify-content:center"><button id="pomo-overlay-toggle" onclick="pS()">${tr()?'Duraklat':'Pause'}</button><button class="g" onclick="closePomoOverlay()">${tr()?'Küçült':'Minimize'}</button></div><small class="mut">${tr()?'Küçülttikten sonra sayaç çalışmaya devam eder.':'Timer keeps running when minimized.'}</small></div>`;
   document.body.appendChild(overlay);updatePomoOverlay();
 }
 let stopwatchView='timer',swTouchX=null,swLapFlashUntil=0;
