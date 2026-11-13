@@ -288,7 +288,7 @@ main{scroll-margin-top:.5rem}
 @keyframes mpIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
 .mini-cal-grid .mini-dot{cursor:pointer;border:0;padding:0;font:inherit;min-height:0;box-shadow:none;display:grid;place-items:center;width:2rem;height:2rem;border-radius:50%}
 :root[data-t=beige] #top-date-trigger.lit{background:#efe0c9!important;color:#5c3f28!important}
-:root[data-t=beige] :root[data-t=beige] .mini-cal-grid .mini-dot:hover,:root[data-t=beige] .mini-cal-grid .mini-dot.lit{background:#fff6e9!important;color:#a8845c!important;box-shadow:0 6px 16px #8a5a3a2e}
+:root[data-t=beige] .mini-cal-grid .mini-dot:hover,:root[data-t=beige] .mini-cal-grid .mini-dot.lit{background:#fff6e9!important;color:#a8845c!important;box-shadow:0 6px 16px #8a5a3a2e}
 :root[data-t=beige] .mini-cal-grid .mini-dot:hover span,:root[data-t=beige] .mini-cal-grid .mini-dot.lit span{color:#a8845c!important}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;z-index:9999;padding:1rem;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 @media(max-width:900px){
@@ -542,6 +542,88 @@ button{transition:background .25s,transform .18s,box-shadow .22s}
 :root[data-t=rose]{--bg:#f8ebee;--card:#fff8fa;--ink:#56333e;--mut:#a17a88;--acc:#bf718d;--acc2:#efc5d4;--ok:#749d87;--no:#c46e71;--ln:#f0dce4;--sh:0 12px 30px #ba607820;--okbg:#e6f0e7}
 :root[data-t=midnight]{--bg:#131b2e;--card:#1c2941;--ink:#e8f0ff;--mut:#a3b5ca;--acc:#7195dc;--acc2:#334870;--ok:#71ae8d;--no:#e29091;--ln:#334360;--sh:0 12px 35px #02071165;--okbg:#263d38}
 :root[data-t=sand]{--bg:#f4efe5;--card:#fffaf2;--ink:#50402b;--mut:#968568;--acc:#aa8a4f;--acc2:#e6d6b1;--ok:#85a277;--no:#c08064;--ln:#e8dec9;--sh:0 12px 30px #aa8a4f1b;--okbg:#e8f0df}
+
+:root[data-t=dusk] button:not(.g):not(.danger-logout),:root[data-t=dusk] aside a.on{color:#282732}
+
+:root[data-t=sage]{--bg:#e9eee8;--card:#f8faf6;--ink:#33473a;--mut:#617469;--acc:#55765f;--acc2:#cbdccc;--ok:#6e9a79;--no:#b97c75;--ln:#d7e2d6;--sh:0 12px 32px #33563e14;--okbg:#e0ece1}
+:root[data-t=pearl]{--bg:#f1f0ed;--card:#fdfcfa;--ink:#494847;--mut:#6b6867;--acc:#646b79;--acc2:#d5d6de;--ok:#739485;--no:#b77977;--ln:#e1e0df;--sh:0 12px 32px #44444a15;--okbg:#e3ece7}
+:root[data-t=apricot]{--bg:#f8ede4;--card:#fffaf5;--ink:#573f39;--mut:#7e675c;--acc:#95614f;--acc2:#edcfc0;--ok:#779a81;--no:#c57570;--ln:#eddace;--sh:0 12px 32px #7e4c3a13;--okbg:#e4eee5}
+:root[data-t=dusk]{--bg:#292b38;--card:#343745;--ink:#f1edef;--mut:#c0b8be;--acc:#cbb1c1;--acc2:#615869;--ok:#a4c1ae;--no:#d39b99;--ln:#4e4c59;--sh:0 12px 32px #0004;--okbg:#34463e}
+
+:root[data-t=dusk] button:not(.g):not(.danger-logout),:root[data-t=dusk] aside a.on{color:#282732}
+/* v3 - accessible, predictable layout across phones, tablets, desktop and TV */
+:root{--ui-mid:clamp(.95rem,.93rem + .14vw,1.04rem)}
+body,button,input,select,textarea{font-size:var(--ui-mid)}
+button{line-height:1.35}
+.card h2,.card h3{overflow-wrap:normal;word-break:normal;hyphens:none}
+.task span{overflow-wrap:break-word;word-break:normal;white-space:pre-wrap}
+#tl .task{gap:.5rem;align-items:center}
+#tl .task span{flex:1 1 13rem;min-width:min(100%,13rem)}
+.project-add{display:grid;grid-template-columns:minmax(0,1fr) minmax(8rem,11rem) auto;gap:.55rem;align-items:center}
+.tomorrow-plan-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.5rem;align-items:center}
+.tomorrow-plan-add input{margin:0;min-width:0;width:100%}
+.project-add>input{margin:0;min-width:0;width:100%}
+.project-add>button{min-width:5.5rem}
+.danger-logout{background:#a3424b;color:#fff;border:1px solid transparent;box-shadow:0 4px 14px #a43b3733}
+.danger-logout:hover{background:color-mix(in srgb,#a3424b 85%,#000)}
+.modal{animation:modalVeil .25s ease both}
+.modal .card{animation:modalLift .4s cubic-bezier(.2,.75,.2,1) both;transform-origin:center center}
+.modal[data-kind=day] .card{animation:dayCircleOpen .65s cubic-bezier(.77,0,.175,1) both}
+@keyframes modalVeil{from{opacity:0}to{opacity:1}}
+@keyframes modalLift{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes dayCircleOpen{0%{clip-path:circle(0 at 50% 50%);opacity:0}18%{clip-path:circle(5rem at 50% 50%);opacity:1}100%{clip-path:circle(150vmax at 50% 50%);opacity:1}}
+/* Circular app reveal only after successful sign-in: no looping pulse. */
+#app.circular-enter{animation:circularAppEnter .9s cubic-bezier(.77,0,.175,1) both}
+@keyframes circularAppEnter{0%{clip-path:circle(0 at 50% 50%);opacity:.25}18%{clip-path:circle(5rem at 50% 50%);opacity:.9}100%{clip-path:circle(150vmax at 50% 50%);opacity:1}}
+.login-busy-overlay{background:color-mix(in srgb,var(--bg) 91%,transparent)}
+.login-busy-orbit{width:min(68vw,16rem);aspect-ratio:1;border:1px solid var(--ln);box-shadow:0 0 0 10px color-mix(in srgb,var(--acc) 7%,transparent);animation:none;opacity:1;position:relative}
+.login-busy-orbit:before{content:'';position:absolute;inset:-3px;border-radius:50%;border:3px solid transparent;border-top-color:var(--acc);animation:spinSubtle 1.1s linear infinite}
+@keyframes spinSubtle{to{transform:rotate(360deg)}}
+#journal-counter{font-variant-numeric:tabular-nums}
+.note-tile small{align-self:flex-end;font-size:.77rem}
+.lap-row b,.lap-italic{font-style:italic}
+/* Analog stopwatch: elapsed time, not wall clock. */
+.chrono-dial{position:relative;width:min(78vw,24rem,55vh);aspect-ratio:1;border-radius:50%;background:color-mix(in srgb,#191d22 87%,var(--acc));margin:1rem auto;color:#fff;box-shadow:inset 0 0 0 2px #ffffff1d,0 18px 50px #0002;overflow:hidden;isolation:isolate}
+.chrono-mark{position:absolute;inset:0;transform:rotate(var(--a));pointer-events:none}
+.chrono-mark:before{content:'';position:absolute;top:3.3%;left:calc(50% - .55px);width:1.1px;height:var(--h,3%);background:#ffffff78}
+.chrono-mark.major:before{width:2px;left:calc(50% - 1px);background:#fff9;height:5%}
+.chrono-number{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:clamp(.8rem,3vw,1.18rem);font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:400;color:#fff}
+.chrono-mini{position:absolute;left:35%;top:13%;width:30%;aspect-ratio:1;border-radius:50%;border:1px solid #ffffff49}
+.chrono-mini-tick{position:absolute;left:50%;top:50%;transform:rotate(var(--a)) translateY(calc(-1 * min(9vw,2.35rem)));font-size:.51rem;color:#ffffffbd}
+.chrono-mini .chrono-number{font-size:clamp(.45rem,1.7vw,.65rem)}
+.chrono-mini:after{content:'';position:absolute;width:.27rem;height:.27rem;background:var(--acc);border-radius:50%;inset:calc(50% - .135rem) auto auto calc(50% - .135rem);z-index:6}
+.chrono-hand{position:absolute;top:12%;left:calc(50% - 1px);width:2px;height:40%;background:var(--acc);transform-origin:50% 95%;transform:rotate(var(--deg));z-index:3;border-radius:3px}
+.chrono-pivot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:.53rem;height:.53rem;border-radius:50%;background:var(--acc);z-index:5}
+.chrono-digital{position:absolute;left:50%;top:60%;transform:translate(-50%,-50%);font-size:clamp(.8rem,2.8vw,1.08rem);font-variant-numeric:tabular-nums;color:#fff;white-space:nowrap}
+.chrono-controls{display:flex;justify-content:space-between;gap:.8rem;max-width:min(82vw,25rem);margin:0 auto;width:100%}
+.chrono-controls button{min-width:4.3rem;min-height:4.3rem;border-radius:50%;padding:.35rem;background:var(--card);color:var(--ink);border:2px solid var(--ln)}
+.chrono-controls .stop{color:var(--no);border-color:var(--no);background:color-mix(in srgb,var(--no) 10%,var(--card))}
+.chrono-controls button:disabled{opacity:.45}
+@media(max-width:700px){
+ header.top{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto;justify-items:center;gap:.42rem;padding:.7rem .75rem}
+ header.top .top-brand{font-size:clamp(.95rem,4.2vw,1.16rem)!important;max-width:100%!important;min-width:0;text-align:center;white-space:normal;overflow:visible!important}
+ header.top .top-tools{width:100%;margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:.35rem;justify-content:space-between}
+ header.top .top-clock{font-size:clamp(.75rem,3vw,.9rem);justify-self:center;white-space:nowrap}
+ header.top #top-date-trigger{font-size:clamp(.74rem,3vw,.9rem);white-space:nowrap;min-width:0}
+ header.top .account-chip{max-width:3rem;border-radius:50%;padding:.2rem;justify-self:end}
+ header.top .account-chip .avatar{width:2.25rem;height:2.25rem;font-size:1.05rem}
+ .top-tools .account-name{display:none}
+ #tl .task{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:.42rem}
+ #tl .task span{flex:1 0 100%;min-width:0;width:100%;line-height:1.5;margin:0 0 .18rem;overflow-wrap:break-word;word-break:normal}
+ #tl .task button{flex:0 0 auto;min-width:2.6rem}
+ #tl .task button.g.s{font-size:clamp(.78rem,3.2vw,.9rem)}
+ .project-add{grid-template-columns:minmax(0,1fr) auto;gap:.45rem}
+ .tomorrow-plan-add{grid-template-columns:minmax(0,1fr)}
+ .tomorrow-plan-add button{width:100%}
+ .project-add #pn{grid-column:1/-1}
+ .project-add #pd{min-width:0;max-width:none!important}
+ .project-add>button{min-width:5rem}
+ .card{min-width:0}
+}
+@media(max-width:360px){header.top .top-tools{gap:.17rem}.chrono-controls button{min-height:3.75rem;min-width:3.75rem}}
+@media(min-width:1600px){html{font-size:clamp(16px,1vw,18px)}.shell{max-width:86rem}}
+@media(prefers-reduced-motion:reduce){#app.circular-enter,.modal,.modal .card,.modal[data-kind=day] .card,.login-busy-orbit:before{animation:none!important}}
+
 </style>
 </head>
 <body>
@@ -800,7 +882,7 @@ const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
 const userRe=new RegExp('^['+LETTERS+']{3,20}$');
 function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme()})}
 function norm(a){
-  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
+  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
   return a;
 }
@@ -908,8 +990,8 @@ const m=()=>msg?`<div class="note">${msg}</div>`:'';
 
 /* giris/karsilama ekraninda tema secimi (hesap acmadan da calisir) */
 /* tema: acik / koyu / bej. bej = DB.beige bayragi; ucu tek yerden yonetilir */
-const THEMES=['light','dark','beige','forest','ocean','lavender','rose','midnight','sand'];
-const THEME_NAMES={light:['Açık','Light'],dark:['Koyu','Dark'],beige:['Bej','Beige'],forest:['Orman','Forest'],ocean:['Okyanus','Ocean'],lavender:['Lavanta','Lavender'],rose:['Gül','Rose'],midnight:['Gece','Midnight'],sand:['Kum','Sand']};
+const THEMES=['light','dark','beige','forest','ocean','lavender','rose','midnight','sand','sage','pearl','apricot','dusk'];
+const THEME_NAMES={light:['Açık','Light'],dark:['Koyu','Dark'],beige:['Bej','Beige'],forest:['Orman','Forest'],ocean:['Okyanus','Ocean'],lavender:['Lavanta','Lavender'],rose:['Gül','Rose'],midnight:['Gece','Midnight'],sand:['Kum','Sand'],sage:['Adaçayı','Sage'],pearl:['İnci','Pearl'],apricot:['Şeftali','Apricot'],dusk:['Alacakaranlık','Dusk']};
 function curTheme(){return THEMES.includes(document.documentElement.dataset.t)?document.documentElement.dataset.t:'light'}
 function applyTheme(){
   const value=(A&&A.theme)||(DB&&DB.themeChoice)||(DB&&DB.beige?'beige':(getItem('b1.theme')||sysTheme()));
@@ -955,7 +1037,8 @@ window.addEventListener('orientationchange',()=>{try{detectDevice()}catch(e){}})
 function pressTo(el,fn){
   if(!el)return fn();
   try{el.classList.add('press')}catch(e){}
-  setTimeout(()=>{try{el.classList.remove('press')}catch(e){};fn()},90);
+  fn();
+  setTimeout(()=>{try{el.classList.remove('press')}catch(e){}},110);
 }
 function navGo(el,v,p){
   /* aninda vurgulanir; kabuk yeniden cizilmez, menu yerinde kalir */
@@ -991,13 +1074,19 @@ function renderAppOrAuth(){
 function toast(txt){let el=document.querySelector('.toast');if(!el){el=document.createElement('div');el.className='toast';document.body.appendChild(el)}el.textContent=txt;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),2200)}
 /* giris yapildiktan sonra: gunaydin/tunaydin/iyi geceler hizlica gelir, silinir, sonra welcome */
 function greetThen(cb){
-  // Login success animation; respects reduced-motion preference.
   const reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
   if(reduced){if(cb)cb();return}
-  const g=document.createElement('div');g.className='login-busy-overlay';
-  g.innerHTML='<div class="login-busy-orbit">Improvin\' your day.</div>';
-  document.body.appendChild(g);
-  setTimeout(()=>{g.remove();if(cb)cb()},540);
+  // Navigation uses a short paint delay. Reveal the actual destination, not a fake loading page.
+  setTimeout(()=>{
+    const root=document.getElementById('app');
+    if(root&&A&&view==='app'){
+      root.classList.remove('circular-enter');
+      void root.offsetWidth;
+      root.classList.add('circular-enter');
+      root.addEventListener('animationend',()=>root.classList.remove('circular-enter'),{once:true});
+    }
+    if(cb)cb();
+  },165);
 }
 function goHome(){stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 function backToLogin(){stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
@@ -1007,6 +1096,7 @@ function pickLang(l){setLang(l);renderAppOrAuth()}
 function openModal(id,html){
   if(document.getElementById(id))return;
   const d=document.createElement('div');d.id=id;d.className='modal';
+  if(id==='day-modal')d.dataset.kind='day';
   d.innerHTML=`<div class="card" style="max-width:32rem;width:100%;max-height:85vh;overflow-y:auto">${html}</div>`;
   d.addEventListener('click',e=>{if(e.target===d)d.remove()});
   document.body.appendChild(d);
@@ -1238,22 +1328,47 @@ function confirmLogout(){
   openModal('logout-modal',`<div style="text-align:center"><h2>${t('logout')}</h2><p class="mut">${t('logoutQ')}</p><div class="row" style="justify-content:center;margin-top:1.2rem"><button onclick="closeModal('logout-modal');goLogin()">${t('yes')}</button><button class="g" onclick="closeModal('logout-modal')">${t('no')}</button></div></div>`);
 }
 
-function istanbulTime(){return new Intl.DateTimeFormat('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date())}
+function istanbulTime(){return new Intl.DateTimeFormat('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())}
 function updateIstanbulClock(){const e=$('#istanbul-clock');if(e)e.textContent=istanbulTime()}
+let profileHintTimer=0,profileHintSequence=0;
+async function profileUsernameHint(name,targetId){
+  const serial=++profileHintSequence;
+  clearTimeout(profileHintTimer);
+  const el=document.getElementById(targetId);
+  if(!el)return;
+  const proposed=String(name||'').trim();
+  if(!proposed||proposed===A?.u){el.innerHTML='';return}
+  if(!userRe.test(proposed)){el.innerHTML=`<small class="mut">${esc(t('usernameRules'))}</small>`;return}
+  profileHintTimer=setTimeout(async()=>{
+    let taken=!!(findUser(proposed)&&findUser(proposed)!==A?.u);
+    if(!taken&&A?.authUid){
+      try{const res=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:proposed}});taken=res===false}
+      catch(_){if(serial===profileHintSequence)el.textContent=tr()?'Kullanıcı adı şu an denetlenemedi. Kaydederken tekrar kontrol edilecek.':'Username availability could not be checked.';return}
+    }
+    if(serial!==profileHintSequence||!document.getElementById(targetId))return;
+    if(!taken){el.innerHTML='';return}
+    const options=usernameSuggestions(proposed,Object.keys(DB.accounts));
+    el.innerHTML=`<small class="mut">${t('usernameTaken')} ${tr()?'Öneriler:':'Suggestions:'}</small><div class="row">${options.map(n=>`<button type="button" class="g s" data-suggest="${esc(n)}">${esc(n)}</button>`).join('')}</div>`;
+    el.querySelectorAll('[data-suggest]').forEach(b=>b.addEventListener('click',()=>{
+      const input=document.getElementById(targetId==='settings-name-hint'?'su':'prof-u');
+      if(!input)return;input.value=b.dataset.suggest;profileUsernameHint(input.value,targetId);
+    }));
+  },240);
+}
 function openProfile(){
   if(!A)return;
-  openModal('profile-modal',`<h2>${tr()?'Profilim':'My profile'}</h2><p class="mut">@${esc(A.u)} · ${esc(A.email||'')}</p><label>${t('username')}</label><input id="prof-u" maxlength="20" value="${esc(A.u)}"><label>${t('displayName')}</label><input id="prof-n" maxlength="30" value="${esc(A.nick||'')}"><label>${t('bio')}</label><textarea id="prof-b" rows="3" maxlength="160">${esc(A.bio||'')}</textarea><div class="row"><button onclick="saveProfile()">${t('save')}</button><button class="g" onclick="closeModal('profile-modal')">${t('cancel')}</button></div>`);
+  openModal('profile-modal',`<h2>${tr()?'Profilim':'My profile'}</h2><p class="mut">@${esc(A.u)} · ${esc(A.email||'')}</p><label>${t('username')}</label><input id="prof-u" maxlength="20" value="${esc(A.u)}" oninput="profileUsernameHint(this.value,'profile-name-hint')"><div id="profile-name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="prof-n" maxlength="30" value="${esc(A.nick||'')}"><label>${t('bio')}</label><textarea id="prof-b" rows="3" maxlength="160">${esc(A.bio||'')}</textarea><div class="row"><button onclick="saveProfile()">${t('save')}</button><button class="g" onclick="closeModal('profile-modal')">${t('cancel')}</button></div>`);
 }
 async function saveProfile(){
   if(!A)return;
   const username=String($('#prof-u')?.value||'').trim(),nick=String($('#prof-n')?.value||'').trim(),bio=String($('#prof-b')?.value||'').trim();
   if(!userRe.test(username)||!nick){toast(tr()?'Kullanıcı adı veya isim geçersiz.':'Invalid username or display name.');return}
   if(username!==A.u){
-    const other=findUser(username);if(other&&other!==A.u){toast(t('usernameTaken'));return}
+    const other=findUser(username);if(other&&other!==A.u){await profileUsernameHint(username,'profile-name-hint');toast(t('usernameTaken'));return}
     try{
       if(A.authUid)await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:username}});
       const previous=A.u;delete DB.accounts[previous];A.u=username;DB.accounts[A.u]=A;
-    }catch(_){toast(t('usernameTaken'));return}
+    }catch(_){await profileUsernameHint(username,'profile-name-hint');toast(t('usernameTaken'));return}
   }
   A.nick=nick.slice(0,30);A.bio=bio.slice(0,160);DB.last=A.nick;
   // Treat Supabase's user_data row as the canonical profile record for this app.
@@ -1268,29 +1383,37 @@ function shell(){
     let cls=future?'future':(dayFog(k)?'fog':'');
     if(!future&&its.length>0)cls=its.every(x=>x.done)?'ok':'miss-dot';
     if(hasNote(k))cls+=' note';
-    mc+=`<button class="mini-dot ${cls} ${k===today()?'td':''}" title="${fmt(k)}" onclick="openDay('${k}')"><span>${d}</span></button>`;
+    mc+=`<button class="mini-dot ${cls} ${k===today()?'td':''}" title="${fmt(k)}" ${k<today()&&!A.fog?'disabled aria-disabled="true"':''} onclick="openDay('${k}')"><span>${d}</span></button>`;
   }
   const firstShell=!document.querySelector('.shell aside');
   document.querySelectorAll('body > #mini-cal').forEach(el=>el.remove());
   const oldBackdrop=document.getElementById('mini-backdrop');if(oldBackdrop)oldBackdrop.remove();
-  $('#app').innerHTML=`<header class="top"><b class="top-brand" role="button" tabindex="0" title="${tr()?'Giriş ekranına dön':'Return to sign in'}" onclick="headerHome(this)">Improvin' your day.</b><div class="top-tools"><span class="top-clock" aria-label="Türkiye saati"><span id="istanbul-clock">${istanbulTime()}</span> TR</span><button id="top-date-trigger" class="g s" onclick="toggleMiniCal(event)" title="${t('calendar')}">${fmt(today())}</button><button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.nick||A.u).charAt(0).toUpperCase())}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup"><b>${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><aside id="nav-aside" class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button class="ft-link" onclick="confirmLogout()">${tr()?'Çıkış yap':'Log out'}</button><button id="back-welcome" class="ft-link" onclick="goHome()"><span aria-hidden="true">←</span> ${t('backWelcome')}</button><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><b class="top-brand" role="button" tabindex="0" title="${tr()?'Giriş ekranına dön':'Return to sign in'}" onclick="headerHome(this)">Improvin' your day.</b><div class="top-tools"><span class="top-clock" aria-label="Türkiye saati"><span id="istanbul-clock">${istanbulTime()}</span> TR</span><button id="top-date-trigger" class="g s" onclick="toggleMiniCal(event)" title="${t('calendar')}">${fmt(today())}</button><button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup"><b>${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><aside id="nav-aside" class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button id="back-welcome" class="ft-link" onclick="goHome()"><span aria-hidden="true">←</span> ${t('backWelcome')}</button><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),650)}
   const cal=$('#mini-cal');if(cal&&cal.parentElement!==document.body)document.body.appendChild(cal);
 }
-setInterval(updateIstanbulClock,30000);
+let istanbulClockTimer=0;
+function scheduleIstanbulClock(){
+  clearTimeout(istanbulClockTimer);
+  updateIstanbulClock();
+  // Align repaint with the next wall-clock second; correct drift after tab suspension.
+  istanbulClockTimer=setTimeout(scheduleIstanbulClock,Math.max(40,1010-Date.now()%1000));
+}
+scheduleIstanbulClock();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleIstanbulClock()});
 let swipeStart=null;
 document.addEventListener('touchstart',ev=>{
   if(!A||view!=='app'||innerWidth>900||ev.touches.length!==1)return;
-  if(!ev.target.closest('main')||ev.target.closest('input,textarea,select,button,a,[contenteditable],.laps,.cal'))return;
+  if(!ev.target.closest('main')||ev.target.closest('input,textarea,select,button,a,[contenteditable],.laps,.cal,[data-swipe-stopwatch]'))return;
   const p=ev.touches[0];swipeStart={x:p.clientX,y:p.clientY,at:Date.now()};
 },{passive:true});
 document.addEventListener('touchend',ev=>{
   if(!swipeStart||!A||view!=='app')return;
   const start=swipeStart;swipeStart=null;const p=ev.changedTouches[0];
   if(!p)return;const dx=p.clientX-start.x,dy=p.clientY-start.y;
-  if(Math.abs(dx)<75||Math.abs(dx)<Math.abs(dy)*1.45||Date.now()-start.at>850)return;
+  if(Math.abs(dx)<48||Math.abs(dx)<Math.abs(dy)*1.25||Date.now()-start.at>950)return;
   const idx=NAV.findIndex(v=>v[0]===pg),next=idx+(dx<0?1:-1);
   if(idx>=0&&next>=0&&next<NAV.length)goTo('app',NAV[next][0]);
 },{passive:true});
@@ -1315,9 +1438,10 @@ P.home=()=>{
   }).join('');
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
   <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${tr()?'Önceki yüzdeliğin korunur; yeni artışlar yalnızca etkinlik yaptığın günlerde olur.':'Existing progress is kept; additional points require activity with tasks, notes or focus.'}</p></div>
-  <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="1000" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}">${esc(j)}</textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut">${j.length}/1000</span></div></div>
-  <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<div class="row"><input id="pn" maxlength="40" placeholder="${t('projectName')}"><input id="pd" type="date" min="${today()}" style="max-width:11rem"><button onclick="addProj()">${t('add')}</button></div></div>`);
+  <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="1000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}">${esc(j)}</textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">${j.length}/1000</span></div></div>
+  <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<div class="project-add"><input id="pn" maxlength="40" aria-label="${t('projectName')}" placeholder="${t('projectName')}"><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}"><button onclick="addProj()">${t('add')}</button></div></div>`);
 };
+function updateJournalCounter(el){const e=document.getElementById('journal-counter');if(e)e.textContent=String(el?.value?.length||0)+'/1000'}
 function saveJournal(){
   const text=String($('#journal-input')?.value||'').trim().slice(0,1000);
   if(!A.journal||typeof A.journal!=='object')A.journal={};
@@ -1327,9 +1451,30 @@ function saveJournal(){
 function journalDate(ms){
   return new Intl.DateTimeFormat(tr()?'tr-TR':'en-GB',{timeZone:'Europe/Istanbul',dateStyle:'long',timeStyle:'short'}).format(new Date(ms));
 }
-function openJournalEntry(key){
+function journalEntryStamp(entry){
+  return journalDate(Number(entry?.updatedAt)||Date.now());
+}
+function openJournalEntry(key,edit=false){
   const entry=A.journal?.[key];if(!entry)return;
-  openModal('journal-modal',`<h2>${fmt(key)}</h2><p class="mut">${journalDate(entry.updatedAt||Date.now())} (TR)</p><div class="note" style="white-space:pre-wrap">${esc(entry.text)}</div><button onclick="closeModal('journal-modal')">${t('cancel')}</button>`);
+  const stamp=journalEntryStamp(entry);
+  const body=edit?`<textarea id="journal-edit" rows="7" maxlength="1000" oninput="updateJournalEditCounter(this)">${esc(entry.text||'')}</textarea><small id="journal-edit-count" class="mut">${String(entry.text||'').length}/1000</small>`:
+    `<div class="note" style="white-space:pre-wrap">${esc(entry.text||'')}</div>`;
+  openModal('journal-modal',`<h2>${tr()?'Günlüğüm':'Daily journal'}</h2><p class="mut">${stamp} · TR</p>${body}<div class="row">${edit?`<button onclick="saveJournalEdit('${key}')">${t('save')}</button>`:`<button onclick="closeModal('journal-modal');openJournalEntry('${key}',true)">${t('editNote')}</button>`}<button class="g d" onclick="confirmDeleteJournal('${key}')">${t('delete')}</button><button class="g" onclick="closeModal('journal-modal')">${t('cancel')}</button></div>`);
+}
+function updateJournalEditCounter(el){const e=document.getElementById('journal-edit-count');if(e)e.textContent=String(el.value.length)+'/1000'}
+function saveJournalEdit(key){
+  if(!A?.journal?.[key])return;
+  const value=String(document.getElementById('journal-edit')?.value||'').trim().slice(0,1000);
+  if(!value){toast(tr()?'Boş günlüğü silmek için Sil seçeneğini kullan.':'Use Delete to remove an empty journal.');return}
+  A.journal[key]={text:value,updatedAt:Date.now()};recordActivity();closeModal('journal-modal');if(pg==='rep')P.rep();else if(pg==='home')P.home();toast(t('saved'));
+}
+function confirmDeleteJournal(key){
+  if(!A?.journal?.[key])return;
+  closeModal('journal-modal');openModal('delete-journal-modal',`<h2>${tr()?'Bu günlük silinsin mi?':'Delete this journal?'}</h2><p class="mut">${tr()?'Bu işlem geri alınamaz.':'This action cannot be undone.'}</p><div class="row"><button class="danger-logout" onclick="deleteJournal('${key}')">${t('yes')}</button><button class="g" onclick="closeModal('delete-journal-modal')">${t('no')}</button></div>`);
+}
+function deleteJournal(key){
+  if(A?.journal&&Object.hasOwn(A.journal,key)){delete A.journal[key];save()}
+  closeModal('delete-journal-modal');if(pg==='rep')P.rep();else if(pg==='home')P.home();toast(t('saved'));
 }
 function addProj(){const n=$('#pn').value.trim(),d=$('#pd').value;if(n&&d){A.projects.push({n,d});recordActivity();P.home()}}
 
@@ -1349,7 +1494,7 @@ P.todo=()=>{
   const bl=A.backlog.map((bt,i)=>`<div class="task"><span>${esc(bt)}</span><button class="g s" onclick="fromBack(${i})">${t('addToToday')}</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">${t('delete')}</button></div>`).join('');
   const acted=A.tasks.some(x=>x.s==='done'||x.s==='miss');
   M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">'+t('addTask')+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" placeholder="${t('newTask')}" onkeydown="if(event.key==='Enter'){event.preventDefault();addT()}"><button onclick="addT()">${t('add')}</button></div></div>
-  <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünün görevlerini değerlendirdikten sonra yarının görevlerini buraya ekleyebilirsin.':'Plan tomorrow after reviewing today\'s tasks.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="row"><input id="plan-input" maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'){event.preventDefault();addTomorrowPlan()}"><button onclick="addTomorrowPlan()" ${acted?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${acted?'':`<small class="mut">${tr()?'Önce bugünden bir görevi ✓ veya ✕ ile değerlendir.':'Mark one task ✓ or ✕ first.'}</small>`}</div>
+  <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünün görevlerini değerlendirdikten sonra yarının görevlerini buraya ekleyebilirsin.':'Plan tomorrow after reviewing today\'s tasks.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><input id="plan-input" maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'){event.preventDefault();addTomorrowPlan()}"><button onclick="addTomorrowPlan()" ${acted?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${acted?'':`<small class="mut">${tr()?'Önce bugünden bir görevi ✓ veya ✕ ile değerlendir.':'Mark one task ✓ or ✕ first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
 function vibrateTask(){try{if(navigator.vibrate)navigator.vibrate(12)}catch(_){}}
@@ -1372,12 +1517,24 @@ function removePlan(i){ensurePlans();const next=addD(today(),1);if(A.plans[next]
 function dayFog(k){if(!A||!A.fog)return false;if(k>=today())return false;const its=items(k);return !(its.length>0&&its.every(x=>x.done))}
 function hasNote(k){return !!(A.future&&A.future[k])}
 function openDay(k){
+  if(k<today()&&!A.fog){toast(tr()?'Geçmiş günü açmak için Önceki günler görünümünü etkinleştir.':'Turn Fog past days on to open past dates.');return}
   selDay=k;
   const its=items(k),note=(A.future&&A.future[k])||'',future=k>today();
   openModal('day-modal',`<h2>${fmt(k)}${future?' · '+t('futureNotes'):''}</h2>${its.length?its.map(x=>`<div class="task ${x.done?'done':'miss'}"><span>${esc(x.t)}</span><b>${x.done?'✓ '+t('done'):'✕ '+t('notDone')}</b></div>`).join(''):'<p class="mut">'+t('noRecords')+'</p>'}
-<div style="margin-top:1rem"><h3>${t('yourNote')}</h3><textarea id="dn" rows="3" maxlength="500" placeholder="${t('notePlaceholder')}">${esc(note)}</textarea><div class="row" style="justify-content:flex-end"><button class="g" onclick="closeModal('day-modal')">${t('cancel')}</button><button onclick="saveNote('${k}')">${t('save')}</button></div></div>`);
+<div style="margin-top:1rem"><h3>${t('yourNote')}</h3>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)} TR</small>`:''}<textarea id="dn" rows="3" maxlength="500" placeholder="${t('notePlaceholder')}">${esc(note)}</textarea><div class="row" style="justify-content:flex-end"><button class="g" onclick="closeModal('day-modal')">${t('cancel')}</button><button onclick="saveNote('${k}')">${t('save')}</button></div></div>`);
 }
-function saveNote(k){const v=($('#dn').value||'').trim().slice(0,500);if(!A.future)A.future={};if(v)A.future[k]=v;else delete A.future[k];if(v)recordActivity();else save();closeModal('day-modal');toast(t('noteSaved'));P.pc()}
+function saveNote(k){
+  const v=String(document.getElementById('dn')?.value||'').trim().slice(0,500);
+  if(!A.future||typeof A.future!=='object')A.future={};
+  if(!A.futureMeta||typeof A.futureMeta!=='object')A.futureMeta={};
+  const previous=String(A.future[k]||''),meta=A.futureMeta[k]||{},now=Date.now();
+  if(v){
+    A.future[k]=v;
+    A.futureMeta[k]={createdAt:meta.createdAt||now,editedAt:previous&&previous!==v?now:(meta.editedAt||null)};
+    if(previous!==v)recordActivity();else save();
+  }else{delete A.future[k];delete A.futureMeta[k];save()}
+  closeModal('day-modal');toast(t('noteSaved'));if(pg==='pc')P.pc();else renderPage();
+}
 P.pc=()=>{
   const n=new Date(),mn=(2026-n.getFullYear())*12+10-n.getMonth();
   if(calOff<mn)calOff=mn;
@@ -1389,14 +1546,14 @@ P.pc=()=>{
     if(!future&&its.length>0)cls=its.every(x=>x.done)?'ok':'miss-dot';
     if(hasNote(k))cls+=' note';
     const dp=(!future&&its.length)?Math.round(its.filter(x=>x.done).length/its.length*100):null;
-    c+=`<button class="dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}${dp!==null?' — %'+dp:''}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="openDay('${k}')"><small>${dayName(new Date(y,mo,d).getDay())}</small><span>${d}</span><em class="dpct">${dp!==null?'%'+dp:'&nbsp;'}</em></button>`;
+    c+=`<button class="dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}${dp!==null?' — %'+dp:''}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" ${k<today()&&!A.fog?'disabled aria-disabled="true"':''} onclick="openDay('${k}')"><small>${dayName(new Date(y,mo,d).getDay())}</small><span>${d}</span><em class="dpct">${dp!==null?'%'+dp:'&nbsp;'}</em></button>`;
   }
   const monthKey=`${y}-${pad(mo+1)}`;
-  const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile"><b>${fmt(k)}</b><p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();P.pc()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button><button class="g s" onclick="P.pc()">${t('calendar')}</button></div></div><div class="card"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="row" style="margin-top:.6rem"><input id="fnd" type="date" style="max-width:11rem"><button onclick="newNote()">${t('addFutureNote')}</button></div></div>`);
+  const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile"><b>${fmt(k)}</b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)} TR</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="row" style="margin-top:.6rem"><input id="fnd" type="date" style="max-width:11rem"><button onclick="newNote()">${t('addFutureNote')}</button></div></div>`);
 };
 function newNote(){const d=$('#fnd').value;if(!d){toast(tr()?'Bir tarih seç.':'Pick a date.');return}openDay(d)}
-function delNote(k){delete A.future[k];save();P.pc()}
+function delNote(k){delete A.future[k];if(A.futureMeta)delete A.futureMeta[k];save();P.pc()}
 function st(a,b){let t=0,d=0,by={};for(let x=a;x<=b;x=addD(x,1)){items(x).forEach(i=>{t++;by[i.t]=by[i.t]||[0,0];by[i.t][1]++;if(i.done){d++;by[i.t][0]++}})}return{t,d,p:t?Math.round(d/t*100):0,by}}
 const qb=(k,arr,ro)=>arr.map((x,i)=>`<label>${esc(x.q)}</label><div class="qa"><textarea rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this)">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i})">${t('delete')}</button>`}</div><div class="qcap mut">${x.a.length}/400</div>`).join('');
 function qa(k,i,el){A.qs[k][i].a=el.value.slice(0,400);save();el.parentElement.nextElementSibling.textContent=el.value.length+'/400'}
@@ -1441,7 +1598,7 @@ ${wTop?briefRow(tr()?'En çok yaptığın':'Most frequent',esc(wTop[0]).slice(0,
 ${briefRow(tr()?'Kayıtlı gün':'Days recorded',weekDone+'/7')}</div>
 <div style="margin-top:1.1rem"><h3 style="margin:.2rem 0 .4rem">${tr()?'Bu ay':'This month'} <span class="mut" style="font-size:.8rem">${monthName(x.getMonth())} ${x.getFullYear()}</span></h3>
 ${briefRow(tr()?'Tamamlanan':'Completed',mNow.d+'/'+mNow.t+' · %'+mNow.p,(tr()?'Geçen ay':'Last month')+' %'+mPrev.p+' ('+(mDiff>=0?'+':'')+mDiff+')')}
-${briefRow(tr()?'Kayıtlı gün':'Days recorded',monthDone+'/'+(dd(ma,mb)+1))}</div><div style="margin-top:1.2rem"><h3>${tr()?'Günlükler':'Daily journals'}</h3><div class="journal-grid">${Object.entries(A.journal||{}).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,90).map(([k,v])=>`<div class="note-tile"><b>${fmt(k)}</b><small class="mut">${journalDate(v.updatedAt||Date.now())}</small><p>${esc(v.text||'')}</p><button class="g s" onclick="openJournalEntry('${k}')">${tr()?'Aç':'Open'}</button></div>`).join('')||'<p class="mut">'+(tr()?'Henüz günlük yok.':'No journals yet.')+'</p>'}</div></div></div>`;
+${briefRow(tr()?'Kayıtlı gün':'Days recorded',monthDone+'/'+(dd(ma,mb)+1))}</div><div style="margin-top:1.2rem"><h3>${tr()?'Günlükler':'Daily journals'}</h3><div class="journal-grid">${Object.entries(A.journal||{}).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,90).map(([k,v])=>`<div class="note-tile"><b>${journalEntryStamp(v)} · TR</b><p>${esc(v.text||'')}</p><button class="g s" onclick="openJournalEntry('${k}')">${tr()?'Aç':'Open'}</button></div>`).join('')||'<p class="mut">'+(tr()?'Henüz günlük yok.':'No journals yet.')+'</p>'}</div></div></div>`;
 }
 P.rep=()=>{
   const td=today(),wa=mon(td),wb=addD(wa,6),x=new Date();
@@ -1539,37 +1696,44 @@ function openPomoOverlay(){
   overlay.innerHTML=`<div class="pomo-panel" role="dialog" aria-label="Pomodoro"><div class="pomo-ring" id="pomo-ring"><div class="pomo-ring-inner"><div id="pomo-overlay-phase" class="pomo-meta">${pomoPhaseLabel()}</div><div class="tm" id="pomo-overlay-time">${ft(pm.left)}</div><div class="pomo-meta">${tr()?'Improvin’ your day.':'Improvin’ your day.'}</div></div></div><div class="row" style="justify-content:center"><button id="pomo-overlay-toggle" onclick="pS()">${tr()?'Duraklat':'Pause'}</button><button class="g" onclick="closePomoOverlay()">${tr()?'Küçült':'Minimize'}</button></div><small class="mut">${tr()?'Küçülttikten sonra sayaç çalışmaya devam eder.':'Timer keeps running when minimized.'}</small></div>`;
   document.body.appendChild(overlay);updatePomoOverlay();
 }
-let stopwatchView='timer',swTouchX=null;
+let stopwatchView='timer',swTouchX=null,swLapFlashUntil=0;
 function swElapsed(){
   const st=A?.stopwatch||{elapsed:0,started:0,running:false};
   return Math.max(0,Number(st.elapsed)||0)+(st.running?Math.max(0,Date.now()-Number(st.started||Date.now())):0);
 }
 function swRender(){
-  const e=$('#sw');if(e)e.textContent=stopwatchFormat(swElapsed());
+  const ms=swElapsed(),formatted=stopwatchFormat(ms);
+  const e=document.getElementById('sw');if(e){e.textContent=formatted;e.classList.toggle('lap-italic',Date.now()<swLapFlashUntil)}
+  const chrono=document.getElementById('chrono-digital');if(chrono){chrono.textContent=formatted;chrono.classList.toggle('lap-italic',Date.now()<swLapFlashUntil)}
   if(stopwatchView==='clock')updateClockFace();
 }
-function clockInTurkey(){
-  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(new Date());
-  const get=type=>Number(parts.find(x=>x.type===type)?.value||0);
-  return{h:get('hour'),m:get('minute'),s:get('second')};
+function chronographTicks(){
+  let output='';
+  for(let i=0;i<300;i++)output+=`<i class="chrono-mark ${i%25===0?'major':''}" style="--a:${i*1.2}deg;--h:${i%5===0?'3.2%':'1.45%'}"></i>`;
+  for(let v=0;v<60;v+=5){
+    const angle=v*Math.PI/30,position=38.5;
+    const x=50+position*Math.sin(angle),y=50-position*Math.cos(angle);
+    output+=`<span class="chrono-number" style="left:${x}%;top:${y}%">${v}</span>`;
+  }
+  return output;
 }
+const CHRONO_TICKS=chronographTicks();
 function updateClockFace(){
-  const v=clockInTurkey(),sec=$('#clock-second'),min=$('#clock-minute'),hour=$('#clock-hour');
-  if(sec)sec.style.setProperty('--degrees',v.s*6+'deg');
-  if(min)min.style.setProperty('--degrees',(v.m*6+v.s/10)+'deg');
-  if(hour)hour.style.setProperty('--degrees',((v.h%12)*30+v.m/2)+'deg');
-  const label=$('#clock-time');if(label)label.textContent=istanbulTime()+' TR';
+  const ms=swElapsed(),hand=document.getElementById('chrono-hand');
+  if(hand)hand.style.setProperty('--deg',(ms%60000)/60000*360+'deg');
+  const sub=document.getElementById('chrono-sub-hand');
+  if(sub)sub.style.setProperty('--deg',(ms%1800000)/1800000*360+'deg');
 }
 function swMode(mode){
   stopwatchView=mode==='clock'?'clock':'timer';
   if(pg==='pomo')P.pomo();
 }
-function swTouchStart(ev){swTouchX=ev.touches?.[0]?.clientX??null}
-function swTouchEnd(ev){if(swTouchX==null)return;const delta=(ev.changedTouches?.[0]?.clientX??swTouchX)-swTouchX;swTouchX=null;if(delta>60)swMode('timer');else if(delta< -60)swMode('clock')}
+function swTouchStart(ev){swTouchX=null;if(ev.target.closest('button,input,textarea'))return;swTouchX=ev.touches?.[0]?.clientX??null}
+function swTouchEnd(ev){if(swTouchX==null)return;const delta=(ev.changedTouches?.[0]?.clientX??swTouchX)-swTouchX;swTouchX=null;if(delta>43)swMode('timer');else if(delta< -43)swMode('clock')}
 function lap(){
   if(!A?.stopwatch?.running)return;
   if(!Array.isArray(A.laps))A.laps=[];
-  A.laps.push(swElapsed());A.laps=A.laps.slice(-100);save();P.pomo();
+  A.laps.push(swElapsed());A.laps=A.laps.slice(-100);swLapFlashUntil=Date.now()+820;save();P.pomo();
 }
 P.pomo=()=>{
   editIdx=-1;
@@ -1578,8 +1742,8 @@ P.pomo=()=>{
   const laps=(A.laps||[]).map((x,i)=>`<div class="lap-row"><span>Lap ${i+1}</span><b>${stopwatchFormat(x)}</b></div>`).reverse().join('');
   M(`<div class="card"><div class="mut" style="text-align:center" id="pl"></div><div class="tm" id="pt">${ft(pm.left)}</div><div class="row" style="justify-content:center"><button onclick="pS()">${pm.run?(tr()?'Duraklat':'Pause'):t('startPause')}</button><button class="g" onclick="pR()">${t('reset')}</button><button class="g" onclick="openPomoOverlay()">${tr()?'Odak ekranı':'Focus screen'}</button></div><p id="pi" class="mut" style="text-align:center"></p></div>
   <div class="card"><h2>${t('focusAndBreak')}</h2>${pr||'<p class="mut">'+t('addLength')+'</p>'}<div class="row"><input id="cw" type="number" min="1" max="600" placeholder="${t('focus')} (${t('minutes')})"><input id="cb" type="number" min="1" max="600" placeholder="${t('break')} (${t('minutes')})"><button onclick="addP()">${tr()?'Ekle / Güncelle':'Add / Update'}</button></div><p class="mut">${t('afterFive')}</p></div>
-  <div class="card" ontouchstart="swTouchStart(event)" ontouchend="swTouchEnd(event)"><h2>${t('stopwatch')}</h2><div class="row" style="justify-content:center"><button class="${stopwatchView==='timer'?'':'g'} s" onclick="swMode('timer')">${tr()?'Kronometre':'Stopwatch'}</button><button class="${stopwatchView==='clock'?'':'g'} s" onclick="swMode('clock')">${tr()?'Saat':'Clock'}</button></div>
-  ${stopwatchView==='timer'?`<div id="sw" class="sw-display">${stopwatchFormat(swElapsed())}</div><div class="row" style="justify-content:center"><button onclick="swS()">${A.stopwatch.running?(tr()?'Duraklat':'Pause'):(tr()?'Başlat':'Start')}</button><button class="g" onclick="lap()" ${A.stopwatch.running?'':'disabled'}>Lap</button><button class="g" onclick="swR()">${t('reset')}</button></div><div class="laps">${laps}</div>`:`<div class="clock-face"><div id="clock-hour" class="hand hour"></div><div id="clock-minute" class="hand"></div><div id="clock-second" class="hand" style="width:2px;background:var(--no)"></div></div><div id="clock-time" class="clock-label">${istanbulTime()} TR</div>`}
+  <div class="card" data-swipe-stopwatch="true" ontouchstart="swTouchStart(event)" ontouchend="swTouchEnd(event)"><h2>${t('stopwatch')}</h2><div class="row" style="justify-content:center"><button class="${stopwatchView==='timer'?'':'g'} s" onclick="swMode('timer')">${tr()?'Kronometre':'Stopwatch'}</button><button class="${stopwatchView==='clock'?'':'g'} s" onclick="swMode('clock')">${tr()?'Saat':'Clock'}</button></div>
+  ${stopwatchView==='timer'?`<div id="sw" class="sw-display">${stopwatchFormat(swElapsed())}</div><div class="row" style="justify-content:center"><button onclick="swS()">${A.stopwatch.running?(tr()?'Duraklat':'Pause'):(tr()?'Başlat':'Start')}</button><button class="g" onclick="lap()" ${A.stopwatch.running?'':'disabled'}>Lap</button><button class="g" onclick="swR()">${t('reset')}</button></div><div class="laps">${laps}</div>`:`<div class="chrono-dial" role="img" aria-label="${tr()?'Analog kronometre':'Analog stopwatch'}">${CHRONO_TICKS}<div class="chrono-mini">${[0,10,20].map(v=>{const a=v*Math.PI/15;return `<span class="chrono-number" style="left:${50+37*Math.sin(a)}%;top:${50-37*Math.cos(a)}%">${v}</span>`}).join('')}<div id="chrono-sub-hand" class="chrono-hand" style="top:12%;height:40%"></div></div><div id="chrono-hand" class="chrono-hand"></div><div class="chrono-pivot"></div><div id="chrono-digital" class="chrono-digital">${stopwatchFormat(swElapsed())}</div></div><div class="chrono-controls"><button onclick="lap()" ${A.stopwatch.running?'':'disabled'}>Lap</button><button class="stop" onclick="swS()">${A.stopwatch.running?(tr()?'Dur':'Stop'):(tr()?'Başlat':'Start')}</button></div><div class="laps">${laps}</div>`}
   <p class="mut" style="text-align:center">${tr()?'Sağa/sola kaydırarak kronometre ile saat arasında geçebilirsin.':'Swipe horizontally to switch between stopwatch and clock.'}</p></div>`);
   pi();swRender();
 };
@@ -1652,14 +1816,15 @@ const left=k=>{const n=Date.now();A[k]=(A[k]||[]).filter(t=>n-t<15*864e5);return
 P.set=()=>{
   const keys=Object.keys(DB.accounts).filter(u=>DB.accounts[u]&&!DB.accounts[u].authUid);
   const ac=keys.map(u=>`<span class="tag"><span>@${esc(u)}</span><button class="g s" onclick="switchAcc(${JSON.stringify(u)})">${t('switch')}</button></span>`).join('');
-  M(`${m()}<div class="card"><h2>${t('account')}</h2><p class="mut">${tr()?'Üstteki yuvarlak profil düğmesinden de düzenleyebilirsin.':'You can also edit your profile in the top-right account menu.'}</p><label>${t('username')}</label><div class="row"><input id="su" value="${esc(A.u)}" maxlength="20"><button onclick="chg('u')">${t('change')}</button></div><label>${t('displayName')}</label><div class="row"><input id="sn" value="${esc(A.nick||'')}" maxlength="30"><button onclick="chg('n')">${t('change')}</button></div><label>${t('bio')}</label><textarea id="sb" maxlength="160" rows="3" onchange="A.bio=this.value.slice(0,160);save()">${esc(A.bio||'')}</textarea><p class="mut">${tr()?'E-posta:':'Email:'} <b>${esc(A.email||'')}</b></p><p class="mut">${tr()?'Demo süresince e-posta değiştirme/doğrulama kapalı.':'Email change/verification is disabled during the demo.'}</p></div>
+  M(`${m()}<div class="card"><h2>${t('account')}</h2><p class="mut">${tr()?'Üstteki yuvarlak profil düğmesinden de düzenleyebilirsin.':'You can also edit your profile in the top-right account menu.'}</p><label>${t('username')}</label><div class="row"><input id="su" value="${esc(A.u)}" maxlength="20" oninput="profileUsernameHint(this.value,'settings-name-hint')"><div id="settings-name-hint" aria-live="polite" style="flex-basis:100%"></div><button onclick="chg('u')">${t('change')}</button></div><label>${t('displayName')}</label><div class="row"><input id="sn" value="${esc(A.nick||'')}" maxlength="30"><button onclick="chg('n')">${t('change')}</button></div><label>${t('bio')}</label><textarea id="sb" maxlength="160" rows="3" onchange="A.bio=this.value.slice(0,160);save()">${esc(A.bio||'')}</textarea><p class="mut">${tr()?'E-posta:':'Email:'} <b>${esc(A.email||'')}</b></p><p class="mut">${tr()?'Demo süresince e-posta değiştirme/doğrulama kapalı.':'Email change/verification is disabled during the demo.'}</p></div>
   <div class="card"><h2>${t('theme')}</h2>${themePick(false)}</div>
   <div class="card"><h2>${t('lang')}</h2><div class="langbar" style="justify-content:flex-start">${langBtns()}</div></div>
   <div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>
   <div class="card"><h2>${tr()?'Veri saklama ve senkronizasyon':'Storage and sync'}</h2><p class="mut">${A.authUid?(tr()?'Bulut oturumu açık. Verilerin Supabase hesabında saklanır; aynı e-posta ve şifreyle başka tarayıcıda giriş yapabilirsin.':'Cloud account active; sign in on other browsers with the same email and password.'):(tr()?'Eski yerel hesap: başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.')}</p><p class="mut">${tr()?'Demo e-posta sahipliğini doğrulamaz; şifre sıfırlama e-postası çalışmayabilir.':'Demo does not verify email ownership; password reset email may be unavailable.'}</p></div>
   ${ac?`<div class="card"><h2>${tr()?'Eski yerel hesaplar':'Legacy local accounts'}</h2>${ac}</div>`:''}
   <div class="card"><h2>${t('resetSystem')}</h2><p class="mut">${tr()?'Görevler, notlar, günlükler, ilerleme ve raporlar sıfırlanır. Hesap kimliğin kalır.':'Tasks, journals, progress and reports will be reset. Account identity is retained.'}</p><button style="background:var(--no)" onclick="resetSys()">${t('reset')}</button></div>
-  <div class="card"><h2>${t('deleteAccount')}</h2><p class="mut">${tr()?'Bulut hesabı silme işlemi demo sürümünde kapalıdır; sunucuda güvenli hesap silme işlevi gerektirir.':'Cloud deletion is not available in demo; it requires a secure server-side deletion endpoint.'}</p><button class="g d" onclick="delAcc()">${t('deleteAccount')}</button></div>`);
+  <div class="card"><h2>${t('deleteAccount')}</h2><p class="mut">${tr()?'Bulut hesabı silme işlemi demo sürümünde kapalıdır; sunucuda güvenli hesap silme işlevi gerektirir.':'Cloud deletion is not available in demo; it requires a secure server-side deletion endpoint.'}</p><button class="g d" onclick="delAcc()">${t('deleteAccount')}</button></div>
+  <div class="card"><h2>${tr()?'Oturum':'Session'}</h2><p class="mut">${tr()?'Hesabından güvenli şekilde çıkış yap.':'Sign out of your account.'}</p><button class="danger-logout" onclick="confirmLogout()">${t('logout')}</button></div>`);
 };
 
 function switchAcc(u){stopTimers();A=null;sbClear();loginDat={u,p:''};goTo('login','home')}
@@ -1670,11 +1835,11 @@ async function chg(k){
   const v=String($(k==='u'?'#su':'#sn')?.value||'').trim();if(!v)return;
   if(k==='u'){
     if(!userRe.test(v)){msg=t('usernameRules');return P.set()}
-    const other=findUser(v);if(other&&other!==A.u){msg=t('usernameTaken');return P.set()}
+    const other=findUser(v);if(other&&other!==A.u){await profileUsernameHint(v,'settings-name-hint');toast(t('usernameTaken'));return}
     if(v===A.u)return;
     if(A.authUid){
       try{await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:v}})}
-      catch(_){msg=t('usernameTaken');return P.set()}
+      catch(_){await profileUsernameHint(v,'settings-name-hint');toast(t('usernameTaken'));return}
     }
     delete DB.accounts[A.u];A.u=v;DB.accounts[v]=A;
   }else{A.nick=v.slice(0,30)}
