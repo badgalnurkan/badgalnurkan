@@ -582,7 +582,7 @@ window.addEventListener('storage',e=>{
   if(!nd||!nd.accounts)return;
   DB=nd;
   const u=loginDat.u||DB.lastUser;
-  if(!A&&u&&DB.accounts[u]){A=norm(DB.accounts[u]);applyTheme();if(view!=='app'){view='app';pg='home'}renderAppOrAuth();return}
+  if(!A){renderAppOrAuth();return} // Baska sekmedeki kayit giris ekranini atlatamaz.
   if(A&&DB.accounts[A.u]){A=nd.accounts[A.u];restorePomodoroState();applyTheme();if(document.querySelector('aside')){const m=$('#mn');const had=m?m.innerHTML:'';shell()}return}
   renderAppOrAuth();
 });
@@ -919,7 +919,7 @@ function renderAppOrAuth(){
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
     h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${tr()?'E-posta veya bu cihazdaki kullanıcı adı':'Email or a username saved on this device'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
-  else if(view==='setup')h=`<div class="login-wrap"><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value"><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value"><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='setup')h=`<div class="login-wrap"><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value;setAvailabilityHint('user-status','')" onblur="checkUsernameUI()"><div id="user-status" class="mut" style="min-height:1.2rem;font-size:.82rem" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;setAvailabilityHint('email-status','')" onblur="checkEmailUI()"><div id="email-status" class="mut" style="min-height:1.2rem;font-size:.82rem" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='verify'){
     const pending=readJson(PENDING_SIGNUP_KEY)||{};
     h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${tr()?'E-postanı doğrula':'Verify your email'}</h2>${m()}<p class="mut">${tr()?'Kayıt bağlantısını şu adrese gönderdik:':'We sent a confirmation link to:'}</p><p><b>${esc(pending.email||loginDat.e||DB.lastEmail||'')}</b></p><p class="mut">${tr()?'Gelen kutunu ve spam klasörünü kontrol et. Bağlantıyı açtıktan sonra hesabın etkinleşecek.':'Check your inbox and spam folder. Your account will activate after you open the link.'}</p><div class="row"><button onclick="resendSignupConfirmation()">${tr()?'Doğrulama e-postasını yeniden gönder':'Resend confirmation email'}</button><button class="g" onclick="goTo('login','home')">${t('login')}</button></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('setup','home')">${tr()?'Başka e-posta kullan':'Use another email'}</a></div>`);
@@ -1038,8 +1038,9 @@ async function setup(){
   if(!userRe.test(u))msg=t('usernameRules');
   else if(!n)msg=t('displayRequired');
   else if(findUser(u))msg=t('usernameTaken');
-  else if(!e)msg=tr()?'E-posta zorunlu (hesabın buna bağlı).':'Email is required (your account is tied to it).';
-  else if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))msg=t('emailInvalid');
+  else if(!e)msg=tr()?'E-posta zorunlu (hesabın buna bağlı).':'Email is required to register.';
+  else if(!isValidEmail(e))msg=t('emailInvalid');
+  else if(localEmailTaken(e))msg=tr()?'Bu e-posta adresi bu cihazdaki bir hesapta zaten kayıtlı.':'This email is already used by an account on this device.';
   else msg=pwOk(p,u);
   if(msg)return renderAppOrAuth();
   if(!cloud()){
@@ -1047,8 +1048,15 @@ async function setup(){
     return renderAppOrAuth();
   }
   try{
+    if(!await sbUsernameAvailable(u)){
+      msg=t('usernameTaken');return renderAppOrAuth();
+    }
     const j=await sbSignUp(u,p,n,e,formDat.b);
     const user=j.user||j;
+    if(user&&Array.isArray(user.identities)&&user.identities.length===0){
+      msg=tr()?'Bu e-posta adresi zaten kayıtlı. Giriş yapabilir veya şifreni sıfırlayabilirsin.':'This email address is already registered. Sign in or reset your password.';
+      return renderAppOrAuth();
+    }
     if(j.access_token&&j.refresh_token){
       sbSave({...j,user});
       await activateCloudUser(user,null);
@@ -1057,14 +1065,17 @@ async function setup(){
       toast(tr()?'Hesabın oluşturuldu.':'Your account has been created.');return;
     }
     if(user&&user.id){
-      /* E-posta onayı açıkken oturum null döner; bu durumda uygulamaya giriş VERİLMEZ. */
       setItem(PENDING_SIGNUP_KEY,JSON.stringify({email:e,username:u,createdAt:Date.now()}));
       DB.lastEmail=e;formDat={u:'',n:'',b:'',e:'',t:'',p:''};loginDat={u:e,p:'',e};
       view='verify';msg='';renderAppOrAuth();return;
     }
     throw new Error(tr()?'Kayıt yanıtı beklenen biçimde değil.':'Unexpected sign-up response.');
   }catch(err){
-    msg=(tr()?'Kayıt oluşturulamadı: ':'Could not create account: ')+String(err.message||err);
+    if(isUsernameCollision(err)){
+      msg=t('usernameTaken');
+    }else{
+      msg=authErrorMessage(err, 'signup');
+    }
     renderAppOrAuth();
   }
 }
@@ -1079,7 +1090,7 @@ async function fSendEmail(){
     const boxEl=$('#fz');
     if(boxEl)boxEl.innerHTML=`<div class="note">${tr()?'Bu adres için bir hesap varsa şifre sıfırlama bağlantısı gönderildi. Gelen kutunu ve spam klasörünü kontrol et.':'If an account exists for this address, a password reset link has been sent. Check your inbox and spam folder.'}</div><button class="g" onclick="goTo('login','home')">${t('login')}</button>`;
   }catch(err){
-    msg=(tr()?'E-posta gönderilemedi: ':'Could not send email: ')+String(err.message||err);
+    msg=authErrorMessage(err,'recover');
     renderAppOrAuth();
   }
 }
@@ -1414,7 +1425,7 @@ P.set=()=>{
   const ac=keys.map((u,i)=>`<span class="tag ${DB.accounts[u]===A?'on':''}"><span>${esc(u)}</span>${DB.accounts[u]===A?'<span class="mut">'+t('active')+'</span>':`<button class="g s" onclick="switchAcc(${i})">${t('switch')}</button>`}</span>`).join('');
   M(`${m()}<div class="card"><h2>${t('lang')}</h2><div class="langbar" style="justify-content:flex-start">${langBtns()}</div><p class="mut" style="font-size:.85rem">${t('quoteLangNote')}</p></div>
 <div class="card"><h2>${t('account')}</h2><label>${t('username')} <span class="mut">(${tr()?'15 günde 5 değişiklik — kalan':'5 changes per 15 days —'} ${left('uc')})</span></label><div class="row"><input id="su" maxlength="20" value="${esc(A.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'')"><button onclick="chg('u')">${t('change')}</button></div><label style="display:block;margin-top:.8rem">${t('displayName')} <span class="mut">(${left('nc')})</span></label><div class="row"><input id="sn" maxlength="30" value="${esc(A.nick)}"><button onclick="chg('n')">${t('change')}</button></div><label style="display:block;margin-top:.8rem">${t('bio')}</label><textarea id="sb" rows="2" maxlength="160" onchange="A.bio=this.value;save()">${esc(A.bio)}</textarea></div>
-<div class="card"><h2>${t('email')}</h2><label>${t('email')} ${A.authUid?'✓':''}</label><div class="row" style="margin-bottom:.6rem"><input id="semail" type="email" value="${esc(A.email||A.mail||'')}"><button onclick="vSend('email')">${tr()?'Doğrulama bağlantısı gönder':'Send confirmation link'}</button></div><div id="vz"></div><p class="mut" style="font-size:.8rem">${tr()?'E-posta değişikliği Supabase üzerinden doğrulanır.':'Email changes are verified through Supabase.'}</p></div>
+${A.authUid?`<div class="card"><h2>${t('email')}</h2><label>${tr()?'Doğrulanmış e-posta / Verified email':'Verified email'}</label><p class="mut" style="font-size:.82rem">${esc(A.email||A.mail||'')}</p><label>${tr()?'Yeni e-posta adresi':'New email address'}</label><div class="row" style="margin-bottom:.6rem"><input id="semail" type="email" autocomplete="email" value="${esc(A.email||A.mail||'')}"><button onclick="vSend('email')">${tr()?'E-postayı değiştir':'Change email'}</button></div><div id="vz" aria-live="polite"></div><p class="mut" style="font-size:.8rem">${tr()?'Yeni adresi onaylaman gerekir. Güvenli e-posta değişimi açıksa eski adresine de onay gönderilir.':'You must confirm the new address. Secure email change may also require approval at your old address.'}</p></div>`:`<div class="card"><h2>${t('email')}</h2><p class="mut" style="font-size:.85rem">${tr()?'Bu hesap yalnızca bu cihazda kayıtlı. E-posta doğrulamak için önce mevcut verilerinle bir bulut hesabı oluşturmalısın. Görevlerin ve notların korunur.':'This account is stored on this device only. Create a cloud account using your existing data to verify an email. Tasks and notes will be kept.'}</p><label>${tr()?'Doğrulanacak e-posta':'Email to verify'}</label><input id="semail" type="email" autocomplete="email" value="${esc(A.email||A.mail||'')}"><label>${tr()?'Mevcut yerel şifre':'Current local password'}</label><input id="migrate-old-pass" type="password" autocomplete="current-password"><label>${tr()?'Bulut şifresi (en az 8 karakter)':'Cloud password (at least 8 characters)'}</label><input id="migrate-new-pass" type="password" autocomplete="new-password"><div class="row" style="margin-top:.7rem"><button onclick="migrateLocalAccount()">${tr()?'Buluta taşı ve doğrulama gönder':'Move to cloud & send verification'}</button></div><p class="mut" style="font-size:.8rem">${tr()?'E-posta onaylanana kadar hesabın bu cihazda kullanılabilir.':'Your local account remains usable until you confirm the email.'}</p></div>`}
 <div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>
 <div class="card"><h2>${t('theme')}</h2>${themePick(false).replace('themebar','theme-in').replace('margin:0 0 .8rem','margin:0')}</div></div>
 <div class="card"><h2>${t('accounts')}</h2>${ac}<div style="margin-top:.6rem"><button class="g" onclick="A0=A;A=null;goTo('setup','home')">${t('addAccount')}</button></div></div>
@@ -1425,34 +1436,85 @@ function switchAcc(i){stopTimers();const k=Object.keys(DB.accounts)[i];A=null;lo
 /* oturum kapaninca sayac ve kronometre durur, sonraki kullaniciya gecmez */
 function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,end:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0};persistPomodoroState();document.title=TITLE}catch(e){}}
 function goLogin(){stopTimers();A=null;loginDat={u:'',p:''};goTo('login','home')}
-function chg(k){
-  const key=k=='u'?'uc':'nc';
-  if(left(key)<=0){msg=tr()?'Son 15 gündeki 5 değişiklik hakkının tamamını kullandın.':'You have used all 5 changes for the last 15 days.';return P.set()}
-  const v=$(k=='u'?'#su':'#sn').value.trim();if(!v)return;
-  if(k=='u'){
+async function chg(k){
+  const key=k==='u'?'uc':'nc';
+  if(left(key)<=0){msg=tr()?'Son 15 gündeki 5 değişiklik hakkının tamamını kullandın.':'You have used all 5 changes in 15 days.';return P.set()}
+  const v=$(k==='u'?'#su':'#sn').value.trim();if(!v)return;
+  if(k==='u'){
     if(!userRe.test(v)){msg=t('usernameRules');return P.set()}
     const ex=findUser(v);if(ex&&ex!==A.u){msg=t('usernameTaken');return P.set()}
     if(v===A.u)return;
+    if(A.authUid){
+      const previous=A.u;
+      try{
+        await cloudUserForActive();
+        await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:v}});
+        try{await sb('/auth/v1/user',{method:'PUT',body:{data:{username:v,nick:A.nick,bio:A.bio||''}}})}
+        catch(e){try{await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:previous}})}catch(_){}throw e}
+      }catch(e){msg=isUsernameCollision(e)?t('usernameTaken'):authErrorMessage(e,'username');return P.set()}
+    }
     delete DB.accounts[A.u];A.u=v;DB.accounts[v]=A;
-  }else{if(v===A.nick)return;A.nick=v}
-  A[key].push(Date.now());DB.last=A.nick;save();msg=`${t('saved')} ${left(key)}`+(tr()?' değişiklik hakkı kaldı.':' changes left.');shell();
+  }else{
+    if(v===A.nick)return;
+    A.nick=v;
+    if(A.authUid){
+      try{await cloudUserForActive();await sb('/auth/v1/user',{method:'PUT',body:{data:{nick:v,username:A.u,bio:A.bio||''}}})}
+      catch(e){msg=authErrorMessage(e,'profile');return P.set()}
+    }
+  }
+  A[key].push(Date.now());DB.last=A.nick;DB.lastUser=A.u;save();
+  msg=`${t('saved')} ${left(key)}`+(tr()?' değişiklik hakkı kaldı.':' changes left.');shell();
 }
 async function vSend(k){
-  if(k!=='email'||!A||!A.authUid){
-    msg=tr()?'E-posta değiştirmek için doğrulanmış bir bulut oturumu gerekli.':'A verified cloud session is required to change the email.';
-    return P.set();
-  }
-  const v=String($('#s'+k)?.value||'').trim().toLowerCase();
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){msg=t('emailInvalid');return P.set()}
+  if(k!=='email'||!A)return;
+  if(!A.authUid){msg=tr()?'Önce aşağıdaki form ile hesabını buluta taşı.':'Move your local account to the cloud first.';return P.set()}
+  const v=String($('#semail')?.value||'').trim().toLowerCase();
+  if(!isValidEmail(v)){msg=t('emailInvalid');return P.set()}
+  if(localEmailTaken(v,A.u)){msg=tr()?'Bu e-posta bu cihazdaki başka bir hesapta kayıtlı.':'This email is used by another local account.';return P.set()}
   try{
-    await sb('/auth/v1/user',{method:'PATCH',body:{email:v}});
-    $('#vz').innerHTML=`<div class="note">${tr()?'Yeni e-posta adresine doğrulama bağlantısı gönderildi. Onaylandıktan sonra adresin güncellenecek.':'A confirmation link has been sent. Your email will update after confirmation.'}</div>`;
+    const user=await cloudUserForActive();
+    if(v===String(user.email||'').toLowerCase()){
+      msg=tr()?'Bu e-posta zaten hesabına bağlı. Başka bir adres yazarsan değiştirebilirsin.':'This is already your account email. Enter a different email to change it.';
+      return P.set();
+    }
+    await sb('/auth/v1/user',{method:'PUT',body:{email:v}});
+    const status=$('#vz');if(status)status.innerHTML=`<div class="note">${tr()?'E-posta değişikliği istendi. Yeni adresine gelen bağlantıyı aç. Güvenli e-posta değişimi açıksa eski adresindeki bağlantıyı da onayla.':'Email change requested. Open the link at your new address. If secure email change is enabled, confirm the old address too.'}</div>`;
   }catch(err){
-    msg=(tr()?'E-posta değiştirilemedi: ':'Could not update email: ')+String(err.message||err);
-    P.set();
+    msg=authErrorMessage(err,'emailChange');P.set();
   }
 }
 
+/* Yerel hesabi kaybetmeden dogrulama e-postali Supabase hesaba gecir. */
+async function migrateLocalAccount(){
+  if(!A||A.authUid)return;
+  const email=String($('#semail')?.value||'').trim().toLowerCase();
+  const oldPassword=$('#migrate-old-pass')?.value||'';
+  const cloudPassword=$('#migrate-new-pass')?.value||'';
+  if(!isValidEmail(email)){msg=t('emailInvalid');return P.set()}
+  if(localEmailTaken(email,A.u)){msg=tr()?'Bu e-posta bu cihazdaki başka bir hesapta zaten kayıtlı.':'This email is already used on this device.';return P.set()}
+  if(!oldPassword){msg=tr()?'Mevcut yerel şifreni gir.':'Enter your current local password.';return P.set()}
+  if(!await pwMatch(A,oldPassword)){msg=t('currentWrong');return P.set()}
+  const problem=pwOk(cloudPassword,A.u);
+  if(problem){msg=problem;return P.set()}
+  try{
+    if(!await sbUsernameAvailable(A.u)){msg=t('usernameTaken');return P.set()}
+    const j=await sbSignUp(A.u,cloudPassword,A.nick,email,A.bio||'');
+    const user=j.user||j;
+    if(user&&Array.isArray(user.identities)&&!user.identities.length){
+      msg=tr()?'Bu e-posta zaten kayıtlı. Yeni bir hesap oluşturmadan önce giriş yap veya şifreni sıfırla.':'This email is already registered. Sign in or reset your password instead.';
+      return P.set();
+    }
+    if(!user||!user.id)throw new Error('Missing signup user.');
+    setItem(PENDING_MIG_KEY,JSON.stringify({username:A.u,email,createdAt:Date.now()}));
+    if(j.access_token&&j.refresh_token){
+      sbSave({...j,user});await activateCloudUser(user,A);
+      setItem(PENDING_MIG_KEY,'');msg=tr()?'Hesabın buluta taşındı.':'Account moved to the cloud.';
+      return P.set();
+    }
+    msg=tr()?`Doğrulama bağlantısı ${email} adresine gönderildi. Gelen kutunu kontrol et. Hesabındaki kayıtlar doğrulamadan sonra buluta aktarılır.`:`Confirmation sent to ${email}. Check your inbox. Your account data will migrate when you verify.`;
+    P.set();
+  }catch(err){msg=isUsernameCollision(err)?t('usernameTaken'):authErrorMessage(err,'migration');P.set()}
+}
 async function chPw(){
   const current=$('#op')?.value||'',next=$('#np')?.value||'';
   const e=pwOk(next,A.u);if(e){msg=e;return P.set()}
@@ -1496,8 +1558,66 @@ async function delAcc(){
 const SUPABASE_URL='https://flcfqwndqfmbritaywfb.supabase.co';
 const SUPABASE_KEY='sb_publishable_4QTEEc6tSYV2QtNhmeP6Iw_B3sM6dtm';
 const SITE_URL='https://badgalnurkan.vercel.app/';
-const CLOUD_KEY='b1cloud', SESS_KEY='b1sb', PENDING_SIGNUP_KEY='b1.pending.signup';
+const CLOUD_KEY='b1cloud', SESS_KEY='b1sb', PENDING_SIGNUP_KEY='b1.pending.signup', PENDING_MIG_KEY='b1.pending.migration';
 let recoveryUser=null;
+const isValidEmail=e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(e||'').trim());
+const localEmailTaken=(e,exceptUser='')=>Object.keys(DB.accounts).some(u=>
+  u.toLowerCase()!==String(exceptUser).toLowerCase()
+  && String(DB.accounts[u].email||DB.accounts[u].mail||'').toLowerCase()===String(e).toLowerCase()
+);
+function setAvailabilityHint(id,message,problem=false){
+  const el=document.getElementById(id);
+  if(el){el.textContent=message;el.style.color=problem?'var(--no)':'var(--mut)'}
+}
+async function checkUsernameUI(){
+  const u=String($('#u')?.value||'').trim();if(!u||!userRe.test(u))return;
+  if(findUser(u)){setAvailabilityHint('user-status',t('usernameTaken'),true);return}
+  try{
+    const available=await sbUsernameAvailable(u);
+    if(String($('#u')?.value||'').trim()!==u)return;
+    setAvailabilityHint('user-status',available?(tr()?'Kullanıcı adı uygun.':'Username is available.'):t('usernameTaken'),!available);
+  }catch(e){setAvailabilityHint('user-status',authErrorMessage(e,'username'),true)}
+}
+function checkEmailUI(){
+  const email=String($('#e')?.value||'').trim().toLowerCase();
+  if(email&&localEmailTaken(email))setAvailabilityHint('email-status',tr()?'Bu e-posta bu cihazda zaten kullanılıyor.':'This email is already used on this device.',true);
+  else if(email&&!isValidEmail(email))setAvailabilityHint('email-status',t('emailInvalid'),true);
+  else setAvailabilityHint('email-status','');
+}
+function isUsernameCollision(e){
+  const text=String(e&&(e.code||'')||'')+' '+String(e&&(e.message||'')||'');
+  return /23505|iydu_usernames_case_insensitive_key|duplicate key.*username/i.test(text);
+}
+function isMissingSql(e){return /PGRST202|PGRST205|could not find the function|schema cache|404/.test(String(e?.code||'')+' '+String(e?.message||'')+' '+String(e?.status||''))}
+function authErrorMessage(err,where=''){
+  const raw=String(err?.message||err||'');const code=String(err?.code||'').toLowerCase();
+  if(isMissingSql(err))return tr()?'Supabase kullanıcı adı kontrolü henüz kurulmamış. Verilen SQL dosyasını SQL Editor’da çalıştır.':'Username verification is not installed. Run the provided SQL file in the Supabase SQL Editor.';
+  if(isUsernameCollision(err))return t('usernameTaken');
+  if(/email_exists|user_already_exists|email.*already.*registered|user already registered|already been registered/i.test(code+' '+raw))return tr()?'Bu e-posta adresi zaten kayıtlı. Giriş yap veya şifreni sıfırla.':'This email is already registered. Sign in or reset your password.';
+  if(/email_not_confirmed/i.test(code+' '+raw))return tr()?'Önce e-posta adresine gelen doğrulama bağlantısını aç.':'First open the verification link sent to your email.';
+  if(/invalid_credentials|invalid login credentials/i.test(code+' '+raw))return tr()?'E-posta veya şifre hatalı.':'Incorrect email or password.';
+  if(/email.*rate|rate.limit|too many requests|over.email.send.rate.limit/i.test(code+' '+raw))return tr()?'Çok sık e-posta istendi. Bir süre sonra yeniden dene.':'Too many email requests. Try again later.';
+  if(/invalid.*token|jwt expired|session.*expired/i.test(code+' '+raw))return tr()?'Oturum süresi doldu. E-posta ve şifrenle yeniden giriş yap.':'Your session has expired. Please sign in again.';
+  if(where==='emailChange'&&/email/i.test(raw)&&/unique|exists|taken/i.test(raw))return tr()?'Bu e-posta başka bir hesapta kayıtlı.':'This email is already assigned to another account.';
+  return (tr()?'İşlem tamamlanamadı: ':'Unable to complete: ')+raw;
+}
+async function sbUsernameAvailable(username){
+  const res=await fetch(SUPABASE_URL+'/rest/v1/rpc/iydu_username_available',{
+    method:'POST',headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({p_username:username})
+  });
+  let data=null;try{data=await res.json()}catch(e){}
+  if(!res.ok){const e=new Error(data?.message||data?.error||('HTTP '+res.status));e.code=data?.code;e.status=res.status;throw e}
+  return data===true;
+}
+async function cloudUserForActive(){
+  const session=sbSession();
+  if(!A||!A.authUid||!session||!session.access_token){throw new Error(tr()?'Bulut oturumu kapalı. E-posta ve şifrenle yeniden giriş yap.':'Cloud session is missing. Sign in again with your email and password.')}
+  const user=await sbCurrentUser();
+  if(!user||user.id!==A.authUid)throw new Error(tr()?'Bu hesap için bulut oturumu bulunamadı. Yeniden giriş yap.':'No matching cloud session. Please sign in again.');
+  if(!user.email_confirmed_at&&!user.confirmed_at)throw new Error(tr()?'Önce mevcut e-posta adresini doğrula.':'Verify your current email first.');
+  return user;
+}
 const cloud=()=>{try{return localStorage.getItem(CLOUD_KEY)!=='0'}catch(e){return true}};
 const sbSession=()=>{try{return JSON.parse(getItem(SESS_KEY)||'null')}catch(e){return null}};
 function sbSave(sess){
@@ -1555,7 +1675,7 @@ async function sbCurrentUser(){
   const session=sbSession();if(session&&session.access_token)sbSave({...session,user});
   return user;
 }
-async function sbUpdatePassword(password){return await sb('/auth/v1/user',{method:'PATCH',body:{password}})}
+async function sbUpdatePassword(password){return await sb('/auth/v1/user',{method:'PUT',body:{password}})}
 async function sbRecover(email){
   const url='/auth/v1/recover?redirect_to='+encodeURIComponent(sbRedirect());
   return sb(url,{method:'POST',body:{email:String(email).trim().toLowerCase()}});
@@ -1568,22 +1688,32 @@ async function activateCloudUser(user,fallbackAccount){
   if(!user||!user.id||!user.email)throw new Error('Supabase user information is incomplete.');
   const meta=user.user_metadata||{};
   const email=String(user.email).toLowerCase();
+  const pending=readJson(PENDING_MIG_KEY)||{};
+  const eligibleMigration=pending.email===email
+    && String(meta.username||'').toLowerCase()===String(pending.username||'').toLowerCase()
+    && DB.accounts[pending.username]&&!DB.accounts[pending.username].authUid
+    && Date.now()-(pending.createdAt||0)<7*864e5;
+  const migrated=eligibleMigration?DB.accounts[pending.username]:null;
   const localKey=Object.keys(DB.accounts).find(k=>String(DB.accounts[k].mail||DB.accounts[k].email||'').toLowerCase()===email);
   const remoteData=await sbPull('');
-  const base=remoteData||(fallbackAccount|| (localKey?DB.accounts[localKey]:null))||{};
+  const base=remoteData||fallbackAccount||migrated|| (localKey?DB.accounts[localKey]:null)||{};
   let username=String(meta.username||base.u||(localKey||'')).trim();
+  try{
+    const rows=await sb('/rest/v1/iydu_usernames?select=username&user_id=eq.'+encodeURIComponent(user.id));
+    if(Array.isArray(rows)&&rows[0]?.username)username=rows[0].username;
+  }catch(e){if(!isMissingSql(e))console.warn('Username lookup unavailable:',e)}
   if(!userRe.test(username))username='user'+String(user.id).replace(/-/g,'').slice(0,12);
-  /* Auth dönüşündeki kullanıcı kimliğini oturum kaydına da yaz. */
   sbSave({...sbSession(),user});
   const account=norm(base);
   account.u=username;
   account.nick=String(account.nick||meta.nick||username);
   if(!account.bio&&meta.bio)account.bio=String(meta.bio).slice(0,160);
   account.email=email;account.mail=email;account.authUid=user.id;
-  /* Supabase Auth parolayı yönetir; yerel hesapta parola özeti tutulmaz. */
   account.pw='';
   DB.accounts[username]=account;
-  if(localKey&&localKey!==username)delete DB.accounts[localKey];
+  if(localKey&&localKey!==username&&DB.accounts[localKey]?.authUid===user.id)delete DB.accounts[localKey];
+  if(eligibleMigration&&pending.username!==username)delete DB.accounts[pending.username];
+  if(eligibleMigration)setItem(PENDING_MIG_KEY,'');
   DB.last=account.nick;DB.lastUser=username;DB.lastEmail=email;
   A=account;lastSig=signature(account);restorePomodoroState();applyTheme();save();
   return account;
@@ -1610,7 +1740,7 @@ async function handleAuthRedirect(){
     await activateCloudUser(user,null);
     setItem(PENDING_SIGNUP_KEY,'');formDat={u:'',n:'',b:'',e:'',t:'',p:''};
     view='app';pg='home';msg='';renderAppOrAuth();greetThen();
-    toast(tr()?'E-posta doğrulandı, hesabın hazır.':'Email confirmed. Your account is ready.');
+    toast(type==='email_change'?(tr()?'E-posta değişikliği onaylandı.':'Email change confirmed.'):(tr()?'E-posta doğrulandı, hesabın hazır.':'Email confirmed. Your account is ready.'));
     return true;
   }catch(err){
     A=null;view='login';msg=(tr()?'Doğrulama bağlantısı işlenemedi: ':'Could not complete the authentication link: ')+String(err.message||err);
