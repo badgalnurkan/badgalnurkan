@@ -942,6 +942,22 @@ main .card{animation-duration:.25s;animation-delay:0s!important}
  .contact-actions a{transition:none!important}
 }
 
+
+/* V8: identical compact report actions and explicit 300ms in / 200ms out day dialogs. */
+#mn .report-heading{width:100%;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.6rem!important}
+#mn .report-heading h2,#mn .report-heading h3{font-size:clamp(.94rem,1.4vw,1.1rem);line-height:1.3;margin:0;min-width:0}
+#mn .report-heading .report-more{width:7.9rem;min-width:7.9rem;max-width:7.9rem;display:inline-flex;align-items:center;justify-content:center;justify-self:end;white-space:nowrap;font-size:.8rem;line-height:1.2;padding:.42rem .52rem;min-height:2.45rem;box-sizing:border-box}
+@media(max-width:320px){#mn .report-heading .report-more{width:6.8rem;min-width:6.8rem;max-width:6.8rem;font-size:.72rem;padding:.4rem .3rem}#mn .report-heading h2,#mn .report-heading h3{font-size:.9rem}}
+.modal[data-kind=day]{animation:dayVeilForward .3s cubic-bezier(.2,.7,.2,1) both!important}
+.modal[data-kind=day] .card{animation:dayCircleForward .3s cubic-bezier(.2,.7,.2,1) both!important;transform-origin:center center;will-change:opacity,clip-path,transform}
+.modal[data-kind=day].is-closing{animation:dayVeilReverse .2s cubic-bezier(.35,0,.7,1) both!important;transition:none!important;pointer-events:none}
+.modal[data-kind=day].is-closing .card{animation:dayCircleReverse .2s cubic-bezier(.35,0,.7,1) both!important;transition:none!important}
+@keyframes dayVeilForward{from{opacity:0}to{opacity:1}}
+@keyframes dayVeilReverse{from{opacity:1}to{opacity:0}}
+@keyframes dayCircleForward{0%{opacity:0;clip-path:circle(0 at 50% 50%);transform:translate3d(0,6px,0) scale(.96)}100%{opacity:1;clip-path:circle(150% at 50% 50%);transform:none}}
+@keyframes dayCircleReverse{0%{opacity:1;clip-path:circle(150% at 50% 50%);transform:none}100%{opacity:0;clip-path:circle(0 at 50% 50%);transform:translate3d(0,6px,0) scale(.96)}}
+@media(prefers-reduced-motion:reduce){.modal[data-kind=day],.modal[data-kind=day] .card,.modal[data-kind=day].is-closing,.modal[data-kind=day].is-closing .card{animation:none!important;transition:none!important}}
+
 </style>
 </head>
 <body>
@@ -1421,11 +1437,22 @@ function openModal(id,html){
   const previous=document.getElementById(id);if(previous){if(previous.classList.contains('is-closing'))previous.remove();else return;}
   const d=document.createElement('div');d.id=id;d.className='modal';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
   if(id==='day-modal')d.dataset.kind='day';
+  d._returnFocus=document.activeElement;
   d.innerHTML=`<div class="card" style="max-width:32rem;width:100%;max-height:85vh;overflow-y:auto">${html}</div>`;
-  d.addEventListener('click',e=>{if(e.target===d)d.remove()});
+  d.addEventListener('click',e=>{if(e.target===d)closeModal(id)});
   document.body.appendChild(d);
 }
-const closeModal=id=>{const e=document.getElementById(id);if(!e||e.classList.contains('is-closing'))return;e.classList.add('is-closing');e.setAttribute('aria-hidden','true');setTimeout(()=>e.remove(),210)};
+function closeModal(id){
+  const el=document.getElementById(id);
+  if(!el||el.classList.contains('is-closing'))return;
+  el.classList.add('is-closing');el.setAttribute('aria-hidden','true');
+  const opener=el._returnFocus;
+  const reduced=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  setTimeout(()=>{
+    el.remove();
+    if(opener?.isConnected)try{opener.focus({preventScroll:true})}catch(_){}
+  },reduced?0:(el.dataset.kind==='day'?205:210));
+}
 function openGuideModal(){
   const body=tr()?`<p>Improvin' your day: yapılacaklar, yarın planlaması, günlük, Pomodoro, kronometre, ilerleme ve raporlar.</p><p>Yeni bulut hesapları Supabase ile eşitlenir; aynı e-posta ve şifreyle başka tarayıcıda giriş yapılabilir. Eski yerel hesaplar otomatik olarak buluta taşınmaz.</p><p class="mut"><b>Demo uyarısı:</b> Bu aşamada e-posta sahipliği doğrulanmayabilir ve şifre sıfırlama e-postası çalışmayabilir. Hassas kişisel bilgi girmeyin.</p>`
     :`<p>Track tasks, plan tomorrow, write a daily journal, focus with Pomodoro, review your progress and reports.</p><p>New cloud accounts use Supabase and can be opened on another device with the same email/password. Legacy local accounts do not sync automatically.</p><p class="mut"><b>Demo:</b> Email ownership may not be verified, and password reset emails may not work. Avoid sensitive personal information.</p>`;
@@ -1645,7 +1672,33 @@ function confirmLogout(){
 }
 
 function istanbulTime(){return new Intl.DateTimeFormat('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())}
-function updateIstanbulClock(){const e=$('#istanbul-clock');if(e)e.textContent=istanbulTime()}
+/* BEGIN ISTANBUL DATE SYNC: deterministic calendar day in the header clock's timezone. */
+const ISTANBUL_DAY_FORMATTER=new Intl.DateTimeFormat('en-US',{
+  timeZone:'Europe/Istanbul',year:'numeric',month:'2-digit',day:'2-digit'
+});
+function istanbulDayKey(at=new Date()){
+  const p=Object.fromEntries(ISTANBUL_DAY_FORMATTER.formatToParts(at).filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));
+  return `${p.year}-${p.month}-${p.day}`;
+}
+/* END ISTANBUL DATE SYNC */
+function updateIstanbulClock(){
+  const clock=$('#istanbul-clock');if(clock)clock.textContent=istanbulTime();
+  const trigger=$('#top-date-trigger');
+  if(!A||view!=='app'||!trigger)return;
+  const day=istanbulDayKey();
+  if(trigger.dataset.day===day)return;
+  trigger.dataset.day=day;
+  trigger.textContent=fmt(day);
+  const mini=$('#mini-cal');
+  if(mini){
+    const info=miniCalendarData(day);
+    const heading=mini.querySelector('.mini-month-title');
+    const grid=mini.querySelector('.mini-cal-grid');
+    if(heading)heading.textContent=monthName(info.mo)+' '+info.y;
+    if(grid)grid.innerHTML=info.mc;
+    if(mini.classList.contains('open'))placeMiniCal();
+  }
+}
 function switchHeaderLang(){setLang(DB.lang==='tr'?'en':'tr');if(A){shell()}else renderAppOrAuth()}
 let profileHintTimer=0,profileHintSequence=0;
 async function profileUsernameHint(name,targetId){
@@ -1691,21 +1744,28 @@ async function saveProfile(){
   // Treat Supabase's user_data row as the canonical profile record for this app.
   save();closeModal('profile-modal');shell();toast(t('saved'));
 }
-function shell(){
-  roll();document.documentElement.className='';
-  const n=new Date(),y=n.getFullYear(),mo=n.getMonth(),days=new Date(y,mo+1,0).getDate();
+/* Return one month of header buttons without rebuilding the page or any draft inputs. */
+function miniCalendarData(dayKey){
+  const [y,month]=dayKey.split('-').map(Number),mo=month-1;
+  const days=new Date(y,mo+1,0).getDate();
   let mc='';
   for(let d=1;d<=days;d++){
-    const k=`${y}-${pad(mo+1)}-${pad(d)}`,its=items(k),future=k>today();
-    let cls=future?'future':(dayFog(k)?'fog':'');
+    const k=`${y}-${pad(month)}-${pad(d)}`,its=items(k),future=k>dayKey;
+    let cls=future?'future':(k<dayKey&&A.fog&&!(its.length>0&&its.every(x=>x.done))?'fog':'');
     if(!future&&its.length>0)cls=its.every(x=>x.done)?'ok':'miss-dot';
     if(hasNote(k))cls+=' note';
-    mc+=`<button class="mini-dot ${cls} ${k===today()?'td':''}" title="${fmt(k)}" ${k<today()&&!A.fog?'disabled aria-disabled="true"':''} onclick="miniClick(event,'${k}')"><span>${d}</span></button>`;
+    mc+=`<button class="mini-dot ${cls} ${k===dayKey?'td':''}" title="${fmt(k)}" ${k<dayKey&&!A.fog?'disabled aria-disabled="true"':''} onclick="miniClick(event,'${k}')"><span>${d}</span></button>`;
   }
+  return {y,mo,mc};
+}
+function shell(){
+  roll();document.documentElement.className='';
+  const headerDay=istanbulDayKey();
+  const {y,mo,mc}=miniCalendarData(headerDay);
   const firstShell=!document.querySelector('.shell aside');
   document.querySelectorAll('body > #mini-cal').forEach(el=>el.remove());
   const oldBackdrop=document.getElementById('mini-backdrop');if(oldBackdrop)oldBackdrop.remove();
-  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(today())}</button><button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b>${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><aside id="nav-aside" class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button><button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><aside id="nav-aside" class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),650)}
@@ -1833,9 +1893,9 @@ function removePlan(i){ensurePlans();const next=addD(today(),1);if(A.plans[next]
 /* sis: tamamlanmamis gecmis gunler */
 function dayFog(k){if(!A||!A.fog)return false;if(k>=today())return false;const its=items(k);return !(its.length>0&&its.every(x=>x.done))}
 function hasNote(k){return !!(A.future&&A.future[k])}
-function openDay(k){
+function openDay(k,fromReport=false){
   closeMiniCal();
-  if(k<today()&&!A.fog){toast(tr()?'Geçmiş günü açmak için Önceki günler görünümünü etkinleştir.':'Turn Fog past days on to open past dates.');return}
+  if(k<today()&&!A.fog&&!fromReport){toast(tr()?'Geçmiş günü açmak için Önceki günler görünümünü etkinleştir.':'Turn Fog past days on to open past dates.');return}
   selDay=k;
   const its=items(k),note=(A.future&&A.future[k])||'',future=k>today();
   openModal('day-modal',`<h2>${fmt(k)}${future?' · '+t('futureNotes'):''}</h2>${its.length?its.map(x=>`<div class="task ${x.done?'done':'miss'}"><span>${esc(x.t)}</span><b>${x.done?'✓ '+t('done'):'✕ '+t('notDone')}</b></div>`).join(''):'<p class="mut">'+t('noRecords')+'</p>'}
@@ -1922,14 +1982,14 @@ function historySection(){
   const pma=D(new Date(x.getFullYear(),x.getMonth()-1,1)),pmb=D(new Date(x.getFullYear(),x.getMonth(),0));
   const mNow=st(ma,mb),mPrev=st(pma,pmb),mDiff=mNow.p-mPrev.p;
   const weekDone=dd(mon(td),td)+1,monthDone=dd(ma,td)+1;
-  return`<div class="card"><div class="row report-heading"><h2>${tr()?'Geçmiş özet':'Past summary'}</h2><button class="g s" onclick="showReportDetail('summary')">${tr()?'Daha fazlası':'More details'} →</button></div>
+  return`<div class="card"><div class="row report-heading"><h2>${tr()?'Geçmiş özet':'Past summary'}</h2><button class="g s report-more" onclick="showReportDetail('summary')">${tr()?'Daha fazlası':'More details'} →</button></div>
 <div style="margin-top:.6rem"><h3 style="margin:.2rem 0 .4rem">${tr()?'Bu hafta':'This week'} <span class="mut" style="font-size:.8rem">${fmt(mon(td))} – ${fmt(td)}</span></h3>
 ${briefRow(tr()?'Tamamlanan':'Completed',wNow.d+'/'+wNow.t+' · %'+wNow.p,(tr()?'Geçen hafta':'Last week')+' %'+wPrev.p+' ('+(wDiff>=0?'+':'')+wDiff+')')}
 ${wTop?briefRow(tr()?'En çok yaptığın':'Most frequent',esc(wTop[0]).slice(0,28),wTop[1][0]+'/'+wTop[1][1]):''}
 ${briefRow(tr()?'Kayıtlı gün':'Days recorded',weekDone+'/7')}</div>
 <div style="margin-top:1.1rem"><h3 style="margin:.2rem 0 .4rem">${tr()?'Bu ay':'This month'} <span class="mut" style="font-size:.8rem">${monthName(x.getMonth())} ${x.getFullYear()}</span></h3>
 ${briefRow(tr()?'Tamamlanan':'Completed',mNow.d+'/'+mNow.t+' · %'+mNow.p,(tr()?'Geçen ay':'Last month')+' %'+mPrev.p+' ('+(mDiff>=0?'+':'')+mDiff+')')}
-${briefRow(tr()?'Kayıtlı gün':'Days recorded',monthDone+'/'+(dd(ma,mb)+1))}</div><div style="margin-top:1.2rem"><div class="row report-heading"><h3>${tr()?'Günlükler':'Daily journals'}</h3><button class="g s" onclick="showReportDetail('journals')">${tr()?'Daha fazlası':'More details'} →</button></div><div class="journal-grid">${Object.entries(A.journal||{}).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,90).map(([k,v])=>`<div class="note-tile"><b>${journalEntryStamp(v)}</b><p>${esc(v.text||'')}</p><button class="g s" onclick="openJournalEntry('${k}')">${tr()?'Aç':'Open'}</button></div>`).join('')||'<p class="mut">'+(tr()?'Henüz günlük yok.':'No journals yet.')+'</p>'}</div></div></div>`;
+${briefRow(tr()?'Kayıtlı gün':'Days recorded',monthDone+'/'+(dd(ma,mb)+1))}</div><div style="margin-top:1.2rem"><div class="row report-heading"><h3>${tr()?'Günlükler':'Daily journals'}</h3><button class="g s report-more" onclick="showReportDetail('journals')">${tr()?'Daha fazlası':'More details'} →</button></div><div class="journal-grid">${Object.entries(A.journal||{}).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,90).map(([k,v])=>`<div class="note-tile"><b>${journalEntryStamp(v)}</b><p>${esc(v.text||'')}</p><button class="g s" onclick="openJournalEntry('${k}')">${tr()?'Aç':'Open'}</button></div>`).join('')||'<p class="mut">'+(tr()?'Henüz günlük yok.':'No journals yet.')+'</p>'}</div></div></div>`;
 }
 let reportDetail='';
 function showReportDetail(key){if(!['summary','journals','answers'].includes(key))return;reportDetail=key;P.rep();window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'})}
@@ -1951,7 +2011,7 @@ function reportDetailView(){
   const byDay=Object.keys(A.hist||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&Array.isArray(A.hist[k])).sort().reverse();
   const groups=new Map();for(const day of byDay){const month=day.slice(0,7);if(!groups.has(month))groups.set(month,[]);groups.get(month).push(day)}
   const cards=[...groups].map(([month,days])=>{
-    const lines=days.map(d=>{const it=items(d),done=it.filter(x=>x&&x.done).length;return `<div class="task"><span>${esc(d)} — ${done}/${it.length} ${t('tasksDone')}</span><button class="g s" onclick="openDay('${d}')">${tr()?'İncele':'Review'}</button></div>`}).join('');
+    const lines=days.map(d=>{const it=items(d),done=it.filter(x=>x&&x.done).length;return `<div class="task"><span>${esc(d)} — ${done}/${it.length} ${t('tasksDone')}</span><button class="g s" onclick="openDay('${d}',true)">${tr()?'İncele':'Review'}</button></div>`}).join('');
     return `<section class="card"><h3>${esc(month)}</h3>${lines}</section>`;
   }).join('');
   return header+`<div class="card"><button class="g s" onclick="showReportDetail('answers')">${tr()?'🔒 Yıl sonu yanıt arşivi':'🔒 Year-end answer archive'}</button><p class="mut">${tr()?'Yanıtlar kilitlendikten sonra yıl bitene kadar gizli kalır.':'Locked answers stay hidden until the year ends.'}</p></div>${cards||`<div class="card"><p class="mut">${tr()?'Henüz geçmiş kayıt yok.':'No past records yet.'}</p></div>`}`;
