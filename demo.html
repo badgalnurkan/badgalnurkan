@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Improvin' your day</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6eee3">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap">
+<style>
+:root{--bg:#f6eee3;--card:#fffaf3;--ink:#4a3426;--mut:#9a8068;--acc:#a9714b;--acc2:#e3c3a1;--ok:#6fa876;--no:#c76b5a;--ln:#ecdcc8;--sh:0 12px 32px #8a5a3a16;--fs:'Fraunces',Georgia,'Times New Roman',serif;--okbg:#e6f1e6}
+:root[data-t=dark]{--bg:#221914;--card:#2e221b;--ink:#f3e8da;--mut:#b09a84;--acc:#d2a074;--acc2:#6b4a33;--ok:#7bbd83;--no:#d7796a;--ln:#40302a;--sh:0 12px 32px #0006;--okbg:#2a3a2c}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px);font-size:clamp(16px,.35vw + 11px,24px);overflow-y:scroll}
+@media(min-width:1600px){html{font-size:clamp(15.5px,.45vw + 11px,16px)}}
+/* mobil: okunakli taban olcu */
+@media(max-width:600px){html{font-size:clamp(16px,4.4vw,17.5px)}}
+@media(max-width:360px){html{font-size:16px}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,Ubuntu,sans-serif;line-height:1.6;transition:background .4s,color .4s;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+#app{display:flex;flex-direction:column;flex:1;width:100%;transition:opacity .22s ease}
+#app.soft-out{opacity:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--acc);color:#fff;border:0;border-radius:999px;padding:.6em 1.4em;min-height:2.75rem;font-weight:600;cursor:pointer;box-shadow:0 4px 14px #a9714b33;transition:transform .2s,box-shadow .2s,background .3s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:hover{transform:translateY(-1px);box-shadow:0 6px 18px #a9714b44}
+button.g{background:transparent;border:1.5px solid var(--ln);color:var(--ink);box-shadow:none}
+button.g:hover{border-color:var(--acc)}
+button.s{min-height:2.2rem;padding:.25em .9em;font-size:.82rem}
+button.d{color:var(--no);border-color:var(--no)}
+button:disabled{opacity:.35;cursor:not-allowed;transform:none}
+input,select,textarea{background:var(--bg);border:1.5px solid var(--ln);border-radius:16px;padding:.7em 1.1em;width:100%;margin:.3em 0 .8em;font-size:max(16px,1rem);transition:border .3s}
+textarea{resize:vertical}
+input:focus,textarea:focus{outline:0;border-color:var(--acc)}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+label{font-size:.9rem;font-weight:600}
+.shell{display:flex;flex:1;max-width:80rem;margin:0 auto;width:100%;align-items:flex-start;padding:0 1rem;gap:1.2rem}
+aside{width:16rem;background:var(--card);margin:1.2rem 0;border-radius:24px;box-shadow:var(--sh);padding:1.4rem 1rem;display:flex;flex-direction:column;gap:.3rem;transition:background .4s;flex-shrink:0;position:sticky;top:1rem}
+aside .lg{font-family:var(--fs);font-weight:700;font-size:1.4rem;line-height:1.2;color:var(--acc);margin-bottom:1rem;word-break:break-word;cursor:pointer;padding:0 .5rem}
+aside .lg small{display:block;font-family:'Nunito',system-ui,sans-serif;font-size:.8rem;font-weight:600;color:var(--mut);margin-bottom:.2rem}
+aside a{padding:.7em 1rem;border-radius:999px;cursor:pointer;color:var(--mut);font-weight:600;font-size:.95rem;transition:all .25s;-webkit-tap-highlight-color:transparent}
+aside a:hover{background:var(--bg);color:var(--ink)}
+aside a.on{background:var(--acc);color:#fff;box-shadow:0 4px 14px #a9714b33}
+aside a.press{transform:scale(.96);background:color-mix(in srgb,var(--acc) 22%,transparent)}
+aside a{transition:background .22s ease,color .22s ease,transform .16s ease}
+aside a.on{font-weight:800;letter-spacing:.005em}
+@supports not (background:color-mix(in srgb,red,blue)){aside a.press{background:var(--bg)}}
+main{transition:opacity .18s ease}
+main.swap{opacity:0}
+main.an{animation:pgIn .32s cubic-bezier(.2,.7,.2,1) both}
+@keyframes pgIn{from{opacity:0;transform:translate3d(0,var(--pg-dy,8px),0)}to{opacity:1;transform:none}}
+@media(max-aspect-ratio:3/4){main{--pg-dy:10px}}
+@media(min-aspect-ratio:16/10){main{--pg-dy:6px}}
+@media(prefers-reduced-motion:reduce){main.an{animation:none}}
+aside a{transition:background .22s ease,color .22s ease,transform .16s ease,box-shadow .22s ease}
+main{flex:1;min-width:0;padding:1.2rem 0;max-width:54rem;margin:0 auto;width:100%;animation:fi .3s ease;display:flex;flex-direction:column;gap:1.2rem}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+header.top{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.9rem 1.5rem;background:var(--card);border-bottom:1px solid var(--ln);color:var(--mut);font-size:.95rem;transition:all .4s;position:relative}
+header.top b{font-family:var(--fs);font-size:1.15rem;color:var(--acc);cursor:pointer}
+.lv2 header.top,.lv3 header.top,.lv4 header.top{background:linear-gradient(90deg,var(--card),var(--bg));border-bottom:2px solid var(--acc)}
+.lv3 .card,.lv4 .card{box-shadow:0 14px 40px #8a5a3a2a}
+.lv4 aside .lg{letter-spacing:.06em}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:24px;box-shadow:var(--sh);padding:1.5rem;transition:all .3s}
+h1,h2,h3{font-family:var(--fs);font-weight:600;margin:.2em 0 .5em}
+h1,h2{font-size:1.3rem}h3{font-size:1.05rem}
+.mut{color:var(--mut)}
+.row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.row>input{flex:1;min-width:8rem;margin:0}
+.center{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:clamp(1rem,3vw,1.5rem);width:100%}
+.welcome-screen{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:space-between;padding:1.5rem;position:relative}
+/* ust satir: marka solda, tema sagda — mobilde ust uste binmez */
+.welcome-top{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap}
+.welcome-top .themebar{margin:0!important;justify-content:flex-end!important}
+@media(max-width:600px){
+  .welcome-screen{padding:1rem}
+  .welcome-top{gap:.35rem}
+  .welcome-top .brand-badge{font-size:1.05rem}
+  .welcome-top .themebar button{padding:.3em .7em;font-size:.72rem;min-height:2rem}
+  .welcome-top .themebar small{display:none}
+}
+@media(max-width:360px){.welcome-top .themebar button{padding:.28em .55em;font-size:.68rem}}
+.brand-badge{font-family:var(--fs);font-weight:700;font-size:1.2rem;color:var(--acc);letter-spacing:.05em}
+.welcome-center{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;margin:auto;max-width:30rem;width:100%;padding:1rem 0}
+.welcome-footer-bar{display:flex;justify-content:space-between;align-items:flex-end;width:100%;font-size:.85rem;color:var(--mut);gap:1rem}
+.social-links{display:flex;flex-direction:column;text-align:right;gap:.2rem}
+.social-links a{color:var(--mut);text-decoration:none;transition:color .2s}
+.social-links a:hover{color:var(--acc)}
+.box{max-width:26rem;width:100%;text-align:left}
+/* giris/kayit kutusu: dengeli en-boy orani (ekrani kaplamaz, kucuk de kalmaz) */
+.login-wrap{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem;gap:.4rem}
+.login-wrap>.langbar,.login-wrap>.themebar{max-width:26rem;margin:0 auto}
+.login-wrap .box{max-width:clamp(20rem,34vw,27rem)}
+/* ust serit: solda tema, sagda dil; ikisi ayni hizada ve kutu kenarlarina simetrik */
+.login-top{width:100%;max-width:clamp(20rem,34vw,27rem);margin:.2rem auto .7rem;display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.login-top .themebar{display:flex;flex-wrap:nowrap;align-items:center;gap:.3rem!important;margin:0!important;justify-content:flex-start!important;width:auto}
+.login-top .themebar>small{margin:0 .15rem 0 0!important}
+.login-top .themebar button,.login-top .langbar button{min-height:2.1rem;padding:.3em .8em;font-size:.8rem;line-height:1}
+.login-top .langbar{display:flex;flex-wrap:nowrap;gap:.3rem;width:auto;margin:0;justify-content:flex-end}
+.login-top .langbar button{min-width:2.6rem;padding:.3em .65em}
+@media(min-width:901px) and (min-aspect-ratio:1/1){.login-top{max-width:clamp(21rem,26vw,26rem)}}
+@media(min-width:601px) and (max-width:1024px){.login-top,.login-wrap .box{max-width:min(26rem,86vw)}}
+@media(max-width:600px){.login-top{max-width:100%;margin:.1rem auto .6rem}}
+@media(max-width:380px){
+  .login-top{gap:.35rem}
+  .login-top .themebar>small{display:none}
+  .login-top .themebar button,.login-top .langbar button{padding:.28em .6em;font-size:.74rem;min-height:2rem}
+  .login-top .langbar button{min-width:2.3rem}
+}
+@media(max-height:500px) and (orientation:landscape){.login-top{max-width:min(26rem,90vw);margin:.1rem auto .4rem}.login-wrap{padding-top:.5rem}}
+@media(min-width:901px) and (min-aspect-ratio:1/1){
+  .login-wrap .box{max-width:clamp(21rem,26vw,26rem)}
+  .login-wrap .box input{font-size:.98rem;padding:.62em 1em;margin:.25em 0 .7em}
+  .login-wrap .box h2{font-size:1.2rem;margin-bottom:.6rem}
+}
+@media(max-height:640px){.login-wrap{justify-content:flex-start;padding-top:.6rem}}
+/* simetri: ust serit ile giris kutusu ayni genislik ve ayni kenar (en-boy oranina gore) */
+.login-wrap{--lw:clamp(20rem,34vw,27rem)}
+@media(min-width:901px) and (min-aspect-ratio:1/1){.login-wrap{--lw:clamp(21rem,26vw,26rem)}}
+@media(min-width:601px) and (max-width:1024px){.login-wrap{--lw:min(26rem,86vw)}}
+@media(max-width:600px){.login-wrap{--lw:100%;padding-left:clamp(.75rem,4vw,1.2rem);padding-right:clamp(.75rem,4vw,1.2rem)}}
+@media(max-height:500px) and (orientation:landscape){.login-wrap{--lw:min(26rem,90vw)}}
+.login-wrap .center{padding:0;min-height:auto;width:100%}
+.login-wrap .login-top,.login-wrap .box{width:100%;max-width:var(--lw)!important;box-sizing:border-box}
+.big{font-family:var(--fs);font-size:clamp(2.2rem,7vw,4.2rem);font-weight:600;letter-spacing:.04em;line-height:1.1;text-align:center;margin:.2em 0 .4em;color:var(--ink)}
+.task{display:flex;align-items:center;gap:.7rem;padding:.8rem 1rem;background:var(--bg);border:1.5px solid var(--ln);border-radius:16px;margin:.5rem 0;transition:all .4s}
+.task span{flex:1;min-width:0;overflow-wrap:anywhere;transition:color .4s}
+.task.done{background:var(--okbg);border-color:var(--ok)}
+@supports(background:color-mix(in srgb,red,blue)){.task.done{background:color-mix(in srgb,var(--ok) 16%,var(--card))}}
+.task.done span{color:var(--ok);text-decoration:line-through}
+.task.miss{border-color:var(--no);opacity:.85}
+.task.shake{animation:sh .45s}
+@keyframes sh{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.ck,.xx{width:2.5rem;height:2.5rem;min-height:0;padding:0;border-radius:50%;background:transparent;border:2px solid var(--ln);color:var(--mut);box-shadow:none;transition:all .35s;flex-shrink:0}
+.ck.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.xx.on{background:var(--no);border-color:var(--no);color:#fff}
+.cal{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem;justify-content:center}
+.dot{width:3.2rem;height:3.2rem;border-radius:16px;background:var(--ln);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.65rem;cursor:pointer;transition:all .25s;color:var(--mut);gap:1px;border:0;padding:0;min-height:0;box-shadow:none}
+.dot span{font-size:.9rem;font-weight:700}
+.dot small{font-size:.55rem;opacity:.85;text-transform:uppercase}
+.cal .dot{height:3.75rem}
+.dot em.dpct{font-style:normal;font-size:.6rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;opacity:.95}
+@media(max-aspect-ratio:3/4){.cal .dot{height:calc(clamp(2.2rem,13vw,3rem) + .7rem)}}
+.dot.ok{background:var(--ok);color:#fff}
+.dot.miss-dot{background:var(--mut);color:#fff;opacity:.75}
+.dot.td{outline:2px solid var(--acc);outline-offset:2px}
+.dot:hover{transform:scale(1.08)}
+.bar{height:.65rem;background:var(--ln);border-radius:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok);transition:width .6s}
+.tm{font-family:var(--fs);font-size:clamp(2.6rem,8vw,5rem);font-weight:600;color:var(--acc);text-align:center;font-variant-numeric:tabular-nums}
+.tag{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;background:var(--bg);border:1.5px solid var(--ln);border-radius:14px;padding:.5rem 1rem;margin:.3rem 0;font-size:.95rem}
+.tag.on{border-color:var(--acc)}
+.note{background:var(--bg);border:1px dashed var(--acc);border-radius:12px;padding:.6em 1em;margin:.5em 0;font-size:.9rem}
+.qa{display:flex;gap:.5rem;align-items:flex-start}
+.qa textarea{margin:0;flex:1}
+.qcap{text-align:right;font-size:.78rem;margin:.2rem 0 .8rem}
+.pct-big{font-family:var(--fs);font-size:clamp(2.4rem,8vw,4rem);font-weight:700;color:var(--acc);line-height:1}
+footer{text-align:center;padding:1rem;color:var(--mut);font-size:.8rem;background:var(--card);border-top:1px solid var(--ln);width:100%;margin-top:auto}
+#ck[hidden]{display:none}
+#ck{position:fixed;left:1rem;right:1rem;bottom:calc(1rem + env(safe-area-inset-bottom,0px));z-index:99;background:var(--card);border:1px solid var(--acc);border-radius:14px;padding:1rem;display:flex;gap:.8rem;flex-wrap:wrap;align-items:center;justify-content:space-between;max-width:42rem;margin:auto;box-shadow:var(--sh)}
+.mini-popup{display:none;position:fixed;top:0;left:0;right:auto;background:var(--card);border:1px solid var(--ln);border-radius:18px;padding:clamp(.7rem,2vw,1rem);box-shadow:0 18px 50px #00000055;z-index:99999;width:min(20rem,calc(100vw - 1.2rem));max-height:min(78vh,34rem);overflow:auto;text-align:center;-webkit-overflow-scrolling:touch;touch-action:manipulation}
+#mini-backdrop{position:fixed;inset:0;background:transparent;z-index:99998}
+#mini-backdrop[hidden]{display:none}
+.mini-cal-grid{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.5rem;justify-content:center}
+.mini-dot{position:relative;width:2rem;height:2rem;border-radius:50%;background:var(--ln);display:grid;place-items:center;font-size:.7rem;color:var(--mut)}
+.mini-dot.td{outline:2px solid var(--acc);font-weight:700;color:var(--acc)}
+.mini-dot::after{content:attr(data-day);position:absolute;bottom:125%;left:50%;transform:translateX(-50%) translateY(4px);background:var(--ink);color:var(--bg);font-size:.65rem;padding:3px 7px;border-radius:6px;white-space:nowrap;opacity:0;visibility:hidden;transition:opacity .25s,transform .25s,visibility .25s;pointer-events:none;z-index:100}
+.mini-dot:hover::after{opacity:1;visibility:visible;transform:translateX(-50%)}
+/* mini takvim (header sag ust): sayinin uzerine gelince yumusak fade-in / fade-out + acik bej */
+.mini-dot{transition:background .45s ease,color .45s ease,box-shadow .45s ease,opacity .45s ease,transform .45s ease,filter .45s ease}
+.mini-cal-grid .mini-dot:hover,.mini-cal-grid .mini-dot.lit{background:#f7ecdc;color:#a8845c;box-shadow:0 6px 16px #8a5a3a33;transform:translateY(-1px) scale(1.12)}
+.mini-cal-grid .mini-dot span{transition:color .45s ease}
+.mini-cal-grid .mini-dot:hover span,.mini-cal-grid .mini-dot.lit span{color:#a8845c}
+.mini-dot.future{background:transparent;border:1.5px dashed var(--ln);color:var(--mut);opacity:.6}
+.mini-dot.fog{background:var(--ln);color:var(--mut);opacity:.5;filter:blur(.6px) saturate(.4)}
+.mini-cal-grid .mini-dot.fog:hover,.mini-cal-grid .mini-dot.fog.lit{filter:none;opacity:1}
+.mini-dot.note{position:relative}
+.mini-dot span{font-weight:600;font-size:.72rem;line-height:1}
+.mini-dot small{display:none}
+.mini-dot.note::before{content:'•';position:absolute;top:-2px;right:1px;font-size:.6rem;color:var(--acc)}
+#top-date-trigger{transition:color .35s,background .35s,box-shadow .35s,transform .35s;padding:.25em .7em;border-radius:999px;display:inline-flex;align-items:center;gap:.35em}
+#top-date-trigger:hover{color:var(--acc);background:var(--bg);transform:translateY(-1px)}
+#top-date-trigger.lit{color:#7a5636;background:#f7ecdc;box-shadow:0 6px 18px #8a5a3a2a}
+#top-date-trigger small{font-size:.72rem;opacity:.85;font-weight:600}
+.mini-popup{animation:mpIn .32s cubic-bezier(.2,.7,.2,1) both}
+/* TV / uzaktan kumanda ve klavye: odak gorunur, hedefler buyuk */
+aside a:focus-visible,button:focus-visible,.dot:focus-visible,.mini-dot:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+@media(min-width:1700px) and (min-aspect-ratio:16/9){
+html{font-size:16px}html{font-size:16px}aside{width:18.5rem}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+/* mobil menu: takilma/jitter yok, dokunma hedefleri buyuk, smooth kaydirma */
+aside{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x;scroll-behavior:smooth;scrollbar-width:none}
+aside::-webkit-scrollbar{display:none}
+aside a{flex:0 0 auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+@media(hover:none),(pointer:coarse){
+  aside a:hover{transform:none;background:transparent;color:var(--mut)}
+  aside a.on:hover{background:var(--acc);color:#fff}
+  aside a{padding:.55em 1.05em;min-height:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;line-height:1;font-size:.92rem}
+  aside{gap:.35rem;scroll-padding-inline:.4rem;scroll-snap-type:x proximity}
+}
+::view-transition-old(root){animation:vtOut .28s ease both}
+::view-transition-new(root){animation:vtIn .28s ease both}
+@keyframes vtOut{to{opacity:0}}
+@keyframes vtIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){::view-transition-new(root){animation:none}}
+/* ---- tum cihazlarda ayni gecisler: TV, telefon, tablet, dokunmatik ---- */
+.emenv{display:flex;justify-content:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem}
+.row{row-gap:.5rem}
+.card,.task,.tag,.note{max-width:100%;overflow-wrap:anywhere}
+[role=button]{-webkit-user-select:none;user-select:none}
+@media(hover:none),(pointer:coarse){
+  button,a[role=button],.dot,.mini-dot,.ck,.xx{min-height:2.9rem}
+  button.s,.ck,.xx,.dot{min-height:2.6rem}
+  button:hover,a[role=button]:hover{transform:none;box-shadow:none}
+  aside a:hover{background:transparent;color:var(--mut)}
+  aside a.on:hover{background:var(--acc);color:#fff}
+  .dot:hover{transform:none}
+}
+/* telefon */
+@media(max-width:600px){
+  .shell{padding:0 .6rem}
+  .card{padding:1rem;border-radius:18px}
+  h1,h2{font-size:1.15rem}
+  .pct-big{font-size:clamp(2rem,11vw,3rem)}
+  header.top{flex-wrap:wrap;row-gap:.3rem}
+  .row>button{flex:1 1 auto}
+  .qa{flex-direction:column}.qa button{align-self:flex-end}
+  .dot{width:clamp(2.4rem,15vw,3rem);height:clamp(2.4rem,15vw,3rem)}
+}
+/* tablet: kendi olcusu */
+@media(min-width:601px) and (max-width:1024px){
+  aside{width:13.5rem}
+  main{max-width:44rem}
+  html{font-size:16px}
+}
+/* televizyon / cok genis ekran: uzaktan kumanda icin buyuk hedefler ve odak */
+@media(min-width:1700px){
+  button{min-height:2.9rem;padding:.6em 1.45em}
+  aside a{padding:.75em 1.05em}
+  .dot{width:3.2rem;height:3.2rem}
+  .shell{max-width:84rem}
+  main{max-width:56rem}
+}
+/* TV: uzaktan kumanda icin buyuk hedefler, ama yazi boyu sabit */
+@media(min-height:1000px) and (min-aspect-ratio:16/9) and (pointer:coarse){
+  button{min-height:3.25rem;padding:.7em 1.6em}
+  aside a{padding:.85em 1.15em}
+  .dot{width:3.6rem;height:3.6rem}
+}
+@media(min-width:2400px){.shell{max-width:92rem}main{max-width:60rem}}
+:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+/* ---- cihaza gore ince ayar (data-dev) ---- */
+html[data-dev=phone] .shell{padding:0 .55rem}
+html[data-dev=phone] .card{padding:.95rem;border-radius:18px}
+html[data-dev=phone] .big{font-size:clamp(2rem,9vw,3rem)}
+html[data-dev=phone] .dot{width:clamp(2.3rem,14vw,2.9rem);height:clamp(2.3rem,14vw,2.9rem)}
+html[data-dev=phone] header.top{padding:.7rem .8rem;font-size:.9rem}
+html[data-dev=tablet] .shell{padding:0 .9rem;gap:.9rem}
+html[data-dev=tablet] aside{width:14rem}
+html[data-dev=tv] .shell{max-width:96rem}
+html[data-dev=desktop-xl] main{max-width:58rem}
+html[data-dev=desktop-xl] .shell{max-width:84rem}
+html[data-orient=landscape][data-dev=phone] .welcome-screen{min-height:auto}
+html[data-orient=landscape][data-dev=phone] .center{min-height:auto;padding:1rem}
+/* ---- telefonda sayi kaymasi yok: rakamlar sabit genislikte ---- */
+.tm,.pct-big,.dot span,.mini-dot,.qcap,#sync,.bar,.tag b,aside a{font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}
+.dot span,.mini-dot{display:inline-block;min-width:1.35em;text-align:center;line-height:1.05}
+.dot small{display:block;line-height:1}
+/* ---- dokunmatikte "geri atma" (sayfa ziplamasi) engeli ---- */
+html,body{overscroll-behavior-y:auto;overflow-x:clip}
+body{-webkit-overflow-scrolling:touch}
+aside a,button,.dot,.mini-dot{touch-action:pan-y pinch-zoom}
+aside{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-x pan-y;scroll-behavior:smooth}
+main{scroll-margin-top:.5rem}
+/* mobil: dengeli satir araligi ve okunakli kucuk metin */
+@media(max-width:600px){
+  body{line-height:1.55}
+  .mut,small,.qcap{font-size:max(.82rem,12.5px)}
+  button{font-size:1rem}
+  input,textarea,select{font-size:16px}
+  h1,h2{font-size:1.18rem}
+  h3{font-size:1.02rem}
+  .card{gap:.2rem}
+  .row{gap:.5rem}
+}
+.mini-popup::before{content:'';position:absolute;top:-6px;right:1.6rem;width:12px;height:12px;background:var(--card);border-left:1px solid var(--ln);border-top:1px solid var(--ln);transform:rotate(45deg)}
+@media(max-width:560px){.mini-popup{width:calc(100vw - 1rem);border-radius:16px}}
+@media(max-height:520px){.mini-popup{max-height:88vh}}
+.ft-link{display:inline-flex;align-items:center;gap:.4em;min-height:2.4rem;padding:.45em 1.1em;border-radius:999px;border:1.5px solid var(--ln);background:transparent;color:var(--acc);font-weight:600;font-size:.85rem;cursor:pointer;transition:transform .25s,border-color .25s,background .25s,color .25s}
+.ft-link:hover{border-color:var(--acc);background:var(--card);transform:translateY(-1px) scale(1.04)}
+.ft-link:active{transform:scale(.97)}
+@keyframes mpIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+.mini-cal-grid .mini-dot{cursor:pointer;border:0;padding:0;font:inherit;min-height:0;box-shadow:none;display:grid;place-items:center;width:2rem;height:2rem;border-radius:50%}
+:root[data-t=beige] #top-date-trigger.lit{background:#efe0c9!important;color:#5c3f28!important}
+:root[data-t=beige] :root[data-t=beige] .mini-cal-grid .mini-dot:hover,:root[data-t=beige] .mini-cal-grid .mini-dot.lit{background:#fff6e9!important;color:#a8845c!important;box-shadow:0 6px 16px #8a5a3a2e}
+:root[data-t=beige] .mini-cal-grid .mini-dot:hover span,:root[data-t=beige] .mini-cal-grid .mini-dot.lit span{color:#a8845c!important}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;z-index:9999;padding:1rem;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+@media(max-width:900px){
+.shell{flex-direction:column;padding:0 .8rem;gap:0}
+aside{width:100%;margin:.8rem 0 0;flex-direction:row;overflow-x:auto;padding:.5rem;align-items:center;gap:.3rem;position:static;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+aside::-webkit-scrollbar{display:none}
+aside .lg{display:none}
+aside a{white-space:nowrap;padding:.55em .95em;font-size:.9rem}
+main{padding:1rem 0}
+.card{padding:1.2rem}
+header.top{padding:.8rem 1rem}
+.welcome-footer-bar{flex-direction:column;align-items:center;text-align:center;gap:.8rem}
+.social-links{text-align:center}
+}
+@media(max-width:480px){.task{flex-wrap:wrap}.dot{width:2.8rem;height:2.8rem}.qa{flex-direction:column}.qa button{align-self:flex-end}}
+@media(max-height:480px) and (orientation:landscape){.welcome-screen,.center{min-height:auto}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ==== i18n / theme switch / motion ==== */
+.langbar{display:flex;gap:.45rem;justify-content:flex-end;width:100%;margin-bottom:.4rem}
+.langbar button{padding:.35em 1em;font-size:.8rem;min-height:2.2rem;background:transparent;border:1.5px solid var(--ln);color:var(--mut);box-shadow:none}
+.langbar button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.welcome-center .langbar{justify-content:center;margin-bottom:.8rem}
+.toast{position:fixed;left:50%;bottom:calc(1.4rem + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(10px);background:var(--ink);color:var(--bg);padding:.7em 1.2em;border-radius:999px;font-size:.85rem;z-index:10000;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+a.lg-link{color:var(--acc);font-weight:600;text-decoration:none;font-size:.9rem;cursor:pointer;padding:.4em .8em;border-radius:999px;border:1.5px solid var(--ln);transition:all .25s}
+a.lg-link:hover{border-color:var(--acc);transform:translateY(-1px)}
+/* nav hover: buyume/kuculme */
+aside a{transition:background .25s,color .25s,transform .25s,box-shadow .25s}
+aside a:hover{transform:scale(1.05)}
+aside a:active{transform:scale(.97)}
+/* sayfa icerigi yukaridan asagiya yavasca siralanir */
+main .card{animation:slIn .5s cubic-bezier(.2,.7,.2,1) both}
+main .card:nth-child(1){animation-delay:.02s}
+main .card:nth-child(2){animation-delay:.09s}
+main .card:nth-child(3){animation-delay:.16s}
+main .card:nth-child(4){animation-delay:.23s}
+main .card:nth-child(5){animation-delay:.3s}
+main .card:nth-child(6){animation-delay:.37s}
+main .card:nth-child(n+7){animation-delay:.44s}
+@keyframes slIn{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:none}}
+/* menu alttan yukari gelir */
+aside.intro{animation:navIn .55s cubic-bezier(.2,.7,.2,1) both}
+@media(max-width:900px){aside.intro{animation:navIn .4s cubic-bezier(.2,.7,.2,1) both}}
+@media(prefers-reduced-motion:reduce){aside{animation:none}}
+@keyframes navIn{from{opacity:0;transform:translateY(42px)}to{opacity:1;transform:none}}
+header.top{animation:hdrIn .5s ease both}
+@keyframes hdrIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+/* giris gecis ekrani: gunaydin / tunaydin / iyi geceler */
+.greet-screen{position:fixed;inset:0;z-index:9998;display:grid;place-items:center;background:var(--bg);color:var(--ink);font-family:var(--fs);font-size:clamp(1.8rem,6vw,3.4rem);font-weight:600;text-align:center;padding:1.5rem;animation:grIn .45s ease both;cursor:pointer}
+.greet-screen.out{animation:grOut .55s ease forwards}
+@keyframes grIn{from{opacity:0;letter-spacing:.35em}to{opacity:1;letter-spacing:.02em}}
+@keyframes grOut{to{opacity:0;transform:scale(1.04);letter-spacing:.3em}}
+/* takvim: sisli gecmis, bugun, secili, gelecege not */
+.dot{transition:background .35s,color .35s,box-shadow .35s,outline-color .35s,opacity .35s,transform .25s,filter .35s}
+.dot.future{background:transparent;border:1.5px dashed var(--ln);color:var(--mut);opacity:.6}
+.dot.fog{background:var(--ln);color:var(--mut);opacity:.5;filter:blur(.7px) saturate(.4)}
+.dot.fog:hover,.dot.future:hover,.dot.ok:hover,.dot.miss-dot:hover{filter:none;opacity:1}
+.dot.note::after{content:'•';position:absolute;top:1px;right:5px;font-size:.7rem;color:var(--acc);font-weight:700}
+.dot{position:relative}
+/* 10.11 : tum arayuzde bej tema + koyu bej sayilar */
+:root[data-t=beige]{--bg:#f3e6d2;--card:#fbf3e6;--ink:#4a3426;--mut:#a68b70;--acc:#c09062;--acc2:#e6cfae;--ok:#8fae7e;--no:#c07a5f;--ln:#e5d3ba;--sh:0 12px 32px #8a5a3a1f;--okbg:#eaf0e0}
+:root[data-t=beige] body{background:#f3e6d2}
+:root[data-t=beige] .dot,:root[data-t=beige] .mini-dot{background:#e8d5bb;color:#6b4a33}
+:root[data-t=beige] .dot.ok{background:#c9a37a;color:#3a2718}
+:root[data-t=beige] .dot.miss-dot{background:#c8b096;color:#4a3426}
+:root[data-t=beige] .dot.fog{background:#e3cfb3;color:#8a6b4f}
+:root[data-t=beige] .dot.future{background:transparent;border-color:#dcc6a8;color:#9c7d5e}
+:root[data-t=beige] .dot.td,:root[data-t=beige] .mini-dot.td{outline-color:#a9714b;color:#4a3426}
+
+
+/* ==== tum isletim sistemleri + en/boy oranlari: duyarli ve simetrik duzen ==== */
+.shell{padding-inline:clamp(.7rem,2.4vw,2rem);gap:clamp(.9rem,1.6vw,1.6rem)}
+main{padding-block:clamp(.9rem,1.6vw,1.6rem);gap:clamp(.9rem,1.4vw,1.4rem)}
+.card{padding:clamp(1rem,2vw,1.6rem);border-radius:clamp(18px,2vw,26px)}
+header.top{padding:clamp(.6rem,1.2vw,1rem) clamp(.8rem,2vw,1.8rem);gap:.5rem;flex-wrap:wrap;row-gap:.4rem}
+header.top b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:min(46vw,22rem)}
+.row{row-gap:.5rem}
+input,select,textarea{max-width:100%}
+.tm{font-size:clamp(2rem,7.2vw,4.6rem);letter-spacing:.02em;overflow-wrap:anywhere}
+.pct-big{font-size:clamp(2.1rem,7vw,4rem)}
+.big{font-size:clamp(1.9rem,7vw,4rem)}
+.dot{width:clamp(2.4rem,5.2vw,3.2rem);height:clamp(2.4rem,5.2vw,3.2rem);border-radius:clamp(12px,1.6vw,16px)}
+.cal{gap:clamp(.3rem,1vw,.55rem)}
+.task{gap:clamp(.4rem,.9vw,.7rem);padding:clamp(.6rem,1.2vw,.9rem) clamp(.7rem,1.4vw,1rem)}
+footer{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:clamp(.8rem,1.6vw,1.2rem)}
+.qa{flex-wrap:wrap}
+.qa textarea{min-width:min(100%,12rem)}
+/* footer: giris ekranina don */
+#back-login{display:inline-flex;align-items:center;gap:.4em;min-height:2.4rem;padding:.45em 1.1em;border-radius:999px;border:1.5px solid var(--ln);background:transparent;color:var(--acc);font-weight:600;font-size:.85rem;cursor:pointer;transition:transform .25s,border-color .25s,background .25s,color .25s}
+#back-login:hover{border-color:var(--acc);background:var(--card);transform:translateY(-1px) scale(1.04)}
+#back-login:active{transform:scale(.97)}
+/* hatirlanan kullanici karti */
+.remember{display:flex;align-items:center;gap:.7rem;background:var(--bg);border:1.5px solid var(--ln);border-radius:18px;padding:.7rem .9rem;margin-bottom:.9rem;transition:border-color .3s,transform .3s}
+.remember:hover{border-color:var(--acc)}
+.remember .av{width:2.4rem;height:2.4rem;border-radius:50%;display:grid;place-items:center;background:var(--acc);color:#fff;font-family:var(--fs);font-weight:700;flex-shrink:0}
+.remember b{display:block;line-height:1.2;overflow-wrap:anywhere}
+.remember small{color:var(--mut);font-size:.75rem}
+.remember .sp{flex:1;min-width:0}
+.saved-list{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem}
+.saved-list button{background:transparent;border:1.5px solid var(--ln);color:var(--ink);box-shadow:none;min-height:2.2rem;padding:.3em .9em;font-size:.82rem}
+.saved-list button:hover{border-color:var(--acc)}
+/* yuzdelik: gun sayisi karti */
+.stat{display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem 1rem}
+.stat b{font-family:var(--fs);font-size:clamp(1.6rem,4vw,2.4rem);color:var(--acc);line-height:1}
+@media(max-width:900px){
+  aside{overflow-x:auto;justify-content:flex-start;padding:.45rem;scroll-snap-type:x proximity}
+  aside a{scroll-snap-align:center}
+  .shell{gap:0}
+  .welcome-footer-bar{gap:.6rem}
+}
+@media(max-width:560px){
+  .remember{flex-wrap:wrap}
+  .card{padding:1rem}
+  .row>button{flex:1 1 auto}
+  aside a{min-height:2.9rem;height:auto;padding:.6em 1em}
+  .stat{gap:.3rem .8rem}
+  #top-date-trigger{font-size:.85rem}
+}
+@media(min-width:1400px){main{max-width:60rem}}
+@media(min-aspect-ratio:16/9) and (min-width:1200px){aside{width:17.5rem}}
+@media(max-aspect-ratio:3/4){.cal{justify-content:flex-start}.dot{width:clamp(2.2rem,13vw,3rem);height:clamp(2.2rem,13vw,3rem)}}
+
+
+/* ==== mobile polish: compact typography, smooth horizontal navigation, month and brand fit ==== */
+.top-brand{min-width:0;max-width:none}
+.month-title{min-width:0;white-space:nowrap;word-break:normal;overflow-wrap:normal;hyphens:none}
+@media(max-width:900px){
+  .shell{padding-inline:clamp(.55rem,2.8vw,.85rem)}
+  .shell aside{
+    width:100%;max-width:100%;margin:.65rem 0 .25rem;padding:.4rem;
+    display:flex;flex-wrap:nowrap;justify-content:flex-start;align-items:center;
+    gap:.35rem;overflow-x:auto;overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
+    scroll-behavior:smooth;scroll-snap-type:x proximity;
+    scroll-padding-inline:.5rem;scrollbar-width:none;
+    border:1px solid var(--ln);box-shadow:0 5px 18px #8a5a3a10;
+  }
+  .shell aside::-webkit-scrollbar{display:none}
+  .shell aside a{
+    flex:0 0 auto;scroll-snap-align:center;white-space:nowrap;
+    min-height:2.55rem;height:auto;padding:.55rem .82rem;
+    font-size:clamp(.78rem,2.6vw,.9rem);line-height:1.15;
+    transition:background .28s ease,color .28s ease,transform .28s cubic-bezier(.2,.7,.2,1),box-shadow .28s ease;
+  }
+  .shell aside a.on{transform:translateY(-1px);box-shadow:0 4px 12px #a9714b2b}
+  main{gap:clamp(.75rem,2.4vw,1rem)}
+  .card{padding:clamp(.9rem,3.8vw,1.15rem);border-radius:clamp(16px,4vw,20px)}
+  .card h2{font-size:clamp(1.02rem,4.2vw,1.18rem);line-height:1.25;letter-spacing:0}
+  .card h3{font-size:clamp(.94rem,3.8vw,1.04rem);line-height:1.3}
+  .mut,small,.qcap{font-size:clamp(.76rem,2.9vw,.84rem)}
+  .row{gap:.45rem}
+  .month-nav{flex-wrap:nowrap;gap:clamp(.25rem,1.5vw,.5rem)}
+  .month-nav>button{flex:0 0 auto;min-width:2.45rem;padding:.35rem .72rem}
+  .month-title{flex:1 1 auto;font-size:clamp(.92rem,4.3vw,1.12rem);line-height:1.15;letter-spacing:0;text-align:center;overflow:visible}
+  header.top{
+    display:flex;flex-wrap:nowrap;align-items:center;gap:.4rem;
+    padding:.68rem clamp(.65rem,3vw,.9rem);
+  }
+  header.top .top-brand{
+    flex:1 1 auto;min-width:0;max-width:none!important;
+    overflow:visible!important;text-overflow:clip!important;white-space:nowrap;
+    font-size:clamp(.82rem,4.05vw,1.04rem)!important;
+    line-height:1.2;letter-spacing:0;
+  }
+  #top-date-trigger{flex:0 0 auto;font-size:clamp(.72rem,3vw,.84rem);padding:.22em .48em;gap:.22em}
+  #top-date-trigger small{font-size:.68rem}
+  .pct-big{font-size:clamp(2rem,9vw,2.8rem)}
+  .tm{font-size:clamp(2.3rem,10vw,3.8rem)}
+}
+@media(max-width:380px){
+  header.top{gap:.28rem;padding-inline:.55rem}
+  header.top .top-brand{font-size:clamp(.78rem,3.9vw,.92rem)!important}
+  #top-date-trigger{font-size:.7rem;padding:.2em .38em}
+  .month-nav>button{min-width:2.25rem;padding:.3rem .6rem}
+  .month-title{font-size:clamp(.86rem,4vw,1rem)}
+  .shell aside a{padding:.52rem .72rem;font-size:.78rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .shell aside{scroll-behavior:auto;scroll-snap-type:none}
+  .shell aside a{transition:none}
+}
+
+/* ==== mobile nav: native horizontal swipe, no snap resistance ==== */
+@media(max-width:900px){
+  .shell aside{
+    overflow-x:auto!important;overflow-y:hidden!important;
+    touch-action:pan-x pan-y pinch-zoom!important;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+    scroll-snap-type:none!important;
+    scroll-behavior:smooth;
+    scrollbar-width:none;
+    cursor:grab;
+  }
+  .shell aside:active{cursor:grabbing}
+  .shell aside a{
+    touch-action:pan-x pan-y pinch-zoom!important;
+    scroll-snap-align:none!important;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;-webkit-user-select:none;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .shell aside{scroll-behavior:auto}
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="ck" hidden>
+  <span>Do you accept cookies? If you accept, your data is stored on this device permanently; if you decline, it is kept only while this tab stays open.</span>
+  <span class="row"><button onclick="ck(1)">Accept</button><button class="g" onclick="ck(0)">Decline</button></span>
+</div>
+<script>
+const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
+const TITLE="Improvin' your day";
+/* ---- kalici depo: localStorage oncelikli, olmazsa bellek ici yedek (Safari gizli mod / dosya:// ) ---- */
+const MEM={};
+const store=()=>{try{const t='__t'+Math.random();localStorage.setItem(t,'1');localStorage.removeItem(t);return localStorage}catch(e){return null}};
+const LSK='b1', OTURUM='b1s', FEEDB='b1f', LOCAL_OTURUM='b1.this';
+function getItem(k){try{const s=store();if(s){const v=s.getItem(k);if(v!==null)return v}}catch(e){}return MEM[k]===undefined?null:MEM[k]}
+function setItem(k,v){MEM[k]=v;try{const s=store();if(s){s.setItem(k,v);return true}}catch(e){}return false}
+let DB=null;
+let DBraw=null;try{DBraw=JSON.parse(getItem(LSK)||'')}catch(e){}
+/* veri kaybina karsi yedek: her acilista son iyi kayit ayri tutulur */
+let DBbak=null;try{DBbak=JSON.parse(getItem('b1.bak')||'')}catch(e){}
+if((!DBraw||!DBraw.accounts||!Object.keys(DBraw.accounts).length)&&DBbak&&DBbak.accounts&&Object.keys(DBbak.accounts).length)DBraw=DBbak;
+DB=DBraw&&DBraw.accounts?DBraw:{accounts:{},last:'',lastUser:'',lock:{},lang:'en',beige:false};
+if(!DB.lang)DB.lang='en';if(DB.beige===undefined)DB.beige=false;if(!DB.lastUser)DB.lastUser='';
+document.documentElement.lang=DB.lang;
+let pushT=null;
+function schedulePush(){try{clearTimeout(pushT)}catch(e){}pushT=setTimeout(()=>{try{sbPush()}catch(e){}},2500)}
+const save=()=>{
+  try{
+    if(A)A.updatedAt=Date.now();
+    DB.savedAt=Date.now();
+    setItem(LSK,JSON.stringify(DB));
+    touchSession();
+    schedulePush();
+  }catch(e){}
+};
+/* oturum: kullanici bilgisi kucuk ve ayri tutulur -> ana kayit bozulsa da geri donus var */
+function touchSession(){
+  try{
+    const u=A?A.u:(DB.lastUser||'');if(!u)return;
+    const body=JSON.stringify({user:u,sig:signature(A||DB.accounts[u]),at:Date.now()});
+    setItem(OTURUM,body);setItem(LOCAL_OTURUM,body);
+  }catch(e){}
+}
+/* imza: menude/acik sayfada oturumu geri yuklemek icin (sifre yerine ozet) */
+const signature=a=>a?(a.pw||'').slice(0,24)+':'+String(a.u||''):'';
+function ck(v){setItem('b1ck',String(v));$('#ck').hidden=true;save()}
+/* her kayitta kucuk bir yedek tut (kaza/bug ile veri kaybini engeller) */
+function backupTick(){try{const raw=getItem(LSK);if(!raw)return;const parsed=JSON.parse(raw);if(parsed&&parsed.accounts&&Object.keys(parsed.accounts).length){setItem('b1.bak',raw);setItem('b1.bak.at',String(Date.now()))}}catch(e){}}
+setInterval(backupTick,20000);
+window.addEventListener('beforeunload',backupTick);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){backupTick();if(A&&pm.run)persistPomodoroState()}else if(A&&pm.run)pTick(true)});
+window.addEventListener('pagehide',()=>{if(A&&pm.run)persistPomodoroState()});
+try{if(getItem('b1ck')===null)$('#ck').hidden=false}catch(e){}
+const sysTheme=()=>(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+document.documentElement.dataset.t=sysTheme();
+try{if(JSON.parse(getItem(LSK)||'{}').beige)document.documentElement.dataset.t='beige'}catch(e){}
+let A=null,A0=null,view='welcome',pg='home',calOff=0,selDay=null,msg='',codes={},lastSig='';
+/* yenileme / yeni sekme: son kullanici + acik sayfa geri gelir, veriler korunur */
+function readJson(k){try{return JSON.parse(getItem(k)||'null')}catch(e){return null}}
+function restoreSession(){
+  try{
+    const cands=[readJson(OTURUM),readJson(LOCAL_OTURUM)];
+    let user='';
+    for(const c of cands){if(c&&c.user&&findUser(c.user)){user=findUser(c.user);break}}
+    if(!user&&DB.lastUser&&findUser(DB.lastUser))user=findUser(DB.lastUser);
+    if(!user){const ks=Object.keys(DB.accounts);if(ks.length===1)user=ks[0]}
+    if(!user)return false;
+    const savedAccount=DB.accounts[user];
+    /* Bulut hesabı, Supabase oturumu yoksa yalnızca yerel önbellekle açılmaz. */
+    if(savedAccount&&savedAccount.authUid&&!sbSession())return false;
+    A=norm(savedAccount);lastSig=signature(A);restorePomodoroState();
+    loginDat.u=user;
+    const st=history.state;
+    view='app';pg=(st&&st.v==='app'&&st.p)?st.p:'home';
+    applyTheme();touchSession();
+    return true;
+  }catch(e){return false}
+}
+/* baska sekmede yapilan degisiklik bu sekmeye de yansir (veri ayrismasi olmaz) */
+window.addEventListener('storage',e=>{
+  if(e.key!==LSK||!e.newValue)return;
+  let nd;try{nd=JSON.parse(e.newValue)}catch(_){return}
+  if(!nd||!nd.accounts)return;
+  DB=nd;
+  const u=loginDat.u||DB.lastUser;
+  if(!A){renderAppOrAuth();return} // Baska sekmedeki kayit giris ekranini atlatamaz.
+  if(A&&DB.accounts[A.u]){A=nd.accounts[A.u];restorePomodoroState();applyTheme();if(document.querySelector('aside')){const m=$('#mn');const had=m?m.innerHTML:'';shell()}return}
+  renderAppOrAuth();
+});
+/* geri tusu: oturum acikken cikis ekranina dusmesin */
+
+let formDat={u:'',n:'',b:'',e:'',t:'',p:''},loginDat={u:'',p:''};
+
+function paint(){renderAppOrAuth()}
+/* yumusak sayfa gecisi: destekleyen tarayicida View Transitions, digerlerinde ayni davranis */
+let softPaintTimer=0;
+function softPaint(){
+  const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const canVT=document.startViewTransition&&document.visibilityState==='visible'&&!reduced;
+  if(canVT){
+    clearTimeout(softPaintTimer);softPaintTimer=0;
+    const existing=$('#app');if(existing)existing.classList.remove('soft-out');
+    try{
+      const t=document.startViewTransition(()=>paint());
+      if(t&&t.finished&&t.finished.catch)t.finished.catch(()=>{});
+      if(t&&t.ready&&t.ready.catch)t.ready.catch(()=>{});
+      return;
+    }catch(e){}
+  }
+  const root=$('#app');
+  if(!root||reduced){paint();return;}
+  clearTimeout(softPaintTimer);
+  root.classList.add('soft-out');
+  softPaintTimer=setTimeout(()=>{
+    paint();
+    requestAnimationFrame(()=>{
+      const current=$('#app');if(current)current.classList.remove('soft-out');
+      softPaintTimer=0;
+    });
+  },140);
+}
+function goTo(v,p,push=true){
+  const same=A&&v==='app'&&view==='app'&&document.getElementById('mn')&&document.querySelector('#nav-aside,aside');
+  view=v;pg=p;msg='';selDay=null;
+  if(push){try{history.pushState({v,p},'','')}catch(e){}}
+  if(same){swapPage();return}
+  softPaint();window.scrollTo(0,0);
+}
+/* menu gecisi: header ve menu yerinde kalir, yalnizca sayfa icerigi yumusakca degisir */
+function swapPage(){
+  const aside=document.querySelector('aside');
+  if(aside){aside.querySelectorAll('a[data-k]').forEach(a=>{const on=a.dataset.k===pg;a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')})}
+  if(pg!=='pomo'||!pm.run)document.title=TITLE;
+  const y=window.scrollY,main=document.querySelector('main');
+  const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finish=()=>{
+    renderPage();
+    if(main)main.classList.remove('swap');
+    if(pg!=='pomo'&&y>0){try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){window.scrollTo(0,0)}}
+    centerNav();
+  };
+  if(main&&!reduced){main.classList.add('swap');setTimeout(finish,180)}
+  else finish();
+}
+/* mobil/tablet: secilen sekme yatay menude ortalanir, sayfa ziplamaz */
+function centerNav(){
+  const aside=document.querySelector('aside'),on=aside&&aside.querySelector('a.on');
+  if(!aside||!on||aside.scrollWidth<=aside.clientWidth+2)return;
+  /* Use visible rectangles rather than offsetLeft: mobile browsers can report
+     offsetLeft relative to the page when the horizontal nav is not positioned. */
+  const navRect=aside.getBoundingClientRect(),itemRect=on.getBoundingClientRect();
+  const itemCenter=(itemRect.left-navRect.left)+aside.scrollLeft+(itemRect.width/2);
+  const target=itemCenter-(aside.clientWidth/2);
+  const max=Math.max(0,aside.scrollWidth-aside.clientWidth);
+  const left=Math.max(0,Math.min(max,target));
+  const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  try{aside.scrollTo({left,behavior:reduced?'auto':'smooth'})}catch(e){aside.scrollLeft=left}
+}
+window.addEventListener('popstate',e=>{
+  if(A)return;
+  if(e.state){view=e.state.v;pg=e.state.p}else{view='welcome';pg='home'}
+  msg='';selDay=null;renderAppOrAuth();
+});
+try{if(!history.state)history.replaceState({v:view,p:pg},'','')}catch(e){}
+document.addEventListener('keydown',e=>{
+  const t=e.target;
+  if((e.key==='Enter'||e.key===' ')&&t&&t.getAttribute&&t.getAttribute('role')==='button'){e.preventDefault();t.click()}
+});
+
+const D=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>D(new Date()),fmt=s=>{const[y,m,d]=s.split('-');return d+'.'+m};
+const dd=(a,b)=>Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5);
+const sha=async s=>{try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))|0;return'f'+h}};
+const AY=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const Q_LIST=["Small steps add up to big changes.","Discipline is choosing what you want most over what you want now.","You don't have to be great to start, but you have to start to be great.","Consistency beats intensity.","Progress, not perfection.","Focus on being productive instead of busy.","Your future is created by what you do today, not tomorrow.","Action is the foundational key to all success."];
+const getDailyQuote=()=>getDailyQuoteIn(DB.lang);
+
+/* ================= i18n ================= */
+const STRS={
+en:{welcome:'WELCOME',continue:'Continue →',howItWorks:'How it works',contact:'Contact me',login:'Sign in',create:'Create account',forgot:'Forgot password',
+username:'Username',password:'Password',newAccount:'New account',today:'Today',backlog:'Backlog',projectReminders:'Project reminders',projectName:'Project name',add:'Add',
+noProjects:'No projects yet.',addTask:'Add a task.',newTask:'New task',done:'Done',notDone:'Not done',delete:'Delete',addToToday:'Add to today',
+dailyReport:'Daily report',tasksDone:'tasks done',total:'Total',level:'Level',successDays:'successful days to the next level. The look gets richer as you level up.',
+quoteOfTheDay:'Quote of the day',focus:'focus',break:'break',focusAndBreak:'Focus and break lengths',stopwatch:'Stopwatch',startPause:'Start / Pause',reset:'Reset',
+startStop:'Start / Stop',addLength:'Add a length',afterFive:'After 5 focus sessions, the longest saved break is used.',
+progress:'Progress',everyDayAdds:'Every day you complete all your tasks adds +1.',analysis:'Analysis',noRecords:'No records for this day.',
+weeklyReport:'Weekly report',monthlyReport:'Monthly report',previous:'previous',change:'change',questionsFor:'Questions for this',lockAnswers:'Lock answers',
+answersLocked:'Your answers are locked.',noQuestions:'There were no questions for this',askedNext:'; the questions below will be asked next',
+addOwnQuestion:'Add your own question',addQuestion:'Add question',randomQuestion:'🎲 Random question',opensOn:'This report opens on',daysLeft:'days left',
+account:'Account',emailAndPhone:'Email and phone',email:'Email',phone:'Phone',sendCode:'Send code',currentPassword:'Current password',newPassword:'New password',
+changePassword:'Change password',theme:'Theme',dark:'Dark',light:'Light',accounts:'Accounts',addAccount:'+ Add account',resetSystem:'Reset system',reset:'Reset',
+deleteAccount:'Delete account',displayName:'Display name',bio:'Bio',change:'Change',active:'active',switch:'Switch',verify:'Verify',
+logout:'Log out',logoutQ:'Do you want to log out?',yes:'Yes',no:'No',loginBack:'Back to sign in',welcomeBack:'Welcome back',welcomeExcl:'Welcome!',
+locked:'Temporarily locked. Time left:',wrongLogin:'Wrong username or password. Attempts left:',signOut:'Sign out',signOutQ:'Go back to the sign-in screen? Your data stays saved on this device.',
+lockedReport:'This report opens on',futureNotes:'Notes for the future',addFutureNote:'Add a note',noteSaved:'Note saved.',notePlaceholder:'What do you want to remember about this day?',
+noNote:'No note for this day yet.',editNote:'Edit note',save:'Save',cancel:'Cancel',yourNote:'Your note',futureNoteHint:'You can leave a note for any day in the calendar — even for days that have not arrived yet.',
+streak:'Daily progress',gainToday:'+1 today',earned:'earned',toNext:'to next level',selectDay:'Select a day on the calendar',calendar:'Calendar',
+lang:'Language',quoteLangNote:'Quotes are translated into your chosen language.',pomoEnds:'Ends at',alreadyEnds:'if you start now it ends at',
+session:'Session',longBreak:'Long break',pastDaysFog:'Past days you did not complete appear foggy.',futureDays:'Future days — you can add notes.',
+fogToggle:'Fog past days',on:'On',off:'Off',settings:'Settings',minutes:'min',digitsOnly:'Digits only',code:'Code',wrongCode:'Wrong code.',
+noContact:'No email or phone number is registered on this account.',phoneInvalid:'Phone must be digits only (10-15 digits).',emailInvalid:'Invalid email address.',
+emailRequired:'Enter an email or phone for verification.',usernameRules:'Username must be 3-20 letters (no digits or spaces).',usernameTaken:'That username is taken.',
+displayRequired:'Display name is required.',resetDone:'Password reset. You can sign in now.',currentWrong:'Current password is wrong.',pwChanged:'Password changed.',
+verified:'Verified.',saved:'Saved.',wrongPw:'Wrong password.',systemReset:'System reset.',accountDeleted:'Account deleted.',sendHint:'Your code:',
+takeNote:'Note',newAccountTitle:'Create account',back:'Back',signInTitle:'Sign in',
+remembered:'Remembered on this device',notYou:'Not you?',savedUsers:'Accounts on this device',useAccount:'Sign in',
+wrongLogin:'Wrong username or password. Attempts left:',wrongLoginKnown:'Password is wrong for {u}. Attempts left:',
+totalDays:'Total days',everyDayCounts:'Every day since you started counts — %1 = 1 day. Nothing else is required.',
+daysRecorded:'days recorded',pctTitle:'Daily percentage',pctHint:'Goes up by 1 every day — independent of tasks and other stats.',backWelcome:'Back to the welcome screen',beigeOn:'Light beige look is on',beigeOff:'Light beige look is off',welcomeUser:'Welcome back,',
+noAccountYet:'No account on this device yet',currentAccount:'Current account',
+},
+tr:{welcome:'HOŞ GELDİN',continue:'Devam →',howItWorks:'Nasıl çalışır',contact:'Bana ulaş',login:'Giriş yap',create:'Hesap oluştur',forgot:'Şifremi unuttum',
+username:'Kullanıcı adı',password:'Şifre',newAccount:'Yeni hesap',today:'Bugün',backlog:'Birikim',projectReminders:'Proje hatırlatıcıları',projectName:'Proje adı',add:'Ekle',
+noProjects:'Henüz proje yok.',addTask:'Bir görev ekle.',newTask:'Yeni görev',done:'Yapıldı',notDone:'Yapılmadı',delete:'Sil',addToToday:'Bugüne ekle',
+dailyReport:'Günlük rapor',tasksDone:'görev tamamlandı',total:'Toplam',level:'Seviye',successDays:'başarılı gün kaldı. Seviye yükseldikçe görünüm zenginleşir.',
+quoteOfTheDay:'Günün alıntısı',focus:'odak',break:'mola',focusAndBreak:'Odak ve mola süreleri',stopwatch:'Kronometre',startPause:'Başlat / Duraklat',reset:'Sıfırla',
+startStop:'Başlat / Durdur',addLength:'Süre ekle',afterFive:'5 odak seansından sonra kayıtlı en uzun mola kullanılır.',
+progress:'İlerleme',everyDayAdds:'Tüm görevlerini bitirdiğin her gün +1 ekler.',analysis:'Analiz',noRecords:'Bu güne ait kayıt yok.',
+weeklyReport:'Haftalık rapor',monthlyReport:'Aylık rapor',previous:'önceki',change:'değişim',questionsFor:'Sorular —',lockAnswers:'Cevapları kilitle',
+answersLocked:'Cevapların kilitli.',noQuestions:'Bu dönem için soru yoktu',askedNext:'; aşağıdaki sorular bir sonraki dönemde sorulacak',
+addOwnQuestion:'Kendi sorunu ekle',addQuestion:'Soru ekle',randomQuestion:'🎲 Rastgele soru',opensOn:'Bu rapor şu tarihte açılır:',daysLeft:'gün kaldı',
+account:'Hesap',emailAndPhone:'E-posta ve telefon',email:'E-posta',phone:'Telefon',sendCode:'Kod gönder',currentPassword:'Mevcut şifre',newPassword:'Yeni şifre',
+changePassword:'Şifreyi değiştir',theme:'Tema',dark:'Koyu',light:'Açık',accounts:'Hesaplar',addAccount:'+ Hesap ekle',resetSystem:'Sistemi sıfırla',reset:'Sıfırla',
+deleteAccount:'Hesabı sil',displayName:'Görünen ad',bio:'Hakkında',change:'Değiştir',active:'aktif',switch:'Geç',verify:'Onayla',
+logout:'Çıkış yap',logoutQ:'Çıkış yapmak istiyor musun?',yes:'Evet',no:'Hayır',loginBack:'Giriş ekranına dön',welcomeBack:'Tekrar hoş geldin',welcomeExcl:'Hoş geldin!',
+locked:'Geçici olarak kilitli. Kalan süre:',wrongLogin:'Kullanıcı adı veya şifre yanlış. Kalan deneme:',signOut:'Çıkış',signOutQ:'Giriş ekranına dönmek istiyor musun? Verilerin bu cihazda kayıtlı kalır.',
+lockedReport:'Bu rapor şu tarihte açılır:',futureNotes:'Geleceğe notlar',addFutureNote:'Not ekle',noteSaved:'Not kaydedildi.',notePlaceholder:'Bu günle ilgili neyi hatırlamak istersin?',
+noNote:'Bu gün için henüz not yok.',editNote:'Notu düzenle',save:'Kaydet',cancel:'Vazgeç',yourNote:'Notun',futureNoteHint:'Takvimde herhangi bir güne not bırakabilirsin — henüz gelmemiş günlere bile.',
+streak:'Günlük ilerleme',gainToday:'Bugün +1',earned:'kazanıldı',toNext:'sonraki seviyeye',selectDay:'Takvimden bir gün seç',calendar:'Takvim',
+lang:'Dil',quoteLangNote:'Alıntılar seçtiğin dile çevrilir.',pomoEnds:'Bitiş',alreadyEnds:'şimdi başlarsan biter',
+session:'Seans',longBreak:'Uzun mola',pastDaysFog:'Tamamlamadığın geçmiş günler sisli görünür.',futureDays:'Gelecek günler — not ekleyebilirsin.',
+fogToggle:'Geçmiş günler sisli',on:'Açık',off:'Kapalı',settings:'Ayarlar',minutes:'dk',digitsOnly:'Sadece rakam',code:'Kod',wrongCode:'Kod yanlış.',
+noContact:'Bu hesapta kayıtlı e-posta veya telefon yok.',phoneInvalid:'Telefon sadece rakamlardan oluşmalı (10-15 hane).',emailInvalid:'Geçersiz e-posta adresi.',
+emailRequired:'Doğrulama için bir e-posta veya telefon gir.',usernameRules:'Kullanıcı adı 3-20 harf olmalı (rakam ve boşluk yok).',usernameTaken:'Bu kullanıcı adı alınmış.',
+displayRequired:'Görünen ad zorunlu.',resetDone:'Şifre sıfırlandı. Artık giriş yapabilirsin.',currentWrong:'Mevcut şifre yanlış.',pwChanged:'Şifre değiştirildi.',
+verified:'Onaylandı.',saved:'Kaydedildi.',wrongPw:'Şifre yanlış.',systemReset:'Sistem sıfırlandı.',accountDeleted:'Hesap silindi.',sendHint:'Doğrulama kodun:',
+takeNote:'Not',newAccountTitle:'Hesap oluştur',back:'Geri',signInTitle:'Giriş yap',
+remembered:'Bu cihazda hatırlanıyor',notYou:'Sen değil misin?',savedUsers:'Bu cihazdaki hesaplar',useAccount:'Giriş yap',
+wrongLogin:'Kullanıcı adı veya şifre yanlış. Kalan deneme:',wrongLoginKnown:'{u} için şifre yanlış. Kalan deneme:',
+totalDays:'Toplam gün',everyDayCounts:'Başladığın günden beri her gün sayılır — %1 = 1 gün. Başka bir koşul yok.',
+daysRecorded:'kayıtlı gün',pctTitle:'Günlük yüzde',pctHint:'Her gün 1 artar — görevlerden ve diğer sayılardan bağımsızdır.',backWelcome:'Karşılama ekranına dön',beigeOn:'Açık bej görünüm açık',beigeOff:'Açık bej görünüm kapalı',welcomeUser:'Tekrar hoş geldin,',
+noAccountYet:'Bu cihazda henüz hesap yok',currentAccount:'Aktif hesap',
+}
+};
+const Q_EN=["Small steps add up to big changes.","Discipline is choosing what you want most over what you want now.","You don't have to be great to start, but you have to start to be great.","Consistency beats intensity.","Progress, not perfection.","Focus on being productive instead of busy.","Your future is created by what you do today, not tomorrow.","Action is the foundational key to all success."];
+const Q_TR=["Küçük adımlar büyük değişimlerin toplamıdır.","Disiplin, şu an istediğin şeyi değil en çok istediğin şeyi seçmektir.","Başlamak için harika olman gerekmez; harika olmak için başlaman gerekir.","İstikrar, yoğunluktan daha güçlüdür.","Mükemmellik değil, ilerleme.","Meşgul olmak yerine üretken olmaya odaklan.","Geleceğin, yarının değil bugün yaptıklarınla kurulur.","Eylem, her başarının temel anahtarıdır."];
+const RQ_EN=["What fed your mind the most today?","How satisfied are you with your main goal this period?","What is the biggest distraction you should cut out of your life?","Are you giving yourself the value you deserve in this process?","How would you rate your energy today from 1 to 10, and why?","What would you tell your future self about this week?","When did you last step outside your comfort zone?","What small detail made you proudest this week?"];
+const RQ_TR=["Bugün zihnini en çok ne besledi?","Bu dönemdeki ana hedefinden ne kadar memnunsun?","Hayatından çıkarman gereken en büyük dikkat dağıtıcı ne?","Bu süreçte kendine hak ettiğin değeri veriyor musun?","Bugünkü enerjini 1-10 arasında nasıl değerlendirirsin, neden?","Bu hafta hakkında gelecekteki kendine ne söylerdin?","En son ne zaman konfor alanının dışına çıktın?","Bu hafta seni en çok gururlandıran küçük detay neydi?"];
+const DEFQ_EN={week:["What did you move forward the most this week?","What did you struggle with?","What one thing will you do better next week?"],month:["What was your biggest win this month?","What did you neglect, and why?","What will you focus on next month?"]};
+const DEFQ_TR={week:["Bu hafta en çok neyi ilerlettin?","En çok neyle zorlandın?","Gelecek hafta daha iyi yapacağın tek şey ne?"],month:["Bu ayın en büyük kazanımı neydi?","Neyi ihmal ettin ve neden?","Gelecek ay neye odaklanacaksın?"]};
+const NAV_KEYS=[['home','Home'],['pomo','Pomodoro'],['todo','To-do list'],['pc','Progress'],['rep','Reports'],['set','Settings'],['logout','Log out']];
+const NAV_TR={home:'Ana sayfa',pomo:'Pomodoro',todo:'Yapılacaklar',pc:'İlerleme',rep:'Raporlar',set:'Ayarlar',logout:'Çıkış yap'};
+const AY_TR=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const DN_TR=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+const LANG_NAMES={en:'English',tr:'Türkçe'};
+const setLang=l=>{DB.lang=l==='tr'?'tr':'en';save();document.documentElement.lang=DB.lang};
+const tr=()=>DB.lang==='tr';
+const t=(k,lang)=>(STRS[lang||DB.lang]||STRS.en)[k]||STRS.en[k]||k;
+const monthName=mo=>tr()?AY_TR[mo]:AY[mo];
+const dayName=i=>tr()?DN_TR[i]:DAY_NAMES[i];
+const navLabel=k=>tr()?(NAV_TR[k]||k):(NAV_KEYS.find(x=>x[0]===k)||[k,k])[1];
+const quoteFor=lang=>(lang||DB.lang)==='tr'?Q_TR:Q_EN;
+const getDailyQuoteIn=lang=>{const L=quoteFor(lang),n=new Date(),s=new Date(n.getFullYear(),0,0);return L[Math.floor(((n-s)+((s.getTimezoneOffset()-n.getTimezoneOffset())*60000))/864e5)%L.length]};
+const rqFor=lang=>(lang||DB.lang)==='tr'?RQ_TR:RQ_EN;
+const defQ=(k,lang)=>(lang||DB.lang)==='tr'?DEFQ_TR[k]:DEFQ_EN[k];
+const greetKey=()=>{const h=new Date().getHours();return h>=5&&h<12?'morning':h>=12&&h<18?'afternoon':'night'};
+const greetText=()=>{const g=greetKey();return tr()?(g==='morning'?'Günaydın':g==='afternoon'?'Tünaydın':'İyi geceler'):(g==='morning'?'Good morning':g==='afternoon'?'Good afternoon':'Good night')};
+
+const RANDOM_Q=["What fed your mind the most today?","How satisfied are you with your main goal this period?","What is the biggest distraction you should cut out of your life?","Are you giving yourself the value you deserve in this process?","How would you rate your energy today from 1 to 10, and why?","What would you tell your future self about this week?","When did you last step outside your comfort zone?","What small detail made you proudest this week?"];
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
+const userRe=new RegExp('^['+LETTERS+']{3,20}$');
+function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme()})}
+function norm(a){
+  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},pomo:null,fog:true,pctFrom:today()};
+  for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
+  return a;
+}
+const findUser=u=>Object.keys(DB.accounts).find(k=>k.toLowerCase()===String(u).toLowerCase());
+/* hesap kaydi her zaman localStorage'da tutulur: cerez reddedilse bile kullanici hatirlanir */
+const storeAcct=()=>{try{return localStorage}catch(e){return store()}};
+const rndHex=n=>{const a=new Uint8Array(n);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(let i=0;i<n;i++)a[i]=Math.floor(Math.random()*256);return[...a].map(x=>x.toString(16).padStart(2,'0')).join('')};
+/* sifre: PBKDF2 + tuz (yeni kayitlar), eski kayitlar icin geriye donuk dogrulama */
+async function hashPw(p,salt){
+  salt=salt||rndHex(16);
+  try{
+    const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']);
+    const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:120000,hash:'SHA-256'},key,256);
+    return {pw:'p2$'+salt+'$'+[...new Uint8Array(bits)].map(x=>x.toString(16).padStart(2,'0')).join(''),salt};
+  }catch(e){return {pw:'p1$'+salt+'$'+await sha(salt+'|'+p),salt}}
+}
+async function pwMatch(a,p){
+  if(!a||!a.pw)return false;
+  const v=String(a.pw);
+  if(v.indexOf('p2$')===0||v.indexOf('p1$')===0){const r=await hashPw(p,v.split('$')[1]);return r.pw===v}
+  return v===await sha(p);
+}
+async function setPw(a,p){const r=await hashPw(p);a.pw=r.pw;a.salt=r.salt;a.pwAt=Date.now();if(A&&a===A)lastSig=signature(a)}
+function roll(){
+  const t=today();
+  try{fixTodoData()}catch(e){}
+  if(A.day!==t){
+    A.hist[A.day]=A.tasks.map(x=>({t:x.t,done:x.s==='done'}));
+    A.tasks.filter(x=>x.s!=='done').forEach(x=>A.backlog.push(x.t));
+    while(A.backlog.length>10)A.backlog.shift();
+    A.tasks=[];A.day=t;save();
+  }
+}
+const items=d=>d===today()?A.tasks.map(x=>({t:x.t,done:x.s==='done'})):(A.hist[d]||[]);
+const okDay=d=>{const i=items(d);return i.length>0&&i.every(x=>x.done)};
+const succ=()=>{let n=0;Object.keys(A.hist).forEach(d=>{if(d!==today()&&okDay(d))n++});if(okDay(today()))n++;return n};
+/* %1 = 1 gun: kayit gununden bugune kadar gecen her gun bir puan. Baska kosul yok. */
+/* yuzde: bagimsiz sayac. Her takvim gunu +1; gorevlere/gecmise bagli degil, asla ziplamaz. */
+const pctStart=()=>{if(!A.pctFrom||!/^\d{4}-\d{2}-\d{2}$/.test(A.pctFrom))A.pctFrom=today();return A.pctFrom};
+const pct=()=>Math.max(1,dd(pctStart(),today())+1);
+const dayCount=pct;
+const startDay=pctStart;
+const lvl=()=>1+Math.floor((pct()-1)/7);
+
+function pwOk(p,u){
+  if(p.length<8)return tr()?'Şifre en az 8 karakter olmalı.':'Password must be at least 8 characters.';
+  if(/(.)\1/.test(p))return tr()?'Yan yana aynı harf veya rakam olamaz.':'No repeated adjacent letters or digits.';
+  if(/0123|1234|2345|3456|4567|5678|6789|abcd|qwer|asdf/i.test(p)||/^(.)\1+$/.test(p))return tr()?'Şifre çok basit.':'Password is too simple.';
+  if(/2007|1308|130807|0813|password|sifre/i.test(p))return tr()?'Kolay tahmin edilen şifreler kullanılamaz.':'Easily guessable passwords are not allowed.';
+  if(u&&p.toLowerCase().includes(u.toLowerCase()))return tr()?'Şifre kullanıcı adını içeremez.':'Password cannot contain your username.';
+  return'';
+}
+function mon(d){const x=new Date(d+'T00:00');x.setDate(x.getDate()-((x.getDay()+6)%7));return D(x)}
+function addD(d,n){const x=new Date(d+'T00:00');x.setDate(x.getDate()+n);return D(x)}
+const fmtMin=m=>m>=60?Math.floor(m/60)+' h '+(m%60)+' min':m+' min';
+const box=x=>`<div class="center"><div class="box card">${x}</div></div>`;
+/* giris/kayit icin ayni kutu, dar ekranda degismez */
+const boxWide=x=>box(x);
+const m=()=>msg?`<div class="note">${msg}</div>`:'';
+
+/* giris/karsilama ekraninda tema secimi (hesap acmadan da calisir) */
+/* tema: acik / koyu / bej. bej = DB.beige bayragi; ucu tek yerden yonetilir */
+const THEMES=['light','dark','beige'];
+function curTheme(){const d=document.documentElement.dataset.t;return d==='dark'?'dark':(DB&&DB.beige?'beige':'light')}
+function applyTheme(){
+  const beige=!!(DB&&DB.beige);
+  const base=beige?'light':((A&&A.theme)||getItem('b1.theme')||sysTheme());
+  document.documentElement.dataset.t=beige?'beige':(base==='dark'?'dark':'light');
+}
+function setTheme(v){
+  v=THEMES.indexOf(v)<0?'light':v;
+  DB.beige=(v==='beige');
+  if(A)A.theme=(v==='beige')?'light':v;
+  try{setItem('b1.theme',v)}catch(e){}
+  document.documentElement.dataset.t=v;
+  if(A)save();
+  if(view==='welcome'||view==='login')renderAppOrAuth();
+  else if($('#mn'))P.set();
+}
+function themePick(compact){
+  const cur=curTheme();
+  const b=(v,label)=>`<button class="${cur===v?'':'g'} s" onclick="setTheme('${v}')" aria-pressed="${cur===v}">${label}</button>`;
+  return`<div class="themebar" style="display:flex;gap:.4rem;justify-content:${compact?'flex-end':'center'};margin:${compact?'0':'0 0 .8rem'};align-items:center;flex-wrap:wrap"><small class="mut" style="margin-right:.2rem">${tr()?'Tema':'Theme'}</small>${b('light',tr()?'Açık':'Light')}${b('dark',tr()?'Koyu':'Dark')}${b('beige',tr()?'Bej':'Beige')}</div>`;
+}
+/* acilista secilen temayi uygula */
+try{const st=getItem('b1.theme');if(THEMES.indexOf(st)>=0)document.documentElement.dataset.t=st}catch(e){}
+
+/* ---- cihaz tanima: olculeri cihazin kendisine gore uygula ---- */
+function detectDevice(){
+  const w=innerWidth,h=innerHeight,coarse=window.matchMedia('(pointer:coarse)').matches||(navigator.maxTouchPoints||0)>1;
+  const short=Math.min(w,h),long=Math.max(w,h);
+  let dev='desktop';
+  /* telefon/tablet: kisa kenar + dokunmatik; TV: buyuk ekran; masaustu: geri kalan */
+  if(short<=600&&(coarse||short<=480))dev='phone';
+  else if(short<=900&&coarse)dev='tablet';
+  else if(short<=1024&&long<=1400)dev='tablet';
+  else if(coarse&&long>1024)dev='tv';
+  else if(long>=1700)dev='desktop-xl';
+  else if(long<=900)dev='mobile-narrow';
+  document.documentElement.dataset.dev=dev;
+  document.documentElement.dataset.orient=h>=w?'portrait':'landscape';
+  return dev;
+}
+try{detectDevice()}catch(e){}
+window.addEventListener('resize',()=>{clearTimeout(window.__dvT);window.__dvT=setTimeout(()=>{try{detectDevice()}catch(e){}},180)});
+window.addEventListener('orientationchange',()=>{try{detectDevice()}catch(e){}});
+
+/* menu gecisi: dokunulan ogede kisa "basildi" efekti, sonra yumusak gecis */
+function pressTo(el,fn){
+  if(!el)return fn();
+  try{el.classList.add('press')}catch(e){}
+  setTimeout(()=>{try{el.classList.remove('press')}catch(e){};fn()},90);
+}
+function navGo(el,v,p){
+  /* aninda vurgulanir; kabuk yeniden cizilmez, menu yerinde kalir */
+  if(el){const bar=el.parentElement;if(bar)bar.querySelectorAll('a.on').forEach(a=>a.classList.remove('on'));el.classList.add('on')}
+  pressTo(el,()=>goTo(v,p));
+}
+/* header'a dokununca giris ekranina git (oturum kapatmadan) */
+function headerHome(el){
+  pressTo(el,()=>{
+    if(A){A0=A;A=null}
+    msg='';loginDat={u:'',p:'',e:''};
+    view='login';pg='home';
+    try{history.pushState({v:'login',p:'home'},'','')}catch(e){}
+    renderAppOrAuth();window.scrollTo(0,0);
+  });
+}
+
+function renderAppOrAuth(){
+  if(A){try{sessionStorage.setItem('b1.view','app')}catch(e){}shell();return}
+  try{sessionStorage.setItem('b1.view',view==='app'?'login':view)}catch(e){}
+  document.title=TITLE;
+  if(view==='app')view=Object.keys(DB.accounts).length?'login':'welcome';
+  let h='';
+  if(view==='welcome')h=`<div class="welcome-screen"><div class="welcome-top"><div class="brand-badge">badgalnurkan</div><div id="theme-anchor">${themePick(true)}</div></div><div class="welcome-center"><div class="langbar">${langBtns()}</div><h1 class="big">${t('welcome')}</h1><div class="row" style="justify-content:center;gap:.8rem;margin-top:.5rem"><button onclick="goTo(Object.keys(DB.accounts).length?'login':'setup','home')">${t('continue')}</button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><div style="margin-top:1rem"><a href="mailto:nurkancanbulat89@gmail.com" style="color:var(--acc);font-weight:600;text-decoration:none;font-size:.9rem">${t('contact')}</a></div></div><div class="welcome-footer-bar"><div>© 2026 nurkancanbulat — All rights reserved.</div><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">tiktok/@badgalnurkan</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">instagram/@badgalnurkann</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">x/@badgalnurk</a></div></div></div>`;
+  else if(view==='login'){
+    const rem=(skipRem?null:rememberedUser()),others=Object.keys(DB.accounts).filter(k=>k!==rem);
+    if(!loginDat.u&&rem){
+      const remembered=DB.accounts[rem];
+      loginDat.u=String(DB.lastEmail||(remembered&&(remembered.mail||remembered.email))||rem);
+    }
+    const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="useAccount('${esc(rem)}')">${t('useAccount')}</button></div>`:`<p class="mut" style="margin:.2rem 0 .9rem">${t('noAccountYet')}</p>`;
+    const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
+    h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${tr()?'E-posta veya bu cihazdaki kullanıcı adı':'Email or a username saved on this device'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
+  }
+  else if(view==='setup')h=`<div class="login-wrap"><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value;setAvailabilityHint('user-status','')" onblur="checkUsernameUI()"><div id="user-status" class="mut" style="min-height:1.2rem;font-size:.82rem" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;setAvailabilityHint('email-status','')" onblur="checkEmailUI()"><div id="email-status" class="mut" style="min-height:1.2rem;font-size:.82rem" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='verify'){
+    const pending=readJson(PENDING_SIGNUP_KEY)||{};
+    h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${tr()?'E-postanı doğrula':'Verify your email'}</h2>${m()}<p class="mut">${tr()?'Kayıt bağlantısını şu adrese gönderdik:':'We sent a confirmation link to:'}</p><p><b>${esc(pending.email||loginDat.e||DB.lastEmail||'')}</b></p><p class="mut">${tr()?'Gelen kutunu ve spam klasörünü kontrol et. Bağlantıyı açtıktan sonra hesabın etkinleşecek.':'Check your inbox and spam folder. Your account will activate after you open the link.'}</p><div class="row"><button onclick="resendSignupConfirmation()">${tr()?'Doğrulama e-postasını yeniden gönder':'Resend confirmation email'}</button><button class="g" onclick="goTo('login','home')">${t('login')}</button></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('setup','home')">${tr()?'Başka e-posta kullan':'Use another email'}</a></div>`);
+  }
+  else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="reset-email" type="email" autocomplete="email" autocapitalize="none" value="${esc(DB.lastEmail||loginDat.e||'')}" placeholder="name@example.com"><div class="row"><button onclick="fSendEmail()">${tr()?'Sıfırlama bağlantısı gönder':'Send reset link'}</button></div><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='recover')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${tr()?'Yeni şifre belirle':'Choose a new password'}</h2>${m()}<label>${t('newPassword')}</label><input id="recovery-password" type="password" autocomplete="new-password"><label>${tr()?'Yeni şifreyi tekrar yaz':'Confirm new password'}</label><input id="recovery-password-confirm" type="password" autocomplete="new-password"><button onclick="completePasswordRecovery()">${tr()?'Şifreyi kaydet':'Save password'}</button>`);
+  $('#app').innerHTML=h;
+  if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
+}
+
+
+function toast(txt){let el=document.querySelector('.toast');if(!el){el=document.createElement('div');el.className='toast';document.body.appendChild(el)}el.textContent=txt;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),2200)}
+/* giris yapildiktan sonra: gunaydin/tunaydin/iyi geceler hizlica gelir, silinir, sonra welcome */
+function greetThen(cb){
+  const g=document.createElement('div');g.className='greet-screen';g.textContent=greetText();
+  document.body.appendChild(g);
+  const skip=()=>{g.remove();document.removeEventListener('keydown',skip)};
+  g.addEventListener('click',skip);
+  document.addEventListener('keydown',skip);
+  setTimeout(()=>{g.classList.add('out');setTimeout(()=>{g.remove();document.removeEventListener('keydown',skip);cb&&cb()},560)},900);
+}
+function goHome(){stopTimers();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
+function backToLogin(){stopTimers();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
+
+function langBtns(short){return ['en','tr'].map(l=>`<button class="${DB.lang===l?'on':''}" onclick="pickLang('${l}')" title="${LANG_NAMES[l]}" aria-label="${LANG_NAMES[l]}">${short?l.toUpperCase():LANG_NAMES[l]}</button>`).join('')}
+function pickLang(l){setLang(l);renderAppOrAuth()}
+function openModal(id,html){
+  if(document.getElementById(id))return;
+  const d=document.createElement('div');d.id=id;d.className='modal';
+  d.innerHTML=`<div class="card" style="max-width:32rem;width:100%;max-height:85vh;overflow-y:auto">${html}</div>`;
+  d.addEventListener('click',e=>{if(e.target===d)d.remove()});
+  document.body.appendChild(d);
+}
+const closeModal=id=>{const e=document.getElementById(id);if(e)e.remove()};
+function openGuideModal(){
+  const tr2=tr();
+  const body=tr2
+    ?`<ul style="font-size:.92rem;padding-left:1.2rem;line-height:1.7"><li><b>Ana sayfa:</b> günün alıntısı, günlük rapor, seviye ve proje hatırlatıcıları.</li><li><b>Yapılacaklar:</b> görev ekle, bitince ✓, bitmediyse ✕. Kaçırdığın görevler birikime geçer (en fazla 10).</li><li><b>Pomodoro:</b> odak/mola süreleri, 5 seanstan sonra en uzun mola ve milisaniyeli kronometre.</li><li><b>İlerleme:</b> tüm görevlerini bitirdiğin her gün yüzdelik dilimini +1 artırır. Geçmişte tamamlamadığın günler sisli görünür; herhangi bir güne, gelecekteki günlere bile not ekleyebilirsin.</li><li><b>Raporlar:</b> haftalık rapor pazar günü, aylık rapor ayın son günü açılır.</li></ul><p class="mut" style="font-size:.85rem">Verilerin yalnızca bu tarayıcıda saklanır.</p>`
+    :`<p class="mut">Built to help you manage your daily discipline, tasks and focus. Your data is stored only in your own browser.</p><ul style="font-size:.92rem;padding-left:1.2rem;line-height:1.7"><li><b>Home:</b> quote of the day, daily report, level and project reminders.</li><li><b>To-do list:</b> add a task, tap ✓ when done or ✕ if not done. Missed tasks move to the backlog (max 10).</li><li><b>Pomodoro:</b> focus/break lengths, the longest break after 5 sessions, and a millisecond stopwatch.</li><li><b>Progress:</b> every day you finish all your tasks adds +1 to your percentage. Past days you did not complete appear foggy; you can leave a note on any day, even a future one.</li><li><b>Reports:</b> the weekly report opens on Sunday, the monthly report on the last day of the month.</li></ul>`;
+  openModal('guide-modal',`<h2>${t('howItWorks')}</h2>${body}<div style="text-align:center;margin-top:1.2rem"><button onclick="closeModal('guide-modal')">${tr2?'Anladım':'Got it'}</button></div>`);
+}
+
+/* bu cihazda hatirlanan kullanici (giris ekraninda otomatik dolu gelir) */
+function rememberedUser(){
+  const list=Object.keys(DB.accounts);
+  if(!list.length)return '';
+  if(DB.lastUser&&DB.accounts[DB.lastUser])return DB.lastUser;
+  const byNick=list.find(k=>DB.accounts[k].nick===DB.last);
+  return byNick||list[0];
+}
+function useAccount(u){loginDat={u,p:''};view='login';msg='';renderAppOrAuth();const pe=$('#p');if(pe)pe.focus()}
+let skipRem=false;
+function otherUser(){
+  /* "not you?": hatirlanan hesabi gizle, bos giris formu goster */
+  skipRem=true;loginDat={u:'',p:''};msg='';renderAppOrAuth();
+  setTimeout(()=>{const ue=$('#u');if(ue){ue.value='';ue.focus()}},30);
+}
+function backToRemembered(){skipRem=false;loginDat={u:'',p:''};msg='';renderAppOrAuth()}
+async function login(){
+  const raw=String(loginDat.u||'').trim();
+  const typedMail=raw.includes('@')?raw.toLowerCase():'';
+  const localKey=typedMail
+    ?Object.keys(DB.accounts).find(k=>String(DB.accounts[k].mail||DB.accounts[k].email||'').toLowerCase()===typedMail)
+    :findUser(raw);
+  const u=localKey||(!typedMail?raw:'');
+  const a=localKey?DB.accounts[localKey]:null;
+  if(!raw){msg=tr()?'Kullanıcı adı veya e-posta adresini gir.':'Enter your username or email.';return renderAppOrAuth()}
+  if(!loginDat.p){msg=tr()?'Şifreni gir.':'Enter your password.';return renderAppOrAuth()}
+  const k=(localKey||raw).toLowerCase(),L=DB.lock[k]||{f:0,lv:0,until:0};
+  if(Date.now()<L.until){msg=`${t('locked')} ${fmtMin(Math.ceil((L.until-Date.now())/60000))}.`;return renderAppOrAuth()}
+
+  /* Yeni bulut hesaplarında e-posta ve parola Supabase Auth ile doğrulanır. */
+  const cloudEmail=typedMail||(a&&String(a.mail||a.email||'').toLowerCase())||'';
+  if(cloud()&&cloudEmail){
+    try{
+      const j=await sbSignIn(cloudEmail,loginDat.p);
+      const user=j.user||await sbCurrentUser();
+      if(!user||!user.id)throw new Error(tr()?'Supabase kullanıcı bilgisi alınamadı.':'Could not read the Supabase user.');
+      if(user.email_confirmed_at===null||user.email_confirmed_at===undefined&&!user.confirmed_at){
+        /* Supabase normalde doğrulanmamış e-postayla parola girişini reddeder. */
+        throw new Error(tr()?'E-posta adresin henüz doğrulanmamış.':'Your email address has not been confirmed yet.');
+      }
+      await activateCloudUser(user,a);
+      DB.lock[k]={f:0,lv:L.lv,until:0};
+      loginDat={u:'',p:'',e:''};
+      applyTheme();save();goTo('app','home');greetThen();
+      toast(tr()?'Bulut hesabın yüklendi.':'Your cloud account is ready.');return;
+    }catch(err){
+      /* Önceden bu cihazda açılmış yerel hesaplar eski parolalarıyla çalışmaya devam eder. */
+      if(a&&a.authUid){
+        msg=tr()?'E-posta veya şifre doğrulanamadı. E-postanı doğruladığından emin ol.':'Email or password could not be verified. Make sure your email is confirmed.';
+        return renderAppOrAuth();
+      }
+      if(!(a&&a.pw)){
+        msg=tr()?'Giriş başarısız. E-posta ve şifreni kontrol et.':'Sign-in failed. Check your email and password.';
+        return renderAppOrAuth();
+      }
+    }
+  }
+
+  /* Eski, yalnızca bu cihazda kayıtlı hesaplar için geriye dönük giriş. */
+  if(a&&!a.authUid&&a.pw&&await pwMatch(a,loginDat.p)){
+    DB.lock[k]={f:0,lv:L.lv,until:0};A=norm(a);restorePomodoroState();
+    DB.last=a.nick;DB.lastUser=a.u;DB.lastEmail=a.mail||a.email||'';lastSig=signature(a);loginDat={u:'',p:''};
+    applyTheme();save();goTo('app','home');greetThen();return;
+  }
+  L.f++;
+  if(L.f>=5){const long=L.lv>0;L.until=Date.now()+(long?5*3600000:30*60000);L.lv++;L.f=0;msg=long?(tr()?'5 hatalı deneme daha. 5 saat kilitli.':'5 more failed attempts. Locked for 5 hours.'):(tr()?'5 hatalı deneme. 30 dakika kilitli.':'5 failed attempts. Locked for 30 minutes.')}
+  else msg=tr()?'Kullanıcı adı/e-posta veya şifre yanlış.':'Username/email or password is incorrect.';
+  DB.lock[k]=L;save();renderAppOrAuth();
+}
+
+async function setup(){
+  const u=$('#u').value.trim(),n=$('#n').value.trim(),e=$('#e').value.trim().toLowerCase(),p=$('#p').value;
+  formDat={u,n,b:$('#b')?$('#b').value:'',e,t:'',p};
+  if(!userRe.test(u))msg=t('usernameRules');
+  else if(!n)msg=t('displayRequired');
+  else if(findUser(u))msg=t('usernameTaken');
+  else if(!e)msg=tr()?'E-posta zorunlu (hesabın buna bağlı).':'Email is required to register.';
+  else if(!isValidEmail(e))msg=t('emailInvalid');
+  else if(localEmailTaken(e))msg=tr()?'Bu e-posta adresi bu cihazdaki bir hesapta zaten kayıtlı.':'This email is already used by an account on this device.';
+  else msg=pwOk(p,u);
+  if(msg)return renderAppOrAuth();
+  if(!cloud()){
+    msg=tr()?'Gerçek üyelik için bulut bağlantısı etkin olmalı.':'Cloud sign-up must be enabled for real accounts.';
+    return renderAppOrAuth();
+  }
+  try{
+    if(!await sbUsernameAvailable(u)){
+      msg=t('usernameTaken');return renderAppOrAuth();
+    }
+    const j=await sbSignUp(u,p,n,e,formDat.b);
+    const user=j.user||j;
+    if(user&&Array.isArray(user.identities)&&user.identities.length===0){
+      msg=tr()?'Bu e-posta adresi zaten kayıtlı. Giriş yapabilir veya şifreni sıfırlayabilirsin.':'This email address is already registered. Sign in or reset your password.';
+      return renderAppOrAuth();
+    }
+    if(j.access_token&&j.refresh_token){
+      sbSave({...j,user});
+      await activateCloudUser(user,null);
+      formDat={u:'',n:'',b:'',e:'',t:'',p:''};
+      A0=null;applyTheme();save();goTo('app','home');greetThen();
+      toast(tr()?'Hesabın oluşturuldu.':'Your account has been created.');return;
+    }
+    if(user&&user.id){
+      setItem(PENDING_SIGNUP_KEY,JSON.stringify({email:e,username:u,createdAt:Date.now()}));
+      DB.lastEmail=e;formDat={u:'',n:'',b:'',e:'',t:'',p:''};loginDat={u:e,p:'',e};
+      view='verify';msg='';renderAppOrAuth();return;
+    }
+    throw new Error(tr()?'Kayıt yanıtı beklenen biçimde değil.':'Unexpected sign-up response.');
+  }catch(err){
+    if(isUsernameCollision(err)){
+      msg=t('usernameTaken');
+    }else{
+      msg=authErrorMessage(err, 'signup');
+    }
+    renderAppOrAuth();
+  }
+}
+
+/* Supabase e-posta doğrulama ve parola kurtarma akışları */
+async function fSendEmail(){
+  const email=String($('#reset-email')?.value||'').trim().toLowerCase();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg=t('emailInvalid');return renderAppOrAuth()}
+  try{
+    await sbRecover(email);
+    DB.lastEmail=email;save();
+    const boxEl=$('#fz');
+    if(boxEl)boxEl.innerHTML=`<div class="note">${tr()?'Bu adres için bir hesap varsa şifre sıfırlama bağlantısı gönderildi. Gelen kutunu ve spam klasörünü kontrol et.':'If an account exists for this address, a password reset link has been sent. Check your inbox and spam folder.'}</div><button class="g" onclick="goTo('login','home')">${t('login')}</button>`;
+  }catch(err){
+    msg=authErrorMessage(err,'recover');
+    renderAppOrAuth();
+  }
+}
+async function completePasswordRecovery(){
+  const pass=$('#recovery-password')?.value||'';
+  const confirm=$('#recovery-password-confirm')?.value||'';
+  const user=recoveryUser||await sbCurrentUser();
+  const username=String(user&&(user.user_metadata||{}).username||'');
+  const validation=pwOk(pass,username);
+  if(validation){msg=validation;return renderAppOrAuth()}
+  if(pass!==confirm){msg=tr()?'Şifreler eşleşmiyor.':'The passwords do not match.';return renderAppOrAuth()}
+  try{
+    await sbUpdatePassword(pass);
+    const refreshedUser=await sbCurrentUser();
+    await activateCloudUser(refreshedUser||user,null);
+    recoveryUser=null;msg='';view='app';pg='home';
+    save();renderAppOrAuth();greetThen();
+    toast(tr()?'Şifren güncellendi.':'Your password has been updated.');
+  }catch(err){
+    msg=(tr()?'Şifre güncellenemedi: ':'Could not update password: ')+String(err.message||err);
+    renderAppOrAuth();
+  }
+}
+async function resendSignupConfirmation(){
+  const pending=readJson(PENDING_SIGNUP_KEY)||{};
+  const email=String(pending.email||loginDat.e||'').trim().toLowerCase();
+  if(!email){msg=tr()?'Doğrulanacak e-posta bulunamadı.':'No pending email address was found.';return renderAppOrAuth()}
+  try{
+    await sbResendSignup(email);
+    toast(tr()?'Doğrulama e-postası yeniden gönderildi.':'Confirmation email resent.');
+  }catch(err){
+    msg=(tr()?'E-posta gönderilemedi: ':'Could not resend email: ')+String(err.message||err);
+    renderAppOrAuth();
+  }
+}
+
+const NAV=NAV_KEYS;
+function closeMiniCal(){const el=$('#mini-cal');if(el)el.style.display='none';const bd=$('#mini-backdrop');if(bd)bd.hidden=true}
+function placeMiniCal(){
+  const el=$('#mini-cal'),trig=$('#top-date-trigger');if(!el||!trig)return;
+  el.style.display='block';
+  const r=trig.getBoundingClientRect(),w=el.offsetWidth,h=el.offsetHeight,vw=innerWidth,vh=innerHeight,m=8;
+  let left=Math.min(Math.max(m,r.right-w),vw-w-m);
+  let top=r.bottom+8;
+  if(top+h>vh-m&&r.top-h-8>m)top=Math.max(m,r.top-h-8);
+  if(top+h>vh-m)top=Math.max(m,vh-h-m);
+  el.style.left=Math.round(left)+'px';el.style.top=Math.round(top)+'px';
+  el.style.animation='none';void el.offsetWidth;el.style.animation='';
+}
+function toggleMiniCal(e){
+  if(e){e.stopPropagation();e.preventDefault()}
+  const el=$('#mini-cal');if(!el)return;
+  if(el.style.display==='block'){closeMiniCal();return}
+  let bd=$('#mini-backdrop');
+  if(!bd){bd=document.createElement('div');bd.id='mini-backdrop';bd.onclick=ev=>{ev.stopPropagation();closeMiniCal()};document.body.appendChild(bd)}
+  bd.hidden=false;
+  placeMiniCal();
+}
+window.addEventListener('resize',()=>{const el=$('#mini-cal');if(el&&el.style.display==='block')placeMiniCal()});
+window.addEventListener('scroll',()=>{const el=$('#mini-cal');if(el&&el.style.display==='block')placeMiniCal()},true);
+/* header'daki tarih (sag ust) = 10.11: tiklaninca tum arayuzde acik bej tema */
+/* 10.11 (header sag ust tarih): sayinin uzerine gelince veya tiklaninca acik bej.
+   Tiklamada takvim ACIK kalir (arkada birakilmaz); sadece tiklanan sayi ve tum arayuz bej olur. */
+let beigeBusy=false;
+function miniClick(e,k){
+  if(e){e.stopPropagation();e.preventDefault()}
+  if(beigeBusy)return;beigeBusy=true;setTimeout(()=>beigeBusy=false,420);
+  const grid=$('#mini-cal');
+  if(!grid||grid.style.display!=='block')toggleMiniCal();
+  const el=grid?[...grid.querySelectorAll('.mini-dot')].find(x=>x.title===fmt(k)):null;
+  DB.beige=!DB.beige;applyTheme();save();
+  document.querySelectorAll('.dot').forEach(d=>{d.classList.add('lit');setTimeout(()=>d.classList.remove('lit'),650)});
+  if(el){el.classList.remove('lit');void el.offsetWidth;el.classList.add('lit');setTimeout(()=>el.classList.remove('lit'),900)}
+  toast(DB.beige?t('beigeOn'):t('beigeOff'));
+  if(A&&document.querySelector('aside')){shell();if(pg==='pc')P.pc()}
+  const g=$('#mini-cal');if(g){g.style.display='block';placeMiniCal()}
+  const again=g?[...g.querySelectorAll('.mini-dot')].find(x=>x.title===fmt(k)):null;
+  if(again){again.classList.add('lit');setTimeout(()=>again.classList.remove('lit'),900)}
+}
+function fadeDot(el,on){
+  if(!el||!el.classList)return;
+  if(on)el.classList.add('lit');else el.classList.remove('lit');
+}
+window.addEventListener('click',e=>{const mc=$('#mini-cal'),t=$('#top-date-trigger');if(mc&&mc.style.display==='block'&&t&&!t.contains(e.target)&&!mc.contains(e.target))closeMiniCal()});
+function confirmLogout(){
+  openModal('logout-modal',`<div style="text-align:center"><h2>${t('logout')}</h2><p class="mut">${t('logoutQ')}</p><div class="row" style="justify-content:center;margin-top:1.2rem"><button onclick="closeModal('logout-modal');goLogin()">${t('yes')}</button><button class="g" onclick="closeModal('logout-modal')">${t('no')}</button></div></div>`);
+}
+
+function shell(){
+  roll();
+  const L=lvl();document.documentElement.className='lv'+Math.min(L,4);
+  const n=new Date(),y=n.getFullYear(),mo=n.getMonth(),days=new Date(y,mo+1,0).getDate();
+  let mc='';
+  for(let d=1;d<=days;d++){const k=`${y}-${pad(mo+1)}-${pad(d)}`,its=items(k),future=k>today();
+    let cls=future?'future':(dayFog(k)?'fog':'');
+    if(!future&&its.length>0)cls=its.every(x=>x.done)?'ok':'miss-dot';
+    if(hasNote(k))cls+=' note';
+    mc+=`<button class="mini-dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="miniClick(event,'${k}')"><span>${d}</span></button>`}
+  const keepAside=document.querySelector('#nav-aside'),firstShell=!document.querySelector('.shell aside');
+  $('#app').innerHTML=`<header class="top"><b class="top-brand" role="button" tabindex="0" title="${tr()?'Giriş ekranı':'Sign-in screen'}" onclick="headerHome(this)">Improvin' your day.</b><span id="top-date-trigger" role="button" tabindex="0" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="toggleMiniCal(event)" title="${t('calendar')}"><span>${fmt(today())}</span> ▾${DB.beige?'<small>bej</small>':''}</span><div id="mini-cal" class="mini-popup"><div style="font-family:var(--fs);font-weight:700;color:var(--acc);margin-bottom:.4rem">${monthName(mo)} ${y}</div><div class="mini-cal-grid">${mc}</div><p class="mut" style="font-size:.72rem;margin:.6rem 0 0">${tr()?'Bir güne tıkla: açık bej görünümü aç/kapat.':'Click a day to toggle the light beige look.'}</p></div></header><div class="shell"><aside class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="goTo('app','set')"><small>${tr()?'Hoş geldin,':'Welcome,'}</small>${esc(A.nick)}</div>${NAV.map(([k])=>k=='logout'?`<a role="button" tabindex="0" onclick="confirmLogout()">${navLabel('logout')}</a>`:`<a role="button" tabindex="0" data-k="${k}" class="${pg==k?'on':''}" ${pg==k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button id="back-welcome" class="ft-link" onclick="goHome()"><span aria-hidden="true">←</span> ${t('backWelcome')}</button><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  if(pg!=='pomo'||!pm.run)document.title=TITLE;
+  renderPage();
+  if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),700)}
+  const mc0=$('#mini-cal');if(mc0&&mc0.parentElement!==document.body)document.body.appendChild(mc0);
+}
+function renderPage(){const mn=$('#mn');if(mn){mn.classList.remove('an');void mn.offsetWidth;mn.classList.add('an')}try{(P[pg]||P.home)()}catch(e){try{console.warn(e);if(pg==='todo'){A.tasks=[];A.backlog=A.backlog||[];fixTodoData();P.todo()}else if(mn)mn.innerHTML='<div class="card"><p>'+(tr()?'Sayfa yüklenemedi, tekrar dene.':'Page failed to load, try again.')+'</p></div>'}catch(_){}}}
+setInterval(()=>{if(A&&A.day!==today())shell()},60000);
+
+const P={};const M=h=>$('#mn').innerHTML=h;
+P.home=()=>{
+  const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length,g=7-succ()%7;
+  const pr=A.projects.map((p,i)=>{const d=dd(today(),p.d);return`<div class="task"><span>${esc(p.n)} — ${d>0?d+(d==1?(tr()?' gün kaldı':' day left'):(tr()?' gün kaldı':' days left')):d==0?(tr()?'son gün bugün!':'last day today!'):Math.abs(d)+(tr()?' gün gecikti':' days overdue')}</span><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`}).join('');
+  M(`<div class="card"><div class="mut" style="margin-bottom:.3rem">${t('quoteOfTheDay')}</div><h2>“${q}”</h2></div><div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut" style="margin:.6rem 0 0;font-size:.85rem">${t('everyDayCounts')}</p></div><div class="card"><h2>${t('level')} ${lvl()}</h2><p class="mut">${g} ${t('successDays')}</p><div class="bar"><i style="width:${(7-g)/7*100}%"></i></div></div><div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<div class="row" style="margin-top:.6rem"><input id="pn" maxlength="40" placeholder="${t('projectName')}" oninput="this.value=this.value.replace(/[^${LETTERS} ]/g,'')"><input id="pd" type="date" style="max-width:11rem" min="${today()}"><button onclick="addProj()">${t('add')}</button></div></div>`);
+};
+function addProj(){const n=$('#pn').value.trim(),d=$('#pd').value;if(n&&d){A.projects.push({n,d});save();P.home()}}
+
+/* eski/bozuk kayitlar (telefonda eski surumden kalan veri) To-do'yu cokertmesin */
+function fixTodoData(){
+  const txt=x=>typeof x==='string'?x:(x&&typeof x==='object'?String(x.t||x.text||x.title||''):String(x==null?'':x));
+  if(!Array.isArray(A.tasks))A.tasks=A.tasks&&typeof A.tasks==='object'?Object.values(A.tasks):[];
+  A.tasks=A.tasks.filter(x=>x!=null).map(x=>typeof x==='object'?{...x,t:txt(x),s:(x.s==='done'||x.s==='miss')?x.s:(x.done?'done':'')}:{t:txt(x),s:''}).filter(x=>x.t);
+  if(!Array.isArray(A.backlog))A.backlog=A.backlog&&typeof A.backlog==='object'?Object.values(A.backlog):[];
+  A.backlog=A.backlog.map(txt).filter(Boolean).slice(-10);
+  if(!A.hist||typeof A.hist!=='object')A.hist={};
+}
+P.todo=()=>{
+  try{fixTodoData()}catch(e){A.tasks=[];A.backlog=[]}
+  const bl=A.backlog.map((bt,i)=>`<div class="task"><span>${esc(bt)}</span><button class="g s" onclick="fromBack(${i})">${t('addToToday')}</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">${t('delete')}</button></div>`).join('');
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">'+t('addTask')+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" placeholder="${t('newTask')}" onkeydown="event.key=='Enter'&&addT()"><button onclick="addT()">${t('add')}</button></div></div><div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2><p class="mut">${tr()?'Yapılmadı olarak işaretlediğin görevler burada birikir; 10\'u geçince en eski silinir.':'Tasks you miss collect here; past 10, the oldest is deleted.'}</p>${bl}</div>`);
+};
+const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}"><span>${esc(x.t)}</span><button class="ck ${x.s=='done'?'on':''}" aria-label="${t('done')}" title="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s=='miss'?'on':''}" aria-label="${t('notDone')}" title="${t('notDone')}" onclick="mk(${i},'miss')">✕</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
+function fromBack(i){A.tasks.push({t:A.backlog[i],s:''});A.backlog.splice(i,1);save();P.todo()}
+function delT(i){A.tasks.splice(i,1);save();P.todo()}
+function addT(){const v=$('#nt').value.trim();if(v){A.tasks.push({t:v,s:''});save();P.todo()}}
+function mk(i,s){const x=A.tasks[i];x.s=x.s===s?'':s;save();$('#t'+i).outerHTML=tk(x,i);if(x.s==='miss'){const e=$('#t'+i);e.classList.add('shake')}}
+
+/* sis: tamamlanmamis gecmis gunler */
+function dayFog(k){if(!A||!A.fog)return false;if(k>=today())return false;const its=items(k);return !(its.length>0&&its.every(x=>x.done))}
+function hasNote(k){return !!(A.future&&A.future[k])}
+function openDay(k){
+  selDay=k;
+  const its=items(k),note=(A.future&&A.future[k])||'',future=k>today();
+  openModal('day-modal',`<h2>${fmt(k)}${future?' · '+t('futureNotes'):''}</h2>${its.length?its.map(x=>`<div class="task ${x.done?'done':'miss'}"><span>${esc(x.t)}</span><b>${x.done?'✓ '+t('done'):'✕ '+t('notDone')}</b></div>`).join(''):'<p class="mut">'+t('noRecords')+'</p>'}
+<div style="margin-top:1rem"><h3>${t('yourNote')}</h3><textarea id="dn" rows="3" maxlength="500" placeholder="${t('notePlaceholder')}">${esc(note)}</textarea><div class="row" style="justify-content:flex-end"><button class="g" onclick="closeModal('day-modal')">${t('cancel')}</button><button onclick="saveNote('${k}')">${t('save')}</button></div></div>`);
+}
+function saveNote(k){const v=($('#dn').value||'').trim().slice(0,500);if(!A.future)A.future={};if(v)A.future[k]=v;else delete A.future[k];save();closeModal('day-modal');toast(t('noteSaved'));P.pc()}
+P.pc=()=>{
+  const n=new Date(),mn=(2026-n.getFullYear())*12+10-n.getMonth();
+  if(calOff<mn)calOff=mn;
+  const base=new Date(n.getFullYear(),n.getMonth()+calOff,1),y=base.getFullYear(),mo=base.getMonth(),days=new Date(y,mo+1,0).getDate();
+  let c='';
+  for(let d=1;d<=days;d++){
+    const k=`${y}-${pad(mo+1)}-${pad(d)}`,its=items(k),future=k>today();
+    let cls=future?'future':(dayFog(k)?'fog':'');
+    if(!future&&its.length>0)cls=its.every(x=>x.done)?'ok':'miss-dot';
+    if(hasNote(k))cls+=' note';
+    const dp=(!future&&its.length)?Math.round(its.filter(x=>x.done).length/its.length*100):null;
+    c+=`<button class="dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}${dp!==null?' — %'+dp:''}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" onclick="openDay('${k}')"><small>${dayName(new Date(y,mo,d).getDay())}</small><span>${d}</span><em class="dpct">${dp!==null?'%'+dp:'&nbsp;'}</em></button>`;
+  }
+  const monthKey=`${y}-${pad(mo+1)}`;
+  const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<div class="task"><span><b>${fmt(k)}</b> — ${esc(A.future[k])}</span><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div>`).join('');
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();P.pc()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button><button class="g s" onclick="P.pc()">${t('calendar')}</button></div></div><div class="card"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p>${noteList||'<p class="mut">'+t('noNote')+'</p>'}<div class="row" style="margin-top:.6rem"><input id="fnd" type="date" style="max-width:11rem"><button onclick="newNote()">${t('addFutureNote')}</button></div></div>`);
+};
+function newNote(){const d=$('#fnd').value;if(!d){toast(tr()?'Bir tarih seç.':'Pick a date.');return}openDay(d)}
+function delNote(k){delete A.future[k];save();P.pc()}
+function st(a,b){let t=0,d=0,by={};for(let x=a;x<=b;x=addD(x,1)){items(x).forEach(i=>{t++;by[i.t]=by[i.t]||[0,0];by[i.t][1]++;if(i.done){d++;by[i.t][0]++}})}return{t,d,p:t?Math.round(d/t*100):0,by}}
+const qb=(k,arr,ro)=>arr.map((x,i)=>`<label>${esc(x.q)}</label><div class="qa"><textarea rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this)">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i})">${t('delete')}</button>`}</div><div class="qcap mut">${x.a.length}/400</div>`).join('');
+function qa(k,i,el){A.qs[k][i].a=el.value.slice(0,400);save();el.parentElement.nextElementSibling.textContent=el.value.length+'/400'}
+function delQ(k,i){A.qs[k].splice(i,1);save();P.rep()}
+function addRandQ(k){const R=rqFor();A.qs[k].push({q:R[Math.floor(Math.random()*R.length)],a:''});save();P.rep()}
+function addQ(k){const e=$('#nq-'+k),v=e.value.trim().slice(0,150);if(v){A.qs[k].push({q:v,a:''});save();P.rep()}}
+function lockQ(k,b){if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent=tr()?'Emin misin? Bu işlem geri alınamaz':'Are you sure? This cannot be undone';return}A.ql[k]=1;save();P.rep()}
+
+function repCard(title,per,a,b,pa,pb,key,nk,defs){
+  const td=today();
+  if(td<b){
+    const tot=dd(a,b)+1,pass=dd(a,td)+1;
+    return`<div class="card"><h2>🔒 ${title}</h2><p class="mut">${t('opensOn')} ${fmt(b)} — ${dd(td,b)} ${t('daysLeft')}</p><div class="bar"><i style="width:${Math.min(100,pass/tot*100)}%"></i></div></div>`;
+  }
+  if(!A.qs[nk])A.qs[nk]=defs.map(q=>({q,a:''}));
+  const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p,cur=A.qs[key]||[],ro=!!A.ql[key];
+  const rows=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
+  return`<div class="card"><h2>${title}</h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}
+<h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3>${cur.length?qb(key,cur,ro)+(ro?'<p class="mut">'+t('answersLocked')+'</p>':`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
+<h3 style="margin-top:1.2rem">${tr()?'Sonraki':'Next'} ${per}</h3>${qb(nk,A.qs[nk],false)}<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="${t('addOwnQuestion')}"><button class="s" onclick="addQ('${nk}')">${t('addQuestion')}</button><button class="g s" onclick="addRandQ('${nk}')">${t('randomQuestion')}</button></div></div>`;
+}
+/* ---- gecmis raporlar: kisa ozet (haftalik / aylik) ---- */
+function briefRow(label,val,sub){
+  return`<div class="task"><span><b>${label}</b>${sub?`<small class="mut" style="display:block;font-size:.78rem">${sub}</small>`:''}</span><b style="color:var(--acc)">${val}</b></div>`;
+}
+function historySection(){
+  const td=today();
+  // haftalik ozet: bu hafta + gecen hafta
+  const wNow=st(mon(td),td),wPrev=st(addD(mon(td),-7),addD(mon(td),-1));
+  const wDiff=wNow.p-wPrev.p;
+  const wTop=Object.entries(wNow.by).sort((a,b)=>b[1][1]-a[1][1])[0];
+  // aylik ozet
+  const x=new Date();
+  const ma=D(new Date(x.getFullYear(),x.getMonth(),1)),mb=D(new Date(x.getFullYear(),x.getMonth()+1,0));
+  const pma=D(new Date(x.getFullYear(),x.getMonth()-1,1)),pmb=D(new Date(x.getFullYear(),x.getMonth(),0));
+  const mNow=st(ma,mb),mPrev=st(pma,pmb),mDiff=mNow.p-mPrev.p;
+  const weekDone=dd(mon(td),td)+1,monthDone=dd(ma,td)+1;
+  return`<div class="card"><h2>${tr()?'Geçmiş özet':'Past summary'}</h2>
+<div style="margin-top:.6rem"><h3 style="margin:.2rem 0 .4rem">${tr()?'Bu hafta':'This week'} <span class="mut" style="font-size:.8rem">${fmt(mon(td))} – ${fmt(td)}</span></h3>
+${briefRow(tr()?'Tamamlanan':'Completed',wNow.d+'/'+wNow.t+' · %'+wNow.p,(tr()?'Geçen hafta':'Last week')+' %'+wPrev.p+' ('+(wDiff>=0?'+':'')+wDiff+')')}
+${wTop?briefRow(tr()?'En çok yaptığın':'Most frequent',esc(wTop[0]).slice(0,28),wTop[1][0]+'/'+wTop[1][1]):''}
+${briefRow(tr()?'Kayıtlı gün':'Days recorded',weekDone+'/7')}</div>
+<div style="margin-top:1.1rem"><h3 style="margin:.2rem 0 .4rem">${tr()?'Bu ay':'This month'} <span class="mut" style="font-size:.8rem">${monthName(x.getMonth())} ${x.getFullYear()}</span></h3>
+${briefRow(tr()?'Tamamlanan':'Completed',mNow.d+'/'+mNow.t+' · %'+mNow.p,(tr()?'Geçen ay':'Last month')+' %'+mPrev.p+' ('+(mDiff>=0?'+':'')+mDiff+')')}
+${briefRow(tr()?'Kayıtlı gün':'Days recorded',monthDone+'/'+(dd(ma,mb)+1))}</div></div>`;
+}
+P.rep=()=>{
+  const td=today(),wa=mon(td),wb=addD(wa,6),x=new Date();
+  const ma=D(new Date(x.getFullYear(),x.getMonth(),1)),mb=D(new Date(x.getFullYear(),x.getMonth()+1,0)),pma=D(new Date(x.getFullYear(),x.getMonth()-1,1)),pmb=D(new Date(x.getFullYear(),x.getMonth(),0));
+  const mNext=D(new Date(x.getFullYear(),x.getMonth()+1,1)).slice(0,7);
+  M(repCard(t('weeklyReport'),tr()?'hafta':'week',wa,wb,addD(wa,-7),addD(wa,-1),wa,addD(wa,7),defQ('week'))+repCard(t('monthlyReport'),tr()?'ay':'month',ma,mb,pma,pmb,ma.slice(0,7),mNext,defQ('month'))+historySection());
+};
+
+let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};
+function persistPomodoroState(){
+  if(!A)return;
+  A.pomo={
+    w:pm.w,b:pm.b,ph:pm.ph,
+    left:pm.run?Math.max(0,Math.ceil((pm.end-Date.now())/1000)):pm.left,
+    run:!!pm.run,end:pm.run?pm.end:0,n:pm.n,lg:pm.lg,updatedAt:Date.now()
+  };
+  save();
+}
+function restorePomodoroState(){
+  if(pm.iv)clearInterval(pm.iv);
+  pm.iv=0;
+  const saved=A&&A.pomo;
+  const first=(A&&Array.isArray(A.presets)&&A.presets.length)?A.presets[0]:{w:25,b:5};
+  const defaultW=Number(first.w)>0&&Number(first.w)<=600?Number(first.w):25;
+  const defaultB=Number(first.b)>0&&Number(first.b)<=600?Number(first.b):5;
+  if(!saved||typeof saved!=='object'){
+    pm={...pm,w:defaultW,b:defaultB,ph:'w',left:defaultW*60,run:0,end:0,n:0,lg:0,iv:0};
+    return;
+  }
+  const w=Number(saved.w),b=Number(saved.b),left=Number(saved.left),end=Number(saved.end);
+  pm={...pm,
+    w:Number.isFinite(w)&&w>0&&w<=600?w:defaultW,
+    b:Number.isFinite(b)&&b>0&&b<=600?b:defaultB,
+    ph:saved.ph==='b'?'b':'w',
+    left:Number.isFinite(left)&&left>=0?left:defaultW*60,
+    run:saved.run?1:0,
+    end:Number.isFinite(end)&&end>0?end:0,
+    n:Number.isFinite(Number(saved.n))?Math.max(0,Math.floor(Number(saved.n))):0,
+    lg:saved.lg?1:0,iv:0
+  };
+  if(pm.run&&pm.end){
+    pTick(true);
+    if(pm.run)pm.iv=setInterval(pTick,500);
+  }else{
+    pm.run=0;pm.end=0;
+  }
+}
+const fmtDuration=m=>{if(m<60)return m+' '+t('minutes');const h=Math.floor(m/60),r=m%60;return r===0?h+(h==1?(tr()?' saat':' hour'):(tr()?' saat':' hours')):h+(tr()?' sa ':' h ')+r+' '+t('minutes')};
+const ft=s=>pad(Math.floor(s/60))+':'+pad(s%60);
+/* kronometre: milisaniye hassasiyetinde HH:MM:SS.mmm */
+/* kronometre: toplam 3 hane (S.dss / SS.dss / M:SS.dss) - bastaki sifir yok */
+const fms=ms=>{const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000),s=Math.floor(ms%60000/1000),x=Math.floor((ms%1000)/10);const pad2=n=>String(n).padStart(2,'0');if(h)return h+':'+pad2(m)+':'+pad2(s)+'.'+pad2(x);if(m)return m+':'+pad2(s)+'.'+pad2(x);return s+'.'+pad2(x)};
+const clk=ms=>{const d=new Date(Date.now()+ms);return pad(d.getHours())+':'+pad(d.getMinutes())};
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();o.connect(c.destination);o.start();o.stop(c.currentTime+.35)}catch(e){}}
+P.pomo=()=>{
+  editIdx=-1;
+  const pr=A.presets.map((p,i)=>`<div class="tag ${pm.w==p.w&&pm.b==p.b?'on':''}"><span role="button" tabindex="0" style="cursor:pointer;flex:1" onclick="setP(${p.w},${p.b})"><b>${fmtDuration(p.w)}</b> ${t('focus')} / <b>${fmtDuration(p.b)}</b> ${t('break')}</span><span class="row" style="gap:.3rem"><button class="g s" onclick="editP(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s d" onclick="delP(${i})">${t('delete')}</button></span></div>`).join('');
+  M(`<div class="card"><div class="mut" style="text-align:center" id="pl"></div><div class="tm" id="pt">${ft(pm.left)}</div><div class="row" style="justify-content:center"><button onclick="pS()">${t('startPause')}</button><button class="g" onclick="pR()">${t('reset')}</button></div><p id="pi" class="mut" style="text-align:center"></p></div><div class="card"><h2>${t('focusAndBreak')}</h2>${pr||'<p class="mut">'+t('addLength')+'</p>'}<div class="row" style="margin-top:.7rem"><input id="cw" type="number" inputmode="numeric" min="1" max="600" placeholder="${t('focus')} (${t('minutes')})"><input id="cb" type="number" inputmode="numeric" min="1" max="600" placeholder="${t('break')} (${t('minutes')})"><button onclick="addP()">${tr()?'Ekle / Güncelle':'Add / Update'}</button></div><p class="mut" style="font-size:.85rem">${t('afterFive')}</p></div><div class="card"><h2>${t('stopwatch')}</h2><div class="tm" id="sw">${fms(pm.swT*1000)}</div><div class="row" style="justify-content:center"><button onclick="swS()">${t('startStop')}</button><button class="g" onclick="swR()">${t('reset')}</button></div></div>`);
+  pi();
+};
+function pi(){
+  const e=$('#pi'),l=$('#pl');if(!e)return;
+  l.textContent=pm.ph==='w'?`${t('session')} ${pm.n%5+1}/5 · ${fmtDuration(pm.w)}`:(pm.lg?t('longBreak'):t('break'));
+  e.textContent=pm.run?`${t('pomoEnds')}: ${clk(pm.left*1000)}`:(pm.w>60&&pm.ph==='w'?`${pm.w} ${t('minutes')} · ${t('alreadyEnds')} ${clk(pm.left*1000)}`:'');
+}
+function setP(w,b){clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,end:0,n:0,lg:0,iv:0};persistPomodoroState();document.title=TITLE;P.pomo()}
+let editIdx=-1;
+function editP(i){const p=A.presets[i];$('#cw').value=p.w;$('#cb').value=p.b;editIdx=i}
+function delP(i){A.presets.splice(i,1);save();P.pomo()}
+function addP(){
+  const w=Math.round(+$('#cw').value),b=Math.round(+$('#cb').value);
+  if(w>0&&b>0&&w<=600&&b<=600){if(editIdx>=0){A.presets[editIdx]={w,b};editIdx=-1}else A.presets.push({w,b});save();setP(w,b)}
+}
+function pTick(silent=false){
+  if(!pm.run||!pm.end)return;
+  const now=Date.now();let transitions=0,changed=false;
+  while(pm.end<=now&&transitions<1000000){
+    if(!silent&&transitions===0)beep();
+    let nextMinutes;
+    if(pm.ph==='w'){
+      pm.n++;pm.ph='b';pm.lg=pm.n%5===0?1:0;
+      const breaks=Array.isArray(A&&A.presets)?A.presets.map(p=>Number(p.b)).filter(v=>Number.isFinite(v)&&v>0):[];
+      nextMinutes=pm.lg?Math.max(pm.b,...breaks):pm.b;
+    }else{
+      pm.ph='w';pm.lg=0;nextMinutes=pm.w;
+    }
+    pm.end+=Math.max(1,nextMinutes)*60000;
+    transitions++;changed=true;
+  }
+  if(pm.end<=now)pm.end=now+1000;
+  pm.left=Math.max(0,Math.ceil((pm.end-now)/1000));
+  const t2=$('#pt');if(t2)t2.textContent=ft(pm.left);
+  if(A)document.title=ft(pm.left)+' · '+TITLE;
+  if(changed)persistPomodoroState();
+  pi();
+}
+function pS(){
+  if(pm.run){
+    pTick(true);
+    clearInterval(pm.iv);pm.iv=0;pm.run=0;pm.end=0;
+  }else{
+    pm.run=1;pm.end=Date.now()+Math.max(0,pm.left)*1000;
+    clearInterval(pm.iv);pm.iv=setInterval(pTick,500);
+  }
+  persistPomodoroState();pi();
+}
+function pR(){
+  clearInterval(pm.iv);
+  pm={...pm,run:0,ph:'w',left:pm.w*60,end:0,n:0,lg:0,iv:0};
+  persistPomodoroState();document.title=TITLE;P.pomo();
+}
+function swS(){
+  if(pm.sw){clearInterval(pm.swI);pm.sw=0;return}
+  pm.sw=1;const start=Date.now()-pm.swT*1000;
+  pm.swI=setInterval(()=>{pm.swT=(Date.now()-start)/1000;const e=$('#sw');if(e)e.textContent=fms(Math.round(pm.swT*1000))},16);
+}
+function swR(){clearInterval(pm.swI);pm.sw=0;pm.swT=0;P.pomo()}
+
+const left=k=>{const n=Date.now();A[k]=(A[k]||[]).filter(t=>n-t<15*864e5);return 5-A[k].length};
+P.set=()=>{
+  const keys=Object.keys(DB.accounts);
+  const ac=keys.map((u,i)=>`<span class="tag ${DB.accounts[u]===A?'on':''}"><span>${esc(u)}</span>${DB.accounts[u]===A?'<span class="mut">'+t('active')+'</span>':`<button class="g s" onclick="switchAcc(${i})">${t('switch')}</button>`}</span>`).join('');
+  M(`${m()}<div class="card"><h2>${t('lang')}</h2><div class="langbar" style="justify-content:flex-start">${langBtns()}</div><p class="mut" style="font-size:.85rem">${t('quoteLangNote')}</p></div>
+<div class="card"><h2>${t('account')}</h2><label>${t('username')} <span class="mut">(${tr()?'15 günde 5 değişiklik — kalan':'5 changes per 15 days —'} ${left('uc')})</span></label><div class="row"><input id="su" maxlength="20" value="${esc(A.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'')"><button onclick="chg('u')">${t('change')}</button></div><label style="display:block;margin-top:.8rem">${t('displayName')} <span class="mut">(${left('nc')})</span></label><div class="row"><input id="sn" maxlength="30" value="${esc(A.nick)}"><button onclick="chg('n')">${t('change')}</button></div><label style="display:block;margin-top:.8rem">${t('bio')}</label><textarea id="sb" rows="2" maxlength="160" onchange="A.bio=this.value;save()">${esc(A.bio)}</textarea></div>
+${A.authUid?`<div class="card"><h2>${t('email')}</h2><label>${tr()?'Doğrulanmış e-posta / Verified email':'Verified email'}</label><p class="mut" style="font-size:.82rem">${esc(A.email||A.mail||'')}</p><label>${tr()?'Yeni e-posta adresi':'New email address'}</label><div class="row" style="margin-bottom:.6rem"><input id="semail" type="email" autocomplete="email" value="${esc(A.email||A.mail||'')}"><button onclick="vSend('email')">${tr()?'E-postayı değiştir':'Change email'}</button></div><div id="vz" aria-live="polite"></div><p class="mut" style="font-size:.8rem">${tr()?'Yeni adresi onaylaman gerekir. Güvenli e-posta değişimi açıksa eski adresine de onay gönderilir.':'You must confirm the new address. Secure email change may also require approval at your old address.'}</p></div>`:`<div class="card"><h2>${t('email')}</h2><p class="mut" style="font-size:.85rem">${tr()?'Bu hesap yalnızca bu cihazda kayıtlı. E-posta doğrulamak için önce mevcut verilerinle bir bulut hesabı oluşturmalısın. Görevlerin ve notların korunur.':'This account is stored on this device only. Create a cloud account using your existing data to verify an email. Tasks and notes will be kept.'}</p><label>${tr()?'Doğrulanacak e-posta':'Email to verify'}</label><input id="semail" type="email" autocomplete="email" value="${esc(A.email||A.mail||'')}"><label>${tr()?'Mevcut yerel şifre':'Current local password'}</label><input id="migrate-old-pass" type="password" autocomplete="current-password"><label>${tr()?'Bulut şifresi (en az 8 karakter)':'Cloud password (at least 8 characters)'}</label><input id="migrate-new-pass" type="password" autocomplete="new-password"><div class="row" style="margin-top:.7rem"><button onclick="migrateLocalAccount()">${tr()?'Buluta taşı ve doğrulama gönder':'Move to cloud & send verification'}</button></div><p class="mut" style="font-size:.8rem">${tr()?'E-posta onaylanana kadar hesabın bu cihazda kullanılabilir.':'Your local account remains usable until you confirm the email.'}</p></div>`}
+<div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>
+<div class="card"><h2>${t('theme')}</h2>${themePick(false).replace('themebar','theme-in').replace('margin:0 0 .8rem','margin:0')}</div></div>
+<div class="card"><h2>${t('accounts')}</h2>${ac}<div style="margin-top:.6rem"><button class="g" onclick="A0=A;A=null;goTo('setup','home')">${t('addAccount')}</button></div></div>
+<div class="card"><h2>${t('resetSystem')}</h2><p class="mut">${tr()?'Görevler, geçmiş, ilerleme, projeler, rapor cevapları ve süreler silinir. Hesap bilgilerin kalır. Onaylamak için şifreni gir.':'Tasks, history, progress, projects, report answers and timer lengths are erased. Your account details stay. Enter your password to confirm.'}</p><input id="rp" type="password" placeholder="${t('password')}" autocomplete="current-password"><button class="d" style="background:var(--no);color:#fff" onclick="resetSys()">${t('reset')}</button></div>
+<div class="card"><h2>${t('deleteAccount')}</h2><p class="mut">${tr()?'Hesabın ve tüm verilerin bu cihazdan kalıcı olarak silinir.':'Your account and all data are permanently deleted from this device.'}</p><input id="dp" type="password" placeholder="${t('password')}" autocomplete="current-password"><button style="background:var(--no)" onclick="delAcc()">${t('deleteAccount')}</button></div>`);
+};
+function switchAcc(i){stopTimers();const k=Object.keys(DB.accounts)[i];A=null;loginDat={u:k,p:''};goTo('login','home')}
+/* oturum kapaninca sayac ve kronometre durur, sonraki kullaniciya gecmez */
+function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,end:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0};persistPomodoroState();document.title=TITLE}catch(e){}}
+function goLogin(){stopTimers();A=null;loginDat={u:'',p:''};goTo('login','home')}
+async function chg(k){
+  const key=k==='u'?'uc':'nc';
+  if(left(key)<=0){msg=tr()?'Son 15 gündeki 5 değişiklik hakkının tamamını kullandın.':'You have used all 5 changes in 15 days.';return P.set()}
+  const v=$(k==='u'?'#su':'#sn').value.trim();if(!v)return;
+  if(k==='u'){
+    if(!userRe.test(v)){msg=t('usernameRules');return P.set()}
+    const ex=findUser(v);if(ex&&ex!==A.u){msg=t('usernameTaken');return P.set()}
+    if(v===A.u)return;
+    if(A.authUid){
+      const previous=A.u;
+      try{
+        await cloudUserForActive();
+        await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:v}});
+        try{await sb('/auth/v1/user',{method:'PUT',body:{data:{username:v,nick:A.nick,bio:A.bio||''}}})}
+        catch(e){try{await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:previous}})}catch(_){}throw e}
+      }catch(e){msg=isUsernameCollision(e)?t('usernameTaken'):authErrorMessage(e,'username');return P.set()}
+    }
+    delete DB.accounts[A.u];A.u=v;DB.accounts[v]=A;
+  }else{
+    if(v===A.nick)return;
+    A.nick=v;
+    if(A.authUid){
+      try{await cloudUserForActive();await sb('/auth/v1/user',{method:'PUT',body:{data:{nick:v,username:A.u,bio:A.bio||''}}})}
+      catch(e){msg=authErrorMessage(e,'profile');return P.set()}
+    }
+  }
+  A[key].push(Date.now());DB.last=A.nick;DB.lastUser=A.u;save();
+  msg=`${t('saved')} ${left(key)}`+(tr()?' değişiklik hakkı kaldı.':' changes left.');shell();
+}
+async function vSend(k){
+  if(k!=='email'||!A)return;
+  if(!A.authUid){msg=tr()?'Önce aşağıdaki form ile hesabını buluta taşı.':'Move your local account to the cloud first.';return P.set()}
+  const v=String($('#semail')?.value||'').trim().toLowerCase();
+  if(!isValidEmail(v)){msg=t('emailInvalid');return P.set()}
+  if(localEmailTaken(v,A.u)){msg=tr()?'Bu e-posta bu cihazdaki başka bir hesapta kayıtlı.':'This email is used by another local account.';return P.set()}
+  try{
+    const user=await cloudUserForActive();
+    if(v===String(user.email||'').toLowerCase()){
+      msg=tr()?'Bu e-posta zaten hesabına bağlı. Başka bir adres yazarsan değiştirebilirsin.':'This is already your account email. Enter a different email to change it.';
+      return P.set();
+    }
+    await sb('/auth/v1/user',{method:'PUT',body:{email:v}});
+    const status=$('#vz');if(status)status.innerHTML=`<div class="note">${tr()?'E-posta değişikliği istendi. Yeni adresine gelen bağlantıyı aç. Güvenli e-posta değişimi açıksa eski adresindeki bağlantıyı da onayla.':'Email change requested. Open the link at your new address. If secure email change is enabled, confirm the old address too.'}</div>`;
+  }catch(err){
+    msg=authErrorMessage(err,'emailChange');P.set();
+  }
+}
+
+/* Yerel hesabi kaybetmeden dogrulama e-postali Supabase hesaba gecir. */
+async function migrateLocalAccount(){
+  if(!A||A.authUid)return;
+  const email=String($('#semail')?.value||'').trim().toLowerCase();
+  const oldPassword=$('#migrate-old-pass')?.value||'';
+  const cloudPassword=$('#migrate-new-pass')?.value||'';
+  if(!isValidEmail(email)){msg=t('emailInvalid');return P.set()}
+  if(localEmailTaken(email,A.u)){msg=tr()?'Bu e-posta bu cihazdaki başka bir hesapta zaten kayıtlı.':'This email is already used on this device.';return P.set()}
+  if(!oldPassword){msg=tr()?'Mevcut yerel şifreni gir.':'Enter your current local password.';return P.set()}
+  if(!await pwMatch(A,oldPassword)){msg=t('currentWrong');return P.set()}
+  const problem=pwOk(cloudPassword,A.u);
+  if(problem){msg=problem;return P.set()}
+  try{
+    if(!await sbUsernameAvailable(A.u)){msg=t('usernameTaken');return P.set()}
+    const j=await sbSignUp(A.u,cloudPassword,A.nick,email,A.bio||'');
+    const user=j.user||j;
+    if(user&&Array.isArray(user.identities)&&!user.identities.length){
+      msg=tr()?'Bu e-posta zaten kayıtlı. Yeni bir hesap oluşturmadan önce giriş yap veya şifreni sıfırla.':'This email is already registered. Sign in or reset your password instead.';
+      return P.set();
+    }
+    if(!user||!user.id)throw new Error('Missing signup user.');
+    setItem(PENDING_MIG_KEY,JSON.stringify({username:A.u,email,createdAt:Date.now()}));
+    if(j.access_token&&j.refresh_token){
+      sbSave({...j,user});await activateCloudUser(user,A);
+      setItem(PENDING_MIG_KEY,'');msg=tr()?'Hesabın buluta taşındı.':'Account moved to the cloud.';
+      return P.set();
+    }
+    msg=tr()?`Doğrulama bağlantısı ${email} adresine gönderildi. Gelen kutunu kontrol et. Hesabındaki kayıtlar doğrulamadan sonra buluta aktarılır.`:`Confirmation sent to ${email}. Check your inbox. Your account data will migrate when you verify.`;
+    P.set();
+  }catch(err){msg=isUsernameCollision(err)?t('usernameTaken'):authErrorMessage(err,'migration');P.set()}
+}
+async function chPw(){
+  const current=$('#op')?.value||'',next=$('#np')?.value||'';
+  const e=pwOk(next,A.u);if(e){msg=e;return P.set()}
+  if(A.authUid){
+    try{
+      if(!current){msg=tr()?'Mevcut şifreni gir.':'Enter your current password.';return P.set()}
+      await sbSignIn(A.email||A.mail,current);
+      await sbUpdatePassword(next);
+      msg=t('pwChanged');P.set();toast(t('saved'));return;
+    }catch(err){msg=tr()?'Şifre değiştirilemedi. Mevcut şifreni kontrol et.':'Password could not be changed. Check your current password.';return P.set()}
+  }
+  if(!await pwMatch(A,current)){msg=t('currentWrong');return P.set()}
+  await setPw(A,next);save();msg=t('pwChanged');P.set();
+}
+
+async function resetSys(){
+  const password=$('#rp')?.value||'';
+  if(A&&A.authUid){
+    try{if(!password)throw new Error('password required');await sbSignIn(A.email||A.mail,password)}
+    catch(e){msg=t('wrongPw');return P.set()}
+  }else if(!await pwMatch(A,password)){msg=t('wrongPw');return P.set()}
+  clearInterval(pm.iv);clearInterval(pm.swI);
+  const previous=A;
+  const a=newAcc(previous.u,previous.nick,previous.bio,previous.pw,previous.email,previous.phone);
+  a.ver=previous.ver;a.theme=previous.theme;a.nc=previous.nc;a.uc=previous.uc;a.fog=previous.fog;
+  if(previous.authUid){a.authUid=previous.authUid;a.email=previous.email;a.mail=previous.mail;a.pw=''}
+  a.future={};a.pctFrom=today();a.pomo=null;
+  DB.accounts[previous.u]=a;A=a;
+  pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,lg:0,iv:0,sw:0,swT:0,swI:0};
+  save();msg=t('systemReset');shell();
+}
+async function delAcc(){
+  if(A&&A.authUid){
+    msg=tr()?'Bulut hesabının kalıcı silinmesi için sunucu tarafında güvenli hesap silme işlevi henüz kurulmadı. Şimdilik bu düğme bulut hesabını silmez.':'Secure server-side deletion for cloud accounts has not been configured yet. This button will not delete your cloud account.';
+    return P.set();
+  }
+  if(!await pwMatch(A,$('#dp').value)){msg=t('wrongPw');return P.set()}
+  delete DB.accounts[A.u];A=null;DB.last='';DB.lastUser=Object.keys(DB.accounts)[0]||'';save();view='welcome';goTo('welcome','home');
+}
+/* ================= Supabase Auth + bulut senkron ================= */
+const SUPABASE_URL='https://flcfqwndqfmbritaywfb.supabase.co';
+const SUPABASE_KEY='sb_publishable_4QTEEc6tSYV2QtNhmeP6Iw_B3sM6dtm';
+const SITE_URL='https://badgalnurkan.vercel.app/';
+const CLOUD_KEY='b1cloud', SESS_KEY='b1sb', PENDING_SIGNUP_KEY='b1.pending.signup', PENDING_MIG_KEY='b1.pending.migration';
+let recoveryUser=null;
+const isValidEmail=e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(e||'').trim());
+const localEmailTaken=(e,exceptUser='')=>Object.keys(DB.accounts).some(u=>
+  u.toLowerCase()!==String(exceptUser).toLowerCase()
+  && String(DB.accounts[u].email||DB.accounts[u].mail||'').toLowerCase()===String(e).toLowerCase()
+);
+function setAvailabilityHint(id,message,problem=false){
+  const el=document.getElementById(id);
+  if(el){el.textContent=message;el.style.color=problem?'var(--no)':'var(--mut)'}
+}
+async function checkUsernameUI(){
+  const u=String($('#u')?.value||'').trim();if(!u||!userRe.test(u))return;
+  if(findUser(u)){setAvailabilityHint('user-status',t('usernameTaken'),true);return}
+  try{
+    const available=await sbUsernameAvailable(u);
+    if(String($('#u')?.value||'').trim()!==u)return;
+    setAvailabilityHint('user-status',available?(tr()?'Kullanıcı adı uygun.':'Username is available.'):t('usernameTaken'),!available);
+  }catch(e){setAvailabilityHint('user-status',authErrorMessage(e,'username'),true)}
+}
+function checkEmailUI(){
+  const email=String($('#e')?.value||'').trim().toLowerCase();
+  if(email&&localEmailTaken(email))setAvailabilityHint('email-status',tr()?'Bu e-posta bu cihazda zaten kullanılıyor.':'This email is already used on this device.',true);
+  else if(email&&!isValidEmail(email))setAvailabilityHint('email-status',t('emailInvalid'),true);
+  else setAvailabilityHint('email-status','');
+}
+function isUsernameCollision(e){
+  const text=String(e&&(e.code||'')||'')+' '+String(e&&(e.message||'')||'');
+  return /23505|iydu_usernames_case_insensitive_key|duplicate key.*username/i.test(text);
+}
+function isMissingSql(e){return /PGRST202|PGRST205|could not find the function|schema cache|404/.test(String(e?.code||'')+' '+String(e?.message||'')+' '+String(e?.status||''))}
+function authErrorMessage(err,where=''){
+  const raw=String(err?.message||err||'');const code=String(err?.code||'').toLowerCase();
+  if(isMissingSql(err))return tr()?'Supabase kullanıcı adı kontrolü henüz kurulmamış. Verilen SQL dosyasını SQL Editor’da çalıştır.':'Username verification is not installed. Run the provided SQL file in the Supabase SQL Editor.';
+  if(isUsernameCollision(err))return t('usernameTaken');
+  if(/email_exists|user_already_exists|email.*already.*registered|user already registered|already been registered/i.test(code+' '+raw))return tr()?'Bu e-posta adresi zaten kayıtlı. Giriş yap veya şifreni sıfırla.':'This email is already registered. Sign in or reset your password.';
+  if(/email_not_confirmed/i.test(code+' '+raw))return tr()?'Önce e-posta adresine gelen doğrulama bağlantısını aç.':'First open the verification link sent to your email.';
+  if(/invalid_credentials|invalid login credentials/i.test(code+' '+raw))return tr()?'E-posta veya şifre hatalı.':'Incorrect email or password.';
+  if(/email.*rate|rate.limit|too many requests|over.email.send.rate.limit/i.test(code+' '+raw))return tr()?'Çok sık e-posta istendi. Bir süre sonra yeniden dene.':'Too many email requests. Try again later.';
+  if(/invalid.*token|jwt expired|session.*expired/i.test(code+' '+raw))return tr()?'Oturum süresi doldu. E-posta ve şifrenle yeniden giriş yap.':'Your session has expired. Please sign in again.';
+  if(where==='emailChange'&&/email/i.test(raw)&&/unique|exists|taken/i.test(raw))return tr()?'Bu e-posta başka bir hesapta kayıtlı.':'This email is already assigned to another account.';
+  return (tr()?'İşlem tamamlanamadı: ':'Unable to complete: ')+raw;
+}
+async function sbUsernameAvailable(username){
+  const res=await fetch(SUPABASE_URL+'/rest/v1/rpc/iydu_username_available',{
+    method:'POST',headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({p_username:username})
+  });
+  let data=null;try{data=await res.json()}catch(e){}
+  if(!res.ok){const e=new Error(data?.message||data?.error||('HTTP '+res.status));e.code=data?.code;e.status=res.status;throw e}
+  return data===true;
+}
+async function cloudUserForActive(){
+  const session=sbSession();
+  if(!A||!A.authUid||!session||!session.access_token){throw new Error(tr()?'Bulut oturumu kapalı. E-posta ve şifrenle yeniden giriş yap.':'Cloud session is missing. Sign in again with your email and password.')}
+  const user=await sbCurrentUser();
+  if(!user||user.id!==A.authUid)throw new Error(tr()?'Bu hesap için bulut oturumu bulunamadı. Yeniden giriş yap.':'No matching cloud session. Please sign in again.');
+  if(!user.email_confirmed_at&&!user.confirmed_at)throw new Error(tr()?'Önce mevcut e-posta adresini doğrula.':'Verify your current email first.');
+  return user;
+}
+const cloud=()=>{try{return localStorage.getItem(CLOUD_KEY)!=='0'}catch(e){return true}};
+const sbSession=()=>{try{return JSON.parse(getItem(SESS_KEY)||'null')}catch(e){return null}};
+function sbSave(sess){
+  if(!sess||!sess.access_token)return;
+  const saved={
+    access_token:sess.access_token,
+    refresh_token:sess.refresh_token||'',
+    token_type:sess.token_type||'bearer',
+    expires_in:sess.expires_in||3600,
+    expires_at:sess.expires_at||Date.now()+Number(sess.expires_in||3600)*1000,
+    user:sess.user||null,
+    at:Date.now()
+  };
+  setItem(SESS_KEY,JSON.stringify(saved));
+}
+function sbClear(){try{setItem(SESS_KEY,'')}catch(e){}}
+const sbRedirect=()=>SITE_URL;
+/* REST isteği: 401 alınırsa refresh token ile bir kez yenile ve isteği tekrarla. */
+async function sb(path,opt,retry=true){
+  opt=opt||{};
+  const sess=sbSession();
+  const headers=Object.assign({'apikey':SUPABASE_KEY,'Content-Type':'application/json'},opt.headers||{});
+  if(sess&&sess.access_token&&!/^\/auth\/v1\/(signup|token|otp|resend|recover)(?:\?|$)/.test(path))headers['Authorization']='Bearer '+sess.access_token;
+  const response=await fetch(SUPABASE_URL+path,{method:opt.method||'GET',headers,body:opt.body!==undefined?JSON.stringify(opt.body):undefined});
+  let payload=null;try{payload=await response.json()}catch(e){}
+  if(response.status===401&&retry&&sess&&sess.refresh_token&&!/^\/auth\/v1\/token/.test(path)){
+    if(await sbRefresh())return sb(path,opt,false);
+  }
+  if(!response.ok){
+    const message=(payload&&(payload.msg||payload.message||payload.error_description||payload.error))||('HTTP '+response.status);
+    const error=new Error(message);error.status=response.status;error.code=payload&&payload.code;throw error;
+  }
+  return payload;
+}
+async function sbSignUp(username,password,nick,email,bio){
+  const url='/auth/v1/signup?redirect_to='+encodeURIComponent(sbRedirect());
+  return sb(url,{method:'POST',body:{email:String(email).trim().toLowerCase(),password,
+    data:{username,nick,bio:bio||''}}});
+}
+async function sbSignIn(email,password){
+  const j=await sb('/auth/v1/token?grant_type=password',{method:'POST',body:{email:String(email).trim().toLowerCase(),password}});
+  if(j&&j.access_token)sbSave(j);
+  return j;
+}
+async function sbRefresh(){
+  const session=sbSession();if(!session||!session.refresh_token)return false;
+  try{
+    const j=await sb('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:session.refresh_token}},false);
+    if(j&&j.access_token){sbSave(j);return true}
+  }catch(e){}
+  return false;
+}
+async function sbCurrentUser(){
+  const user=await sb('/auth/v1/user',{method:'GET'});
+  const session=sbSession();if(session&&session.access_token)sbSave({...session,user});
+  return user;
+}
+async function sbUpdatePassword(password){return await sb('/auth/v1/user',{method:'PUT',body:{password}})}
+async function sbRecover(email){
+  const url='/auth/v1/recover?redirect_to='+encodeURIComponent(sbRedirect());
+  return sb(url,{method:'POST',body:{email:String(email).trim().toLowerCase()}});
+}
+async function sbResendSignup(email){
+  const url='/auth/v1/resend?redirect_to='+encodeURIComponent(sbRedirect());
+  return sb(url,{method:'POST',body:{type:'signup',email:String(email).trim().toLowerCase()}});
+}
+async function activateCloudUser(user,fallbackAccount){
+  if(!user||!user.id||!user.email)throw new Error('Supabase user information is incomplete.');
+  const meta=user.user_metadata||{};
+  const email=String(user.email).toLowerCase();
+  const pending=readJson(PENDING_MIG_KEY)||{};
+  const eligibleMigration=pending.email===email
+    && String(meta.username||'').toLowerCase()===String(pending.username||'').toLowerCase()
+    && DB.accounts[pending.username]&&!DB.accounts[pending.username].authUid
+    && Date.now()-(pending.createdAt||0)<7*864e5;
+  const migrated=eligibleMigration?DB.accounts[pending.username]:null;
+  const localKey=Object.keys(DB.accounts).find(k=>String(DB.accounts[k].mail||DB.accounts[k].email||'').toLowerCase()===email);
+  const remoteData=await sbPull('');
+  const base=remoteData||fallbackAccount||migrated|| (localKey?DB.accounts[localKey]:null)||{};
+  let username=String(meta.username||base.u||(localKey||'')).trim();
+  try{
+    const rows=await sb('/rest/v1/iydu_usernames?select=username&user_id=eq.'+encodeURIComponent(user.id));
+    if(Array.isArray(rows)&&rows[0]?.username)username=rows[0].username;
+  }catch(e){if(!isMissingSql(e))console.warn('Username lookup unavailable:',e)}
+  if(!userRe.test(username))username='user'+String(user.id).replace(/-/g,'').slice(0,12);
+  sbSave({...sbSession(),user});
+  const account=norm(base);
+  account.u=username;
+  account.nick=String(account.nick||meta.nick||username);
+  if(!account.bio&&meta.bio)account.bio=String(meta.bio).slice(0,160);
+  account.email=email;account.mail=email;account.authUid=user.id;
+  account.pw='';
+  DB.accounts[username]=account;
+  if(localKey&&localKey!==username&&DB.accounts[localKey]?.authUid===user.id)delete DB.accounts[localKey];
+  if(eligibleMigration&&pending.username!==username)delete DB.accounts[pending.username];
+  if(eligibleMigration)setItem(PENDING_MIG_KEY,'');
+  DB.last=account.nick;DB.lastUser=username;DB.lastEmail=email;
+  A=account;lastSig=signature(account);restorePomodoroState();applyTheme();save();
+  return account;
+}
+async function handleAuthRedirect(){
+  const hashText=String(window.location.hash||'');
+  const params=new URLSearchParams(hashText.startsWith('#')?hashText.slice(1):hashText);
+  const errorText=params.get('error_description')||params.get('error');
+  const access=params.get('access_token'),refresh=params.get('refresh_token'),type=params.get('type')||'';
+  if(errorText){
+    try{history.replaceState({},document.title,location.pathname+location.search)}catch(e){}
+    msg=decodeURIComponent(errorText.replace(/\+/g,' '));view='login';renderAppOrAuth();return true;
+  }
+  if(!access||!refresh)return false;
+  /* Token'ları URL'den hemen çıkar; geçmişte ve adres çubuğunda bırakma. */
+  sbSave({access_token:access,refresh_token:refresh,token_type:params.get('token_type')||'bearer',expires_in:Number(params.get('expires_in')||3600)});
+  try{history.replaceState({},document.title,location.pathname+location.search)}catch(e){}
+  try{
+    const user=await sbCurrentUser();
+    sbSave({...sbSession(),user});
+    if(type==='recovery'){
+      recoveryUser=user;view='recover';msg='';renderAppOrAuth();return true;
+    }
+    await activateCloudUser(user,null);
+    setItem(PENDING_SIGNUP_KEY,'');formDat={u:'',n:'',b:'',e:'',t:'',p:''};
+    view='app';pg='home';msg='';renderAppOrAuth();greetThen();
+    toast(type==='email_change'?(tr()?'E-posta değişikliği onaylandı.':'Email change confirmed.'):(tr()?'E-posta doğrulandı, hesabın hazır.':'Email confirmed. Your account is ready.'));
+    return true;
+  }catch(err){
+    A=null;view='login';msg=(tr()?'Doğrulama bağlantısı işlenemedi: ':'Could not complete the authentication link: ')+String(err.message||err);
+    renderAppOrAuth();return true;
+  }
+}
+/* Bulut kaydı yalnızca aktif Supabase kimliğiyle eşleşen yerel hesapta yapılır. */
+async function sbPush(){
+  const session=sbSession();
+  if(!cloud()||!A||!A.authUid||!session||!session.access_token||!session.user||session.user.id!==A.authUid)return false;
+  try{
+    const payload={p_username:A.u,p_nick:A.nick||A.u,p_data:JSON.parse(JSON.stringify(A))};
+    await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:payload});return true;
+  }catch(e){return false}
+}
+async function sbPull(u){
+  if(!cloud()||!sbSession())throw new Error('A valid Supabase session is required to load cloud data.');
+  const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:u||''}});
+  const row=Array.isArray(rows)?rows[0]:rows;
+  return row&&row.data?row.data:null;
+}
+
+function applyTheme(){if(!A)return;document.documentElement.dataset.t=DB.beige?'beige':A.theme}
+function th(t){setTheme(t)}
+function toggleBeige(){setTheme(DB.beige?'light':'beige')}
+
+/* yenileme: son gorulen ekran giris/kayit/karsilama ise oturum otomatik acilmaz, ayni ekran gelir */
+function lastAuthView(){
+  let v='';
+  try{v=sessionStorage.getItem('b1.view')||''}catch(e){}
+  if(!v){try{const st=history.state;if(st&&st.v)v=st.v}catch(e){}}
+  return ['login','setup','forgot','verify','recover','welcome'].indexOf(v)>=0?v:'';
+}
+async function bootstrapApp(){
+  const callbackHandled=await handleAuthRedirect();
+  if(callbackHandled)return;
+  const lastAuth=lastAuthView();
+  const restored=lastAuth?false:restoreSession();
+  if(lastAuth){view=lastAuth;pg='home'}
+  if(restored&&A&&A.authUid){
+    try{
+      let user;
+      try{user=await sbCurrentUser()}catch(e){
+        if(await sbRefresh())user=await sbCurrentUser();
+        else throw e;
+      }
+      await activateCloudUser(user,A);
+    }catch(e){
+      A=null;view='login';pg='home';loginDat={u:DB.lastEmail||DB.lastUser||'',p:'',e:DB.lastEmail||''};
+      msg=tr()?'Oturumun sona ermiş. E-posta ve şifrenle yeniden giriş yap.':'Your session has expired. Sign in again with your email and password.';
+    }
+  }
+  renderAppOrAuth();
+  if(restored)setTimeout(()=>{try{const c=$('#ck');if(c)c.hidden=true}catch(e){}},50);
+}
+bootstrapApp().catch(err=>{console.error('Application startup failed:',err);renderAppOrAuth()});
+/* onbellekten (bfcache) geri gelince de oturum korunur */
+window.addEventListener('pageshow',e=>{if(e.persisted&&!A&&restoreSession())renderAppOrAuth();else if(e.persisted&&A&&pm.run)pTick(true)});
+</script>
+</body>
+</html>
