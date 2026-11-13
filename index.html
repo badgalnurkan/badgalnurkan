@@ -734,7 +734,7 @@ takeNote:'Note',newAccountTitle:'Create account',back:'Back',signInTitle:'Sign i
 remembered:'Remembered on this device',notYou:'Not you?',savedUsers:'Accounts on this device',useAccount:'Sign in',
 wrongLogin:'Wrong username or password. Attempts left:',wrongLoginKnown:'Password is wrong for {u}. Attempts left:',
 totalDays:'Total days',everyDayCounts:'Progress advances only on days when you interact with tasks, notes or focus.',
-daysRecorded:'days recorded',pctTitle:'Daily percentage',pctHint:'Only days with meaningful activity count.',backWelcome:'Back to the welcome screen',beigeOn:'Light beige look is on',beigeOff:'Light beige look is off',welcomeUser:'Welcome back,',
+daysRecorded:'days recorded',pctTitle:'Daily percentage',pctHint:'Older progress is preserved; future progress counts active days only.',backWelcome:'Back to the welcome screen',beigeOn:'Light beige look is on',beigeOff:'Light beige look is off',welcomeUser:'Welcome back,',
 noAccountYet:'No account on this device yet',currentAccount:'Current account',
 },
 tr:{welcome:'HOŞ GELDİN',continue:'Devam →',howItWorks:'Nasıl çalışır',contact:'Bana ulaş',login:'Giriş yap',create:'Hesap oluştur',forgot:'Şifremi unuttum',
@@ -766,7 +766,7 @@ takeNote:'Not',newAccountTitle:'Hesap oluştur',back:'Geri',signInTitle:'Giriş 
 remembered:'Bu cihazda hatırlanıyor',notYou:'Sen değil misin?',savedUsers:'Bu cihazdaki hesaplar',useAccount:'Giriş yap',
 wrongLogin:'Kullanıcı adı veya şifre yanlış. Kalan deneme:',wrongLoginKnown:'{u} için şifre yanlış. Kalan deneme:',
 totalDays:'Toplam gün',everyDayCounts:'Görev, not veya odak etkinliği yaptığın günlerde ilerleme artar.',
-daysRecorded:'kayıtlı gün',pctTitle:'Günlük yüzde',pctHint:'Yalnızca etkinlik yaptığın günler sayılır.',backWelcome:'Karşılama ekranına dön',beigeOn:'Açık bej görünüm açık',beigeOff:'Açık bej görünüm kapalı',welcomeUser:'Tekrar hoş geldin,',
+daysRecorded:'kayıtlı gün',pctTitle:'Günlük yüzde',pctHint:'Eski ilerlemen korunur; bundan sonra yalnızca etkinlik günlerinde artar.',backWelcome:'Karşılama ekranına dön',beigeOn:'Açık bej görünüm açık',beigeOff:'Açık bej görünüm kapalı',welcomeUser:'Tekrar hoş geldin,',
 noAccountYet:'Bu cihazda henüz hesap yok',currentAccount:'Aktif hesap',
 }
 };
@@ -838,9 +838,29 @@ const items=d=>d===today()?A.tasks.map(x=>({t:x.t,done:x.s==='done'})):(A.hist[d
 const okDay=d=>{const i=items(d);return i.length>0&&i.every(x=>x.done)};
 const succ=()=>{let n=0;Object.keys(A.hist).forEach(d=>{if(d!==today()&&okDay(d))n++});if(okDay(today()))n++;return n};
 /* BEGIN CORE LOGIC: tested with Node's built-in test runner */
-function progressPercent(activeDays){
+/* Legacy percentage compatibility (2026-11-13 cutover): prior releases awarded
+   +1 for each calendar day since pctFrom. Preserve that already-displayed value,
+   then award additional points only for meaningful activity AFTER the cutover.
+   This is read-only: never rewrite or discard the user's historical data. */
+const PROGRESS_CUTOVER='2026-11-13';
+function validProgressDate(value){
+  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
+  const date=new Date(value+'T00:00:00Z');
+  return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===value;
+}
+function progressDayDistance(from,to){
+  return Math.round((Date.parse(to+'T00:00:00Z')-Date.parse(from+'T00:00:00Z'))/86400000);
+}
+function progressPercent(activeDays,pctFrom,asOf){
   const days=activeDays&&typeof activeDays==='object'&&!Array.isArray(activeDays)?activeDays:{};
-  return Math.max(1, Object.keys(days).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&days[d]).length);
+  const current=validProgressDate(asOf)?asOf:new Date().toISOString().slice(0,10);
+  const cutoff=current<PROGRESS_CUTOVER?current:PROGRESS_CUTOVER;
+  const isLegacy=validProgressDate(pctFrom)&&pctFrom<=PROGRESS_CUTOVER;
+  const baseline=isLegacy?Math.max(1,progressDayDistance(pctFrom,cutoff)+1):0;
+  const recent=Object.keys(days).filter(day=>
+    validProgressDate(day)&&day<=current&&days[day]===true&&(!isLegacy||day>cutoff)
+  ).length;
+  return Math.max(1,baseline+recent);
 }
 function stopwatchFormat(ms){
   const v=Number.isFinite(ms)?Math.max(0,ms):0;
@@ -864,7 +884,7 @@ function recordActivity(){
   A.activeDays[today()]=true;
   save();
 }
-const pct=()=>progressPercent(A&&A.activeDays);
+const pct=()=>progressPercent(A&&A.activeDays,A&&A.pctFrom,today());
 const dayCount=pct;
 const pctStart=()=>A&&A.pctFrom||today();
 const startDay=pctStart;
@@ -1294,7 +1314,7 @@ P.home=()=>{
     return`<div class="task"><span>${esc(p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
   }).join('');
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
-  <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${tr()?'Yüzdelik yalnızca etkinlik yaptığın günlerde ilerler.':'Progress increases only on days you interact with tasks, notes or focus.'}</p></div>
+  <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${tr()?'Önceki yüzdeliğin korunur; yeni artışlar yalnızca etkinlik yaptığın günlerde olur.':'Existing progress is kept; additional points require activity with tasks, notes or focus.'}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="1000" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}">${esc(j)}</textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut">${j.length}/1000</span></div></div>
   <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<div class="row"><input id="pn" maxlength="40" placeholder="${t('projectName')}"><input id="pd" type="date" min="${today()}" style="max-width:11rem"><button onclick="addProj()">${t('add')}</button></div></div>`);
 };
