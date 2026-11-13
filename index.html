@@ -729,6 +729,99 @@ header.top .top-brand{display:block;justify-self:center;width:100%;font-size:cla
 @keyframes portalRingQuick{0%{opacity:1;transform:rotate(0) scale(.95)}49%{opacity:1;transform:rotate(200deg) scale(1.07)}100%{opacity:0;transform:rotate(350deg) scale(.25)}}
 @media(prefers-reduced-motion:reduce){#login-portal .portal-disc,#login-portal .portal-ring{animation:none!important}}
 .current-account-indicator{display:inline-flex;align-items:center;white-space:nowrap;color:var(--acc);font-size:.82rem;font-weight:700;padding:.25rem .6rem;border-radius:999px;background:color-mix(in srgb,var(--acc2) 28%,var(--card))}
+
+
+/* V6: targeted layout correction. Keep V5 data and progress logic unchanged. */
+:root[data-t=white]{--bg:#ffffff;--card:#ffffff;--ink:#202124;--mut:#51545c;--acc:#404247;--acc2:#e2e4e7;--ln:#d8dade;--ok:#316a4b;--no:#aa3348;--okbg:#e8f3eb;--on-acc:#ffffff;--sh:0 8px 24px #0000000b}
+:root[data-t=black]{--bg:#101114;--card:#1a1b1e;--ink:#f4f4f5;--mut:#c0c3c9;--acc:#e5e6e9;--acc2:#34373e;--ln:#41444b;--ok:#9cd5af;--no:#ff929f;--okbg:#26362c;--on-acc:#121316;--sh:0 8px 24px #00000036}
+:root[data-t=white] .brand-mark{filter:grayscale(.8) contrast(1.03)}
+:root[data-t=black] .brand-mark{filter:grayscale(.6) brightness(1.3)}
+
+/* Symmetrical three-track header: title is centered in viewport, independent of tools. */
+header.top{--brand-size:85px;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,auto) minmax(0,1fr)!important;align-items:center;column-gap:clamp(.35rem,1vw,.9rem);row-gap:.35rem;padding:.55rem clamp(.65rem,1.6vw,1.45rem)}
+header.top .brand-logo-trigger{grid-column:1;grid-row:1;justify-self:start;display:flex;align-items:center;justify-content:center;flex:0 0 var(--brand-size);width:var(--brand-size);height:var(--brand-size);min-height:0;padding:0;border:0;box-shadow:none;background:transparent;border-radius:50%;touch-action:manipulation}
+header.top .brand-logo-trigger:hover{transform:scale(1.035);box-shadow:none}
+header.top .brand-mark{width:var(--brand-size)!important;height:var(--brand-size)!important;max-width:none!important;min-width:0!important;object-fit:contain;pointer-events:none}
+header.top .header-title-group{grid-column:2;grid-row:1;min-width:0;justify-self:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center}
+header.top .top-brand{display:block;min-height:0;padding:.15rem .3rem;border:0;background:transparent;box-shadow:none;color:var(--acc);font:600 clamp(.99rem,1.1vw + .58rem,1.22rem)/1.25 var(--fs);text-align:center!important;white-space:nowrap;max-width:none!important;overflow:visible!important;text-overflow:unset}
+header.top .top-brand:hover{box-shadow:none;transform:none;color:var(--ink)}
+header.top .brand-credit{font-size:clamp(.62rem,.58vw + .34rem,.74rem);font-style:italic;line-height:1.35;color:var(--mut);white-space:nowrap}
+header.top .top-tools{grid-column:3;grid-row:1;justify-self:end;display:flex;justify-content:flex-end;align-items:center;gap:clamp(.2rem,.58vw,.6rem);min-width:0;max-width:100%}
+@media(max-width:980px){
+ header.top{--brand-size:70px;grid-template-rows:auto auto;row-gap:.2rem}
+ header.top .top-tools{grid-column:1/-1;grid-row:2;justify-self:stretch;width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:.45rem}
+ header.top .top-clock{justify-self:start;min-width:0}
+ header.top #top-date-trigger{justify-self:center}
+ header.top .account-chip{justify-self:end}
+}
+@media(max-width:599px){
+ header.top{--brand-size:60px;padding:.52rem .62rem;column-gap:.15rem}
+ header.top .top-brand{font-size:clamp(.85rem,3.5vw,1.03rem)!important;letter-spacing:-.01em;padding-inline:.05rem}
+ header.top .brand-credit{font-size:.59rem}
+ header.top .top-tools{gap:.2rem}
+ header.top .top-clock{font-size:clamp(.7rem,2.8vw,.85rem)}
+}
+@media(min-width:981px) and (max-width:1799px){header.top{--brand-size:85px}}
+@media(min-width:1800px){header.top{--brand-size:115px}}
+
+/* Theme controls: comfortable swatch-label distance, and compact fallback on small widths. */
+.themebar:not(.theme-picker){display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:.55rem!important;flex-wrap:wrap;min-width:0}
+.themebar:not(.theme-picker) .theme-label{flex:0 0 auto;margin-inline-end:.2rem!important;white-space:nowrap;font-size:.88rem}
+.themebar button.theme-choice{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:.48rem!important;padding:.42rem .73rem!important;min-height:2.45rem;white-space:nowrap!important;flex:0 0 auto;line-height:1.2}
+.themebar .theme-swatch{flex:0 0 1.13rem;width:1.13rem;height:1.13rem;margin:0!important}
+.settings-theme .theme-picker{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,9.2rem),1fr));gap:.55rem!important}
+.settings-theme .theme-picker button.theme-choice{justify-content:flex-start!important;width:100%;min-width:0;font-size:.9rem}
+.welcome-top #theme-anchor{min-width:0;max-width:100%}
+.welcome-top .themebar{justify-content:flex-end!important}
+@media(max-width:390px){
+ .welcome-top{justify-content:center;gap:.45rem}
+ .welcome-top .brand-badge{width:100%;text-align:center}
+ .welcome-top .themebar{justify-content:center!important}
+ .login-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.4rem}
+ .login-top .themebar{flex:1 1 auto;max-width:100%}
+}
+.not-you-wrap{margin:.08rem 0 .95rem;padding-top:.2rem}
+
+/* Roll back the oversized V5 calendar. Keep weekday abbreviations unbroken. */
+#mn .progress-calendar{display:flex!important;flex-wrap:wrap!important;justify-content:center!important;align-items:center;gap:clamp(.25rem,.65vw,.47rem);margin-top:.85rem}
+#mn .progress-calendar .dot{width:clamp(2.45rem,5vw,3.2rem)!important;height:3.55rem!important;min-width:0!important;min-height:0!important;aspect-ratio:auto!important;flex:0 0 auto;padding:.2rem .05rem!important;gap:.06rem}
+#mn .progress-calendar .dot small{font-size:.56rem!important;line-height:1.05;letter-spacing:0;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:none!important}
+#mn .progress-calendar .dot span{font-size:.9rem!important}
+#mn .progress-calendar .dot em.dpct{font-size:.54rem!important}
+@media(max-width:600px){#mn .progress-calendar{gap:.28rem}#mn .progress-calendar .dot{width:clamp(2.3rem,12vw,2.95rem)!important;height:3.32rem!important}}
+
+/* Future notes: short native date field + one readable note prompt, no overflow. */
+#mn .future-add-row{margin-top:.7rem;gap:.28rem;max-width:100%;min-width:0}
+#mn .future-add-row input{box-sizing:border-box;margin:0;min-width:0;max-width:100%;min-height:2.7rem;padding:.47rem .7rem;font-size:1rem}
+#mn .future-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:.45rem;min-width:0}
+#mn .future-fields #fnd{width:min(100%,15rem);height:2.7rem;max-height:2.7rem}
+#mn .future-note-compose{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.5rem;align-items:center;min-width:0}
+#mn .future-note-compose button{min-width:0;white-space:nowrap;padding:.48rem .85rem;min-height:2.7rem}
+@media(max-width:380px){#mn .future-note-compose{grid-template-columns:minmax(0,1fr)}#mn .future-note-compose button{justify-self:start}}
+
+/* Reports: consistent breathing space and compact More links on mobile. */
+#mn .report-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.7rem!important;min-width:0}
+#mn .report-heading h2,#mn .report-heading h3{min-width:0;line-height:1.3;margin:0}
+#mn .report-heading button{margin:0!important;padding:.42rem .72rem;min-height:2.45rem;white-space:nowrap;font-size:.84rem}
+@media(max-width:480px){
+ #mn .report-heading{gap:.65rem!important}
+ #mn .report-heading h2{font-size:1.04rem}
+ #mn .report-heading h3{font-size:.98rem}
+ #mn .report-heading button{font-size:.77rem;padding:.37rem .55rem}
+ #mn .journal-grid .note-tile{padding:.78rem .84rem;gap:.45rem}
+ #mn .journal-grid{gap:.55rem}
+}
+
+/* Interaction feedback is short; avoid delays that make navigation unresponsive. */
+button,aside a,.lg-link,.ft-link{transition:background-color .18s ease,color .18s ease,border-color .18s ease,transform .15s cubic-bezier(.2,.75,.25,1),box-shadow .18s ease}
+button:active,aside a:active,.lg-link:active{transform:scale(.985)}
+#app{transition:opacity .13s ease}
+main.swap{transition:opacity .11s ease}
+main .card{animation-duration:.25s;animation-delay:0s!important}
+.mini-popup{transition:opacity .18s ease,transform .2s cubic-bezier(.2,.75,.25,1),visibility .18s}
+.modal,.modal .card{animation-duration:.22s}
+@media(prefers-reduced-motion:reduce){button,aside a,.lg-link,.ft-link,main .card,.mini-popup{animation:none!important;transition:none!important}}
+
 </style>
 </head>
 <body>
@@ -832,7 +925,7 @@ function softPaint(){
       const current=$('#app');if(current)current.classList.remove('soft-out');
       softPaintTimer=0;
     });
-  },140);
+  },90);
 }
 function goTo(v,p,push=true){
   const same=A&&v==='app'&&view==='app'&&document.getElementById('mn')&&document.querySelector('#nav-aside,aside');
@@ -854,7 +947,7 @@ function swapPage(){
     if(pg!=='pomo'&&y>0){try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){window.scrollTo(0,0)}}
     centerNav();
   };
-  if(main&&!reduced){main.classList.add('swap');setTimeout(finish,180)}
+  if(main&&!reduced){main.classList.add('swap');setTimeout(finish,90)}
   else finish();
 }
 /* mobil/tablet: secilen sekme yatay menude ortalanir, sayfa ziplamaz */
@@ -1096,9 +1189,9 @@ const m=()=>msg?`<div class="note">${msg}</div>`:'';
 
 /* giris/karsilama ekraninda tema secimi (hesap acmadan da calisir) */
 /* tema: acik / koyu / bej. bej = DB.beige bayragi; ucu tek yerden yonetilir */
-const THEMES=["porcelain", "cacao", "mint", "turquoise", "sapphire", "cloudblue", "forest", "citrus", "ambersun", "rosewood", "orchid", "berry", "clay", "obsidian", "midnightblue"];
-const THEME_NAMES={"porcelain":["Porselen","Porcelain"],"cacao":["Kakao","Cacao"],"mint":["Nane","Mint"],"turquoise":["Turkuaz","Turquoise"],"sapphire":["Safir","Sapphire"],"cloudblue":["Bulut Mavisi","Cloud Blue"],"forest":["Yosun","Moss"],"citrus":["Limon","Citron"],"ambersun":["Amber","Amber"],"rosewood":["Gül Ağacı","Rosewood"],"orchid":["Orkide","Orchid"],"berry":["Yaban Mersini","Berry"],"clay":["Kızıl Toprak","Red Earth"],"obsidian":["Obsidyen","Obsidian"],"midnightblue":["Lacivert","Midnight Blue"]};
-const THEME_SWATCHES={"porcelain":"#FDD7E4","cacao":"#D2691E","mint":"#7FFFD4","turquoise":"#40E0D0","sapphire":"#98AFC7","cloudblue":"#C6DEFF","forest":"#A0D6B4","citrus":"#CDDC39","ambersun":"#FFA500","rosewood":"#FDD7E4","orchid":"#DDA0DD","berry":"#DF73D4","clay":"#D2691E","obsidian":"#6F2DA8","midnightblue":"#728FCE"};
+const THEMES=["white", "black", "porcelain", "cacao", "mint", "turquoise", "sapphire", "cloudblue", "forest", "citrus", "ambersun", "rosewood", "orchid", "berry", "clay", "obsidian", "midnightblue"];
+const THEME_NAMES={"white":["Beyaz","White"],"black":["Siyah","Black"],"porcelain":["Porselen","Porcelain"],"cacao":["Kakao","Cacao"],"mint":["Nane","Mint"],"turquoise":["Turkuaz","Turquoise"],"sapphire":["Safir","Sapphire"],"cloudblue":["Bulut Mavisi","Cloud Blue"],"forest":["Yosun","Moss"],"citrus":["Limon","Citron"],"ambersun":["Amber","Amber"],"rosewood":["Gül Ağacı","Rosewood"],"orchid":["Orkide","Orchid"],"berry":["Yaban Mersini","Berry"],"clay":["Kızıl Toprak","Red Earth"],"obsidian":["Obsidyen","Obsidian"],"midnightblue":["Lacivert","Midnight Blue"]};
+const THEME_SWATCHES={"white":"#ffffff","black":"#101013","porcelain":"#FDD7E4","cacao":"#D2691E","mint":"#7FFFD4","turquoise":"#40E0D0","sapphire":"#98AFC7","cloudblue":"#C6DEFF","forest":"#A0D6B4","citrus":"#CDDC39","ambersun":"#FFA500","rosewood":"#FDD7E4","orchid":"#DDA0DD","berry":"#DF73D4","clay":"#D2691E","obsidian":"#6F2DA8","midnightblue":"#728FCE"};
 const LEGACY_THEME_MAP={"light":"porcelain","dark":"obsidian","beige":"cacao","forest":"forest","ocean":"turquoise","lavender":"orchid","rose":"rosewood","midnight":"midnightblue","sand":"ambersun","sage":"mint","pearl":"cloudblue","apricot":"clay","dusk":"berry","glacier":"sapphire","citrus":"citrus","clay":"clay","nocturne":"obsidian"};
 const resolvedTheme=value=>THEMES.includes(value)?value:(LEGACY_THEME_MAP[value]||(value==='dark'?'obsidian':'porcelain'));
 function curTheme(){return resolvedTheme(document.documentElement.dataset.t)}
@@ -1116,7 +1209,7 @@ function setTheme(v){
   else if($('#mn')){if(pg==='set')P.set()}
 }
 function themePick(compact,showTitle=true){
-  const cur=curTheme(),choices=(view==='app'?THEMES:['porcelain','cacao','obsidian']);
+  const cur=curTheme(),choices=(view==='app'?THEMES:['white','black']);
   return`<div class="themebar ${view==='app'&&!compact?'theme-picker':''}" role="group" aria-label="${tr()?'Tema seçimi':'Select theme'}" style="display:flex;gap:.4rem;justify-content:${compact?'flex-end':'center'};margin:0;align-items:center;flex-wrap:wrap">${showTitle?`<small class="mut theme-label">${tr()?'Tema':'Theme'}</small>`:''}${choices.map(v=>`<button type="button" class="${cur===v?'':'g'} s theme-choice" onclick="setTheme('${v}')" aria-pressed="${cur===v}" data-theme="${v}"><span class="theme-swatch" style="--swatch:${THEME_SWATCHES[v]}" aria-hidden="true"></span>${THEME_NAMES[v][tr()?0:1]}</button>`).join('')}</div>`;
 }
 /* acilista secilen temayi uygula */
@@ -1160,19 +1253,24 @@ function headerHome(el){
   openModal('header-confirm',`<h2>${tr()?'Giriş ekranına dönülsün mü?':'Return to the sign-in screen?'}</h2><p class="mut">${tr()?'Kaydedilmiş verilerin korunur.':'Saved data will be kept.'}</p><div class="row"><button onclick="closeModal('header-confirm');goLogin()">${t('yes')}</button><button class="g" onclick="closeModal('header-confirm')">${t('no')}</button></div>`);
 }
 
+function welcomeDisplayName(){
+  const account=DB?.accounts?.[DB?.lastUser] || (A&&A.u?A:null);
+  const name=String(account?.nick||DB?.last||'').trim().slice(0,40);
+  return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
+}
 function renderAppOrAuth(){
   if(A){try{sessionStorage.setItem('b1.view','app')}catch(e){}shell();return}
   try{sessionStorage.setItem('b1.view',view==='app'?'login':view)}catch(e){}
   document.title=TITLE;
   if(view==='app')view=Object.keys(DB.accounts).length?'login':'welcome';
   let h='';
-  if(view==='welcome')h=`<div class="welcome-screen"><div class="welcome-top"><div class="brand-badge">badgalnurkan</div><div id="theme-anchor">${themePick(true)}</div></div><div class="welcome-center"><div class="langbar">${langBtns()}</div><h1 class="big">${t('welcome')}</h1><div class="row" style="justify-content:center;gap:.8rem;margin-top:.5rem"><button onclick="goTo('login','home')">${t('continue')}</button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><div style="margin-top:1rem"><a href="mailto:nurkancanbulat89@gmail.com" style="color:var(--acc);font-weight:600;text-decoration:none;font-size:.9rem">${t('contact')}</a></div></div><div class="welcome-footer-bar"><div>© 2026 nurkancanbulat — All rights reserved.</div><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">tiktok/@badgalnurkan</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">instagram/@badgalnurkann</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">x/@badgalnurk</a></div></div></div>`;
+  if(view==='welcome')h=`<div class="welcome-screen"><div class="welcome-top"><div class="brand-badge">badgalnurkan</div><div id="theme-anchor">${themePick(true)}</div></div><div class="welcome-center"><div class="langbar">${langBtns()}</div><h1 class="big">${welcomeDisplayName()}</h1><div class="row" style="justify-content:center;gap:.8rem;margin-top:.5rem"><button onclick="goTo('login','home')">${t('continue')}</button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><div style="margin-top:1rem"><a href="mailto:nurkancanbulat89@gmail.com" style="color:var(--acc);font-weight:600;text-decoration:none;font-size:.9rem">${t('contact')}</a></div></div><div class="welcome-footer-bar"><div>© 2026 nurkancanbulat — All rights reserved.</div><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">tiktok/@badgalnurkan</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">instagram/@badgalnurkann</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">x/@badgalnurk</a></div></div></div>`;
   else if(view==='login'){
     const rem=(skipRem?null:rememberedUser()),others=Object.keys(DB.accounts).filter(k=>k!==rem);
     if(!loginDat.u&&rem)loginDat.u=rem;
     const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="useAccount('${esc(rem)}')">${t('useAccount')}</button></div>`:`<p class="mut" style="margin:.2rem 0 .9rem">${t('noAccountYet')}</p>`;
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
-    h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div style="text-align:right;margin:-.5rem 0 .6rem"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" onclick="signInWithGoogle()">${tr()?'Google ile devam et':'Continue with Google'}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
+    h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" onclick="signInWithGoogle()">${tr()?'Google ile devam et':'Continue with Google'}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
   else if(view==='setup')h=`<div class="login-wrap"><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button></div><p class="mut">${tr()?'Demo aşamasında e-posta servisi kapalıysa bağlantı gönderilemez; lütfen hesabını oluştururken güçlü bir şifre seç.':'Password reset email requires an email sending provider, which may be unavailable during the demo.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
@@ -1487,7 +1585,7 @@ function shell(){
   const firstShell=!document.querySelector('.shell aside');
   document.querySelectorAll('body > #mini-cal').forEach(el=>el.remove());
   const oldBackdrop=document.getElementById('mini-backdrop');if(oldBackdrop)oldBackdrop.remove();
-  $('#app').innerHTML=`<header class="top"><div class="brand-cluster"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"><b class="top-brand" role="button" tabindex="0" title="${tr()?'Giriş ekranına dön':'Return to sign in'}" onclick="headerHome(this)">Improvin' your day.</b></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(today())}</button><button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b>${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><aside id="nav-aside" class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><button id="back-welcome" class="ft-link" onclick="goHome()"><span aria-hidden="true">←</span> ${t('backWelcome')}</button><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(today())}</button><button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b>${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><aside id="nav-aside" class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),650)}
@@ -1650,9 +1748,18 @@ P.pc=()=>{
   }
   const monthKey=`${y}-${pad(mo+1)}`;
   const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}</b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="row"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><button onclick="newNote()">${t('addFutureNote')}</button></div></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><input id="fn-text" type="text" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
 };
-function newNote(){const d=$('#fnd').value;if(!d){toast(tr()?'Bir tarih seç.':'Pick a date.');return}openDay(d)}
+function newNote(){
+  const d=String($('#fnd')?.value||'');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||Number.isNaN(new Date(d+'T00:00').getTime())){
+    toast(tr()?'Geçerli bir tarih seç.':'Pick a valid date.');return;
+  }
+  const draft=String($('#fn-text')?.value||'').slice(0,500);
+  openDay(d);
+  // Reuse the existing confirmation/save path to avoid unintended overwrites.
+  const editor=$('#dn');if(editor&&draft)editor.value=draft;
+}
 function delNote(k){delete A.future[k];if(A.futureMeta)delete A.futureMeta[k];save();P.pc()}
 function st(a,b){let t=0,d=0,by={};for(let x=a;x<=b;x=addD(x,1)){items(x).forEach(i=>{t++;by[i.t]=by[i.t]||[0,0];by[i.t][1]++;if(i.done){d++;by[i.t][0]++}})}return{t,d,p:t?Math.round(d/t*100):0,by}}
 const qb=(k,arr,ro)=>arr.map((x,i)=>`<label>${esc(x.q)}</label><div class="qa"><textarea rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this)">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i})">${t('delete')}</button>`}</div><div class="qcap mut">${x.a.length}/400</div>`).join('');
