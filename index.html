@@ -1404,9 +1404,10 @@ function renderAppOrAuth(){
   else if(view==='login'){
     const rem=(skipRem?null:rememberedUser()),others=Object.keys(DB.accounts).filter(k=>k!==rem);
     if(!loginDat.u&&rem)loginDat.u=rem;
-    const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="useAccount('${esc(rem)}')">${t('useAccount')}</button></div>`:`<p class="mut" style="margin:.2rem 0 .9rem">${t('noAccountYet')}</p>`;
+    const googleRemembered=!!(rem&&DB.accounts[rem].authUid&&DB.accounts[rem].loginMethod==='google');
+    const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="${googleRemembered?'signInWithGoogle()':`useAccount('${esc(rem)}')` }">${googleRemembered?(tr()?'Google ile gir':'Google sign-in'):t('useAccount')}</button></div>`:`<p class="mut" style="margin:.2rem 0 .9rem">${t('noAccountYet')}</p>`;
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
-    h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" value="${esc(loginDat.p)}" oninput="loginDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" onclick="signInWithGoogle()">${tr()?'Google ile devam et':'Continue with Google'}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
+    h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" oninput="loginDat.p=''" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" onclick="signInWithGoogle()">${tr()?'Google ile devam et':'Continue with Google'}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
   else if(view==='setup')h=`<div class="login-wrap"><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button></div><p class="mut">${tr()?'Demo aşamasında e-posta servisi kapalıysa bağlantı gönderilemez; lütfen hesabını oluştururken güçlü bir şifre seç.':'Password reset email requires an email sending provider, which may be unavailable during the demo.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
@@ -1523,7 +1524,7 @@ function goExistingEmail(email){
   msg=tr()?'Bu e-posta zaten kayıtlı. Yeni hesap yerine giriş yap.':'Email already registered. Sign in instead of creating another account.';
   softPaint();
 }
-async function activateCloudUser(j,preferredName=''){
+async function activateCloudUser(j,preferredName='',method='password'){
   const uid=j&&j.user&&j.user.id;
   if(!uid||!j.access_token)throw new Error('Missing authenticated session');
   sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
@@ -1534,6 +1535,8 @@ async function activateCloudUser(j,preferredName=''){
   const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
   a.u=username;a.authUid=uid;a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
   a.pw='';delete a.salt; // Cloud passwords are checked by Supabase, never stored in user_data.
+  a.loginMethod=method==='google'?'google':'password';
+  if(method==='google'||j.user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
   DB.accounts[a.u]=a;DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
   restorePomodoroState();applyTheme();save();loginDat={u:'',p:''};
   goTo('app','home');
@@ -1555,15 +1558,17 @@ async function login(){
     if(email){
       try{
         const j=await sbSignIn(raw,password,email);
-        await activateCloudUser(j,raw);
+        await activateCloudUser(j,raw,'password');
         greetThen();return;
       }catch(e){
         if(localAcc&&!localAcc.authUid&&await pwMatch(localAcc,password)){
           sbClear();A=norm(localAcc);DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home');greetThen();
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
+        loginDat.p='';
         msg=authErrorMessage(e)==='email-unconfirmed'?(tr()?'E-posta doğrulaması gerekiyor. Demo için Supabase ayarını kontrol et.':'Email confirmation required. Check Supabase demo settings.'):
           (tr()?'Giriş başarısız. E-posta ve şifreni kontrol et.':'Sign-in failed. Check email and password.');
+        if(authErrorMessage(e)==='credentials'&&localAcc?.googleConnected)msg=tr()?'Bu hesap Google ile açılmış olabilir. Google ile devam et; manuel giriş için önce Ayarlar’da uygulama şifresi belirle.':'This account may use Google sign-in. Continue with Google, or set an app password in Settings first.';
         if(e.name==='AbortError')msg=tr()?'Bağlantı zaman aşımına uğradı.':'Connection timed out.';
         return renderAppOrAuth();
       }
@@ -2236,8 +2241,8 @@ P.set=()=>{
   M(`${m()}<div class="card"><h2>${t('account')}</h2><p class="mut">${tr()?'Üstteki yuvarlak profil düğmesinden de düzenleyebilirsin.':'You can also edit your profile in the top-right account menu.'}</p><label>${t('username')}</label><div class="row"><input id="su" value="${esc(A.u)}" maxlength="20" oninput="profileUsernameHint(this.value,'settings-name-hint')"><div id="settings-name-hint" aria-live="polite" style="flex-basis:100%"></div><button onclick="chg('u')">${t('change')}</button></div><label>${t('displayName')}</label><div class="row"><input id="sn" value="${esc(A.nick||'')}" maxlength="30"><button onclick="chg('n')">${t('change')}</button></div><label>${t('bio')}</label><textarea id="sb" maxlength="160" rows="3" onchange="A.bio=this.value.slice(0,160);save()">${esc(A.bio||'')}</textarea><p class="mut">${tr()?'E-posta:':'Email:'} <b>${esc(A.email||'')}</b></p><p class="mut">${tr()?'Demo süresince e-posta değiştirme/doğrulama kapalı.':'Email change/verification is disabled during the demo.'}</p></div>
   <div class="card settings-theme"><h2>${t('theme')}</h2>${themePick(false,false)}</div>
   <div class="card"><h2>${t('lang')}</h2><div class="langbar" style="justify-content:flex-start">${langBtns()}</div></div>
-  <div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>
-  <div class="card"><h2>${tr()?'Gizlilik ve veri saklama':'Privacy and storage'}</h2><p class="mut">${tr()?'Uygulama giriş ve tercih verilerini bu tarayıcıda saklar. Bulut hesaplarının görev ve notları Supabase ile eşitlenir. Reddet düğmesiyle kapatılabilecek bir izleme çerezi kullanılmıyor; gerekli depolama çalışmaya devam eder.':'The app stores necessary session and preference data in this browser. Cloud account tasks and notes are synced with Supabase. This notice is not an opt-in for analytics cookies.'}</p><p class="mut">${A.authUid?(tr()?'Bulut oturumu açık. Verilerin Supabase hesabında saklanır; aynı e-posta ve şifreyle başka tarayıcıda giriş yapabilirsin.':'Cloud account active; sign in on other browsers with the same email and password.'):(tr()?'Eski yerel hesap: başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.')}</p><p class="mut">${tr()?'Demo e-posta sahipliğini doğrulamaz; şifre sıfırlama e-postası çalışmayabilir.':'Demo does not verify email ownership; password reset email may be unavailable.'}</p></div>
+  ${A.authUid&&A.loginMethod==='google'?`<div class="card"><h2>${tr()?'E-posta ve şifreyle giriş':'Email & password sign-in'}</h2><p class="mut">${tr()?'Google hesabına aynı e-posta adresiyle manuel giriş yapabilmek için uygulamaya özel bir şifre belirle. Google şifreni burada kullanma.':'To sign in manually with the same email, create a separate password for this app. Do not enter your Google password.'}</p><label>${tr()?'Yeni uygulama şifresi':'New app password'}</label><input id="google-app-pass" type="password" autocomplete="new-password" minlength="8"><label>${tr()?'Şifreyi tekrar yaz':'Confirm password'}</label><input id="google-app-pass-confirm" type="password" autocomplete="new-password" minlength="8"><button id="google-app-pass-submit" onclick="setGoogleAccountPassword()">${tr()?'Manuel girişi etkinleştir':'Enable email sign-in'}</button></div>`:`<div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>`}
+  <div class="card"><h2>${tr()?'Gizlilik ve veri saklama':'Privacy and storage'}</h2><p class="mut">${tr()?'Uygulama giriş ve tercih verilerini bu tarayıcıda saklar. Bulut hesaplarının görev ve notları Supabase ile eşitlenir. Reddet düğmesiyle kapatılabilecek bir izleme çerezi kullanılmıyor; gerekli depolama çalışmaya devam eder.':'The app stores necessary session and preference data in this browser. Cloud account tasks and notes are synced with Supabase. This notice is not an opt-in for analytics cookies.'}</p><p class="mut">${A.authUid?(tr()?'Bulut oturumu açık. Farklı cihazlarda Google ile veya hesabında ayrıca etkinleştirdiğin e-posta/şifre yöntemiyle giriş yapabilirsin.':'Cloud account active. Sign in on other devices with Google, or with email and a password you have explicitly set for this account.'):(tr()?'Eski yerel hesap: başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.')}</p><p class="mut">${tr()?'Demo e-posta sahipliğini doğrulamaz; şifre sıfırlama e-postası çalışmayabilir.':'Demo does not verify email ownership; password reset email may be unavailable.'}</p></div>
   ${ac?`<div class="card"><h2>${tr()?'Eski yerel hesaplar':'Legacy local accounts'}</h2>${ac}</div>`:''}
   <div class="card"><h2>${t('resetSystem')}</h2><p class="mut">${tr()?'Görevler, notlar, günlükler, ilerleme ve raporlar sıfırlanır. Hesap kimliğin kalır.':'Tasks, journals, progress and reports will be reset. Account identity is retained.'}</p><button style="background:var(--no)" onclick="resetSys()">${t('reset')}</button></div>
   <div class="card"><h2>${t('deleteAccount')}</h2><p class="mut">${tr()?'Bulut hesabı silme işlemi demo sürümünde kapalıdır; sunucuda güvenli hesap silme işlevi gerektirir.':'Cloud deletion is not available in demo; it requires a secure server-side deletion endpoint.'}</p><button class="g d" onclick="delAcc()">${t('deleteAccount')}</button></div>
@@ -2266,6 +2271,39 @@ function vSend(k){
   toast(tr()?'E-posta doğrulama, demo e-posta servisi kurulana kadar kullanılamaz.':'Email verification requires a mail provider.');
 }
 function vOk(k){toast(tr()?'Demo doğrulama kodu oluşturulmaz.':'Demo does not generate verification codes.');}
+let settingGooglePassword=false;
+async function setGoogleAccountPassword(){
+  if(settingGooglePassword||!A?.authUid||A.loginMethod!=='google')return;
+  const passEl=document.getElementById('google-app-pass');
+  const confirmEl=document.getElementById('google-app-pass-confirm');
+  const password=String(passEl?.value||''),confirm=String(confirmEl?.value||'');
+  const error=pwOk(password,A.u);
+  if(error){toast(error);return}
+  if(password!==confirm){toast(tr()?'Şifreler eşleşmiyor.':'Passwords do not match.');return}
+  settingGooglePassword=true;
+  const button=document.getElementById('google-app-pass-submit');
+  if(button)button.disabled=true;
+  try{
+    // Local profile metadata is NOT proof of identity. Revalidate the Auth user.
+    const user=await sbCurrentUser();
+    if(!user?.id||user.id!==A.authUid)throw new Error('Identity mismatch');
+    const updated=await sb('/auth/v1/user',{method:'PUT',body:{password}});
+    if(!updated?.id||updated.id!==A.authUid)throw new Error('Password update unverified');
+    // Do not cache or sync the password. Supabase Auth owns it.
+    if(passEl)passEl.value='';
+    if(confirmEl)confirmEl.value='';
+    msg=tr()?'Uygulama şifresi belirlendi. Artık aynı e-posta ve yeni şifreyle manuel giriş yapabilirsin. Google girişi de çalışır.':'App password saved. You can now sign in with your email and new password. Google sign-in still works.';
+    P.set();
+  }catch(e){
+    if(passEl)passEl.value='';
+    if(confirmEl)confirmEl.value='';
+    toast(tr()?'Şifre kaydedilemedi. Google ile yeniden giriş yapıp tekrar dene; güvenlik doğrulaması isteniyor olabilir.':'Could not save the password. Sign in with Google again and retry; additional verification may be required.');
+  }finally{
+    settingGooglePassword=false;
+    const submit=document.getElementById('google-app-pass-submit');
+    if(submit)submit.disabled=false;
+  }
+}
 async function chPw(){
   const oldPass=String($('#op')?.value||''),newPass=String($('#np')?.value||'');
   const problem=pwOk(newPass,A.u);if(problem){msg=problem;return P.set()}
@@ -2331,7 +2369,7 @@ async function bootstrapCloudAuth(){
       finally{clearTimeout(timer)}
       if(!response.ok)throw new Error('OAuth verification failed');
       const user=await response.json();if(!user?.id)throw new Error('Invalid OAuth user');
-      await activateCloudUser({user,access_token:at,refresh_token:rt});greetThen();return;
+      await activateCloudUser({user,access_token:at,refresh_token:rt},'','google');greetThen();return;
     }catch(err){sbClear();msg=tr()?'Google oturumu doğrulanamadı. Lütfen tekrar dene.':'Google session could not be verified.';view='login';renderAppOrAuth();return}
   }
   await restoreCloudOnLoad();
@@ -2406,6 +2444,7 @@ async function restoreCloudOnLoad(){
     const meta=user.user_metadata||{};
     const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
     a.authUid=user.id;a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
+    if(user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
     DB.accounts[a.u]=a;DB.lastUser=a.u;DB.last=a.nick;A=a;
     view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();
     if(!remote)await sbPush();
