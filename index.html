@@ -5,7 +5,7 @@
 <title>Improvin' your day</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f6eee3">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Fraunces:wght@500;600;700&family=Homemade+Apple&family=Nunito:wght@400;600;700&family=UnifrakturCook:wght@700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Fraunces:wght@500;600;700&family=Homemade+Apple&family=Nunito:wght@400;600;700&family=UnifrakturCook:wght@700&display=swap">
 <style>
 :root{--bg:#FFFAFA;--card:#ffffff;--ink:#542A0C;--mut:#835C3B;--acc:#800000;--acc2:#FDD7E4;--ok:#387C44;--no:#C71585;--ln:#ebd8d4;--sh:0 12px 32px #542A0C13;--on-acc:#fff;--okbg:#eaf4ed;--fs:'Fraunces',Georgia,'Times New Roman',serif;--okbg:#e6f1e6}
 *{box-sizing:border-box}
@@ -1066,6 +1066,138 @@ footer .legal-links{margin:.15rem auto .3rem}
 }
 @media(max-width:380px){.login-top{flex-wrap:wrap}.login-top>.themebar,.login-top>.langbar{min-width:0}.profile-fields{min-width:0}}
 @media(prefers-reduced-motion:reduce){.toast{transition:none!important}}
+
+/* V13.1.2.1 - scoped typography + compact calendar + reversible greeting portal.
+   The requested proprietary font families are preferred only when installed locally;
+   licensed font binaries are not shipped. */
+:root{
+  --v13121-century:'Century','Century Schoolbook','New Century Schoolbook','Baskerville',Georgia,serif;
+  --v13121-bell:'Bell MT','Baskerville','Cormorant Garamond',Georgia,serif;
+  --v13121-eras:'Eras Medium ITC','Eras ITC','Trebuchet MS','Nunito',Arial,sans-serif;
+  --v13121-bernard:'Bernard MT Condensed','Bernard MT','Cinzel Decorative',Georgia,serif;
+  --v13121-mv:'MV Boli','Comic Sans MS','Segoe Print','Nunito',cursive;
+}
+/* Only the brand credit at the top of the WELCOME screen changes. */
+.welcome-top .brand-badge{
+  font-family:'Cormorant Garamond',Georgia,serif!important;
+  font-weight:500!important;
+  letter-spacing:.025em;
+  font-size:clamp(1.12rem,2.2vw,1.4rem);
+}
+/* The requested serif welcome label, menu face and member display name. */
+.shell aside .lg{font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:clamp(1.15rem,1.5vw,1.5rem);letter-spacing:0;line-height:1.22}
+.shell aside .lg small{
+  font-family:var(--v13121-century);font-weight:700;font-size:clamp(.9rem,1.1vw,1.05rem);
+  margin-bottom:.42rem;color:var(--ink);letter-spacing:0;
+}
+.shell aside a{font-family:var(--v13121-bell);font-size:clamp(1rem,1.24vw,1.28rem);font-weight:600;letter-spacing:.005em;line-height:1.24}
+/* Standard manual sign-in text: Eras Medium ITC with reliable system fallback. */
+.login-wrap.auth-standard .box,
+.login-wrap.auth-standard .box :is(h2,label,button,input,a,small,p,b,span),
+.login-wrap.auth-standard .box .auth-signin-title{
+  font-family:var(--v13121-eras)!important;
+}
+.login-wrap.auth-standard .box .auth-signin-title{font-size:clamp(1.65rem,3vw,2.05rem)!important;font-weight:600!important}
+/* Remembered Google accounts: uniform Georgia on the form and contextual card. */
+.login-wrap.auth-google-remembered .box,
+.login-wrap.auth-google-remembered .box :is(h2,label,button,input,a,small,p,b,span),
+.login-wrap.auth-google-remembered .box .auth-signin-title{
+  font-family:Georgia,'Times New Roman',serif!important;
+}
+.login-wrap.auth-google-remembered .box .auth-signin-title{font-size:clamp(1.65rem,3vw,2.1rem)!important;font-weight:700!important}
+/* Keep the remembered account label readable rather than breaking mid-sentence on phones. */
+@media(max-width:440px){
+ .auth-google-remembered .remember{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:.65rem;row-gap:.4rem}
+ .auth-google-remembered .remember .av{grid-column:1;grid-row:1}
+ .auth-google-remembered .remember .sp{grid-column:2;grid-row:1}
+ .auth-google-remembered .remember>button{grid-column:1/-1;width:100%;justify-self:stretch;margin-top:.1rem}
+}
+/* Register page: keep headings separate from all helper labels and controls. */
+.login-wrap.auth-register .box,
+.login-wrap.auth-register .box :is(label,button,input,textarea,a,small,p,b,span){
+  font-family:var(--v13121-mv)!important;
+}
+.login-wrap.auth-register .box .auth-register-title{
+  font-family:var(--v13121-bernard)!important;font-weight:600!important;
+  font-size:clamp(1.45rem,3.5vw,2.05rem)!important;
+  line-height:1.24;overflow-wrap:anywhere;
+}
+.login-wrap.auth-register .box :is(input,textarea){font-size:clamp(.95rem,1.2vw,1.05rem)!important;line-height:1.4}
+.login-wrap.auth-register .box .legal-intro{font-size:clamp(.76rem,1.05vw,.88rem);line-height:1.55}
+/* Theme / language selection all use the same original theme display face. */
+:is(.welcome-screen,.login-wrap) :is(.themebar:not(.theme-picker),.langbar),
+:is(.welcome-screen,.login-wrap) :is(.themebar:not(.theme-picker),.langbar) :is(button,small,span,.theme-label){
+  font-family:var(--display-theme)!important;font-style:normal!important;font-weight:400!important;
+}
+/* Compact fixed-size calendar, even on desktop and 4K screens. */
+#mn .calendar-panel{width:100%;max-width:min(34rem,550px);margin-inline:auto}
+#mn .calendar-panel .month-title{min-width:0;font-size:clamp(.98rem,1.2vw,1.18rem)}
+#mn .calendar-panel .progress-calendar{
+  width:100%;max-width:min(29rem,480px);margin:.8rem auto 0!important;
+  display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr));
+  align-items:stretch!important;justify-content:stretch!important;
+  column-gap:clamp(.16rem,.5vw,.38rem);row-gap:clamp(.2rem,.65vw,.42rem);
+}
+#mn .calendar-panel .progress-calendar .dot{
+  width:100%!important;min-width:0!important;min-height:0!important;
+  max-width:100%!important;height:clamp(2.65rem,3.3vw,3.05rem)!important;
+  aspect-ratio:auto!important;padding:.12rem .05rem!important;
+}
+#mn .calendar-panel .progress-calendar .cal-empty{min-height:0}
+#mn .calendar-panel .progress-calendar .dot span{font-size:clamp(.72rem,1vw,.9rem)!important}
+#mn .calendar-panel .progress-calendar .dot .dpct{font-size:clamp(.5rem,.7vw,.58rem)!important}
+@media(max-width:900px){
+  .shell aside a{font-size:clamp(.94rem,2.85vw,1.09rem)!important;line-height:1.18}
+  #mn .calendar-panel{max-width:min(100%,34rem,550px)}
+}
+@media(max-width:410px){
+  #mn .calendar-panel{padding:clamp(.65rem,2.8vw,.95rem)}
+  #mn .calendar-panel .progress-calendar{gap:clamp(.12rem,.5vw,.24rem)}
+  #mn .calendar-panel .progress-calendar .dot{height:clamp(2.25rem,10vw,2.65rem)!important}
+  .login-wrap.auth-register .box .legal-intro{font-size:.76rem}
+}
+/* Greeting: circular opening then immediately retracting, without a long hold.
+   Important overrides intentionally win over V7's flat veil animation. */
+#login-portal{z-index:20019;pointer-events:none;isolation:isolate;overflow:hidden}
+#login-portal .portal-disc{
+  background:color-mix(in srgb,var(--card) 83%,var(--acc))!important;
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  clip-path:circle(0 at 50% 50%)!important;
+  animation:v13121Bloom .52s cubic-bezier(.34,.02,.24,1) both!important;
+}
+#login-portal .portal-ring{
+  position:relative;width:3.4rem;height:3.4rem;
+  animation:v13121Ring .45s ease-in-out both!important;
+  z-index:2;
+}
+#login-portal .portal-greeting{
+  position:absolute;z-index:3;max-width:min(90vw,26rem);padding:0 1rem;
+  text-align:center;font-family:var(--v13121-century);font-weight:700;
+  font-size:clamp(1.35rem,5.1vw,2.55rem);line-height:1.2;
+  color:var(--ink);text-wrap:balance;pointer-events:none;
+  animation:v13121Greeting .52s ease-in-out both;
+}
+@keyframes v13121Bloom{
+  0%{opacity:0;clip-path:circle(0 at 50% 50%)}
+  44%{opacity:1;clip-path:circle(150vmax at 50% 50%)}
+  56%{opacity:1;clip-path:circle(150vmax at 50% 50%)}
+  100%{opacity:0;clip-path:circle(0 at 50% 50%)}
+}
+@keyframes v13121Ring{
+  0%{opacity:0;transform:rotate(-40deg) scale(.78)}
+  40%{opacity:.9;transform:rotate(145deg) scale(1)}
+  100%{opacity:0;transform:rotate(300deg) scale(.75)}
+}
+@keyframes v13121Greeting{
+  0%{opacity:0;transform:scale(.85)}
+  29%{opacity:0;transform:scale(.95)}
+  48%,62%{opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(.93)}
+}
+@media(prefers-reduced-motion:reduce){
+  #login-portal .portal-disc,#login-portal .portal-ring,#login-portal .portal-greeting{animation:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -1558,9 +1690,9 @@ function renderAppOrAuth(){
     const googleRemembered=!!(rem&&DB.accounts[rem].authUid&&DB.accounts[rem].loginMethod==='google');
     const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="${googleRemembered?'signInWithGoogle()':`useAccount('${esc(rem)}')` }">${googleRemembered?(tr()?'Google ile gir':'Google sign-in'):t('useAccount')}</button></div>`:``;
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
-    h=`<div class="login-wrap"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" onclick="signInWithGoogle()">${tr()?'Google ile devam et':'Continue with Google'}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
+    h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" onclick="signInWithGoogle()">${tr()?'Google ile devam et':'Continue with Google'}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
-  else if(view==='setup')h=`<div class="login-wrap"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button></div><p class="mut">${tr()?'Demo aşamasında e-posta servisi kapalıysa bağlantı gönderilemez; lütfen hesabını oluştururken güçlü bir şifre seç.':'Password reset email requires an email sending provider, which may be unavailable during the demo.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
@@ -1595,11 +1727,12 @@ function greetThen(cb){
   if(reduced){if(cb)cb();setTimeout(()=>toast(greetText()),0);return}
   document.getElementById('login-portal')?.remove();
   const root=document.createElement('div');root.id='login-portal';root.setAttribute('aria-hidden','true');
-  root.innerHTML='<div class="portal-disc"></div><div class="portal-ring"></div>';
+  root.innerHTML='<div class="portal-disc"></div><div class="portal-ring"></div><span class="portal-greeting"></span>';
+  root.querySelector('.portal-greeting').textContent=greetText();
   document.body.appendChild(root);
   let cleaned=false;const cleanup=()=>{if(cleaned)return;cleaned=true;root.remove();if(cb)cb();toast(greetText())};
-  root.addEventListener('animationend',e=>{if(e.target.classList.contains('portal-disc'))cleanup()},{once:true});
-  setTimeout(()=>{if(root.isConnected)cleanup()},380);
+  root.addEventListener('animationend',e=>{if(e.target.classList.contains('portal-disc'))cleanup()});
+  setTimeout(()=>{if(root.isConnected)cleanup()},610);
 }
 function goHome(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 function backToLogin(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
@@ -1972,7 +2105,7 @@ function shell(){
   const firstShell=!document.querySelector('.shell aside');
   document.querySelectorAll('body > #mini-cal').forEach(el=>el.remove());
   const oldBackdrop=document.getElementById('mini-backdrop');if(oldBackdrop)oldBackdrop.remove();
-  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button><button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><aside id="nav-aside" class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button><button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><aside id="nav-aside" class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),650)}
@@ -2160,7 +2293,7 @@ P.pc=()=>{
   }
   const monthKey=`${y}-${pad(mo+1)}`;
   const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}</b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><input id="fn-text" type="text" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><input id="fn-text" type="text" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
 };
 function newNote(){
   const d=String($('#fnd')?.value||'');
