@@ -3393,6 +3393,13 @@ async function v13FinishMigration(j){
     try{
       await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:source.u}});
     }catch(e){if(e?.code==='23505'||e?.status===409)throw new Error('USERNAME_TAKEN');throw e}
+    // Username claim changes data.u; verify that this is the ONLY difference
+    // before using the refreshed JSON as the migration compare-and-swap base.
+    const afterClaim=await sbPull();
+    const claimOnly=afterClaim&&afterClaim.u===source.u&&
+      Object.keys(afterClaim).every(k=>k==='u'||(existing&&JSON.stringify(afterClaim[k])===JSON.stringify(existing[k])))&&
+      Object.keys(existing||{}).every(k=>k==='u'||Object.prototype.hasOwnProperty.call(afterClaim,k));
+    if(!claimOnly)throw new Error('CLOUD_CHANGED');
     const snapshot=exportDataSnapshot(source).account;
     const migration={...snapshot,u:source.u,authUid:uid,accountOrigin:'cloud',loginMethod:'google',googleConnected:true,
       email:String(j.user.email).toLowerCase(),mail:String(j.user.email).toLowerCase(),pw:'',
@@ -3401,7 +3408,7 @@ async function v13FinishMigration(j){
     // replaced when it equals the exact empty snapshot we reviewed above.
     // Missing row: INSERT ... ON CONFLICT DO NOTHING; existing row: UPDATE ... WHERE data=p_expected_data.
     const written=await sb('/rest/v1/rpc/iydu_migrate_legacy',{method:'POST',
-      body:{p_data:migration,p_expected_data:existing||null}});
+      body:{p_data:migration,p_expected_data:afterClaim}});
     if(written!==true)throw new Error('CLOUD_CHANGED');
     const verified=await sbPull();
     if(!verified||verified.legacyMigrationId!==pending.nonce||verified.authUid!==uid||verified.u!==source.u||
@@ -3464,8 +3471,8 @@ async function bootstrapCloudAuth(){
       const identity={user,access_token:at,refresh_token:rt};
        if(await v13FinishMigration(identity)){if(A)greetThen();return}
        await activateCloudUser(identity,'',recovery?'password':'google');
-       if(recovery){openPasswordRecoveryModal();return}
-       greetThen();return;
+       if(recovery&&A){openPasswordRecoveryModal();return}
+       if(A)greetThen();return;
     }catch(err){sbClear();msg=tr()?'Google oturumu doğrulanamadı. Lütfen tekrar dene.':'Google session could not be verified.';view='login';renderAppOrAuth();return}
   }
   // A reload in the middle of migration is not evidence of a completed cloud transfer.
@@ -3536,35 +3543,29 @@ async function sbPull(){
   return row?.data||null;
 }
 async function restoreCloudOnLoad(){
-  if(!sbSession()?.access_token){if(sbSession()?.refresh_token&&!await sbRefresh())return;else if(!sbSession()?.access_token)return}
+  if(!sbSession()?.access_token){
+    if(sbSession()?.refresh_token&&!await sbRefresh())return;
+    if(!sbSession()?.access_token)return;
+  }
   try{
-    const user=await sbCurrentUser();
-    if(!user?.id)return;
+    const user=await sbCurrentUser();if(!user?.id)return;
     const session=sbSession();if(!session)return;
     sbSave({...session,user});
-    const remote=await sbPull();
-    const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
-    const meta=user.user_metadata||{};
-    const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
-    a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
-    if(user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
-    v13ProtectLegacyCollision(a.u,user.id);
-    cacheCloudAccount(a);DB.lastUser=a.u;DB.last=a.nick;A=a;
-    view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();
-    if(!remote)await sbPush();
+    // The same identity check must run after reload, not just after sign-in.
+    await activateCloudUser({...session,user},'',
+      user.app_metadata?.providers?.includes('google')?'google':'password');
   }catch(e){
-    // Do not auto-login from unverified localStorage contents.
     if(e.status===401)sbClear();
     if(e.message==='LOCAL_USERNAME_CACHE_CONFLICT'||e.message==='LOCAL_ALIAS_BACKUP_FAILED'){
       sbClear();msg=e.message==='LOCAL_ALIAS_BACKUP_FAILED'?
-        (tr()?'Eski hesap kopyası güvenle yedeklenemedi; hiçbir yerel kayıt silinmedi. Tarayıcı depolama alanını kontrol et.':
-          'The old profile could not be backed up; no local record was removed. Check browser storage.'):
-        (tr()?'Bu cihazda farklı bir hesaba ait eski kullanıcı adı kaydı var. Veri güvenliği için giriş durduruldu; kayıtları silmeden önce incele.':
-          'A different cached account uses this username. Sign-in was stopped to protect local data.');
-    }
-    if(e.message==='V13_LOCAL_USERNAME_COLLISION'){
-      sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki eski yerel hesapla çakışıyor. Eski veri korunuyor. Yerel hesabından JSON yedeği al ve aktarım adımını kullan.':'A cloud username conflicts with a legacy profile on this device. Local data was preserved. Export it and use the migration flow.';
-    }
+        (tr()?'Eski profil güvenle yedeklenemedi; hiçbir yerel veri silinmedi.':'The older profile could not be backed up; no local data was removed.'):
+        (tr()?'Bu cihazda farklı bir hesaba ait eski kayıtla çakışma var. Kayıtları silme.':
+          'A different cached account conflicts here. Do not erase browser data.');
+    }else if(e.message==='V13_LOCAL_USERNAME_COLLISION'){
+      sbClear();msg=tr()?'Bulut kullanıcı adı eski yerel hesapla çakışıyor. Yerel veriler korundu.':
+        'Cloud username conflicts with a legacy account. Local data was preserved.';
+    }else msg=tr()?'Bulut oturumu veya kullanıcı adı doğrulanamadı. Verilerin korunuyor; yeniden giriş yap.':
+      'Could not verify cloud session or username. Your data is preserved; sign in again.';
     if(!A){view='login';renderAppOrAuth()}
   }
 }
