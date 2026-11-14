@@ -71,23 +71,61 @@ WHERE schemaname = 'public'
 ORDER BY tablename, policyname;
 
 -- 5) Aggregate-only diagnostics: no email, UID or profile data is shown.
-SELECT count(*) AS user_data_rows,
-       count(*) FILTER (WHERE username IS NULL OR btrim(username) = '') AS blank_usernames
-FROM public.user_data;
+-- IMPORTANT: 'public.user_data.username' may not exist in deployed schemas.
+-- Use to_jsonb(row)->>'username' to inspect optional columns without a 42703 error.
+-- If user names are embedded in JSONB, try data.u or data.username.
+-- These checks describe the user_data records only; they do not guarantee
+-- that a separately managed username reservation is free.
+WITH names AS (
+  SELECT NULLIF(btrim(COALESCE(
+    to_jsonb(ud)->>'username',
+    to_jsonb(ud)->'data'->>'u',
+    to_jsonb(ud)->'data'->>'username',
+    ''
+  )), '') AS username_value
+  FROM public.user_data AS ud
+)
+SELECT COUNT(*) AS user_data_rows,
+       COUNT(*) FILTER (WHERE username_value IS NULL) AS rows_without_detectable_username
+FROM names;
 
-SELECT count(*) AS duplicate_case_insensitive_username_groups
+WITH names AS (
+  SELECT LOWER(NULLIF(btrim(COALESCE(
+    to_jsonb(ud)->>'username',
+    to_jsonb(ud)->'data'->>'u',
+    to_jsonb(ud)->'data'->>'username',
+    ''
+  )), '')) AS normalized_name
+  FROM public.user_data AS ud
+)
+SELECT COUNT(*) AS duplicate_case_insensitive_username_groups
 FROM (
-  SELECT lower(username) AS normalized_name
-  FROM public.user_data
-  WHERE username IS NOT NULL
-  GROUP BY lower(username)
-  HAVING count(*) > 1
+  SELECT normalized_name
+  FROM names
+  WHERE normalized_name IS NOT NULL
+  GROUP BY normalized_name
+  HAVING COUNT(*) > 1
 ) AS duplicates;
 
--- 6) Verify the reported example only by boolean; do not retrieve the owner's identity.
+-- 6) Verify the reported example only by boolean, without identifying an account.
+-- False does not imply globally available: the reservation may live elsewhere,
+-- and database LOWER() behavior may differ from Turkish locale case folding.
 SELECT EXISTS(
-  SELECT 1 FROM public.user_data WHERE lower(username) = lower('Öznur')
-) AS oznur_exists_in_user_data;
+  SELECT 1 FROM public.user_data AS ud
+  WHERE LOWER(COALESCE(
+    to_jsonb(ud)->>'username',
+    to_jsonb(ud)->'data'->>'u',
+    to_jsonb(ud)->'data'->>'username',
+    ''
+  )) = LOWER('Öznur')
+) AS oznur_appears_in_user_data;
 
--- Note: an availability RPC can consult a separate username-reservation table.
--- A boolean above alone does NOT prove the username is available.
+-- 7) Find all deployed public tables/views for reservation logic (metadata only).
+SELECT table_name, table_type
+FROM information_schema.tables
+WHERE table_schema='public'
+  AND (table_name ILIKE '%username%' OR table_name ILIKE '%reservation%' OR table_name ILIKE 'iydu%')
+ORDER BY table_name;
+
+-- Availability RPCs can consult a separate username-reservation table.
+-- Run the definitions in section 2 to identify their actual source of truth.
