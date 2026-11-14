@@ -93,13 +93,51 @@ async function main(){
   await fresh.waitForFunction(()=>typeof A!=='undefined'&&A?.u==='BrowserClaim',null,{timeout:20000});
   assert.equal(await fresh.evaluate(()=>view),'app');
 
+  // Callback-path test using a REAL local GoTrue access token from a password
+  // session in a URL fragment. The token is real; the Google provider is NOT.
+  // This validates the frontend OAuth callback parser without claiming Google
+  // consent or provider configuration has been tested.
+  const callbackAccount=await signup('callback-synthetic',{nickname:'Synthetic Callback'});
+  const tokenResponse=await fetch(base+'/auth/v1/token?grant_type=password',{
+    method:'POST',headers:{apikey:anon,'Content-Type':'application/json'},
+    body:JSON.stringify({email:callbackAccount.email,password}),
+    signal:AbortSignal.timeout(15000)
+  });
+  assert.equal(tokenResponse.ok,true,'Failed to mint local session for callback test');
+  const token=await tokenResponse.json();
+  assert.ok(token.access_token&&token.refresh_token);
+  const oauthContext=await browser.newContext({viewport:{width:390,height:844}});
+  const oauthPage=await oauthContext.newPage();
+  const params=new URLSearchParams({
+    access_token:token.access_token,refresh_token:token.refresh_token,
+    token_type:'bearer',type:'oauth'
+  });
+  await oauthPage.goto(site+'#'+params.toString(),{waitUntil:'domcontentloaded'});
+  await oauthPage.locator('#claim-name').waitFor({timeout:20000});
+  assert.equal(await oauthPage.evaluate(()=>A),null);
+  assert.equal(await oauthPage.evaluate(()=>location.hash),'',
+    'Auth callback tokens must be removed from the visible URL');
+  await oauthPage.locator('#claim-name').fill('CallbackName');
+  await oauthPage.locator('#claim-username-submit').click();
+  await oauthPage.waitForFunction(()=>typeof A!=='undefined'&&A?.u==='CallbackName',
+    null,{timeout:20000});
+
+  const denyContext=await browser.newContext();
+  const denyPage=await denyContext.newPage();
+  await denyPage.goto(site+'#error=access_denied&error_description=synthetic-denial',{
+    waitUntil:'domcontentloaded'
+  });
+  await denyPage.waitForFunction(()=>view==='login',null,{timeout:15000});
+  assert.equal(await denyPage.evaluate(()=>location.hash),'',
+    'Denied callback must clear error parameters from the URL');
+
   const claimed=await fresh.evaluate(()=>({
     name:A?.u,
     stored:typeof sbSession==='function'&&!!sbSession()?.access_token
   }));
   assert.equal(claimed.name,'BrowserClaim');
   assert.equal(claimed.stored,true);
-  console.log('PASS Chrome mobile viewport: email login, session restore, unclaimed-name screen, claim and reload.');
+  console.log('PASS Chrome mobile viewport: password login, synthetic OAuth fragment callback, error callback, claim and reload.');
   console.log('Not tested: external Google OAuth consent, production deployment, multi-device JSON CAS.');
 }
 main().catch(err=>{
