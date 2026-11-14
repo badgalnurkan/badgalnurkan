@@ -1570,8 +1570,14 @@ function cachedUsernameConflict(name,account=A){
 function cacheCloudAccount(account){
   if(!account?.authUid)throw new Error('CLOUD_ID_MISSING');
   if(cachedUsernameConflict(account.u,account))throw new Error('LOCAL_USERNAME_CACHE_CONFLICT');
-  for(const [key,entry] of Object.entries(DB.accounts)){
-    if(entry?.authUid===account.authUid && key!==account.u)delete DB.accounts[key];
+  const aliases=Object.entries(DB.accounts).filter(([key,entry])=>
+    entry?.authUid===account.authUid && key!==account.u);
+  if(aliases.length){
+    // Restore must never discard a potentially newer local copy without a durable recovery path.
+    const archiveKey='b1.alias-backup.'+account.authUid+'.'+Date.now()+'-'+rndHex(4);
+    const archive=JSON.stringify({format:'iydu-local-alias-backup',at:new Date().toISOString(),accounts:Object.fromEntries(aliases)});
+    if(!setItem(archiveKey,archive))throw new Error('LOCAL_ALIAS_BACKUP_FAILED');
+    for(const [key] of aliases)delete DB.accounts[key];
   }
   DB.accounts[account.u]=account;
 }
@@ -1918,8 +1924,10 @@ function debounceNameCheck(){
     if(findUser(name)){showNameHint(suggestNameHtml(name));return}
     try{const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:name}});
       if(formDat.u!==name)return;
-      showNameHint(available===false?suggestNameHtml(name):`<small class="username-available">${tr()?'Bu kullanıcı adı uygun.':'This username is available.'}</small>`);
-    }catch(_){showNameHint('')}
+      showNameHint(available===false?suggestNameHtml(name):
+        available===true?`<small class="username-available">${tr()?'Bu kullanıcı adı uygun.':'This username is available.'}</small>`:
+        (tr()?'Kullanıcı adı doğrulanamadı.':'Username availability was not confirmed.'));
+    }catch(_){showNameHint(tr()?'Kullanıcı adı şu an kontrol edilemiyor.':'Username availability cannot be checked right now.')}
   },360);
 }
 function checkEmailHint(){
@@ -1980,7 +1988,10 @@ async function login(){
           await activateCloudUser(j,raw,'password');
         }catch(profileErr){
           loginDat.p='';
-          msg=profileErr.message==='LOCAL_USERNAME_CACHE_CONFLICT'?
+          msg=profileErr.message==='LOCAL_ALIAS_BACKUP_FAILED'?
+            (tr()?'Bu cihazdaki eski profil güvenle yedeklenemedi. Veri silinmedi; depolama alanını kontrol et.':
+              'Your older profile could not be backed up safely. No data was removed; check storage space.'):
+            profileErr.message==='LOCAL_USERNAME_CACHE_CONFLICT'?
             (tr()?'Bu cihazda farklı bir hesaba ait eski kayıtla çakışma var. Hesabın ve şifren doğrulandı; yerel kayıtları silmeden önce destek al.':
               'Your account and password are valid, but another cached account conflicts on this device. Do not erase the browser data.'):
             (tr()?'Kimliğin doğrulandı ancak profil verilerin yüklenemedi. Kayıtların silinmedi; bağlantını veya sunucu durumunu kontrol et.':
@@ -3490,9 +3501,12 @@ async function restoreCloudOnLoad(){
   }catch(e){
     // Do not auto-login from unverified localStorage contents.
     if(e.status===401)sbClear();
-    if(e.message==='LOCAL_USERNAME_CACHE_CONFLICT'){
-      sbClear();msg=tr()?'Bu cihazda farklı bir hesaba ait eski kullanıcı adı kaydı var. Veri güvenliği için giriş durduruldu; kayıtları silmeden önce incele.':
-        'A different cached account uses this username. Sign-in was stopped to protect local data.';
+    if(e.message==='LOCAL_USERNAME_CACHE_CONFLICT'||e.message==='LOCAL_ALIAS_BACKUP_FAILED'){
+      sbClear();msg=e.message==='LOCAL_ALIAS_BACKUP_FAILED'?
+        (tr()?'Eski hesap kopyası güvenle yedeklenemedi; hiçbir yerel kayıt silinmedi. Tarayıcı depolama alanını kontrol et.':
+          'The old profile could not be backed up; no local record was removed. Check browser storage.'):
+        (tr()?'Bu cihazda farklı bir hesaba ait eski kullanıcı adı kaydı var. Veri güvenliği için giriş durduruldu; kayıtları silmeden önce incele.':
+          'A different cached account uses this username. Sign-in was stopped to protect local data.');
     }
     if(e.message==='V13_LOCAL_USERNAME_COLLISION'){
       sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki eski yerel hesapla çakışıyor. Eski veri korunuyor. Yerel hesabından JSON yedeği al ve aktarım adımını kullan.':'A cloud username conflicts with a legacy profile on this device. Local data was preserved. Export it and use the migration flow.';
