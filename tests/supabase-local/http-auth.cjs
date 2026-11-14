@@ -59,6 +59,15 @@ async function rows(table,token,filter=''){
 async function readName(user){
   return check(await rpc('iydu_my_username',user.token),'own username');
 }
+async function assertNewSignup(user,expected){
+  assert.equal(await readName(user),expected);
+  const profile=await rows('profiles',user.token);
+  assert.equal(profile.length,1);
+  assert.equal(profile[0].username,expected);
+  const data=await rows('user_data',user.token);
+  assert.equal(data.length,1);
+  assert.deepEqual(data[0].data,{},'Auth trigger intentionally leaves JSON empty until first app save');
+}
 async function assertTriple(user,expected){
   assert.equal(await readName(user),expected,'reservation was incorrect');
   const ownProfiles=await rows('profiles',user.token);
@@ -71,13 +80,17 @@ async function assertTriple(user,expected){
 
 async function run(){
   const first=await register('first',{username:'FirstUser',nickname:'First Display'});
-  await assertTriple(first,'FirstUser');
+  await assertNewSignup(first,'FirstUser');
   assert.equal(check(await rpc('iydu_username_available',first.token,{
     p_username:'firstuser'
   }),'availability'),false,'existing username advertised available');
 
   // Independent identity may not see or mutate first account's RLS rows.
   const second=await register('second',{username:'SecondUser',nickname:'Second Display'});
+  await assertNewSignup(second,'SecondUser');
+  check(await rpc('iydu_save',second.token,{
+    p_username:'SecondUser',p_nick:'Second Display',p_data:{u:'SecondUser'}
+  }),'second first app save');
   await assertTriple(second,'SecondUser');
   assert.deepEqual(await rows('user_data',second.token,'&user_id=eq.'+first.uid),[],
     'User 2 read User 1 data via PostgREST');
