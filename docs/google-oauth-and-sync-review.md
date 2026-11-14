@@ -1,101 +1,87 @@
-# Google OAuth ve iki cihazda veri tutarlılığı — doğrulama notları
+# Google OAuth ve iki cihazlı eşitleme — güncel doğrulama
 
-Bu not PR #6'nın taslak durumunu belgelemek içindir. Üretim `main`
-veya canlı Supabase üzerinde hiçbir değişiklik yapmaz.
+Bu sayfa PR #6'nın **taslak**, canlıya uygulanmamış çalışma kaydıdır.
 
-## 1. Google ile gerçek giriş
+## Google OAuth
 
-Şu an uygulama, Google düğmesi tıklandığında Supabase Auth'un
-`/auth/v1/authorize?provider=google` adresine yönlendiriyor ve
-`redirect_to` olarak mevcut site kökünü gönderiyor.
-Dönen `#access_token` ve `#refresh_token` fragmentlerini okuyup
-`/auth/v1/user` ile doğruluyor. Ardından sunucudaki kullanıcı adı
-rezervasyonuna bakıyor. İsim yoksa seçim formuna yönlendiriyor.
+`index.html`, Google oturumunu Supabase'in
+`/auth/v1/authorize?provider=google` URL'sinden başlatır.
+Geri dönen URL fragmentindeki oturum belirteçleri
+`/auth/v1/user` ile doğrulanır. Test edilen akış, Chrome'da
+geçerli **yerel Supabase Auth** oturum belirteçleriyle callback'i,
+hata dönüşünü, URL temizliğini ve kullanıcı adı seçim ekranını doğruladı.
 
-Ücretsiz yerel Chrome testinde, bir **gerçek yerel Auth oturumu**
-ile fragment callback ve OAuth hata dönüşü denenir. **Bu test
-Google'ın gerçek kimlik ekranı, izin verme, client ID/secret, Google
-hesap bağlama veya Google sağlayıcı yönlendirmesini test etmez.**
-`tests/supabase-local/browser-login.cjs` kodunda bu ayrım açıkça yazılıdır.
+**Gerçek Google hesap seçimi/consent, Google Cloud client ID ve redirect
+yapılandırması, canlı Vercel ortamından Google'a gidip dönüş
+henüz test edilmedi.** Doğru yapılandırma yetkili bir test
+hesabıyla manuel uçtan uca doğrulama gerektirir.
 
-Google'ın gerçek E2E testinde ayrı ve izinli bir test Google hesabı ve
-yönetim panelindeki OAuth yapılandırması gerekir. Google'ın yönlendirdiği
-Supabase callback adresi `https://flcfqwndqfmbritaywfb.supabase.co/auth/v1/callback`
-Google Cloud OAuth istemcisinde izin verilen redirect URI olmalıdır.
-Supabase Auth içindeki izin verilen `redirect_to` adresi de test
-edilecek site kökünü kapsamalıdır. Kullanıcıdan client secret veya
-hesap şifresini sohbete yapıştırması istenmemelidir.
+Google OAuth yapılandırmasına ilişkin resmî kaynaklar:
 
-Resmî dokümanlar:
 - https://supabase.com/docs/guides/auth/social-login/auth-google
 - https://supabase.com/docs/guides/auth/redirect-urls
 
-## 2. İki cihazın aynı JSON kaydını düzenlemesi
+## İki cihaz arasında JSON kayıtları
 
-Canlı işlev `iydu_save(p_username,p_nick,p_data)` mevcut
-`user_data.data` JSON'unu önceki sürümü kontrol etmeden değiştiriyor.
-Örnek: A ve B aynı görevi görüyor. A görevi işaretliyor; B eski
-ekranından günlük yazıyor. B'nin tam JSON kaydı A'nın değişikliğini
-geri alabilir. Tek başına tarayıcıdaki `fetch` öncesi kontrol yeterli
-değildir.
+Önceden `iydu_save` tüm JSON'u kör biçimde değiştiriyordu.
+İlk denemede CAS fonksiyonunun tek başına yeterli olmadığı
+gerçek testle **kanıtlandı**: eski fonksiyon yeni veriyi
+üzerine yazabiliyordu.
 
-`supabase/rollouts/sync-cas-experimental.sql`, üretime konması
-yasak ayrı bir **deney** fonksiyonu tanımlar:
-`iydu_save_cas(p_expected_data,p_data)`.
+Bunun üzerine **taslak sunucu ve istemci birlikte düzeltildi**:
 
-Her kaydetmede PostgreSQL tek bir UPDATE içinde sunucudaki JSON ile
-cihazın son onaylı JSON kopyasını karşılaştırır. İki cihaz aynı
-kopyadan farklı kayıtlar yazarsa yalnızca ilk eşleşen yazma yapılır,
-diğeri `false` döndürür. Böylece yeni RPC kullanan istemciler için
-çakışma otomatik üzerine yazma ile sonuçlanmaz.
+- `supabase/rollouts/username-integrity-staging.sql`,
+  `iydu_save_cas(p_expected_data,p_data)` ile atomik veri
+  karşılaştırması yapar; kullanıcıya ait olmayan kayıt
+  üzerinde değişikliğe izin vermez.
+- Eski `iydu_save` kör yazması reddedilir; doğrudan
+  tablo mutation yetkileri kaldırılır. Kullanıcılar eski
+  istemcilerle oturum açabilir ama bulut kaydı yeni
+  uygulama yüklenene kadar geçici olarak başarısız olur.
+- `index.html` onaylanan ham sunucu JSON'unu taban
+  alır. Sonraki kullanıcı değişikliklerini ayrı yerel
+  taslak dosyasına kaydeder. Eşzamanlı yazmaların
+  yalnızca güncel olanı kabul edilir.
+- Çakışan cihaz verisi **otomatik üzerine yazılmaz**.
+  Yerel taslak sayfa yenilemesinde korunur, uyarı
+  görünür ve yerel kopya indirilebilir. Buluttaki
+  sürüm seçilirse yerel taslak ayrı kurtarma anahtarına
+  arşivlenir; otomatik ve sessiz birleştirme yapılmaz.
+- Önceki uygulama sürümünden kalan farklı bir
+  yerel profil de ayrı yedeklenir ve indirme
+  seçeneği gösterilir.
 
-Bu deney tek başına **yeterli değildir**:
-- Eski `iydu_save` RPC'si hâlâ açıktır; onunla veri üzerine yazılabilir.
-- Mevcut RLS/GRANT ile doğrudan `user_data` UPDATE erişimi olabilir.
-- Tarayıcı yeni CAS RPC'sini kullanacak şekilde güncellenmedi.
-- Başarısız CAS durumunda yerel değişiklikleri kalıcı kurtarma
-  yedeğine alan, iki cihazın sürümlerini kıyaslayan ve kullanıcının
-  seçimine göre birleştiren arayüz yok.
-- Oturum açılırken veya sekme yenilenirken eşitlenmemiş yerel
-  değişiklikler otomatik kaybolmamalı. Buna yönelik kalıcı dirty-state
-  kontrolü gereklidir.
-- Hesap adı değiştirme, sıfırlama ve eski hesap aktarımı dahil tüm
-  yazarların aynı eşzamanlılık sözleşmesine uyması gerekir.
+Bunun açıklaması, geçiş ve geri alma riskleri:
+[CAS yayın planı](cas-rollout-release-plan.md).
 
-**Üretim dağıtımına başlamadan önce:** Eski yazıcıların güvenli
-biçimde devre dışı bırakılması, yeni istemcinin revizyon yönetimi,
-başarısız yazmanın güvenli geri kazanımı, çok cihazlı tarayıcı
-senaryoları, yedek ve geri alma planı birlikte geliştirilmelidir.
+## Gerçek test kanıtı
 
-### CI deneyi
+GitHub Actions'ta ücretsiz ve sadece geçici Docker
+Supabase/Chrome kullanıldı; üretim Supabase'i yoktur.
+`3f4c67a2c888bc4523a9fc3cbf2e4229acbb163e`
+commit'inde üç test iş akışı **SUCCESS**:
 
-`tests/supabase-local/cas-experiment.cjs` yerel Supabase'de
-iki bağımsız oturuma aynı JSON'u okutur; eşzamanlı CAS yazmalarından
-yalnız birinin başarılı olmasını bekler. Ardından eski RPC'nin
-hâlâ yeni veriyi ezebildiğini **özellikle doğrular**. Dolayısıyla
-bu testin başarılı geçmesi bir güvenlik açığının tamamen çözüldüğü
-anlamına gelmez; **yayın engelinin kanıtıdır**.
+- **Account consistency** — JS regresyonları
+- **Username integrity (isolated PostgreSQL)** — RLS, ACL,
+  kullanıcı adı sahipliği ve gerçek SQL
+- **Supabase Auth integration (free local stack)** — gerçek
+  e-posta/şifre API ve Chrome giriş, kullanıcı adı alma,
+  iki tarayıcı bağlamında görev/günlük çatışması,
+  sayfa yenilemesinden sonra taslağın korunması,
+  yerel yedek indirme ve arşivli bulut kurtarma;
+  eski/direkt yazıcının reddedilmesi.
 
-Canlı veritabanına SQL uygulanmadı; deney sadece geçici Github
-Actions Supabase ortamında yürütülür.
+Doğrulanmış iş akışı:
+https://github.com/badgalnurkan/badgalnurkan/actions/runs/43654357943
 
-## Doğrulama sonucu — 2026-11-15
+## Yayın kapıları
 
-PR #6 commit `65d18e18516e8f28507ba268097894b150aceed4` için GitHub Actions sonuçları:
+Üretimde eski istemcilerin geçişinin planlanması,
+özel yedeğin geri yükleme testi, gerçek Google OAuth
+consent ve SMTP testleri, security-definer fonksiyon
+yetki incelemesi ve geri alma planı **açıktır**.
 
-- `Account consistency`: SUCCESS
-- `Username integrity (isolated PostgreSQL)`: SUCCESS
-- `Supabase Auth integration (free local stack)`: SUCCESS
-
-Kanıt: https://github.com/badgalnurkan/badgalnurkan/actions/runs/43653114947
-
-Son işin loglarında açık sonuçlar:
-
-- `PASS Chrome mobile viewport: password login, synthetic OAuth fragment callback, error callback, claim and reload.`
-- `PASS: local Supabase CAS prevents two concurrent new-RPC writes and stale retries.`
-- `CONFIRMED RELEASE BLOCKER: legacy iydu_save can still overwrite a newer CAS state.`
-
-**Karar:** Google provider'ının gerçek consent akışı test edilmedi;
-CAS yalnızca yeni deney fonksiyonunu kullanan istemciler arasında çalışır.
-Mevcut kullanıcıları korumak için PR taslak kalmalı; üretim SQL'i
-veya `main` üzerinde değişiklik yapılmamalıdır.
+Taslak PR canlıya otomatik birleştirilmemeli.
+Bu çalışma güvenli yazma mekanizmasının test ortamında
+işlediğini kanıtlar; gerçek sistemin tamamen
+hatasız olduğu iddiası değildir.
