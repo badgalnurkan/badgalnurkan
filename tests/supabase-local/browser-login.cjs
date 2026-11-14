@@ -74,6 +74,30 @@ async function main(){
     executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome',
     headless:true,args:['--no-sandbox','--disable-dev-shm-usage']
   });
+  // The real Google provider requires an explicitly authorized test account,
+  // so intercept the outbound request here; no request reaches production.
+  // This tests the actual Google button's redirect origin/provider/return URL.
+  const launchContext=await browser.newContext({viewport:{width:390,height:844}});
+  const launchPage=await launchContext.newPage();
+  await launchPage.route('**/auth/v1/authorize**',async route=>{
+    await route.fulfill({status:200,contentType:'text/html',body:'OAuth navigation intercepted safely in CI'});
+  });
+  await launchPage.goto(site,{waitUntil:'domcontentloaded'});
+  await launchPage.evaluate(()=>goTo('login','home'));
+  const requestPromise=launchPage.waitForRequest(req=>
+    req.url().startsWith(base+'/auth/v1/authorize?'),{timeout:15000});
+  await launchPage.locator('.google-signin').click();
+  const launchRequest=new URL((await requestPromise).url());
+  assert.equal(launchRequest.origin,new URL(base).origin,
+    'Google sign-in attempted to use unexpected Supabase project');
+  assert.equal(launchRequest.pathname,'/auth/v1/authorize');
+  assert.equal(launchRequest.searchParams.get('provider'),'google');
+  assert.equal(launchRequest.searchParams.get('redirect_to'),site,
+    'Redirect must return to exactly the current app URL, no wildcards');
+  assert.equal(launchRequest.searchParams.has('access_token'),false,
+    'OAuth launch must not include an existing session token');
+  console.log('PASS Google button: real browser constructs local authorize URL with correct redirect; external provider intentionally intercepted.');
+
   const normalContext=await browser.newContext({viewport:{width:390,height:844}});
   const normal=await normalContext.newPage();
   await flow(normal,first,'BrowserOne');
