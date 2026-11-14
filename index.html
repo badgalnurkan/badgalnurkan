@@ -969,6 +969,16 @@ main .card{animation-duration:.25s;animation-delay:0s!important}
 footer .legal-links{margin:.15rem auto .3rem}
 @media(max-width:380px){.legal-links{column-gap:.7rem;font-size:.78rem}}
 
+
+/* V10: opt-in account portability and guarded deletion; inherits existing theme variables. */
+.account-data-actions{display:flex;flex-wrap:wrap;gap:.65rem;align-items:center;margin:.8rem 0}
+.account-data-actions button{max-width:100%;white-space:normal}
+.account-data-help{font-size:.82rem;line-height:1.55}
+.account-data-alert{font-size:.83rem;line-height:1.6;margin:.6rem 0}
+.account-delete-form label{display:block;margin:.75rem 0 .3rem}
+.account-delete-form input{width:100%;max-width:100%;box-sizing:border-box}
+.account-delete-form button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:420px){.account-data-actions{flex-direction:column;align-items:stretch}.account-data-actions button{width:100%}}
 </style>
 </head>
 <body>
@@ -1040,9 +1050,19 @@ window.addEventListener('storage',e=>{
   let nd;try{nd=JSON.parse(e.newValue)}catch(_){return}
   if(!nd||!nd.accounts)return;
   DB=nd;
-  if(A&&A.u&&nd.accounts[A.u]&&nd.accounts[A.u].authUid===A.authUid){
-    A=norm(nd.accounts[A.u]);
-    if(view==='app')renderAppOrAuth();
+  if(A&&A.u){
+    const current=nd.accounts[A.u];
+    const same=current&&current.authUid===A.authUid;
+    const moved=!same&&A.authUid?Object.values(nd.accounts).find(x=>x?.authUid===A.authUid):null;
+    if(same||moved){
+      A=norm(same?current:moved);
+      if(view==='app')renderAppOrAuth();
+    }else{
+      // Another tab removed this identity. Do not let this tab re-save it.
+      clearTimeout(pushT);pushT=null;
+      if(A.authUid)sbClear();
+      A=null;view='welcome';pg='home';renderAppOrAuth();
+    }
   }
 });
 /* geri tusu: oturum acikken cikis ekranina dusmesin */
@@ -2259,7 +2279,7 @@ P.set=()=>{
   <div class="card"><h2>${tr()?'Gizlilik ve veri saklama':'Privacy and storage'}</h2><p class="mut">${tr()?'Uygulama giriş ve tercih verilerini bu tarayıcıda saklar. Bulut hesaplarının görev ve notları Supabase ile eşitlenir. Reddet düğmesiyle kapatılabilecek bir izleme çerezi kullanılmıyor; gerekli depolama çalışmaya devam eder.':'The app stores necessary session and preference data in this browser. Cloud account tasks and notes are synced with Supabase. This notice is not an opt-in for analytics cookies.'}</p><p class="mut">${A.authUid?(tr()?'Bulut oturumu açık. Farklı cihazlarda Google ile veya hesabında ayrıca etkinleştirdiğin e-posta/şifre yöntemiyle giriş yapabilirsin.':'Cloud account active. Sign in on other devices with Google, or with email and a password you have explicitly set for this account.'):(tr()?'Eski yerel hesap: başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.')}</p><p class="mut">${tr()?'Demo e-posta sahipliğini doğrulamaz; şifre sıfırlama e-postası çalışmayabilir.':'Demo does not verify email ownership; password reset email may be unavailable.'}</p><p class="legal-intro">${tr()?'Ayrıntılı bilgilendirme ve hakların:':'Full notices and your rights:'}</p>${legalLinks()}</div>
   ${ac?`<div class="card"><h2>${tr()?'Eski yerel hesaplar':'Legacy local accounts'}</h2>${ac}</div>`:''}
   <div class="card"><h2>${t('resetSystem')}</h2><p class="mut">${tr()?'Görevler, notlar, günlükler, ilerleme ve raporlar sıfırlanır. Hesap kimliğin kalır.':'Tasks, journals, progress and reports will be reset. Account identity is retained.'}</p><button style="background:var(--no)" onclick="resetSys()">${t('reset')}</button></div>
-  <div class="card"><h2>${t('deleteAccount')}</h2><p class="mut">${tr()?'Bulut hesabı silme işlemi demo sürümünde kapalıdır; sunucuda güvenli hesap silme işlevi gerektirir.':'Cloud deletion is not available in demo; it requires a secure server-side deletion endpoint.'}</p><button class="g d" onclick="delAcc()">${t('deleteAccount')}</button></div>
+  <div class="card"><h2>${tr()?'Verilerim ve hesabım':'My data and account'}</h2><p class="mut account-data-help">${tr()?'Yüklü hesabının görevlerini, notlarını, günlüklerini ve ilerleme kayıtlarını JSON dosyası olarak dışa aktar. Bu dosya hassas bilgiler içerebilir; güvenli bir yerde sakla.':'Export your loaded tasks, notes, journals and progress as a JSON file. The file may contain private information, so store it securely.'}</p><div class="account-data-actions"><button class="g" onclick="exportMyData()">${tr()?'Verilerimi indir (JSON)':'Download my data (JSON)'}</button><button class="g d" onclick="delAcc()">${t('deleteAccount')}</button></div><p class="mut account-data-help">${A.authUid?(tr()?'Bulut hesabı silme özelliğinin durumu, yalnızca sunucudaki güvenlik kontrolüyle belirlenir. Başlangıçta kapalıdır.':'Cloud deletion availability is checked with the server. It is disabled by default.'):(tr()?'Yerel hesabın silinmesi yalnızca bu tarayıcıdaki kayıtlarını etkiler.':'Deleting a legacy local account affects only records on this browser.')}</p></div>
   <div class="card"><h2>${tr()?'Oturum':'Session'}</h2><p class="mut">${tr()?'Hesabından güvenli şekilde çıkış yap.':'Sign out of your account.'}</p><button class="danger-logout" onclick="confirmLogout()">${t('logout')}</button></div>`);
 };
 
@@ -2347,11 +2367,143 @@ function confirmReset(){
   pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,lg:0,iv:0,sw:0,swT:0,swI:0};
   closeModal('reset-modal');save();msg=t('systemReset');shell();
 }
-async function delAcc(){
-  if(A?.authUid){toast(tr()?'Bulut hesabını silmek için sunucu tarafında güvenli silme işlemi gerekiyor.':'Secure server-side account deletion is not configured.');return}
-  openModal('delete-local-modal',`<h2>${t('deleteAccount')}</h2><p>${tr()?'Eski yerel hesabın ve bu cihazdaki verileri silinecek.':'Delete the legacy local account on this device?'}</p><div class="row"><button style="background:var(--no)" onclick="deleteLocalConfirmed()">${t('yes')}</button><button class="g" onclick="closeModal('delete-local-modal')">${t('no')}</button></div>`);
+// V10: export only the current signed-in app snapshot, never credentials or other accounts.
+function exportDataSnapshot(account){
+  if(!account||typeof account!=='object')throw new Error('No active account');
+  const copy=JSON.parse(JSON.stringify(account));
+  for(const field of ['pw','salt','pwAt','authUid','access_token','refresh_token','token','loginMethod','googleConnected'])delete copy[field];
+  return {
+    format:'improvin-your-day-export',version:1,exportedAt:new Date().toISOString(),
+    scope:'Loaded application account on this device; not a full Supabase service export',
+    account:copy
+  };
 }
-function deleteLocalConfirmed(){if(!A||A.authUid)return;delete DB.accounts[A.u];A=null;DB.lastUser='';save();closeModal('delete-local-modal');goTo('welcome','home')}
+function exportMyData(){
+  if(!A)return;
+  try{
+    const snapshot=exportDataSnapshot(A);
+    const bytes=new Blob([JSON.stringify(snapshot,null,2)],{type:'application/json;charset=utf-8'});
+    const url=URL.createObjectURL(bytes),a=document.createElement('a');
+    const safeName=String(A.u||'account').replace(/[^a-zA-Z0-9_-]/g,'-').slice(0,35)||'account';
+    a.href=url;a.download=`improvin-${safeName}-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+    toast(tr()?'JSON dosyası hazır. Gizli notlar içerebilir.':'JSON export prepared. It may contain private notes.');
+  }catch(e){toast(tr()?'Dosya oluşturulamadı. Tarayıcı indirme izinlerini kontrol et.':'Could not create the file. Check your browser download settings.')}
+}
+
+let accountDeletionBusy=false;
+function accountDeletionMessage(code){
+  const messages={
+    UNAUTHORIZED:["Oturum doğrulanamadı. Hesabından çıkıp yeniden giriş yap.","Session could not be verified. Sign out and sign in again."],
+    DELETION_DISABLED:["Hesap silme sunucuda henüz etkin değil. Şimdilik indirme özelliğini kullanabilirsin.","Server-side account deletion is not yet enabled. You can download your data."],
+    RECENT_SIGN_IN_REQUIRED:["Güvenlik için yeniden giriş yapıp ardından işlemi tekrarla.","For security, sign in again before trying this action."],
+    CONFIRMATION_REQUIRED:["Onay metni veya e-posta eşleşmedi.","The confirmation phrase or email did not match."],
+    DELETE_FAILED:["Hesap silinemedi. Sunucu günlükleri kontrol edilmeli; Storage sahipliği de engel olabilir.","Account deletion failed. Check server logs; Storage ownership may block it."],
+    ORIGIN_NOT_ALLOWED:["Bu site adresi sunucu izin listesinde değil.","This site origin is not allowed by the server."],
+    SERVER_CONFIGURATION_ERROR:["Sunucu yapılandırması eksik; hiçbir hesap silinmedi.","The server is not configured; no account was deleted."],
+    TIMEOUT:["İstek zaman aşımına uğradı. Hesap durumunu kontrol etmeden tekrar silmeyi deneme.","Request timed out. Verify account state before retrying deletion."],
+    NETWORK:["Bağlantı kurulamadı. Daha sonra yeniden kontrol et.","Could not connect. Check again later."]
+  };
+  return (messages[code]||["İşlem doğrulanamadı. Hesap durumunu kontrol et.","Could not verify the action. Check account state."])[tr()?0:1];
+}
+async function accountFunction(action,fields={},retry=true){
+  const session=sbSession();
+  if(!A?.authUid||!session?.access_token||session?.user?.id!==A.authUid){
+    const error=new Error('UNAUTHORIZED');error.code='UNAUTHORIZED';throw error;
+  }
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+  try{
+    const response=await fetch(SUPABASE_URL+'/functions/v1/delete-account',{
+      method:'POST',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json'},
+      body:JSON.stringify({action,...fields}),signal:controller.signal,cache:'no-store'
+    });
+    let result=null;try{result=await response.json()}catch(_){}
+    if(!response.ok){
+      if(response.status===401&&retry&&await sbRefresh())return accountFunction(action,fields,false);
+      const error=new Error(String(result?.code||'HTTP_'+response.status));error.code=result?.code||(response.status===401?'UNAUTHORIZED':'HTTP_'+response.status);throw error;
+    }
+    return result;
+  }catch(e){
+    if(e.name==='AbortError'){const error=new Error('TIMEOUT');error.code='TIMEOUT';throw error}
+    if(e.code)throw e;
+    const error=new Error('NETWORK');error.code='NETWORK';throw error;
+  }finally{clearTimeout(timer)}
+}
+async function delAcc(){
+  if(!A||accountDeletionBusy)return;
+  if(!A.authUid){
+    openModal('delete-local-modal',`<h2>${t('deleteAccount')}</h2><p class="account-data-alert">${tr()?'Bu yerel hesabın yalnızca bu cihazdaki kayıtları ve uygulama yedeği temizlenir. İşlem geri alınamaz; önce verilerini indirmek isteyebilirsin.':'This removes the local account and its app backup on this device. It cannot be undone; consider exporting first.'}</p><label for="local-delete-name">${tr()?'Onaylamak için kullanıcı adını yaz:':'Type your username to confirm:'} <b>${esc(A.u)}</b></label><input id="local-delete-name" autocomplete="off" spellcheck="false" oninput="checkLocalDeletionConsent()"><div class="row" style="margin-top:.8rem"><button id="local-delete-confirm" disabled style="background:var(--no)" onclick="deleteLocalConfirmed()">${t('deleteAccount')}</button><button class="g" onclick="closeModal('delete-local-modal')">${t('cancel')}</button></div>`);
+    return;
+  }
+  accountDeletionBusy=true;
+  try{
+    const state=await accountFunction('status');
+    if(!state?.ok)throw Object.assign(new Error('SERVER_ERROR'),{code:'SERVER_ERROR'});
+    if(!state.deletionEnabled){
+      openModal('account-deletion-status',`<h2>${t('deleteAccount')}</h2><p>${tr()?'Sunucudaki güvenlik kilidi şu an kapalı. Hiçbir hesap silinmedi. Bu aşamada yalnızca bağlantı ve kimlik doğrulama durumu kontrol edildi.':'The server-side safety lock is currently off. No account was deleted. This only checked the connection and authentication.'}</p><button onclick="closeModal('account-deletion-status')">${tr()?'Anladım':'Got it'}</button>`);
+      return;
+    }
+    openModal('delete-cloud-modal',`<h2>${t('deleteAccount')}</h2><p class="account-data-alert">${tr()?'Bu işlem bulut hesabını, bağlı görev ve günlük kayıtlarını kalıcı olarak siler. Başka cihazlarda kalan yerel kopyalar ve sağlayıcı yedekleri anında silinmeyebilir. İşlemi yalnızca kendi test hesabında doğruladıktan sonra kullan.':'This permanently deletes your cloud account and linked tasks/journals. Copies on other devices and provider backups may remain temporarily. Only proceed after testing with a separate test account.'}</p><div class="account-delete-form"><label for="cloud-delete-email">${tr()?'Hesabının e-posta adresini yaz:':'Type your account email:'} <b>${esc(state.email||'')}</b></label><input id="cloud-delete-email" data-server-email="${esc(state.email)}" type="email" autocomplete="off" spellcheck="false" oninput="checkCloudDeletionConsent()"><label for="cloud-delete-phrase">${tr()?'Aşağıdaki ifadeyi aynen yaz:':'Type this phrase exactly:'} <b>DELETE MY ACCOUNT</b></label><input id="cloud-delete-phrase" autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="checkCloudDeletionConsent()"><p id="cloud-delete-error" class="mut" role="status" aria-live="polite"></p><div class="row"><button id="cloud-delete-confirm" disabled style="background:var(--no)" onclick="deleteCloudConfirmed()">${t('deleteAccount')}</button><button class="g" onclick="closeModal('delete-cloud-modal')">${t('cancel')}</button></div></div>`);
+  }catch(e){toast(accountDeletionMessage(e.code))}
+  finally{accountDeletionBusy=false}
+}
+function checkLocalDeletionConsent(){
+  const button=document.getElementById('local-delete-confirm');
+  if(button)button.disabled=!A||A.authUid||document.getElementById('local-delete-name')?.value!==A.u;
+}
+function checkCloudDeletionConsent(){
+  const button=document.getElementById('cloud-delete-confirm');
+  const email=document.getElementById('cloud-delete-email')?.value.trim().toLowerCase();
+  const verified=document.getElementById('cloud-delete-email')?.dataset.serverEmail?.toLowerCase();
+  const phrase=document.getElementById('cloud-delete-phrase')?.value;
+  if(button)button.disabled=accountDeletionBusy||!A?.authUid||email!==verified||phrase!=='DELETE MY ACCOUNT';
+}
+function removeDeletedAccountFromBrowser(uid,username){
+  clearTimeout(pushT);pushT=null;
+  // Remove *only* the deleted identity. Preserve unrelated local profiles.
+  for(const [key,account] of Object.entries(DB.accounts)){
+    if(key===username||uid&&account?.authUid===uid)delete DB.accounts[key];
+  }
+  A=null;
+  if(!DB.accounts[DB.lastUser]){
+    DB.lastUser=Object.keys(DB.accounts)[0]||'';
+    DB.last=DB.accounts[DB.lastUser]?.nick||'';
+  }
+  // Write both primary and fallback snapshots before navigation. An old fallback
+  // must never revive a deleted local or cloud account after a refresh.
+  DB.savedAt=Date.now();
+  const fresh=JSON.stringify(DB);
+  setItem(LSK,fresh);setItem('b1.bak',fresh);setItem('b1.bak.at',String(Date.now()));
+  setItem(OTURUM,'');setItem(LOCAL_OTURUM,'');
+  if(uid)sbClear();
+  loginDat={u:'',p:''};
+}
+function deleteLocalConfirmed(){
+  if(!A||A.authUid||document.getElementById('local-delete-name')?.value!==A.u)return;
+  stopTimers();removeDeletedAccountFromBrowser(null,A.u);
+  closeModal('delete-local-modal');goTo('welcome','home');
+  toast(tr()?'Yerel hesap bu cihazdan kaldırıldı.':'Local account removed from this device.');
+}
+async function deleteCloudConfirmed(){
+  if(!A?.authUid||accountDeletionBusy)return;
+  checkCloudDeletionConsent();
+  if(document.getElementById('cloud-delete-confirm')?.disabled)return;
+  const email=document.getElementById('cloud-delete-email').value.trim().toLowerCase();
+  accountDeletionBusy=true;
+  const button=document.getElementById('cloud-delete-confirm');if(button)button.disabled=true;
+  try{
+    const uid=A.authUid,username=A.u;
+    const result=await accountFunction('delete',{email,confirmation:'DELETE MY ACCOUNT'});
+    if(!result?.ok||result.deleted!==true)throw Object.assign(new Error('SERVER_ERROR'),{code:'SERVER_ERROR'});
+    stopTimers();removeDeletedAccountFromBrowser(uid,username);
+    closeModal('delete-cloud-modal');goTo('welcome','home');
+    toast(tr()?'Hesap silindi. Diğer cihazlarda kalan kopyaları ayrıca temizle.':'Account deleted. Clear any remaining copies on other devices.');
+  }catch(e){
+    const error=document.getElementById('cloud-delete-error');
+    if(error)error.textContent=accountDeletionMessage(e.code);
+    else toast(accountDeletionMessage(e.code));
+  }finally{accountDeletionBusy=false;checkCloudDeletionConsent()}
+}
 
 /* ================= Auth + RLS-protected Supabase sync ================= */
 const SUPABASE_URL='https://flcfqwndqfmbritaywfb.supabase.co';
