@@ -990,6 +990,30 @@ footer .legal-links{margin:.15rem auto .3rem}
 .account-connection{margin:.75rem 0;padding:.85rem 1rem;border:1px solid var(--line, #ddd);border-radius:1rem;font-size:.87rem;line-height:1.5}
 .account-connection strong{display:block;margin-bottom:.3rem}
 .account-connection p{margin:0;color:var(--mut, #777)}
+
+/* V13.1.1: compact symmetrical stopwatch, independent beige overlay and fast circular focus. */
+.stopwatch-card{text-align:center;display:flex;flex-direction:column;align-items:center;gap:clamp(.35rem,1.2vw,.65rem)}
+.stopwatch-card h2{margin:0 0 .3rem}
+.stopwatch-card .sw-mode-controls{margin:0;justify-content:center;gap:.5rem;flex-wrap:wrap}
+.stopwatch-card .sw-mode-controls button{min-height:2.5rem;min-width:0;flex:0 0 auto;padding:.38rem .75rem}
+.stopwatch-card .sw-display{margin:.45rem auto .35rem;line-height:1.1;font-size:clamp(2.15rem,6vw,3.5rem)}
+.stopwatch-card .chrono-dial{margin:.45rem auto;width:min(65vw,18rem,42vh)}
+.stopwatch-card .stopwatch-actions{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:clamp(.4rem,1vw,.7rem);margin:.45rem auto 0}
+.stopwatch-card .stopwatch-actions>button{min-width:0;min-height:2.65rem;flex:0 0 auto;padding:.45rem .85rem}
+.stopwatch-card .laps{align-self:stretch;width:100%;margin:.15rem 0}
+.stopwatch-card>p.mut{margin:.15rem auto 0;font-size:.75rem}
+.caps-hint{color:var(--no);font-size:.82rem;margin:.25rem 0 .4rem}
+.caps-hint[hidden]{display:none!important}
+:root[data-beige=true] body{background:color-mix(in srgb,var(--bg) 84%,#efe0c9)}
+:root[data-beige=true] .card,:root[data-beige=true] .box,:root[data-beige=true] .note-tile{background:color-mix(in srgb,var(--card) 88%,#f6e9d8)}
+:root[data-beige=true] .mini-cal-grid .mini-dot:hover{background:color-mix(in srgb,var(--acc2) 70%,#f0dbc2)}
+.pomo-overlay{animation:focusCircleIn .03s linear both;clip-path:circle(150vmax at 50% 50%)}
+.pomo-overlay.pomo-exit{animation:focusCircleOut .02s linear forwards;pointer-events:none}
+@keyframes focusCircleIn{from{clip-path:circle(0 at 50% 50%);opacity:.8}to{clip-path:circle(150vmax at 50% 50%);opacity:1}}
+@keyframes focusCircleOut{from{clip-path:circle(150vmax at 50% 50%);opacity:1}to{clip-path:circle(0 at 50% 50%);opacity:.8}}
+@media(min-width:1700px){.stopwatch-card .chrono-dial{width:min(19rem,30vh)}.stopwatch-card .sw-display{font-size:3.5rem}}
+@media(max-width:390px){.stopwatch-card .stopwatch-actions{gap:.3rem}.stopwatch-card .stopwatch-actions>button{padding:.4rem .55rem;font-size:.87rem}}
+@media(prefers-reduced-motion:reduce){.pomo-overlay,.pomo-overlay.pomo-exit{animation:none!important;clip-path:none!important}}
 </style>
 </head>
 <body>
@@ -1044,6 +1068,7 @@ setInterval(backupTick,20000);
 window.addEventListener('beforeunload',backupTick);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){backupTick();if(A&&pm.run)persistPomodoroState()}else if(A&&pm.run)pTick(true)});
 window.addEventListener('pagehide',()=>{if(A&&pm.run)persistPomodoroState()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&A?.pomo&&pm.run)pTick(true)});
 
 const sysTheme=()=>(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
 document.documentElement.dataset.t=sysTheme();
@@ -1078,7 +1103,7 @@ window.addEventListener('storage',e=>{
 });
 /* geri tusu: oturum acikken cikis ekranina dusmesin */
 
-let formDat={u:'',n:'',b:'',e:'',t:'',p:''},loginDat={u:'',p:''};
+let formDat={u:'',n:'',b:'',e:'',t:'',p:'',p2:''},loginDat={u:'',p:''};
 
 function paint(){renderAppOrAuth()}
 /* yumusak sayfa gecisi: destekleyen tarayicida View Transitions, digerlerinde ayni davranis */
@@ -1189,7 +1214,7 @@ lang:'Language',quoteLangNote:'Quotes are translated into your chosen language.'
 session:'Session',longBreak:'Long break',pastDaysFog:'Past days you did not complete appear foggy.',futureDays:'Future days — you can add notes.',
 fogToggle:'Fog past days',on:'On',off:'Off',settings:'Settings',minutes:'min',digitsOnly:'Digits only',code:'Code',wrongCode:'Wrong code.',
 noContact:'No email or phone number is registered on this account.',phoneInvalid:'Phone must be digits only (10-15 digits).',emailInvalid:'Invalid email address.',
-emailRequired:'Enter an email or phone for verification.',usernameRules:'Username must be 3-20 letters (no digits or spaces).',usernameTaken:'That username is taken.',
+emailRequired:'Enter an email or phone for verification.',usernameRules:'Username: 3–20 letters, digits, _, . or - (no spaces).',usernameTaken:'That username is taken.',
 displayRequired:'Display name is required.',resetDone:'Password reset. You can sign in now.',currentWrong:'Current password is wrong.',pwChanged:'Password changed.',
 verified:'Verified.',saved:'Saved.',wrongPw:'Wrong password.',systemReset:'System reset.',accountDeleted:'Account deleted.',sendHint:'Your code:',
 takeNote:'Note',newAccountTitle:'Create account',back:'Back',signInTitle:'Sign in',
@@ -1221,7 +1246,7 @@ lang:'Dil',quoteLangNote:'Alıntılar seçtiğin dile çevrilir.',pomoEnds:'Biti
 session:'Seans',longBreak:'Uzun mola',pastDaysFog:'Tamamlamadığın geçmiş günler sisli görünür.',futureDays:'Gelecek günler — not ekleyebilirsin.',
 fogToggle:'Geçmiş günler sisli',on:'Açık',off:'Kapalı',settings:'Ayarlar',minutes:'dk',digitsOnly:'Sadece rakam',code:'Kod',wrongCode:'Kod yanlış.',
 noContact:'Bu hesapta kayıtlı e-posta veya telefon yok.',phoneInvalid:'Telefon sadece rakamlardan oluşmalı (10-15 hane).',emailInvalid:'Geçersiz e-posta adresi.',
-emailRequired:'Doğrulama için bir e-posta veya telefon gir.',usernameRules:'Kullanıcı adı 3-20 harf olmalı (rakam ve boşluk yok).',usernameTaken:'Bu kullanıcı adı alınmış.',
+emailRequired:'Doğrulama için bir e-posta veya telefon gir.',usernameRules:'Kullanıcı adı: 3–20 harf, rakam, _, . veya - (boşluksuz).',usernameTaken:'Bu kullanıcı adı alınmış.',
 displayRequired:'Görünen ad zorunlu.',resetDone:'Şifre sıfırlandı. Artık giriş yapabilirsin.',currentWrong:'Mevcut şifre yanlış.',pwChanged:'Şifre değiştirildi.',
 verified:'Onaylandı.',saved:'Kaydedildi.',wrongPw:'Şifre yanlış.',systemReset:'Sistem sıfırlandı.',accountDeleted:'Hesap silindi.',sendHint:'Doğrulama kodun:',
 takeNote:'Not',newAccountTitle:'Hesap oluştur',back:'Geri',signInTitle:'Giriş yap',
@@ -1259,10 +1284,12 @@ const greetText=()=>{const g=greetKey();return tr()?(g==='morning'?'Günaydın':
 const RANDOM_Q=["What fed your mind the most today?","How satisfied are you with your main goal this period?","What is the biggest distraction you should cut out of your life?","Are you giving yourself the value you deserve in this process?","How would you rate your energy today from 1 to 10, and why?","What would you tell your future self about this week?","When did you last step outside your comfort zone?","What small detail made you proudest this week?"];
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
-const userRe=new RegExp('^['+LETTERS+']{3,20}$');
+// Usernames: letters, digits, underscore, dot and hyphen. Keep quotes and @ out of inline handlers and email detection.
+const USERNAME_ALLOWED='a-zA-Z0-9çÇğĞıİöÖşŞüÜ_.-';
+const userRe=new RegExp('^['+USERNAME_ALLOWED+']{3,20}$');
 function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme()})}
 function norm(a){
-  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
+  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
   return a;
 }
@@ -1290,13 +1317,13 @@ function roll(){
   const t=today();
   try{fixTodoData()}catch(e){}
   if(A.day!==t){
-    A.hist[A.day]=A.tasks.map(x=>({t:x.t,done:x.s==='done'}));
+    A.hist[A.day]=[...(Array.isArray(A.completedBatches?.[A.day])?A.completedBatches[A.day]:[]),...A.tasks.map(x=>({t:x.t,done:x.s==='done'}))];
     A.tasks.filter(x=>x.s!=='done').forEach(x=>A.backlog.push(x.t));
     while(A.backlog.length>10)A.backlog.shift();
-    A.tasks=Array.isArray(A.plans&&A.plans[t])?A.plans[t].map(t=>({t,s:''})):[];if(A.plans)delete A.plans[t];A.day=t;save();
+    A.tasks=Array.isArray(A.plans&&A.plans[t])?A.plans[t].map(t=>({t,s:''})):[];if(A.plans)delete A.plans[t];A.day=t;if(A.completedBatches&&typeof A.completedBatches==='object')A.completedBatches={};save();
   }
 }
-const items=d=>d===today()?A.tasks.map(x=>({t:x.t,done:x.s==='done'})):(A.hist[d]||[]);
+const items=d=>d===today()?[...(Array.isArray(A.completedBatches?.[d])?A.completedBatches[d]:[]),...A.tasks.map(x=>({t:x.t,done:x.s==='done'}))]:(A.hist[d]||[]);
 const okDay=d=>{const i=items(d);return i.length>0&&i.every(x=>x.done)};
 const succ=()=>{let n=0;Object.keys(A.hist).forEach(d=>{if(d!==today()&&okDay(d))n++});if(okDay(today()))n++;return n};
 /* BEGIN CORE LOGIC: tested with Node's built-in test runner */
@@ -1333,7 +1360,7 @@ function stopwatchFormat(ms){
   return String(minute).padStart(2,'0')+':'+String(second).padStart(2,'0')+','+String(cs).padStart(2,'0');
 }
 function usernameSuggestions(name,used=[]){
-  const base=String(name||'').replace(/[^a-zA-ZçÇğĞıİöÖşŞüÜ]/g,'').slice(0,16)||'kullanici';
+  const base=String(name||'').replace(/[^a-zA-Z0-9çÇğĞıİöÖşŞüÜ_.-]/g,'').slice(0,16)||'kullanici';
   const endings=['yeni','gün','artı','genç','odak','aktif','not'];
   const taken=new Set(used.map(x=>String(x).toLocaleLowerCase('tr-TR')));
   return endings.map(s=>(base.slice(0,20-s.length)+s).slice(0,20))
@@ -1379,12 +1406,13 @@ function curTheme(){return resolvedTheme(document.documentElement.dataset.t)}
 function applyTheme(){
   const value=(A&&A.theme)||(DB&&DB.themeChoice)||(DB&&DB.beige?'cacao':(getItem('b1.theme')||sysTheme()));
   document.documentElement.dataset.t=resolvedTheme(value);
+  document.documentElement.dataset.beige=DB?.beige?'true':'false';
 }
 function setTheme(v){
   if(!THEMES.includes(v))return;
   if(A)A.theme=v;
-  DB.themeChoice=v;DB.beige=false;
-  setItem('b1.theme',v);document.documentElement.dataset.t=v;
+  DB.themeChoice=v;
+  setItem('b1.theme',v);applyTheme();
   if(A)save();
   if(view==='welcome'||view==='login'||view==='setup')renderAppOrAuth();
   else if($('#mn')){if(pg==='set')P.set()}
@@ -1450,17 +1478,30 @@ function renderAppOrAuth(){
     const rem=(skipRem?null:rememberedUser()),others=Object.keys(DB.accounts).filter(k=>k!==rem);
     if(!loginDat.u&&rem)loginDat.u=rem;
     const googleRemembered=!!(rem&&DB.accounts[rem].authUid&&DB.accounts[rem].loginMethod==='google');
-    const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="${googleRemembered?'signInWithGoogle()':`useAccount('${esc(rem)}')` }">${googleRemembered?(tr()?'Google ile gir':'Google sign-in'):t('useAccount')}</button></div>`:`<p class="mut" style="margin:.2rem 0 .9rem">${t('noAccountYet')}</p>`;
+    const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="${googleRemembered?'signInWithGoogle()':`useAccount('${esc(rem)}')` }">${googleRemembered?(tr()?'Google ile gir':'Google sign-in'):t('useAccount')}</button></div>`:``;
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
-    h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" oninput="loginDat.p=''" onkeydown="if(event.key==='Enter'){event.preventDefault();login()}" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" onclick="signInWithGoogle()">${tr()?'Google ile devam et':'Continue with Google'}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
+    h=`<div class="login-wrap">`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" onclick="signInWithGoogle()">${tr()?'Google ile devam et':'Continue with Google'}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
-  else if(view==='setup')h=`<div class="login-wrap"><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${LETTERS}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" value="${esc(formDat.p)}" oninput="formDat.p=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='setup')h=`<div class="login-wrap"><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button></div><p class="mut">${tr()?'Demo aşamasında e-posta servisi kapalıysa bağlantı gönderilemez; lütfen hesabını oluştururken güçlü bir şifre seç.':'Password reset email requires an email sending provider, which may be unavailable during the demo.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
 }
 
 
+function showCapsLock(event){
+  const field=event?.target;
+  if(!field?.matches?.('input[type="password"]')||typeof event?.getModifierState!=='function')return;
+  let hint=field.nextElementSibling?.classList.contains('caps-hint')?field.nextElementSibling:null;
+  if(!hint){
+    hint=document.createElement('p');hint.className='caps-hint';hint.setAttribute('role','status');
+    hint.setAttribute('aria-live','polite');hint.textContent=tr()?'Caps Lock açık.':'Caps Lock is on.';
+    field.insertAdjacentElement('afterend',hint);
+  }
+  hint.hidden=!event.getModifierState('CapsLock');
+}
+document.addEventListener('keydown',showCapsLock);
+document.addEventListener('keyup',showCapsLock);
 function toast(txt){let el=document.querySelector('.toast');if(!el){el=document.createElement('div');el.className='toast';document.body.appendChild(el)}el.textContent=txt;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),2200)}
 /* giris yapildiktan sonra: gunaydin/tunaydin/iyi geceler hizlica gelir, silinir, sonra welcome */
 function greetThen(cb){
@@ -1630,12 +1671,13 @@ async function login(){
 async function setup(){
   if(authBusy)return;
   const u=String($('#u')?.value||'').trim(),n=String($('#n')?.value||'').trim();
-  const e=String($('#e')?.value||'').trim().toLowerCase(),p=String($('#p')?.value||'');
-  formDat={u,n,b:String($('#b')?.value||'').slice(0,160),e,t:'',p};
+  const e=String($('#e')?.value||'').trim().toLowerCase(),p=String($('#p')?.value||''),p2=String($('#p2')?.value||'');
+  formDat={u,n,b:String($('#b')?.value||'').slice(0,160),e,t:'',p:'',p2:''};
   if(!userRe.test(u))msg=t('usernameRules');
   else if(!n)msg=t('displayRequired');
   else if(findUser(u))msg=t('usernameTaken');
   else if(!emailPattern.test(e))msg=t('emailInvalid');
+  else if(p!==p2)msg=tr()?'Şifreler eşleşmiyor.':'Passwords do not match.';
   else msg=pwOk(p,u);
   if(msg){renderAppOrAuth();if(msg===t('usernameTaken'))debounceNameCheck();return}
   if(Object.values(DB.accounts).some(a=>String(a.email||a.mail||'').toLowerCase()===e)){goExistingEmail(e);return}
@@ -1920,7 +1962,7 @@ P.todo=()=>{
   const next=addD(today(),1);
   const planned=(A.plans?.[next]||[]).map((name,i)=>`<div class="task"><span>${esc(name)}</span><button class="g s" onclick="removePlan(${i})">${t('delete')}</button></div>`).join('');
   const bl=A.backlog.map((bt,i)=>`<div class="task"><span>${esc(bt)}</span><button class="g s" onclick="fromBack(${i})">${t('addToToday')}</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">${t('delete')}</button></div>`).join('');
-  const acted=A.tasks.some(x=>x.s==='done'||x.s==='miss');
+  const acted=A.tasks.some(x=>x.s==='done'||x.s==='miss')||Boolean(A.completedBatches?.[today()]?.length);
   M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">'+t('addTask')+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" placeholder="${t('newTask')}" onkeydown="if(event.key==='Enter'){event.preventDefault();addT()}"><button onclick="addT()">${t('add')}</button></div></div>
   <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünün görevlerini değerlendirdikten sonra yarının görevlerini buraya ekleyebilirsin.':'Plan tomorrow after reviewing today\'s tasks.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><input id="plan-input" maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'){event.preventDefault();addTomorrowPlan()}"><button onclick="addTomorrowPlan()" ${acted?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${acted?'':`<small class="mut">${tr()?'Önce bugünden bir görevi ✓ veya ✕ ile değerlendir.':'Mark one task ✓ or ✕ first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
@@ -1930,7 +1972,21 @@ const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}"><span>${esc(x.t)}</span><bu
 function fromBack(i){if(!A.backlog[i])return;A.tasks.push({t:A.backlog[i],s:''});A.backlog.splice(i,1);recordActivity();P.todo()}
 function delT(i){if(!A.tasks[i])return;A.tasks.splice(i,1);vibrateTask();recordActivity();P.todo()}
 function addT(){const v=String($('#nt')?.value||'').trim().slice(0,120);if(v){A.tasks.push({t:v,s:''});recordActivity();P.todo()}}
-function mk(i,status){const x=A.tasks[i];if(!x)return;x.s=x.s===status?'':status;vibrateTask();recordActivity();P.todo()}
+function mk(i,status){
+  const x=A.tasks[i];if(!x)return;
+  x.s=x.s===status?'':status;
+  // Archive all-complete batches before showing a clean new list. Historical task data remains in Reports.
+  const allDone=A.tasks.length>0&&A.tasks.every(task=>task.s==='done');
+  if(allDone){
+    if(!A.completedBatches||typeof A.completedBatches!=='object')A.completedBatches={};
+    const key=today();
+    if(!Array.isArray(A.completedBatches[key]))A.completedBatches[key]=[];
+    A.completedBatches[key].push(...A.tasks.map(task=>({t:task.t,done:true})));
+    A.tasks=[];
+  }
+  vibrateTask();recordActivity();P.todo();
+  if(allDone)toast(tr()?'Tüm görevler tamamlandı; Raporlar’a kaydedildi. Yeni bir liste oluşturabilirsin.':'All tasks completed and archived to Reports. Start a new list.');
+}
 function ensurePlans(){if(!A.plans||typeof A.plans!=='object')A.plans={}}
 function addTomorrowPlan(text){
   const v=String(text||$('#plan-input')?.value||'').trim().slice(0,120);if(!v)return;
@@ -2148,7 +2204,7 @@ function beep(){
   }catch(_){}
 }
 function pomoPhaseLabel(){return pm.ph==='w'?(tr()?'Odak zamanı':'Focus time'):(pm.lg?t('longBreak'):t('break'))}
-function closePomoOverlay(){const el=$('#pomo-overlay');if(el)el.remove()}
+function closePomoOverlay(){const el=$('#pomo-overlay');if(!el)return;el.classList.add('pomo-exit');setTimeout(()=>el.remove(),20)}
 function updatePomoOverlay(){
   const el=$('#pomo-overlay');if(!el)return;
   const total=Math.max(1,(pm.ph==='w'?pm.w:(pm.lg?Math.max(pm.b,...(A?.presets||[]).map(p=>Number(p.b)||0)):pm.b))*60);
@@ -2157,12 +2213,46 @@ function updatePomoOverlay(){
   const value=$('#pomo-overlay-time');if(value)value.textContent=ft(pm.left);
   const label=$('#pomo-overlay-phase');if(label)label.textContent=pomoPhaseLabel();
   const toggle=$('#pomo-overlay-toggle');if(toggle)toggle.textContent=pm.run?(tr()?'Duraklat':'Pause'):(tr()?'Devam et':'Resume');
+  updatePomoPip();
 }
 function openPomoOverlay(){
-  if($('#pomo-overlay')){updatePomoOverlay();return}
+  const old=$('#pomo-overlay');
+  if(old?.classList.contains('pomo-exit'))old.remove();
+  else if(old){updatePomoOverlay();return}
   const overlay=document.createElement('div');overlay.id='pomo-overlay';overlay.className='pomo-overlay';
-  overlay.innerHTML=`<div class="pomo-panel" role="dialog" aria-label="Pomodoro"><div class="pomo-ring" id="pomo-ring"><div class="pomo-ring-inner"><div id="pomo-overlay-phase" class="pomo-meta">${pomoPhaseLabel()}</div><div class="tm" id="pomo-overlay-time">${ft(pm.left)}</div><div class="pomo-meta">${tr()?'Improvin’ your day.':'Improvin’ your day.'}</div></div></div><div class="row pomo-actions" style="justify-content:center"><button id="pomo-overlay-toggle" onclick="pS()">${tr()?'Duraklat':'Pause'}</button><button class="g" onclick="closePomoOverlay()">${tr()?'Küçült':'Minimize'}</button></div><small class="mut">${tr()?'Küçülttikten sonra sayaç çalışmaya devam eder.':'Timer keeps running when minimized.'}</small></div>`;
+  overlay.innerHTML=`<div class="pomo-panel" role="dialog" aria-label="Pomodoro"><div class="pomo-ring" id="pomo-ring"><div class="pomo-ring-inner"><div id="pomo-overlay-phase" class="pomo-meta">${pomoPhaseLabel()}</div><div class="tm" id="pomo-overlay-time">${ft(pm.left)}</div><div class="pomo-meta">${tr()?'Improvin’ your day.':'Improvin’ your day.'}</div></div></div><div class="row pomo-actions" style="justify-content:center"><button id="pomo-overlay-toggle" onclick="pS()">${tr()?'Duraklat':'Pause'}</button><button class="g" onclick="openPomoPip()">PiP</button><button class="g" onclick="pomoFullscreen()">${tr()?'Tam ekran':'Fullscreen'}</button><button class="g" onclick="closePomoOverlay()">${tr()?'Küçült':'Minimize'}</button></div><small class="mut">${tr()?'Küçülttikten sonra sayaç çalışmaya devam eder.':'Timer keeps running when minimized.'}</small></div>`;
   document.body.appendChild(overlay);updatePomoOverlay();
+}
+let pomoPipWindow=null;
+function updatePomoPip(){
+  if(!pomoPipWindow||pomoPipWindow.closed)return;
+  const doc=pomoPipWindow.document;
+  const time=doc.getElementById('pip-time'),phase=doc.getElementById('pip-phase'),toggle=doc.getElementById('pip-toggle');
+  if(time)time.textContent=ft(pm.left);
+  if(phase)phase.textContent=pomoPhaseLabel();
+  if(toggle)toggle.textContent=pm.run?(tr()?'Duraklat':'Pause'):(tr()?'Başlat':'Start');
+}
+async function openPomoPip(){
+  // Document PiP is desktop Chromium only; the browser requires a direct user gesture.
+  const api=window.documentPictureInPicture;
+  if(!api?.requestWindow){toast(tr()?'Bu tarayıcı pencere içinde pencere modunu desteklemiyor. Odak ekranını kullanabilirsin.':'Picture-in-Picture is unavailable here. Use Focus screen instead.');openPomoOverlay();return}
+  try{
+    if(pomoPipWindow&&!pomoPipWindow.closed){pomoPipWindow.focus();return}
+    const win=await api.requestWindow({width:360,height:300});pomoPipWindow=win;
+    const doc=win.document;doc.title='Improvin’ your day · Pomodoro';
+    const style=doc.createElement('style');style.textContent='*{box-sizing:border-box}body{margin:0;display:grid;place-items:center;min-height:100vh;background:#181a20;color:#fafafa;font:600 16px system-ui;text-align:center}.ring{border:8px solid #7da5b7;border-radius:50%;width:min(58vw,185px);aspect-ratio:1;display:grid;place-items:center;align-content:center;gap:8px}#pip-time{font-size:2.35rem;font-variant-numeric:tabular-nums}#pip-phase{font-size:.85rem}.actions{display:flex;gap:7px;justify-content:center;margin:12px 0}button{background:#7da5b7;color:#121722;border:0;border-radius:9px;padding:9px 14px;font:inherit;cursor:pointer}';doc.head.appendChild(style);
+    const wrap=doc.createElement('main');wrap.innerHTML='<div class="ring"><div id="pip-phase"></div><div id="pip-time"></div></div><div class="actions"><button id="pip-toggle"></button><button id="pip-reset">Reset</button></div>';
+    doc.body.appendChild(wrap);
+    doc.getElementById('pip-toggle').addEventListener('click',()=>{pS();updatePomoPip()});
+    doc.getElementById('pip-reset').addEventListener('click',()=>{pR();updatePomoPip()});
+    win.addEventListener('pagehide',()=>{if(pomoPipWindow===win)pomoPipWindow=null});
+    updatePomoPip();
+  }catch(_){toast(tr()?'PiP açılmadı; tarayıcı izni gerekiyor olabilir.':'Could not open PiP; your browser may require permission.')}
+}
+async function pomoFullscreen(){
+  openPomoOverlay();
+  try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else throw Error('unsupported')}
+  catch(_){toast(tr()?'Bu cihaz tam ekran modunu desteklemiyor.':'Fullscreen is unavailable on this device.')}
 }
 let stopwatchView='timer',swTouchX=null,swLapFlashUntil=0;
 function swElapsed(){
@@ -2208,10 +2298,11 @@ P.pomo=()=>{
   if(!A.stopwatch||typeof A.stopwatch!=='object')A.stopwatch={elapsed:0,started:0,running:false};
   const pr=A.presets.map((p,i)=>`<div class="tag ${pm.w===p.w&&pm.b===p.b?'on':''}"><span role="button" tabindex="0" style="cursor:pointer;flex:1" onclick="setP(${Number(p.w)},${Number(p.b)})"><b>${fmtDuration(p.w)}</b> ${t('focus')} / <b>${fmtDuration(p.b)}</b> ${t('break')}</span><span class="row"><button class="g s" onclick="editP(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s d" onclick="delP(${i})">${t('delete')}</button></span></div>`).join('');
   const laps=(A.laps||[]).map((x,i)=>`<div class="lap-row"><span>Lap ${i+1}</span><b>${stopwatchFormat(x)}</b></div>`).reverse().join('');
-  M(`<div class="card"><div class="mut" style="text-align:center" id="pl"></div><div class="tm" id="pt">${ft(pm.left)}</div><div class="row" style="justify-content:center"><button onclick="pS()">${pm.run?(tr()?'Duraklat':'Pause'):t('startPause')}</button><button class="g" onclick="pR()">${t('reset')}</button><button class="g" onclick="openPomoOverlay()">${tr()?'Odak ekranı':'Focus screen'}</button></div><p id="pi" class="mut" style="text-align:center"></p></div>
+  M(`<div class="card"><div class="mut" style="text-align:center" id="pl"></div><div class="tm" id="pt">${ft(pm.left)}</div><div class="row" style="justify-content:center"><button onclick="pS()">${pm.run?(tr()?'Duraklat':'Pause'):t('startPause')}</button><button class="g" onclick="pR()">${t('reset')}</button><button class="g" onclick="openPomoOverlay()">${tr()?'Odak ekranı':'Focus screen'}</button><button class="g" onclick="openPomoPip()">PiP</button><button class="g" onclick="pomoFullscreen()">${tr()?'Tam ekran':'Fullscreen'}</button></div><p id="pi" class="mut" style="text-align:center"></p></div>
   <div class="card"><h2>${t('focusAndBreak')}</h2>${pr||'<p class="mut">'+t('addLength')+'</p>'}<div class="row"><input id="cw" type="number" min="1" max="600" placeholder="${t('focus')} (${t('minutes')})"><input id="cb" type="number" min="1" max="600" placeholder="${t('break')} (${t('minutes')})"><button onclick="addP()">${tr()?'Ekle / Güncelle':'Add / Update'}</button></div><p class="mut">${t('afterFive')}</p></div>
-  <div class="card" data-swipe-stopwatch="true" ontouchstart="swTouchStart(event)" ontouchend="swTouchEnd(event)"><h2>${t('stopwatch')}</h2><div class="row" style="justify-content:center"><button class="${stopwatchView==='timer'?'':'g'} s" onclick="swMode('timer')">${tr()?'Kronometre':'Stopwatch'}</button><button class="${stopwatchView==='clock'?'':'g'} s" onclick="swMode('clock')">${tr()?'Saat':'Clock'}</button></div>
-  ${stopwatchView==='timer'?`<div id="sw" class="sw-display">${stopwatchFormat(swElapsed())}</div><div class="row" style="justify-content:center"><button onclick="swS()">${A.stopwatch.running?(tr()?'Duraklat':'Pause'):(tr()?'Başlat':'Start')}</button><button class="g" onclick="lap()" ${A.stopwatch.running?'':'disabled'}>Lap</button><button class="g" onclick="swR()">${t('reset')}</button></div><div class="laps">${laps}</div>`:`<div class="chrono-dial" role="img" aria-label="${tr()?'Analog kronometre':'Analog stopwatch'}">${CHRONO_TICKS}<div class="chrono-mini">${[0,10,20].map(v=>{const a=v*Math.PI/15;return `<span class="chrono-number" style="left:${50+37*Math.sin(a)}%;top:${50-37*Math.cos(a)}%">${v}</span>`}).join('')}<div id="chrono-sub-hand" class="chrono-hand" style="top:12%;height:40%"></div></div><div id="chrono-hand" class="chrono-hand"></div><div class="chrono-pivot"></div><div id="chrono-digital" class="chrono-digital">${stopwatchFormat(swElapsed())}</div></div><div class="chrono-controls"><button onclick="lap()" ${A.stopwatch.running?'':'disabled'}>Lap</button><button class="stop" onclick="swS()">${A.stopwatch.running?(tr()?'Dur':'Stop'):(tr()?'Başlat':'Start')}</button></div><div class="laps">${laps}</div>`}
+  <div class="card stopwatch-card" data-swipe-stopwatch="true" ontouchstart="swTouchStart(event)" ontouchend="swTouchEnd(event)"><h2>${t('stopwatch')}</h2><div class="row sw-mode-controls" style="justify-content:center"><button class="${stopwatchView==='timer'?'':'g'} s" onclick="swMode('timer')">${tr()?'Kronometre':'Stopwatch'}</button><button class="${stopwatchView==='clock'?'':'g'} s" onclick="swMode('clock')">${tr()?'Saat':'Clock'}</button></div>
+  ${stopwatchView==='timer'?`<div id="sw" class="sw-display">${stopwatchFormat(swElapsed())}</div>`:`<div class="chrono-dial" role="img" aria-label="${tr()?'Analog kronometre':'Analog stopwatch'}">${CHRONO_TICKS}<div class="chrono-mini">${[0,10,20].map(v=>{const a=v*Math.PI/15;return `<span class="chrono-number" style="left:${50+37*Math.sin(a)}%;top:${50-37*Math.cos(a)}%">${v}</span>`}).join('')}<div id="chrono-sub-hand" class="chrono-hand" style="top:12%;height:40%"></div></div><div id="chrono-hand" class="chrono-hand"></div><div class="chrono-pivot"></div><div id="chrono-digital" class="chrono-digital">${stopwatchFormat(swElapsed())}</div></div>`}
+  <div class="row stopwatch-actions"><button onclick="swStart()" ${A.stopwatch.running?'disabled':''}>${tr()?'Başlat':'Start'}</button><button class="g" onclick="swStop()" ${A.stopwatch.running?'':'disabled'}>${tr()?'Durdur':'Stop'}</button><button class="g" onclick="lap()" ${A.stopwatch.running?'':'disabled'}>Lap</button><button class="g" onclick="swR()">${t('reset')}</button></div><div class="laps">${laps}</div>
   <p class="mut" style="text-align:center">${tr()?'Sağa/sola kaydırarak kronometre ile saat arasında geçebilirsin.':'Swipe horizontally to switch between stopwatch and clock.'}</p></div>`);
   pi();swRender();
 };
@@ -2260,7 +2351,7 @@ function pS(){
     pm.run=1;pm.end=Date.now()+Math.max(1,pm.left)*1000;
     if(document.visibilityState==='visible')requestAnimationFrame(()=>beep());
     clearInterval(pm.iv);pm.iv=setInterval(()=>pTick(),500);
-    recordActivity();openPomoOverlay();
+    recordActivity();if(!pomoPipWindow||pomoPipWindow.closed)openPomoOverlay();
   }
   persistPomodoroState();pi();updatePomoOverlay();
 }
@@ -2276,6 +2367,8 @@ function swS(){
   else{sw.started=Date.now();sw.running=true;clearInterval(pm.swI);pm.swI=setInterval(swRender,40);recordActivity()}
   save();if(pg==='pomo')P.pomo();
 }
+function swStart(){if(!A?.stopwatch?.running)swS()}
+function swStop(){if(A?.stopwatch?.running)swS()}
 function swR(){
   clearInterval(pm.swI);pm.swI=0;A.stopwatch={elapsed:0,started:0,running:false};A.laps=[];save();if(pg==='pomo')P.pomo();
 }
@@ -2328,6 +2421,7 @@ P.set=()=>{
   <div class="card"><h2>${t('resetSystem')}</h2><p class="mut">${tr()?'Görevler, notlar, günlükler, ilerleme ve raporlar sıfırlanır. Hesap kimliğin kalır.':'Tasks, journals, progress and reports will be reset. Account identity is retained.'}</p><button style="background:var(--no)" onclick="resetSys()">${t('reset')}</button></div>
   ${accountConnection(A)==='local'?`<div class="card legacy-migrate-card"><h2>${tr()?'V13 · Yerel hesabı Google’a taşı':'V13 · Move local account to Google'}</h2><p class="legacy-migrate-warning">${tr()?'Eski hesabının görevlerini, günlüklerini, notlarını ve mevcut ilerleme hesabını bir Google oturumuyla Supabase’e taşı. Önce JSON yedeği alacağız. Google hesabında yalnızca otomatik oluşturulmuş boş bir profil varsa, bu profil açık onayınla aktarılabilir. Google hesabının gerçek verileri varsa işlem durur; hiçbir şey birleştirilmez.':'Move your legacy tasks, journals, notes, and progress to Supabase using a Google sign-in. First download a JSON backup. An automatically created empty Google profile may be replaced with your consent. If that profile contains user data, migration stops without merging or overwriting anything.'}</p><div class="legacy-migrate-actions"><button onclick="v13ShowMigration()">${tr()?'Google hesabına taşı':'Move to Google'}</button></div></div>`:''}
   <div class="card"><h2>${tr()?'Verilerim ve hesabım':'My data and account'}</h2>${accountConnectionHtml(A)}<p class="mut account-data-help">${tr()?'Yüklü hesabının görevlerini, notlarını, günlüklerini ve ilerleme kayıtlarını JSON dosyası olarak dışa aktar. Bu dosya hassas bilgiler içerebilir; güvenli bir yerde sakla.':'Export your loaded tasks, notes, journals and progress as a JSON file. The file may contain private information, so store it securely.'}</p><div class="account-data-actions"><button class="g" onclick="exportMyData()">${tr()?'Verilerimi indir (JSON)':'Download my data (JSON)'}</button><button class="g d" onclick="delAcc()">${accountRemovalButtonLabel(A)}</button></div><p class="mut account-data-help">${accountConnection(A)==='cloud'?(tr()?'Bulut hesabını silmek için yakın zamanda giriş, açık onay ve sunucu doğrulaması gerekir.':'Cloud account deletion requires a recent sign-in, explicit confirmation and server verification.'):accountConnection(A)==='local'?(tr()?'Bu cihazdaki profil kopyasını kaldırmak bulut hesabı silmez.':'Removing this device profile never deletes a cloud account.'):(tr()?'Bağlantı belirsizken silme kapalıdır. Önce yeniden giriş yap.':'Deletion is blocked until the account connection is verified.')}</p></div>
+  <div class="card"><h2>${tr()?'Hesap güvenliği ve e-posta':'Account security and email'}</h2><p class="mut">${tr()?'E-posta doğrulama, sıfırlama ve e-posta değişikliği için doğrulanmış SMTP gerekir. Sunucu kurulana kadar bu talepler gönderilmez.':'Email verification, password reset and email changes need configured SMTP. No emails are sent until the service is enabled.'}</p>${A.authUid?`<div class="row"><button class="g" onclick="requestMyEmailVerification()">${tr()?'E-postamı doğrula':'Verify my email'}</button><button class="g" onclick="requestMyPasswordReset()">${tr()?'Şifre yenileme bağlantısı':'Password reset link'}</button></div><label for="change-email-input">${tr()?'Yeni e-posta adresi':'New email address'}</label><div class="row"><input type="email" id="change-email-input" autocomplete="email" placeholder="name@example.com"><button class="g" onclick="requestMyEmailChange()">${tr()?'E-posta değiştir':'Change email'}</button></div>`:''}<div class="row"><button class="g" onclick="showDeactivationRequirements()">${tr()?'Geçici devre dışı bırakma (hazırlık)':'Temporary deactivation (planned)'}</button></div></div>
   <div class="card"><h2>${tr()?'Oturum':'Session'}</h2><p class="mut">${tr()?'Hesabından güvenli şekilde çıkış yap.':'Sign out of your account.'}</p><button class="danger-logout" onclick="confirmLogout()">${t('logout')}</button></div>`);
 };
 
@@ -2348,6 +2442,60 @@ async function chg(k){
     delete DB.accounts[A.u];A.u=v;DB.accounts[v]=A;
   }else{A.nick=v.slice(0,30)}
   DB.last=A.nick;DB.lastUser=A.u;save();msg=t('saved');shell();
+}
+
+const EMAIL_TRANSACTIONS_ENABLED=false; // Turn on only after verified custom SMTP/Send Email Hook and end-to-end tests.
+function emailFeatureStatus(){
+  toast(tr()?'E-posta doğrulama ve değişiklik bağlantıları için önce Supabase SMTP kurulumu gerekir.':'Verification/change emails require Supabase SMTP configuration first.');
+}
+async function requestMyEmailVerification(){
+  if(!EMAIL_TRANSACTIONS_ENABLED)return emailFeatureStatus();
+  try{
+    const user=await sbCurrentUser();if(!user?.id||user.id!==A?.authUid)throw Error('auth');
+    if(user.email_confirmed_at){toast(tr()?'E-posta zaten doğrulanmış.':'Email is already verified.');return}
+    await sb('/auth/v1/resend',{method:'POST',body:{type:'signup',email:user.email}});
+    toast(tr()?'Doğrulama isteği gönderildi. E-postanı kontrol et.':'Verification requested. Check your inbox.');
+  }catch(_){toast(tr()?'Doğrulama iletisi gönderilemedi. SMTP ve Auth loglarını kontrol et.':'Could not send verification message. Check SMTP and Auth logs.')}
+}
+async function requestMyPasswordReset(){
+  if(!EMAIL_TRANSACTIONS_ENABLED)return emailFeatureStatus();
+  try{
+    const user=await sbCurrentUser();if(!user?.id||user.id!==A?.authUid)throw Error('auth');
+    await sbRecover(user.email);
+    toast(tr()?'Şifre yenileme isteği gönderildi. Gelen kutunu kontrol et.':'Password reset requested. Check your inbox.');
+  }catch(_){toast(tr()?'Şifre yenileme isteği gönderilemedi.':'Could not request password reset.')}
+}
+async function requestMyEmailChange(){
+  if(!EMAIL_TRANSACTIONS_ENABLED)return emailFeatureStatus();
+  const email=String(document.getElementById('change-email-input')?.value||'').trim().toLowerCase();
+  if(!emailPattern.test(email)){toast(tr()?'Geçerli bir e-posta adresi gir.':'Enter a valid email.');return}
+  try{
+    const user=await sbCurrentUser();if(!user?.id||user.id!==A?.authUid)throw Error('auth');
+    const changed=await sb('/auth/v1/user',{method:'PUT',body:{email}});
+    if(changed?.id!==user.id)throw Error('invalid');
+    toast(tr()?'E-posta değişikliği talep edildi. Doğrulama bağlantılarını kontrol et.':'Email change requested. Check confirmation links.');
+  }catch(_){toast(tr()?'E-posta değiştirilemedi; sunucu yapılandırmasını kontrol et.':'Email change failed; check server configuration.')}
+}
+function openPasswordRecoveryModal(){
+  if(!A?.authUid)return;
+  openModal('recover-password-modal',`<h2>${tr()?'Yeni şifreni belirle':'Set a new password'}</h2><p class="mut">${tr()?'Şifre sıfırlama bağlantısıyla doğruladığın hesabın için yeni bir uygulama şifresi belirle.':'Create a new app password for your verified recovery session.'}</p><label>${tr()?'Yeni şifre':'New password'}</label><input type="password" id="recover-pass-a" autocomplete="new-password"><label>${tr()?'Yeni şifre tekrar':'Confirm password'}</label><input type="password" id="recover-pass-b" autocomplete="new-password"><div class="row"><button onclick="completePasswordRecovery()">${tr()?'Şifreyi kaydet':'Save new password'}</button></div>`);
+}
+async function completePasswordRecovery(){
+  if(!A?.authUid)return;
+  const a=String(document.getElementById('recover-pass-a')?.value||'');
+  const b=String(document.getElementById('recover-pass-b')?.value||'');
+  const error=pwOk(a,A.u);if(error)return toast(error);
+  if(a!==b)return toast(tr()?'Şifreler eşleşmiyor.':'Passwords do not match.');
+  try{
+    const u=await sbCurrentUser();if(u?.id!==A.authUid)throw Error('auth');
+    const updated=await sb('/auth/v1/user',{method:'PUT',body:{password:a}});
+    if(updated?.id!==A.authUid)throw Error('unverified');
+    document.getElementById('recover-pass-a').value='';document.getElementById('recover-pass-b').value='';
+    closeModal('recover-password-modal');toast(tr()?'Şifre başarıyla güncellendi.':'Password updated.');
+  }catch(_){toast(tr()?'Şifre güncellenemedi. Bağlantının süresi dolmuş olabilir.':'Could not update password; the recovery link may have expired.')}
+}
+function showDeactivationRequirements(){
+  openModal('deactivation-info',`<h2>${tr()?'Geçici devre dışı bırakma':'Temporary deactivation'}</h2><p>${tr()?'30 günlük devre dışı bırakma; sunucuda hesabı kilitleyen, geri açmayı ve e-postayı doğrulayan, süre sonunda otomatik silen bir servis gerektirir. Bu altyapı henüz kurulmadı; hesabın şu an devre dışı bırakılmayacak.':'A 30-day deactivation requires server-side login restrictions, verified email reactivation, scheduled deletion, and reminder delivery. This backend is not installed, so your account will not be deactivated.'}</p><button class="g" onclick="closeModal('deactivation-info')">${t('cancel')}</button>`);
 }
 function vSend(k){
   toast(tr()?'E-posta doğrulama, demo e-posta servisi kurulana kadar kullanılamaz.':'Email verification requires a mail provider.');
@@ -2575,6 +2723,7 @@ async function deleteCloudConfirmed(){
 }
 
 
+/* V13.1.1 — UI and account safety improvements */
 /* V13 — safe, explicitly authorized legacy-local to Google cloud migration.
    Not Supabase identity linking: a browser-only profile has no Auth identity.
    Credentials never enter the migrated record. Existing cloud data is NEVER upserted. */
@@ -2755,6 +2904,7 @@ function signInWithGoogle(){
 }
 async function bootstrapCloudAuth(){
   const frag=new URLSearchParams(location.hash.replace(/^#/,''));
+  const recovery=frag.get('type')==='recovery';
   const at=frag.get('access_token'),rt=frag.get('refresh_token');
   const error=frag.get('error_description')||frag.get('error');
   if(at||error){try{history.replaceState(history.state||{},'',location.pathname+location.search)}catch(_){}}
@@ -2774,7 +2924,9 @@ async function bootstrapCloudAuth(){
       const user=await response.json();if(!user?.id)throw new Error('Invalid OAuth user');
       const identity={user,access_token:at,refresh_token:rt};
        if(await v13FinishMigration(identity)){if(A)greetThen();return}
-       await activateCloudUser(identity,'','google');greetThen();return;
+       await activateCloudUser(identity,'',recovery?'password':'google');
+       if(recovery){openPasswordRecoveryModal();return}
+       greetThen();return;
     }catch(err){sbClear();msg=tr()?'Google oturumu doğrulanamadı. Lütfen tekrar dene.':'Google session could not be verified.';view='login';renderAppOrAuth();return}
   }
   // A reload in the middle of migration is not evidence of a completed cloud transfer.
@@ -2872,7 +3024,7 @@ async function restoreCloudOnLoad(){
 }
 
 function th(t){setTheme(t)}
-function toggleBeige(){setTheme(curTheme()==='cacao'?'porcelain':'cacao')}
+function toggleBeige(){DB.beige=!DB.beige;applyTheme();save();if(pg==='pc')P.pc()}
 
 // Always land on Home after a verified cloud session is restored.
 view='welcome';pg='home';A=null;
