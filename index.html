@@ -970,7 +970,7 @@ footer .legal-links{margin:.15rem auto .3rem}
 @media(max-width:380px){.legal-links{column-gap:.7rem;font-size:.78rem}}
 
 
-/* V10: opt-in account portability and guarded deletion; inherits existing theme variables. */
+/* V11: account provenance shown explicitly; deletion defaults to fail-closed. */
 .account-data-actions{display:flex;flex-wrap:wrap;gap:.65rem;align-items:center;margin:.8rem 0}
 .account-data-actions button{max-width:100%;white-space:normal}
 .account-data-help{font-size:.82rem;line-height:1.55}
@@ -979,6 +979,9 @@ footer .legal-links{margin:.15rem auto .3rem}
 .account-delete-form input{width:100%;max-width:100%;box-sizing:border-box}
 .account-delete-form button:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:420px){.account-data-actions{flex-direction:column;align-items:stretch}.account-data-actions button{width:100%}}
+.account-connection{margin:.75rem 0;padding:.85rem 1rem;border:1px solid var(--line, #ddd);border-radius:1rem;font-size:.87rem;line-height:1.5}
+.account-connection strong{display:block;margin-bottom:.3rem}
+.account-connection p{margin:0;color:var(--mut, #777)}
 </style>
 </head>
 <body>
@@ -1567,7 +1570,7 @@ async function activateCloudUser(j,preferredName='',method='password'){
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
   const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
   const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
-  a.u=username;a.authUid=uid;a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
+  a.u=username;a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
   a.pw='';delete a.salt; // Cloud passwords are checked by Supabase, never stored in user_data.
   a.loginMethod=method==='google'?'google':'password';
   if(method==='google'||j.user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
@@ -1595,8 +1598,8 @@ async function login(){
         await activateCloudUser(j,raw,'password');
         greetThen();return;
       }catch(e){
-        if(localAcc&&!localAcc.authUid&&await pwMatch(localAcc,password)){
-          sbClear();A=norm(localAcc);DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home');greetThen();
+        if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
+          sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home');greetThen();
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
         loginDat.p='';
@@ -1607,8 +1610,8 @@ async function login(){
         return renderAppOrAuth();
       }
     }
-    if(localAcc&&!localAcc.authUid&&await pwMatch(localAcc,password)){
-      sbClear();A=norm(localAcc);restorePomodoroState();applyTheme();save();goTo('app','home');greetThen();
+    if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
+      sbClear();A=norm(localAcc);A.accountOrigin='local';restorePomodoroState();applyTheme();save();goTo('app','home');greetThen();
       toast(tr()?'Bu yalnızca yerel eski hesap. Diğer cihazlarda e-posta ile bulut hesabına giriş yapmalısın.':'Legacy local account only.');return;
     }
     msg=tr()?'Başka cihazda kayıtlıysan kullanıcı adı yerine e-posta adresinle giriş yap.':'Sign in with email on a new device.';
@@ -2269,24 +2272,59 @@ function swR(){
 }
 
 const left=k=>{const n=Date.now();A[k]=(A[k]||[]).filter(t=>n-t<15*864e5);return 5-A[k].length};
+// V11: evidence of cloud history is never silently downgraded to a local account.
+// A copied browser profile is NOT proof of an active authenticated cloud session.
+function accountCloudHints(account){
+  return !!(account && (account.authUid || account.accountOrigin==='cloud' ||
+    account.googleConnected===true || account.loginMethod==='google' || account.loginMethod==='password'));
+}
+function accountConnection(account=A){
+  if(!account)return 'unknown';
+  if(accountCloudHints(account)){
+    const session=sbSession();
+    return account.authUid && session?.access_token && session.user?.id===account.authUid ? 'cloud' : 'unknown';
+  }
+  return account.accountOrigin==='local' && typeof account.pw==='string' && account.pw.length>0
+    ? 'local' : 'unknown';
+}
+function accountConnectionHtml(account=A){
+  const kind=accountConnection(account);
+  const textByKind={
+    cloud:tr()?['Bulut profili — oturum bağlı','Bulut hesabına ilişkin işlemler sunucuda ayrıca doğrulanır.']:
+       ['Cloud profile — session present','Cloud account actions are independently authenticated by the server.'],
+    local:tr()?['Eski yerel profil — yalnızca bu cihaz','Bu profilin silinmesi Supabase veya Google hesabını silmez.']:
+       ['Legacy local profile — this device only','Removing this profile does not delete any Supabase or Google account.'],
+    unknown:tr()?['Hesap bağlantısı doğrulanamadı','Bu profili yanlışlıkla yerel hesap olarak silmeyeceğiz. Önce çıkış yapıp doğru yöntemle yeniden giriş yap.']:
+       ['Account connection unverified','We will not assume this is a local account. Sign out and sign in again with the right method.']
+  };
+  const label=textByKind[kind];
+  return `<div class="account-connection" role="status"><strong>${label[0]}</strong><p>${label[1]}</p></div>`;
+}
+function accountRemovalButtonLabel(account=A){
+  const kind=accountConnection(account);
+  return kind==='cloud'?(tr()?'Bulut hesabımı sil':'Delete my cloud account'):
+    kind==='local'?(tr()?'Bu cihazdaki profili kaldır':'Remove profile from this device'):
+      (tr()?'Hesap bağlantısını kontrol et':'Check account connection');
+}
+
 P.set=()=>{
-  const keys=Object.keys(DB.accounts).filter(u=>DB.accounts[u]&&!DB.accounts[u].authUid);
-  const ac=keys.map(u=>`<span class="tag"><span>@${esc(u)}</span>${!A.authUid&&A.u===u?`<span class="current-account-indicator" aria-current="true">${tr()?'Mevcut hesap':'Current account'}</span>`:`<button class="g s" onclick="switchAcc(${JSON.stringify(u)})">${t('switch')}</button>`}</span>`).join('');
+  const keys=Object.keys(DB.accounts).filter(u=>DB.accounts[u]&&!accountCloudHints(DB.accounts[u]));
+  const ac=keys.map(u=>`<span class="tag"><span>@${esc(u)}</span>${!accountCloudHints(A)&&A.u===u?`<span class="current-account-indicator" aria-current="true">${tr()?'Mevcut hesap':'Current account'}</span>`:`<button class="g s" onclick="switchAcc(${JSON.stringify(u)})">${t('switch')}</button>`}</span>`).join('');
   M(`${m()}<div class="card"><h2>${t('account')}</h2><p class="mut">${tr()?'Üstteki yuvarlak profil düğmesinden de düzenleyebilirsin.':'You can also edit your profile in the top-right account menu.'}</p><label>${t('username')}</label><div class="row"><input id="su" value="${esc(A.u)}" maxlength="20" oninput="profileUsernameHint(this.value,'settings-name-hint')"><div id="settings-name-hint" aria-live="polite" style="flex-basis:100%"></div><button onclick="chg('u')">${t('change')}</button></div><label>${t('displayName')}</label><div class="row"><input id="sn" value="${esc(A.nick||'')}" maxlength="30"><button onclick="chg('n')">${t('change')}</button></div><label>${t('bio')}</label><textarea id="sb" maxlength="160" rows="3" onchange="A.bio=this.value.slice(0,160);save()">${esc(A.bio||'')}</textarea><p class="mut">${tr()?'E-posta:':'Email:'} <b>${esc(A.email||'')}</b></p><p class="mut">${tr()?'Demo süresince e-posta değiştirme/doğrulama kapalı.':'Email change/verification is disabled during the demo.'}</p></div>
   <div class="card settings-theme"><h2>${t('theme')}</h2>${themePick(false,false)}</div>
   <div class="card"><h2>${t('lang')}</h2><div class="langbar" style="justify-content:flex-start">${langBtns()}</div></div>
   ${A.authUid&&A.loginMethod==='google'?`<div class="card"><h2>${tr()?'E-posta ve şifreyle giriş':'Email & password sign-in'}</h2><p class="mut">${tr()?'Google hesabına aynı e-posta adresiyle manuel giriş yapabilmek için uygulamaya özel bir şifre belirle. Google şifreni burada kullanma.':'To sign in manually with the same email, create a separate password for this app. Do not enter your Google password.'}</p><label>${tr()?'Yeni uygulama şifresi':'New app password'}</label><input id="google-app-pass" type="password" autocomplete="new-password" minlength="8"><label>${tr()?'Şifreyi tekrar yaz':'Confirm password'}</label><input id="google-app-pass-confirm" type="password" autocomplete="new-password" minlength="8"><button id="google-app-pass-submit" onclick="setGoogleAccountPassword()">${tr()?'Manuel girişi etkinleştir':'Enable email sign-in'}</button></div>`:`<div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>`}
-  <div class="card"><h2>${tr()?'Gizlilik ve veri saklama':'Privacy and storage'}</h2><p class="mut">${tr()?'Uygulama giriş ve tercih verilerini bu tarayıcıda saklar. Bulut hesaplarının görev ve notları Supabase ile eşitlenir. Reddet düğmesiyle kapatılabilecek bir izleme çerezi kullanılmıyor; gerekli depolama çalışmaya devam eder.':'The app stores necessary session and preference data in this browser. Cloud account tasks and notes are synced with Supabase. This notice is not an opt-in for analytics cookies.'}</p><p class="mut">${A.authUid?(tr()?'Bulut oturumu açık. Farklı cihazlarda Google ile veya hesabında ayrıca etkinleştirdiğin e-posta/şifre yöntemiyle giriş yapabilirsin.':'Cloud account active. Sign in on other devices with Google, or with email and a password you have explicitly set for this account.'):(tr()?'Eski yerel hesap: başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.')}</p><p class="mut">${tr()?'Demo e-posta sahipliğini doğrulamaz; şifre sıfırlama e-postası çalışmayabilir.':'Demo does not verify email ownership; password reset email may be unavailable.'}</p><p class="legal-intro">${tr()?'Ayrıntılı bilgilendirme ve hakların:':'Full notices and your rights:'}</p>${legalLinks()}</div>
-  ${ac?`<div class="card"><h2>${tr()?'Eski yerel hesaplar':'Legacy local accounts'}</h2>${ac}</div>`:''}
+  <div class="card"><h2>${tr()?'Gizlilik ve veri saklama':'Privacy and storage'}</h2><p class="mut">${tr()?'Uygulama giriş ve tercih verilerini bu tarayıcıda saklar. Bulut hesaplarının görev ve notları Supabase ile eşitlenir. Reddet düğmesiyle kapatılabilecek bir izleme çerezi kullanılmıyor; gerekli depolama çalışmaya devam eder.':'The app stores necessary session and preference data in this browser. Cloud account tasks and notes are synced with Supabase. This notice is not an opt-in for analytics cookies.'}</p><p class="mut">${accountConnection(A)==='cloud'?(tr()?'Bulut profiline bağlı oturum var; sunucu işlemi ayrıca doğrular.':'Cloud session is present; the server separately verifies protected actions.'):accountConnection(A)==='local'?(tr()?'Eski yerel profil: başka cihazlarla eşitlenmez.':'Legacy local profile: no cross-device sync.'):(tr()?'Bu profilin bulut bağlantısı doğrulanamadı.':'Cloud connection for this profile has not been verified.')}</p><p class="mut">${tr()?'Demo e-posta sahipliğini doğrulamaz; şifre sıfırlama e-postası çalışmayabilir.':'Demo does not verify email ownership; password reset email may be unavailable.'}</p><p class="legal-intro">${tr()?'Ayrıntılı bilgilendirme ve hakların:':'Full notices and your rights:'}</p>${legalLinks()}</div>
+  ${ac?`<div class="card"><h2>${tr()?'Bu cihazdaki diğer profiller':'Other profiles on this device'}</h2>${ac}</div>`:''}
   <div class="card"><h2>${t('resetSystem')}</h2><p class="mut">${tr()?'Görevler, notlar, günlükler, ilerleme ve raporlar sıfırlanır. Hesap kimliğin kalır.':'Tasks, journals, progress and reports will be reset. Account identity is retained.'}</p><button style="background:var(--no)" onclick="resetSys()">${t('reset')}</button></div>
-  <div class="card"><h2>${tr()?'Verilerim ve hesabım':'My data and account'}</h2><p class="mut account-data-help">${tr()?'Yüklü hesabının görevlerini, notlarını, günlüklerini ve ilerleme kayıtlarını JSON dosyası olarak dışa aktar. Bu dosya hassas bilgiler içerebilir; güvenli bir yerde sakla.':'Export your loaded tasks, notes, journals and progress as a JSON file. The file may contain private information, so store it securely.'}</p><div class="account-data-actions"><button class="g" onclick="exportMyData()">${tr()?'Verilerimi indir (JSON)':'Download my data (JSON)'}</button><button class="g d" onclick="delAcc()">${t('deleteAccount')}</button></div><p class="mut account-data-help">${A.authUid?(tr()?'Bulut hesabı silme özelliğinin durumu, yalnızca sunucudaki güvenlik kontrolüyle belirlenir. Başlangıçta kapalıdır.':'Cloud deletion availability is checked with the server. It is disabled by default.'):(tr()?'Yerel hesabın silinmesi yalnızca bu tarayıcıdaki kayıtlarını etkiler.':'Deleting a legacy local account affects only records on this browser.')}</p></div>
+  <div class="card"><h2>${tr()?'Verilerim ve hesabım':'My data and account'}</h2>${accountConnectionHtml(A)}<p class="mut account-data-help">${tr()?'Yüklü hesabının görevlerini, notlarını, günlüklerini ve ilerleme kayıtlarını JSON dosyası olarak dışa aktar. Bu dosya hassas bilgiler içerebilir; güvenli bir yerde sakla.':'Export your loaded tasks, notes, journals and progress as a JSON file. The file may contain private information, so store it securely.'}</p><div class="account-data-actions"><button class="g" onclick="exportMyData()">${tr()?'Verilerimi indir (JSON)':'Download my data (JSON)'}</button><button class="g d" onclick="delAcc()">${accountRemovalButtonLabel(A)}</button></div><p class="mut account-data-help">${accountConnection(A)==='cloud'?(tr()?'Bulut hesabı silme sunucudaki güvenlik kilidiyle korunur; varsayılan olarak kapalıdır.':'Cloud account deletion is guarded by a server-side safety lock and is disabled by default.'):accountConnection(A)==='local'?(tr()?'Bu cihazdaki profil kopyasını kaldırmak bulut hesabı silmez.':'Removing this device profile never deletes a cloud account.'):(tr()?'Bağlantı belirsizken silme kapalıdır. Önce yeniden giriş yap.':'Deletion is blocked until the account connection is verified.')}</p></div>
   <div class="card"><h2>${tr()?'Oturum':'Session'}</h2><p class="mut">${tr()?'Hesabından güvenli şekilde çıkış yap.':'Sign out of your account.'}</p><button class="danger-logout" onclick="confirmLogout()">${t('logout')}</button></div>`);
 };
 
 function switchAcc(u){stopTimers();A=null;sbClear();loginDat={u,p:''};goTo('login','home')}
 /* oturum kapaninca sayac ve kronometre durur, sonraki kullaniciya gecmez */
 function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,end:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0};persistPomodoroState();document.title=TITLE}catch(e){}}
-function goLogin(){stopTimers();sbClear();A=null;loginDat={u:'',p:''};goTo('login','home')}
+function goLogin(){pendingDeleteUid=null;stopTimers();sbClear();A=null;loginDat={u:'',p:''};goTo('login','home')}
 async function chg(k){
   const v=String($(k==='u'?'#su':'#sn')?.value||'').trim();if(!v)return;
   if(k==='u'){
@@ -2359,10 +2397,10 @@ function resetSys(){
 }
 function confirmReset(){
   if(!A)return;
-  const safe={u:A.u,nick:A.nick,bio:A.bio,pw:A.pw||'',email:A.email,phone:A.phone,authUid:A.authUid,theme:A.theme};
+  const safe={u:A.u,nick:A.nick,bio:A.bio,pw:A.pw||'',email:A.email,phone:A.phone,authUid:A.authUid,accountOrigin:A.accountOrigin,loginMethod:A.loginMethod,googleConnected:A.googleConnected,theme:A.theme};
   clearInterval(pm.iv);clearInterval(pm.swI);
   const fresh=newAcc(safe.u,safe.nick,safe.bio,safe.pw,safe.email,safe.phone);
-  fresh.authUid=safe.authUid;fresh.mail=safe.email;fresh.theme=safe.theme;fresh.pctFrom=today();
+  fresh.authUid=safe.authUid;fresh.accountOrigin=safe.accountOrigin;fresh.loginMethod=safe.loginMethod;fresh.googleConnected=safe.googleConnected;fresh.mail=safe.email;fresh.theme=safe.theme;fresh.pctFrom=today();
   DB.accounts[safe.u]=fresh;A=fresh;
   pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,lg:0,iv:0,sw:0,swT:0,swI:0};
   closeModal('reset-modal');save();msg=t('systemReset');shell();
@@ -2371,7 +2409,7 @@ function confirmReset(){
 function exportDataSnapshot(account){
   if(!account||typeof account!=='object')throw new Error('No active account');
   const copy=JSON.parse(JSON.stringify(account));
-  for(const field of ['pw','salt','pwAt','authUid','access_token','refresh_token','token','loginMethod','googleConnected'])delete copy[field];
+  for(const field of ['pw','salt','pwAt','authUid','access_token','refresh_token','token','loginMethod','googleConnected','accountOrigin'])delete copy[field];
   return {
     format:'improvin-your-day-export',version:1,exportedAt:new Date().toISOString(),
     scope:'Loaded application account on this device; not a full Supabase service export',
@@ -2392,6 +2430,7 @@ function exportMyData(){
 }
 
 let accountDeletionBusy=false;
+let pendingDeleteUid=null;
 function accountDeletionMessage(code){
   const messages={
     UNAUTHORIZED:["Oturum doğrulanamadı. Hesabından çıkıp yeniden giriş yap.","Session could not be verified. Sign out and sign in again."],
@@ -2408,7 +2447,7 @@ function accountDeletionMessage(code){
 }
 async function accountFunction(action,fields={},retry=true){
   const session=sbSession();
-  if(!A?.authUid||!session?.access_token||session?.user?.id!==A.authUid){
+  if(accountConnection(A)!=='cloud'||!session?.access_token||session?.user?.id!==A.authUid){
     const error=new Error('UNAUTHORIZED');error.code='UNAUTHORIZED';throw error;
   }
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
@@ -2431,38 +2470,50 @@ async function accountFunction(action,fields={},retry=true){
 }
 async function delAcc(){
   if(!A||accountDeletionBusy)return;
-  if(!A.authUid){
-    openModal('delete-local-modal',`<h2>${t('deleteAccount')}</h2><p class="account-data-alert">${tr()?'Bu yerel hesabın yalnızca bu cihazdaki kayıtları ve uygulama yedeği temizlenir. İşlem geri alınamaz; önce verilerini indirmek isteyebilirsin.':'This removes the local account and its app backup on this device. It cannot be undone; consider exporting first.'}</p><label for="local-delete-name">${tr()?'Onaylamak için kullanıcı adını yaz:':'Type your username to confirm:'} <b>${esc(A.u)}</b></label><input id="local-delete-name" autocomplete="off" spellcheck="false" oninput="checkLocalDeletionConsent()"><div class="row" style="margin-top:.8rem"><button id="local-delete-confirm" disabled style="background:var(--no)" onclick="deleteLocalConfirmed()">${t('deleteAccount')}</button><button class="g" onclick="closeModal('delete-local-modal')">${t('cancel')}</button></div>`);
+  pendingDeleteUid=null;
+  const connection=accountConnection(A);
+  if(connection==='unknown'){
+    openModal('account-deletion-unknown',`<h2>${tr()?'Hesap bağlantısı doğrulanamadı':'Account connection unverified'}</h2><p class="account-data-alert">${tr()?'Bu profili yanlışlıkla yalnızca yerel saymayacağız. Hiçbir hesap veya veri silinmedi. Önce verilerini indir, sonra çıkış yapıp Google ya da e-posta/şifreyle yeniden giriş yap.':'We will not assume this is a local-only profile. No account or data was deleted. Export your data, sign out, then sign in again with Google or email/password.'}</p><button onclick="closeModal('account-deletion-unknown')">${tr()?'Anladım':'Got it'}</button>`);
+    return;
+  }
+  if(connection==='local'){
+    openModal('delete-local-modal',`<h2>${tr()?'Yalnızca bu cihazdaki profili kaldır':'Remove the profile from this device only'}</h2><p class="account-data-alert">${tr()?'Bu işlem tarayıcıdaki yerel kayıt ve yedek kopyasını kaldırır. <b>Supabase veya Google hesabını silmez.</b> İşlem geri alınamaz; önce verilerini indir.':'This removes the local browser profile and its backup. <b>It does not delete any Supabase or Google account.</b> This cannot be undone; export your data first.'}</p><label for="local-delete-name">${tr()?'Bu profilin kullanıcı adını yaz:':'Type this profile username:'} <b>${esc(A.u)}</b></label><input id="local-delete-name" autocomplete="off" spellcheck="false" oninput="checkLocalDeletionConsent()"><label for="local-delete-phrase">${tr()?'Aşağıdaki ifadeyi aynen yaz:':'Type the phrase exactly:'} <b>REMOVE FROM DEVICE</b></label><input id="local-delete-phrase" autocomplete="off" spellcheck="false" oninput="checkLocalDeletionConsent()"><div class="row" style="margin-top:.8rem"><button id="local-delete-confirm" disabled style="background:var(--no)" onclick="deleteLocalConfirmed()">${tr()?'Yalnızca cihazdan kaldır':'Remove from this device only'}</button><button class="g" onclick="closeModal('delete-local-modal')">${t('cancel')}</button></div>`);
     return;
   }
   accountDeletionBusy=true;
+  const uid=A.authUid;
   try{
     const state=await accountFunction('status');
-    if(!state?.ok)throw Object.assign(new Error('SERVER_ERROR'),{code:'SERVER_ERROR'});
+    if(!state?.ok||typeof state.email!=='string'||!state.email)throw Object.assign(new Error('SERVER_ERROR'),{code:'SERVER_ERROR'});
+    if(!A||A.authUid!==uid||accountConnection(A)!=='cloud')return;
     if(!state.deletionEnabled){
       openModal('account-deletion-status',`<h2>${t('deleteAccount')}</h2><p>${tr()?'Sunucudaki güvenlik kilidi şu an kapalı. Hiçbir hesap silinmedi. Bu aşamada yalnızca bağlantı ve kimlik doğrulama durumu kontrol edildi.':'The server-side safety lock is currently off. No account was deleted. This only checked the connection and authentication.'}</p><button onclick="closeModal('account-deletion-status')">${tr()?'Anladım':'Got it'}</button>`);
       return;
     }
-    openModal('delete-cloud-modal',`<h2>${t('deleteAccount')}</h2><p class="account-data-alert">${tr()?'Bu işlem bulut hesabını, bağlı görev ve günlük kayıtlarını kalıcı olarak siler. Başka cihazlarda kalan yerel kopyalar ve sağlayıcı yedekleri anında silinmeyebilir. İşlemi yalnızca kendi test hesabında doğruladıktan sonra kullan.':'This permanently deletes your cloud account and linked tasks/journals. Copies on other devices and provider backups may remain temporarily. Only proceed after testing with a separate test account.'}</p><div class="account-delete-form"><label for="cloud-delete-email">${tr()?'Hesabının e-posta adresini yaz:':'Type your account email:'} <b>${esc(state.email||'')}</b></label><input id="cloud-delete-email" data-server-email="${esc(state.email)}" type="email" autocomplete="off" spellcheck="false" oninput="checkCloudDeletionConsent()"><label for="cloud-delete-phrase">${tr()?'Aşağıdaki ifadeyi aynen yaz:':'Type this phrase exactly:'} <b>DELETE MY ACCOUNT</b></label><input id="cloud-delete-phrase" autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="checkCloudDeletionConsent()"><p id="cloud-delete-error" class="mut" role="status" aria-live="polite"></p><div class="row"><button id="cloud-delete-confirm" disabled style="background:var(--no)" onclick="deleteCloudConfirmed()">${t('deleteAccount')}</button><button class="g" onclick="closeModal('delete-cloud-modal')">${t('cancel')}</button></div></div>`);
+    pendingDeleteUid=uid;
+    openModal('delete-cloud-modal',`<h2>${tr()?'Bulut hesabımı sil':'Delete my cloud account'}</h2><p class="account-data-alert">${tr()?'Bu işlem Supabase Auth hesabını ve ona bağlı uygulama verilerini siler. Başka cihazlardaki kopyalar ve sağlayıcı yedekleri hemen temizlenmeyebilir.':'This deletes your Supabase Auth account and linked application data. Other-device copies and provider backups may persist for a time.'}</p><div class="account-delete-form"><label for="cloud-delete-email">${tr()?'Hesabının e-posta adresini yaz:':'Type your account email:'} <b>${esc(state.email||'')}</b></label><input id="cloud-delete-email" data-server-email="${esc(state.email||'')}" type="email" autocomplete="off" spellcheck="false" oninput="checkCloudDeletionConsent()"><label for="cloud-delete-phrase">${tr()?'Aşağıdaki ifadeyi aynen yaz:':'Type this phrase exactly:'} <b>DELETE MY ACCOUNT</b></label><input id="cloud-delete-phrase" autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="checkCloudDeletionConsent()"><p id="cloud-delete-error" class="mut" role="status" aria-live="polite"></p><div class="row"><button id="cloud-delete-confirm" disabled style="background:var(--no)" onclick="deleteCloudConfirmed()">${tr()?'Bulut hesabımı sil':'Delete cloud account'}</button><button class="g" onclick="closeModal('delete-cloud-modal')">${t('cancel')}</button></div></div>`);
   }catch(e){toast(accountDeletionMessage(e.code))}
   finally{accountDeletionBusy=false}
 }
 function checkLocalDeletionConsent(){
   const button=document.getElementById('local-delete-confirm');
-  if(button)button.disabled=!A||A.authUid||document.getElementById('local-delete-name')?.value!==A.u;
+  if(button)button.disabled=accountDeletionBusy||accountConnection(A)!=='local'||
+    document.getElementById('local-delete-name')?.value!==A.u||
+    document.getElementById('local-delete-phrase')?.value!=='REMOVE FROM DEVICE';
 }
 function checkCloudDeletionConsent(){
   const button=document.getElementById('cloud-delete-confirm');
   const email=document.getElementById('cloud-delete-email')?.value.trim().toLowerCase();
   const verified=document.getElementById('cloud-delete-email')?.dataset.serverEmail?.toLowerCase();
   const phrase=document.getElementById('cloud-delete-phrase')?.value;
-  if(button)button.disabled=accountDeletionBusy||!A?.authUid||email!==verified||phrase!=='DELETE MY ACCOUNT';
+  if(button)button.disabled=accountDeletionBusy||accountConnection(A)!=='cloud'||
+    !pendingDeleteUid||A?.authUid!==pendingDeleteUid||email!==verified||phrase!=='DELETE MY ACCOUNT';
 }
 function removeDeletedAccountFromBrowser(uid,username){
   clearTimeout(pushT);pushT=null;
   // Remove *only* the deleted identity. Preserve unrelated local profiles.
   for(const [key,account] of Object.entries(DB.accounts)){
-    if(key===username||uid&&account?.authUid===uid)delete DB.accounts[key];
+    if(uid ? account?.authUid===uid : key===username && !accountCloudHints(account))delete DB.accounts[key];
   }
   A=null;
   if(!DB.accounts[DB.lastUser]){
@@ -2479,13 +2530,14 @@ function removeDeletedAccountFromBrowser(uid,username){
   loginDat={u:'',p:''};
 }
 function deleteLocalConfirmed(){
-  if(!A||A.authUid||document.getElementById('local-delete-name')?.value!==A.u)return;
+  if(accountConnection(A)!=='local'||document.getElementById('local-delete-name')?.value!==A.u||
+     document.getElementById('local-delete-phrase')?.value!=='REMOVE FROM DEVICE')return;
   stopTimers();removeDeletedAccountFromBrowser(null,A.u);
   closeModal('delete-local-modal');goTo('welcome','home');
   toast(tr()?'Yerel hesap bu cihazdan kaldırıldı.':'Local account removed from this device.');
 }
 async function deleteCloudConfirmed(){
-  if(!A?.authUid||accountDeletionBusy)return;
+  if(accountConnection(A)!=='cloud'||accountDeletionBusy||!pendingDeleteUid||A.authUid!==pendingDeleteUid)return;
   checkCloudDeletionConsent();
   if(document.getElementById('cloud-delete-confirm')?.disabled)return;
   const email=document.getElementById('cloud-delete-email').value.trim().toLowerCase();
@@ -2495,7 +2547,7 @@ async function deleteCloudConfirmed(){
     const uid=A.authUid,username=A.u;
     const result=await accountFunction('delete',{email,confirmation:'DELETE MY ACCOUNT'});
     if(!result?.ok||result.deleted!==true)throw Object.assign(new Error('SERVER_ERROR'),{code:'SERVER_ERROR'});
-    stopTimers();removeDeletedAccountFromBrowser(uid,username);
+    stopTimers();removeDeletedAccountFromBrowser(uid,username);pendingDeleteUid=null;
     closeModal('delete-cloud-modal');goTo('welcome','home');
     toast(tr()?'Hesap silindi. Diğer cihazlarda kalan kopyaları ayrıca temizle.':'Account deleted. Clear any remaining copies on other devices.');
   }catch(e){
@@ -2609,7 +2661,7 @@ async function restoreCloudOnLoad(){
     const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
     const meta=user.user_metadata||{};
     const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
-    a.authUid=user.id;a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
+    a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
     if(user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
     DB.accounts[a.u]=a;DB.lastUser=a.u;DB.last=a.nick;A=a;
     view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();
