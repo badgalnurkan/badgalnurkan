@@ -24,9 +24,9 @@ Use disposable test accounts, not a real person's account. Test case-insensitive
 - Google login, signup with email verification, password reset, and legacy-local migration remain functional.
 - Run the automated `npm test` command and verify the GitHub **Account consistency** workflow succeeds.
 
-## 3. Multi-device write protection — NOT COMPLETE
+## 3. Multi-device write protection — STAGED, NOT DEPLOYED
 
-Current `iydu_save` calls write the entire JSON record. A browser-only preflight check is NOT sufficient to prevent a race between two devices.
+The *production* `iydu_save` still writes the entire JSON blindly. The *staged PR* implements server-side JSON compare-and-swap, blocks old blind writes and direct table updates, and retains conflicts in durable local backups. These tests passed on temporary Supabase and Chrome, but were not applied to production.
 
 **Before claiming cross-device write safety:**
 1. Verify the live SQL definitions and whether username reservation is stored separately from `user_data`.
@@ -70,10 +70,11 @@ reservation/JSON. No existing account records were modified by the audit.
   journals/tasks are not rewritten by the claim itself. Local cache aliases are
   archived before rekey.
 - The atomic `iydu_set_username` RPC updates the reservation, profiles row and
-  JSON `u` field in one transaction. `iydu_save` locks the row and rewrites
-  only the canonical `u` field during a full-JSON save. No unclaimed account
-  can push an invented username. `iydu_username_available` checks BOTH
-  existing unique indexes, but actual uniqueness still relies on the DB indexes.
+  JSON `u` field in one transaction. The new `iydu_save_cas` uses an exact
+  raw JSON expected-data predicate; legacy `iydu_save` rejects all writes.
+  Direct table mutations are revoked, while ownership-limited SECURITY DEFINER
+  RPCs perform controlled writes. `iydu_username_available` checks BOTH
+  unique indexes; the indexes are authoritative.
 - **No automatic backfill**: historical mismatches and the missing Google
   reservation remain unchanged until the account holder claims a name. Do not
   overwrite historical `profiles.username` values without an identity-linked
@@ -86,10 +87,27 @@ reservation/JSON. No existing account records were modified by the audit.
 - The Supabase SQL is staged separately because GitHub preview for `index.html`
   still points at the production Supabase URL; never perform test registrations
   from that preview against the real project.
-- **Open risk:** the entire JSON state is still a last-writer-wins write across
-  devices, except the `u` field is server-forced. Implement a separate server
-  revision/CAS protocol for all fields before declaring multi-device sync safe.
+- **Operational risk:** the unmerged PR prevents silent stale writes in disposable
+  tests, but production remains last-writer-wins. Old open clients will lose
+  cloud-write capability during the SQL/frontend cutover (their browser data
+  must be preserved). Conflict edits are archived, not silently merged.
+  See `docs/cas-rollout-release-plan.md` for required staging, backup, cache
+  and rollback gates.
 - The security advisor flagged legacy SECURITY DEFINER APIs, especially
   `handle_new_user` with anonymous EXECUTE. Audit/restrict privileges in a
   separately tested, reversible security change; a privileged trigger should
   not automatically become a public RPC.
+
+
+## Follow-up verified CI (staged only)
+
+At commit `3f4c67a2c888bc4523a9fc3cbf2e4229acbb163e`,
+all three GitHub workflows passed on the temporary test environment,
+including genuine local Supabase Auth, SQL ACL/revocation checks, real
+Chrome two-session data conflicts, durable recovery after browser reload,
+backup download and controlled cloud choice. Details:
+`docs/google-oauth-and-sync-review.md`.
+
+**NOT proven**: actual external Google consent, SMTP, production
+rollout or legacy-open-tab upgrade safety. Do not merge or deploy
+before these gates and verified private backups.
