@@ -1584,12 +1584,10 @@ function cacheCloudAccount(account){
 function rekeyCachedAccount(account,nextName){
   if(cachedUsernameConflict(nextName,account))throw new Error('LOCAL_USERNAME_CACHE_CONFLICT');
   if(account.authUid){
-    for(const [key,entry] of Object.entries(DB.accounts)){
-      if(entry?.authUid===account.authUid)delete DB.accounts[key];
-    }
-  }else delete DB.accounts[account.u];
-  account.u=nextName;
-  DB.accounts[nextName]=account;
+    const next={...account,u:nextName};
+    cacheCloudAccount(next); // back up existing aliases before changing the local key
+    Object.assign(account,next);DB.accounts[nextName]=account;
+  }else{delete DB.accounts[account.u];account.u=nextName;DB.accounts[nextName]=account}
 }
 /* hesap kaydi her zaman localStorage'da tutulur: cerez reddedilse bile kullanici hatirlanir */
 const storeAcct=()=>{try{return localStorage}catch(e){return store()}};
@@ -1802,9 +1800,11 @@ function renderAppOrAuth(){
     h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" onclick="signInWithGoogle()">${tr()?'Google ile devam et':'Continue with Google'}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
   else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='claim-username')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${tr()?'Kullanıcı adını belirle':'Choose your username'}</h2><p class="mut">${tr()?'Hesabın doğrulandı. Devam etmeden önce benzersiz bir kullanıcı adı seç. Mevcut verilerin korunur.':'Your account is verified. Choose a unique username before continuing. Your data is preserved.'}</p>${m()}<form onsubmit="event.preventDefault();claimCloudUsername()"><label for="claim-name">${t('username')} (3–20)</label><input id="claim-name" maxlength="20" autocomplete="username" autocapitalize="none" spellcheck="false" required value="${esc(claimDraftName)}" oninput="claimDraftName=this.value"><p class="mut">${t('usernameRules')}</p><div class="row"><button id="claim-username-submit" type="submit">${tr()?'Kullanıcı adını kaydet':'Save username'}</button><button type="button" class="g" onclick="cancelCloudUsernameClaim()">${tr()?'Girişe dön':'Back to sign-in'}</button></div></form>`)+`</div>`;
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button></div><p class="mut">${tr()?'Demo aşamasında e-posta servisi kapalıysa bağlantı gönderilemez; lütfen hesabını oluştururken güçlü bir şifre seç.':'Password reset email requires an email sending provider, which may be unavailable during the demo.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
+  if(view==='claim-username')document.getElementById('claim-name')?.focus();
 }
 
 
@@ -1953,24 +1953,72 @@ function goExistingEmail(email){
   msg=tr()?'Bu e-posta zaten kayıtlı. Yeni hesap yerine giriş yap.':'Email already registered. Sign in instead of creating another account.';
   softPaint();
 }
+let pendingCloudUsername=null,claimDraftName='',claimBusy=false;
+async function cloudReservedUsername(){
+  const name=await sb('/rest/v1/rpc/iydu_my_username',{method:'POST',body:{}});
+  if(name===null)return null;
+  if(typeof name!=='string'||!userRe.test(name))throw new Error('INVALID_CLOUD_USERNAME');
+  return name;
+}
+function cancelCloudUsernameClaim(){
+  if(claimBusy)return;
+  pendingCloudUsername=null;claimDraftName='';sbClear();A=null;view='login';msg='';renderAppOrAuth();
+}
+async function claimCloudUsername(){
+  if(claimBusy||!pendingCloudUsername)return;
+  const name=String(document.getElementById('claim-name')?.value||claimDraftName).trim();
+  claimDraftName=name;
+  if(!userRe.test(name)){msg=t('usernameRules');return renderAppOrAuth()}
+  const pending=pendingCloudUsername,uid=pending.identity?.user?.id;
+  if(!uid||sbSession()?.user?.id!==uid){
+    msg=tr()?'Oturum süresi doldu. Yeniden giriş yap.':'Session expired. Sign in again.';
+    return renderAppOrAuth();
+  }
+  if(cachedUsernameConflict(name,{authUid:uid})){
+    msg=tr()?'Bu cihazda farklı bir hesabın yerel kaydı bu adı kullanıyor. Verileri korumak için farklı ad seç.':
+      'Another local account uses this name on this device. Choose another to protect its data.';
+    return renderAppOrAuth();
+  }
+  claimBusy=true;const button=document.getElementById('claim-username-submit');
+  if(button)button.disabled=true;
+  try{
+    await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:name}});
+    if(await cloudReservedUsername()!==name)throw new Error('USERNAME_READBACK_MISMATCH');
+    const account=await activateCloudUser(pending.identity,name,pending.method,pending.options);
+    if(!account)throw new Error('USERNAME_CLAIM_UNCONFIRMED');
+    pendingCloudUsername=null;claimDraftName='';greetThen();
+  }catch(error){
+    // A response timeout may happen after commit: preserve the identity for safe retry.
+    msg=error?.code==='23505'||error?.status===409?t('usernameTaken'):
+      (tr()?'Kullanıcı adı doğrulanamadı. Verilerin korundu; bağlantını kontrol edip tekrar dene.':
+        'Username was not confirmed. Your data is preserved; check connection and retry.');
+    view='claim-username';if(!A)renderAppOrAuth();
+  }finally{claimBusy=false;if(button?.isConnected)button.disabled=false}
+}
 async function activateCloudUser(j,preferredName='',method='password',options={}){
   const uid=j&&j.user&&j.user.id;
   if(!uid||!j.access_token)throw new Error('Missing authenticated session');
   sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
   const meta=j.user.user_metadata||{};
-  const fromCloud=await sbPull(); // may throw, never replace cloud data with empty after a failure
+  const fromCloud=await sbPull();
+  const reserved=await cloudReservedUsername(); // canonical username comes from server, never email guess
+  if(!reserved){
+    pendingCloudUsername={identity:j,preferredName,method,options};
+    const proposed=String(fromCloud?.u||preferredName||meta.username||'');
+    claimDraftName=userRe.test(proposed)?proposed:'';
+    A=null;view='claim-username';msg='';renderAppOrAuth();return null;
+  }
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
-  const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
-  const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
-  a.u=username;a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
-  a.pw='';delete a.salt; // Cloud passwords are checked by Supabase, never stored in user_data.
-  a.loginMethod=method==='google'?'google':'password';
+  const a=norm(fromCloud||fromLocal||{u:reserved,nick:meta.nick||meta.nickname||reserved,email:j.user.email});
+  a.u=reserved;a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
+  a.pw='';delete a.salt;a.loginMethod=method==='google'?'google':'password';
   if(method==='google'||j.user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
   v13ProtectLegacyCollision(a.u,uid,options.allowLegacyReplacement===true);
   cacheCloudAccount(a);DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
+  pendingCloudUsername=null;claimDraftName='';
   restorePomodoroState();applyTheme();save();loginDat={u:'',p:''};
   goTo('app','home');
-  if(!fromCloud)await sbPush();
+  if(!fromCloud&&!await sbPush())warnCloudSyncFailure();
   return a;
 }
 async function login(){
@@ -2002,7 +2050,7 @@ async function login(){
               'Your sign-in succeeded, but profile data could not be loaded. Your records were not deleted.');
           return renderAppOrAuth();
         }
-        greetThen();return;
+        if(A)greetThen();return;
       }catch(e){
         if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
           sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home');greetThen();
@@ -2051,6 +2099,7 @@ async function setup(){
       renderAppOrAuth();return;
     }
     await activateCloudUser(j,u);
+    if(!A)return;
     formDat={u:'',n:'',b:'',e:'',t:'',p:''};greetThen();
     toast(tr()?'Bulut hesabın oluşturuldu. E-posta sahipliği kontrol edilmedi (demo).':'Cloud account created. Email ownership was not checked (demo).');
   }catch(err){
