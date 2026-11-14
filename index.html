@@ -5,7 +5,7 @@
 <title>Improvin' your day</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f6eee3">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Fraunces:wght@500;600;700&family=Homemade+Apple&family=Nunito:wght@400;600;700&family=UnifrakturCook:wght@700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Fraunces:wght@500;600;700&family=Homemade+Apple&family=Libre+Baskerville:wght@400;700&family=Patrick+Hand&family=Nunito:wght@400;600;700&family=UnifrakturCook:wght@700&display=swap">
 <style>
 :root{--bg:#FFFAFA;--card:#ffffff;--ink:#542A0C;--mut:#835C3B;--acc:#800000;--acc2:#FDD7E4;--ok:#387C44;--no:#C71585;--ln:#ebd8d4;--sh:0 12px 32px #542A0C13;--on-acc:#fff;--okbg:#eaf4ed;--fs:'Fraunces',Georgia,'Times New Roman',serif;--okbg:#e6f1e6}
 *{box-sizing:border-box}
@@ -1071,11 +1071,11 @@ footer .legal-links{margin:.15rem auto .3rem}
    The requested proprietary font families are preferred only when installed locally;
    licensed font binaries are not shipped. */
 :root{
-  --v13121-century:'Century','Century Schoolbook','New Century Schoolbook','Baskerville',Georgia,serif;
+  --v13121-century:'Century','Century Schoolbook','Libre Baskerville','New Century Schoolbook','Baskerville',Georgia,serif;
   --v13121-bell:'Bell MT','Baskerville','Cormorant Garamond',Georgia,serif;
   --v13121-eras:'Eras Medium ITC','Eras ITC','Trebuchet MS','Nunito',Arial,sans-serif;
   --v13121-bernard:'Bernard MT Condensed','Bernard MT','Cinzel Decorative',Georgia,serif;
-  --v13121-mv:'MV Boli','Comic Sans MS','Segoe Print','Nunito',cursive;
+  --v13121-mv:'MV Boli','Patrick Hand','Comic Sans MS','Segoe Print','Nunito',cursive;
 }
 /* Only the brand credit at the top of the WELCOME screen changes. */
 .welcome-top .brand-badge{
@@ -1198,6 +1198,66 @@ footer .legal-links{margin:.15rem auto .3rem}
   #login-portal .portal-disc,#login-portal .portal-ring,#login-portal .portal-greeting{animation:none!important}
 }
 
+
+/* V13.1.3.1 — theme-aware login portal, concise responsive type and consistent font stacks. */
+:root{--brand-title-font:var(--fs);--v13131-portal-lead:.18s;--v13131-circle-duration:.05s}
+/* The header, auth spinner and after-login brand now all use the same display family. */
+header.top .top-brand,.login-busy-orbit,#login-portal .portal-title{font-family:var(--brand-title-font)!important}
+.login-busy-orbit{font-weight:600;line-height:1.18}
+.login-busy-orbit span{display:block;position:relative;z-index:1;max-width:100%;overflow-wrap:break-word}
+/* 180ms brand prelude then exactly 30ms expansion + 20ms contraction. */
+#login-portal.v13131-portal{
+  position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;
+  z-index:20019;background:var(--bg);isolation:isolate;overflow:hidden;
+  animation:v13131Exit .23s linear both!important;
+}
+#login-portal.v13131-portal .portal-disc{
+  position:absolute;inset:0;background:color-mix(in srgb,var(--card) 58%,var(--acc2));
+  clip-path:circle(0 at 50% 50%)!important;opacity:1!important;
+  animation:v13131Circle .05s linear .18s both!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+#login-portal.v13131-portal .portal-brand{
+  position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:clamp(.65rem,2vw,1rem);max-width:min(92vw,30rem);padding:.5rem;
+  animation:v13131Brand .23s ease-out both;
+}
+#login-portal.v13131-portal .portal-title{
+  font-size:clamp(1.2rem,4vw,2.05rem);font-weight:600;line-height:1.25;
+  text-align:center;color:var(--acc);letter-spacing:normal;white-space:normal;text-wrap:balance;
+}
+#login-portal.v13131-portal .portal-ring{
+  display:block;width:clamp(2.7rem,9vw,3.4rem);height:clamp(2.7rem,9vw,3.4rem);
+  border:2px solid var(--ln);border-top-color:var(--acc);border-right-color:var(--acc);
+  border-radius:50%;animation:v13131Spin .45s linear infinite!important;
+}
+#login-portal.v13131-portal .portal-greeting{display:none!important}
+@keyframes v13131Circle{
+  0%{clip-path:circle(0 at 50% 50%)}
+  60%{clip-path:circle(150vmax at 50% 50%)}
+  100%{clip-path:circle(0 at 50% 50%)}
+}
+@keyframes v13131Brand{0%,78%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.98)}}
+@keyframes v13131Exit{0%,78%{opacity:1}100%{opacity:0}}
+@keyframes v13131Spin{to{transform:rotate(360deg)}}
+/* Normalized type rhythm: mobile, laptop and 4K monitors avoid inherited oversized text. */
+html{font-size:clamp(16px,calc(14.8px + .12vw),18px)!important}
+body{font-size:1rem!important}
+.shell main{font-size:1rem;line-height:1.55}
+.shell main .card{font-size:1rem}
+.shell main .card h2{font-size:clamp(1.08rem,calc(.98rem + .25vw),1.28rem);line-height:1.3}
+.shell main .card h3{font-size:clamp(1rem,calc(.96rem + .15vw),1.14rem);line-height:1.3}
+.shell aside a{font-size:clamp(.95rem,calc(.9rem + .2vw),1.07rem)!important}
+.shell aside .lg{font-size:clamp(1.1rem,calc(1rem + .2vw),1.38rem)}
+.shell main :is(input,textarea,select){min-width:0;max-width:100%;font-size:1rem}
+.shell main :is(.card,.row,.tag,.task){min-width:0}
+.shell main .card .mut{overflow-wrap:break-word}
+@media(max-width:900px){.shell aside a{font-size:clamp(.86rem,2.7vw,.98rem)!important}}
+@media(max-width:390px){.shell main .card h2{font-size:1.1rem}}
+@media(prefers-reduced-motion:reduce){
+  #login-portal.v13131-portal,#login-portal.v13131-portal .portal-brand,
+  #login-portal.v13131-portal .portal-disc,#login-portal.v13131-portal .portal-ring{animation:none!important}
+}
 </style>
 </head>
 <body>
@@ -1623,6 +1683,7 @@ function setTheme(v){
   if(A)A.theme=v;
   DB.themeChoice=v;
   setItem('b1.theme',v);applyTheme();
+  if(typeof updatePomoPip==='function')updatePomoPip();
   if(A)save();
   if(view==='welcome'||view==='login'||view==='setup')renderAppOrAuth();
   else if($('#mn')){if(pg==='set')P.set()}
@@ -1721,18 +1782,22 @@ function toast(txt){
   el.classList.add('on');clearTimeout(el._t);
   el._t=setTimeout(()=>{el.classList.remove('on','focus-toast')},2600);
 }
-/* giris yapildiktan sonra: gunaydin/tunaydin/iyi geceler hizlica gelir, silinir, sonra welcome */
+/* Successful interactive login: show branded spinner, 30ms circular reveal + 20ms reverse; no toast. */
 function greetThen(cb){
   const reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
-  if(reduced){if(cb)cb();setTimeout(()=>toast(greetText()),0);return}
+  if(reduced){if(cb)cb();return}
   document.getElementById('login-portal')?.remove();
-  const root=document.createElement('div');root.id='login-portal';root.setAttribute('aria-hidden','true');
-  root.innerHTML='<div class="portal-disc"></div><div class="portal-ring"></div><span class="portal-greeting"></span>';
-  root.querySelector('.portal-greeting').textContent=greetText();
+  const root=document.createElement('div');
+  root.id='login-portal';root.className='v13131-portal';
+  root.setAttribute('aria-label',tr()?'Giriş başarılı, ana sayfa açılıyor':'Sign-in successful, opening home');
+  root.setAttribute('role','status');
+  root.innerHTML=`<div class="portal-disc"></div><div class="portal-brand"><span class="portal-title">Improvin' your day.</span><span class="portal-ring" aria-hidden="true"></span></div>`;
   document.body.appendChild(root);
-  let cleaned=false;const cleanup=()=>{if(cleaned)return;cleaned=true;root.remove();if(cb)cb();toast(greetText())};
+  let cleaned=false;
+  const cleanup=()=>{if(cleaned)return;cleaned=true;root.remove();if(cb)cb()};
   root.addEventListener('animationend',e=>{if(e.target.classList.contains('portal-disc'))cleanup()});
-  setTimeout(()=>{if(root.isConnected)cleanup()},610);
+  // The logo/spinner appear before the 30ms expansion and 20ms reverse.
+  setTimeout(cleanup,340);
 }
 function goHome(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 function backToLogin(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
@@ -1788,7 +1853,7 @@ function loginBusy(on){
   const btn=document.getElementById(view==='setup'?'register-submit':'login-submit');
   if(btn)btn.disabled=on;
   let ov=document.getElementById('auth-busy');
-  if(on&&!ov){ov=document.createElement('div');ov.id='auth-busy';ov.className='login-busy-overlay';ov.innerHTML='<div class="login-busy-orbit" role="status" aria-live="polite">Improvin\' your day.</div>';document.body.appendChild(ov)}
+  if(on&&!ov){ov=document.createElement('div');ov.id='auth-busy';ov.className='login-busy-overlay';ov.innerHTML='<div class="login-busy-orbit" role="status" aria-live="polite"><span>Improvin\' your day.</span></div>';document.body.appendChild(ov)}
   if(!on&&ov)ov.remove();
 }
 let nameSuggestionChoices=[];
@@ -2219,15 +2284,34 @@ P.todo=()=>{
   const planned=(A.plans?.[next]||[]).map((name,i)=>`<div class="task"><span>${esc(name)}</span><button class="g s" onclick="removePlan(${i})">${t('delete')}</button></div>`).join('');
   const bl=A.backlog.map((bt,i)=>`<div class="task"><span>${esc(bt)}</span><button class="g s" onclick="fromBack(${i})">${t('addToToday')}</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">${t('delete')}</button></div>`).join('');
   const acted=A.tasks.some(x=>x.s==='done'||x.s==='miss')||Boolean(A.completedBatches?.[today()]?.length);
-  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">'+t('addTask')+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" placeholder="${t('newTask')}" onkeydown="if(event.key==='Enter'){event.preventDefault();addT()}"><button onclick="addT()">${t('add')}</button></div></div>
+  const dayFinished=allTodayTasksArchived();
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">'+(dayFinished?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.'):t('addTask'))+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'){event.preventDefault();addT()}"><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
   <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünün görevlerini değerlendirdikten sonra yarının görevlerini buraya ekleyebilirsin.':'Plan tomorrow after reviewing today\'s tasks.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><input id="plan-input" maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'){event.preventDefault();addTomorrowPlan()}"><button onclick="addTomorrowPlan()" ${acted?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${acted?'':`<small class="mut">${tr()?'Önce bugünden bir görevi ✓ veya ✕ ile değerlendir.':'Mark one task ✓ or ✕ first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
 function vibrateTask(){try{if(navigator.vibrate)navigator.vibrate(12)}catch(_){}}
 const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}"><span>${esc(x.t)}</span><button class="ck ${x.s==='done'?'on':''}" aria-label="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s==='miss'?'on':''}" aria-label="${t('notDone')}" onclick="mk(${i},'miss')">✕</button>${x.s?`<button class="g s" onclick="planFromTask(${i})">${tr()?'Yarına planla':'Plan tomorrow'}</button>`:''}<button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
-function fromBack(i){if(!A.backlog[i])return;A.tasks.push({t:A.backlog[i],s:''});A.backlog.splice(i,1);recordActivity();P.todo()}
+function allTodayTasksArchived(){
+  return A && A.day===today() && A.tasks.length===0 &&
+    Array.isArray(A.completedBatches?.[today()]) && A.completedBatches[today()].length>0;
+}
+function fromBack(i){
+  if(!A.backlog[i])return;
+  if(allTodayTasksArchived()){
+    const task=A.backlog[i];
+    // Planning can fail at the 100-task limit; never remove backlog before success.
+    if(!pushTomorrowPlan(task))return;
+    A.backlog.splice(i,1);recordActivity();P.todo();return;
+  }
+  A.tasks.push({t:A.backlog[i],s:''});A.backlog.splice(i,1);recordActivity();P.todo();
+}
 function delT(i){if(!A.tasks[i])return;A.tasks.splice(i,1);vibrateTask();recordActivity();P.todo()}
-function addT(){const v=String($('#nt')?.value||'').trim().slice(0,120);if(v){A.tasks.push({t:v,s:''});recordActivity();P.todo()}}
+function addT(){
+  const v=String($('#nt')?.value||'').trim().slice(0,120);
+  if(!v)return;
+  if(allTodayTasksArchived()){addTomorrowPlan(v);return}
+  A.tasks.push({t:v,s:''});recordActivity();P.todo();
+}
 function mk(i,status){
   const x=A.tasks[i];if(!x)return;
   x.s=x.s===status?'':status;
@@ -2241,14 +2325,20 @@ function mk(i,status){
     A.tasks=[];
   }
   vibrateTask();recordActivity();P.todo();
-  if(allDone)toast(tr()?'Tüm görevler tamamlandı; Raporlar’a kaydedildi. Yeni bir liste oluşturabilirsin.':'All tasks completed and archived to Reports. Start a new list.');
+  if(allDone)toast(tr()?'Bugünkü görevler Raporlar’a kaydedildi. Yeni görevler yarına planlanacak.':'Today’s tasks were saved to Reports. New tasks will go to tomorrow.');
 }
 function ensurePlans(){if(!A.plans||typeof A.plans!=='object')A.plans={}}
+function pushTomorrowPlan(value){
+  const v=String(value||'').trim().slice(0,120);if(!v)return false;
+  ensurePlans();const next=addD(today(),1);
+  if(!Array.isArray(A.plans[next]))A.plans[next]=[];
+  if(A.plans[next].length>=100){toast(tr()?'En fazla 100 plan.':'Up to 100 plans.');return false}
+  A.plans[next].push(v);return true;
+}
 function addTomorrowPlan(text){
-  const v=String(text||$('#plan-input')?.value||'').trim().slice(0,120);if(!v)return;
-  ensurePlans();const next=addD(today(),1);if(!Array.isArray(A.plans[next]))A.plans[next]=[];
-  if(A.plans[next].length>=100){toast(tr()?'En fazla 100 plan.':'Up to 100 plans.');return}
-  A.plans[next].push(v);recordActivity();P.todo();
+  const v=String(text||$('#plan-input')?.value||'').trim().slice(0,120);
+  if(!pushTomorrowPlan(v))return;
+  recordActivity();P.todo();
 }
 function planFromTask(i){const x=A.tasks[i];if(x&&x.s)addTomorrowPlan(x.t)}
 function removePlan(i){ensurePlans();const next=addD(today(),1);if(A.plans[next])A.plans[next].splice(i,1);save();P.todo()}
@@ -2464,7 +2554,7 @@ function beep(){
 function pomoPhaseLabel(){return pm.ph==='w'?(tr()?'Odak zamanı':'Focus time'):(pm.lg?t('longBreak'):t('break'))}
 function closePomoOverlay(){const el=$('#pomo-overlay');if(!el)return;el.classList.add('pomo-exit');setTimeout(()=>el.remove(),20)}
 function updatePomoOverlay(){
-  const el=$('#pomo-overlay');if(!el)return;
+  const el=$('#pomo-overlay');if(!el){updatePomoPip();return}
   const total=Math.max(1,(pm.ph==='w'?pm.w:(pm.lg?Math.max(pm.b,...(A?.presets||[]).map(p=>Number(p.b)||0)):pm.b))*60);
   const pctRemain=Math.min(100,Math.max(0,pm.left/total*100));
   const ring=$('#pomo-ring');if(ring)ring.style.setProperty('--ring',pctRemain+'%');
@@ -2487,9 +2577,20 @@ function updatePomoPip(){
   if(!pomoPipWindow||pomoPipWindow.closed)return;
   const doc=pomoPipWindow.document;
   const time=doc.getElementById('pip-time'),phase=doc.getElementById('pip-phase'),toggle=doc.getElementById('pip-toggle');
+  syncPomoPipAppearance(doc);
   if(time)time.textContent=ft(pm.left);
   if(phase)phase.textContent=pomoPhaseLabel();
   if(toggle)toggle.textContent=pm.run?(tr()?'Duraklat':'Pause'):(tr()?'Başlat':'Start');
+}
+function syncPomoPipAppearance(doc){
+  if(!doc?.documentElement)return;
+  const styles=getComputedStyle(document.documentElement);
+  for(const prop of ['--bg','--card','--ink','--acc','--acc2','--ln','--on-acc','--fs']){
+    const value=styles.getPropertyValue(prop).trim();
+    if(value)doc.documentElement.style.setProperty(prop,value);
+  }
+  const bodyFont=getComputedStyle(document.body).fontFamily;
+  doc.documentElement.style.setProperty('--pip-body-font',bodyFont);
 }
 async function openPomoPip(){
   // Document PiP is desktop Chromium only; the browser requires a direct user gesture.
@@ -2499,7 +2600,13 @@ async function openPomoPip(){
     if(pomoPipWindow&&!pomoPipWindow.closed){pomoPipWindow.focus();return}
     const win=await api.requestWindow({width:360,height:300});pomoPipWindow=win;
     const doc=win.document;doc.title='Improvin’ your day · Pomodoro';
-    const style=doc.createElement('style');style.textContent='*{box-sizing:border-box}body{margin:0;display:grid;place-items:center;min-height:100vh;background:#181a20;color:#fafafa;font:600 16px system-ui;text-align:center}.ring{border:8px solid #7da5b7;border-radius:50%;width:min(58vw,185px);aspect-ratio:1;display:grid;place-items:center;align-content:center;gap:8px}#pip-time{font-size:2.35rem;font-variant-numeric:tabular-nums}#pip-phase{font-size:.85rem}.actions{display:flex;gap:7px;justify-content:center;margin:12px 0}button{background:#7da5b7;color:#121722;border:0;border-radius:9px;padding:9px 14px;font:inherit;cursor:pointer}';doc.head.appendChild(style);
+    // PiP is a separate document: copy only the public font stylesheet, never credentials.
+    for(const link of document.querySelectorAll('link[rel="stylesheet"]')){
+      if(link.href.startsWith('https://fonts.googleapis.com/'))doc.head.appendChild(link.cloneNode(true));
+    }
+    const style=doc.createElement('style');
+     style.textContent=`*{box-sizing:border-box}html{font-size:16px}body{margin:0;display:grid;place-items:center;min-height:100vh;min-height:100dvh;padding:10px;background:var(--bg,#fff);color:var(--ink,#222);font:600 1rem/1.4 var(--pip-body-font,'Nunito',system-ui,sans-serif);text-align:center}.ring{border:7px solid var(--acc,#777);background:var(--card,#fff);border-radius:50%;width:min(58vw,185px);aspect-ratio:1;display:grid;place-items:center;align-content:center;gap:8px}#pip-time{font:600 clamp(1.8rem,8vw,2.35rem)/1.1 var(--fs,'Fraunces',Georgia,serif);font-variant-numeric:tabular-nums;color:var(--acc,#777)}#pip-phase{font-family:var(--pip-body-font,'Nunito',system-ui,sans-serif);font-size:.85rem;color:var(--ink,#222)}.actions{display:flex;gap:7px;justify-content:center;margin:12px 0;flex-wrap:wrap}button{background:var(--acc,#777);color:var(--on-acc,#fff);border:1px solid var(--ln,#ccc);border-radius:999px;padding:9px 14px;font:600 .9rem/1.2 var(--pip-body-font,'Nunito',system-ui,sans-serif);cursor:pointer}`;
+     doc.head.appendChild(style);syncPomoPipAppearance(doc);
     const wrap=doc.createElement('main');wrap.innerHTML='<div class="ring"><div id="pip-phase"></div><div id="pip-time"></div></div><div class="actions"><button id="pip-toggle"></button><button id="pip-reset">Reset</button></div>';
     doc.body.appendChild(wrap);
     doc.getElementById('pip-toggle').addEventListener('click',()=>{pS();updatePomoPip()});
