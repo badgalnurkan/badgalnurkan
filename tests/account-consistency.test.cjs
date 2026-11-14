@@ -79,3 +79,49 @@ test('profile rename checks server independently and sync errors are visible',()
   assert.match(script,/function warnCloudSyncFailure\(/);
   assert.match(script,/if\(A\.authUid&&!await sbPush\(\)\)/);
 });
+
+
+test('valid password with failing profile download never reports invalid credentials',async()=>{
+  const loginCode=section('async function login(){','async function setup(){');
+  const run=new Function(loginCode+`
+    let authBusy=false, msg='', loginDat={u:'',p:''}, A=null;
+    const DB={accounts:{}}, tr=()=>true;
+    const $=sel=>({value:sel==='#u'?'test@example.com':'correct-password'});
+    const findUser=()=>undefined;
+    const loginBusy=()=>{};
+    const sbSignIn=async()=>({access_token:'valid',user:{id:'u1',email:'test@example.com'}});
+    const activateCloudUser=async()=>{throw new Error('profile network error')};
+    const renderAppOrAuth=()=>{};
+    const greetThen=()=>{throw Error('Should not greet if profile download failed')};
+    const authErrorMessage=()=> 'credentials';
+    const accountCloudHints=()=>true, pwMatch=async()=>false, sbClear=()=>{};
+    const norm=x=>x, restorePomodoroState=()=>{},applyTheme=()=>{},save=()=>{},goTo=()=>{},toast=()=>{};
+    return async()=>{await login();return msg};
+  `)();
+  const message=await run();
+  assert.match(message,/profil verilerin yüklenemedi/i);
+  assert.ok(!/şifreni kontrol et/i.test(message));
+});
+
+test('profile changes never announce confirmed sync when server write fails',async()=>{
+  const profileCode=section('async function saveProfile(){','/* Return one month of header buttons');
+  const run=new Function(profileCode+`
+    const A={u:'Eski',nick:'Old',authUid:'u1'};
+    const DB={accounts:{Eski:A},last:'Old'};
+    const userRe=/^.{3,20}$/;
+    let notice='', syncWarning=false, closed=false;
+    const $=sel=>({value:({'#prof-u':'Eski','#prof-n':'Changed','#prof-b':''})[sel]});
+    const tr=()=>true, t=()=> 'Kaydedildi';
+    const toast=msg=>{notice=msg};
+    const cachedUsernameConflict=()=>false,rekeyCachedAccount=()=>{};
+    const sb=async()=>true,profileUsernameHint=async()=>{};
+    const usernameUpdateErrorMessage=()=> 'error';
+    const save=()=>{},closeModal=()=>{closed=true},shell=()=>{};
+    const sbPush=async()=>false,warnCloudSyncFailure=()=>{syncWarning=true};
+    return async()=>{await saveProfile();return {notice,syncWarning,closed}};
+  `)();
+  const result=await run();
+  assert.equal(result.notice,'');
+  assert.equal(result.syncWarning,true);
+  assert.equal(result.closed,true);
+});
