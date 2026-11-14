@@ -37,6 +37,10 @@ function harness({initialName=null,profile={u:'OldAlias',nick:'Old Name',tasks:[
       }
       throw Error('Unexpected RPC '+path);
     };
+    let cloudBase=null,cloudUid=null,cloudBlocked=false;
+    const cloudPending=()=>null,cloudClone=x=>structuredClone(x),
+          cloudEqual=(a,b)=>JSON.stringify(a)===JSON.stringify(b),
+          cloudSnapshot=x=>structuredClone(x),setItem=()=>true;
     const norm=x=>x,cacheCloudAccount=a=>{DB.accounts[a.u]=a};
     const cachedUsernameConflict=()=>conflict;
     const v13ProtectLegacyCollision=()=>{};
@@ -121,8 +125,8 @@ test('legacy migration reads post-claim data as its compare-and-swap baseline',(
 test('browser session activation never schedules background upload on login',()=>{
   const source=section('const save=(options={})=>{','/* oturum:');
   let pushes=0;
-  const save=new Function('A','DB','setItem','touchSession','schedulePush','LSK',source+';return save;')(
-    null,{},()=>{},()=>{},()=>{pushes++},'b1');
+  const save=new Function('A','DB','setItem','touchSession','schedulePush','LSK','cloudDraft','warnCloudSyncFailure',source+';return save;')(
+    null,{},()=>true,()=>{},()=>{pushes++},'b1',()=>true,()=>{});
   save({skipCloudPush:true});
   assert.equal(pushes,0);
   save();
