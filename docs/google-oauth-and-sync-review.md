@@ -78,3 +78,24 @@ anlamına gelmez; **yayın engelinin kanıtıdır**.
 
 Canlı veritabanına SQL uygulanmadı; deney sadece geçici Github
 Actions Supabase ortamında yürütülür.
+
+## Doğrulama sonucu — 2026-11-15
+
+PR #6 commit `65d18e18516e8f28507ba268097894b150aceed4` için GitHub Actions sonuçları:
+
+- `Account consistency`: SUCCESS
+- `Username integrity (isolated PostgreSQL)`: SUCCESS
+- `Supabase Auth integration (free local stack)`: SUCCESS
+
+Kanıt: https://github.com/badgalnurkan/badgalnurkan/actions/runs/43653114947
+
+Son işin loglarında açık sonuçlar:
+
+- `PASS Chrome mobile viewport: password login, synthetic OAuth fragment callback, error callback, claim and reload.`
+- `PASS: local Supabase CAS prevents two concurrent new-RPC writes and stale retries.`
+- `CONFIRMED RELEASE BLOCKER: legacy iydu_save can still overwrite a newer CAS state.`
+
+**Karar:** Google provider'ının gerçek consent akışı test edilmedi;
+CAS yalnızca yeni deney fonksiyonunu kullanan istemciler arasında çalışır.
+Mevcut kullanıcıları korumak için PR taslak kalmalı; üretim SQL'i
+veya `main` üzerinde değişiklik yapılmamalıdır.
