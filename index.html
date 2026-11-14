@@ -1295,7 +1295,7 @@ function warnCloudSyncFailure(){
 }
 function schedulePush(){
   clearTimeout(pushT);
-  if(!A?.authUid)return;
+  if(!A?.authUid||cloudBlocked)return;
   const userId=A.authUid;
   pushT=setTimeout(()=>{
     sbPush().then(ok=>{if(!ok&&A?.authUid===userId)warnCloudSyncFailure()})
@@ -1304,12 +1304,13 @@ function schedulePush(){
 }
 const save=(options={})=>{
   try{
-    if(A)A.updatedAt=Date.now();
+    if(A&&!options.skipCloudPush)A.updatedAt=Date.now();
     DB.savedAt=Date.now();
-    setItem(LSK,JSON.stringify(DB));
+    if(A?.authUid&&!options.skipCloudPush&&!cloudDraft())return;
+    if(!setItem(LSK,JSON.stringify(DB)))throw new Error('LOCAL_STORAGE_FAILED');
     touchSession();
     if(!options.skipCloudPush)schedulePush();
-  }catch(e){}
+  }catch(e){warnCloudSyncFailure()}
 };
 /* oturum: kullanici bilgisi kucuk ve ayri tutulur -> ana kayit bozulsa da geri donus var */
 function touchSession(){
@@ -2009,7 +2010,16 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
     A=null;view='claim-username';msg='';renderAppOrAuth();return null;
   }
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
-  const a=norm(fromCloud||fromLocal||{u:reserved,nick:meta.nick||meta.nickname||reserved,email:j.user.email});
+  const pending=cloudPending(uid);
+  // An unsynced draft is authoritative ONLY on this device until CAS confirms it.
+  cloudUid=uid;cloudBase=cloudClone(pending?.base||fromCloud||{});
+  cloudBlocked=!!(pending&&!cloudEqual(pending.base,fromCloud||{}));
+  if(fromLocal&&!pending&&!cloudEqual(cloudSnapshot(fromLocal),fromCloud||{})){
+    const archive='b1.login-cache-backup.'+uid+'.'+Date.now();
+    if(!setItem(archive,JSON.stringify(cloudSnapshot(fromLocal))))
+      throw new Error('LOCAL_ALIAS_BACKUP_FAILED');
+  }
+  const a=norm(cloudClone(pending?.local||fromCloud||{u:reserved,nick:meta.nick||meta.nickname||reserved,email:j.user.email}));
   a.u=reserved;if(!a.nick)a.nick=String(meta.nick||meta.nickname||reserved);
   a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
   a.pw='';delete a.salt;a.loginMethod=method==='google'?'google':'password';
@@ -2019,7 +2029,7 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   pendingCloudUsername=null;claimDraftName='';
   restorePomodoroState();applyTheme();save({skipCloudPush:true});loginDat={u:'',p:''};
   goTo('app','home');
-  if(!fromCloud&&!await sbPush())warnCloudSyncFailure();
+  if(pending&&!cloudBlocked)schedulePush();
   return a;
 }
 async function login(){
@@ -2282,6 +2292,9 @@ async function saveProfile(){
   const username=String($('#prof-u')?.value||'').trim(),nick=String($('#prof-n')?.value||'').trim(),bio=String($('#prof-b')?.value||'').trim();
   if(!userRe.test(username)||!nick){toast(tr()?'Kullanıcı adı veya isim geçersiz.':'Invalid username or display name.');return}
   if(username!==A.u){
+    if(A.authUid&&cloudPending(A.authUid)&&!(await sbPush())){
+      cloudConflictPanel();return;
+    }
     if(cachedUsernameConflict(username,A)){
       await profileUsernameHint(username,'profile-name-hint');
       toast(tr()?'Bu cihazda farklı bir hesap kaydıyla çakışıyor. Mevcut verileri korumak için işlem durduruldu.':
@@ -2289,7 +2302,10 @@ async function saveProfile(){
       return;
     }
     try{
-      if(A.authUid)await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:username}});
+      if(A.authUid){
+        await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:username}});
+        cloudBase=await sbPull(); // atomic rename also changes JSON.u
+      }
       rekeyCachedAccount(A,username);
     }catch(error){await profileUsernameHint(username,'profile-name-hint');toast(usernameUpdateErrorMessage(error));return}
   }
@@ -2327,6 +2343,7 @@ function shell(){
   $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button><button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><aside id="nav-aside" class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();
+  cloudSyncBanner();
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),650)}
   const cal=$('#mini-cal');if(cal&&cal.parentElement!==document.body)document.body.appendChild(cal);
 }
@@ -3439,6 +3456,93 @@ const SUPABASE_URL='https://flcfqwndqfmbritaywfb.supabase.co';
 const SUPABASE_KEY='sb_publishable_4QTEEc6tSYV2QtNhmeP6Iw_B3sM6dtm';
 const SESS_KEY='b1sb', CLOUD_KEY='b1cloud';
 const cloud=()=>true;
+// Canonical server JSON base for compare-and-swap, never a guessed account object.
+// Pending drafts are stored separately from UI cache so reloads cannot silently
+// replace offline edits with a newer cloud snapshot.
+let cloudBase=null,cloudUid=null,cloudBlocked=false,cloudFlight=null;
+const cloudPendingKey=uid=>'b1.sync.pending.'+uid;
+const cloudClone=x=>JSON.parse(JSON.stringify(x));
+const cloudEqual=(x,y)=>JSON.stringify(x)===JSON.stringify(y);
+function cloudSnapshot(a){
+  const value=cloudClone(a);value.pw='';delete value.salt;
+  return value;
+}
+function cloudPending(uid){
+  const x=readJson(cloudPendingKey(uid));
+  return x&&x.uid===uid&&x.base&&typeof x.base==='object'&&!Array.isArray(x.base)&&
+    x.local&&typeof x.local==='object'&&!Array.isArray(x.local)?x:null;
+}
+function cloudDraft(){
+  if(!A?.authUid)return true;
+  const uid=A.authUid;
+  if(cloudUid!==uid||cloudBase===null){
+    cloudBlocked=true;warnCloudSyncFailure();return false;
+  }
+  const pending={uid,base:cloudClone(cloudBase),local:cloudSnapshot(A),at:Date.now()};
+  try{
+    if(!setItem(cloudPendingKey(uid),JSON.stringify(pending)))throw new Error('LOCAL_SYNC_BACKUP_FAILED');
+    return true;
+  }catch(_){cloudBlocked=true;warnCloudSyncFailure();return false}
+}
+function cloudBackupFile(){
+  const uid=A?.authUid;
+  if(!uid)return;
+  const local=cloudPending(uid)?.local||cloudSnapshot(A);
+  const blob=new Blob([JSON.stringify({format:'iydu-sync-recovery-v1',at:new Date().toISOString(),uid,account:local},null,2)],
+    {type:'application/json'});
+  const href=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=href;link.download='iydu-yerel-yedek-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(href),60000);
+}
+function cloudConflictPanel(){
+  if(!A?.authUid||!cloudBlocked)return;
+  openModal('cloud-sync-conflict',`<h2>${tr()?'Veri eşitleme çakışması':'Cloud sync conflict'}</h2>
+  <p>${tr()?'Bu cihazdaki değişikliklerle sunucudaki güncel kayıt farklı. Üzerine yazmayı durdurduk. Yerel değişikliklerin korunuyor.':
+    'Your local edits differ from the current cloud version. We stopped overwriting. Your local changes are preserved.'}</p>
+  <div class="row"><button onclick="cloudBackupFile()">${tr()?'Yerel verilerimi indir':'Download local backup'}</button>
+  <button class="g" onclick="cloudUseRemote()">${tr()?'Bulut sürümünü aç (önce yedekle)':'Use cloud version (backup first)'}</button>
+  <button class="g" onclick="closeModal('cloud-sync-conflict')">${t('cancel')}</button></div>
+  <p class="mut">${tr()?'Bulut sürümünü seçersen bu cihazın taslağı ayrıca kurtarma kaydına alınır. İki sürüm otomatik birleştirilmez.':
+    'Choosing the cloud version archives your current draft separately. Versions are not auto-merged.'}</p>`);
+}
+function cloudSyncBanner(){
+  if(!A?.authUid||!cloudBlocked)return;
+  const main=document.querySelector('.shell main');
+  if(!main)return;
+  const node=document.createElement('section');
+  node.setAttribute('role','alert');
+  node.className='card';
+  node.style.margin='12px';
+  node.innerHTML=`<strong>${tr()?'Bulut eşitlemesi durduruldu':'Cloud synchronization paused'}</strong>
+    <p>${tr()?'Bu cihazın değişiklikleri korunuyor. Diğer cihazdaki kayıtların üzerine yazılmayacak.':
+      'Your local changes are preserved. They will not overwrite another device.'}</p>
+    <button type="button" onclick="cloudConflictPanel()">${tr()?'Sürümleri incele ve yedekle':'Review versions and backup'}</button>`;
+  main.prepend(node);
+}
+async function cloudUseRemote(){
+  if(!A?.authUid)return;
+  const uid=A.authUid,pending=cloudPending(uid);
+  if(!pending){toast(tr()?'Kurtarılacak yerel taslak bulunamadı.':'No recoverable local draft.');return}
+  const archive='b1.sync.archive.'+uid+'.'+Date.now();
+  if(!setItem(archive,JSON.stringify(pending))){
+    toast(tr()?'Kurtarma kopyası kaydedilemedi; hiçbir veri değiştirilmedi.':'Recovery backup failed. Nothing changed.');return;
+  }
+  let latest;
+  try{latest=await sbPull()}catch(_){warnCloudSyncFailure();return}
+  if(!latest||typeof latest!=='object')return;
+  const next=norm(cloudClone(latest));
+  next.authUid=uid;next.u=await cloudReservedUsername();
+  if(!next.u)return;
+  next.accountOrigin='cloud';next.email=A.email;next.mail=A.mail;next.pw='';
+  try{cacheCloudAccount(next)}catch(_){warnCloudSyncFailure();return}
+  A=next;cloudUid=uid;cloudBase=cloudClone(latest);cloudBlocked=false;
+  setItem(cloudPendingKey(uid),'');
+  closeModal('cloud-sync-conflict');save({skipCloudPush:true});shell();
+  toast(tr()?'Bulut sürümü açıldı. Önceki yerel taslak ayrıca arşivlendi.':
+    'Cloud version loaded. Previous local draft was archived separately.');
+}
+
 
 function signInWithGoogle(){
   const redirect=location.origin+location.pathname;
@@ -3521,17 +3625,49 @@ async function sbCurrentUser(){
   catch(e){if(e.status===401&&await sbRefresh())return sb('/auth/v1/user');throw e}
 }
 async function sbPush(){
-  const session=sbSession();
-  if(!A?.authUid||!session?.user?.id||A.authUid!==session.user.id)return false;
-  const sanitized=JSON.parse(JSON.stringify(A));sanitized.pw='';delete sanitized.salt;
-  try{
-    await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true;
-  }catch(e){
-    if(e.status===401&&await sbRefresh()){
-      const current=sbSession();if(current?.user?.id!==A.authUid)return false;
-      try{await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true}catch(_){return false}
+  if(cloudFlight)return cloudFlight;
+  const session=sbSession(),uid=A?.authUid;
+  if(!uid||session?.user?.id!==uid||cloudBlocked)return false;
+  const pending=cloudPending(uid);
+  if(!pending)return true;
+  if(cloudUid!==uid||cloudBase===null){cloudBlocked=true;return false}
+  const expected=cloudClone(pending.base),payload=cloudClone(pending.local);
+  if(!cloudEqual(expected,cloudBase)){cloudBlocked=true;return false}
+
+  cloudFlight=(async()=>{
+    let result;
+    for(let attempt=0;attempt<2;attempt++){
+      try{
+        result=await sb('/rest/v1/rpc/iydu_save_cas',{method:'POST',
+          body:{p_expected_data:expected,p_data:payload}});
+        break;
+      }catch(e){
+        if(e.status===401&&attempt===0&&await sbRefresh()&&
+           sbSession()?.user?.id===uid)continue;
+        return false;
+      }
     }
-    return false;
+    if(result!==true){
+      cloudBlocked=true; if(A?.authUid===uid){shell();cloudConflictPanel()}
+      return false;
+    }
+    // Commit was acknowledged. Persist a new CAS base for edits made during flight.
+    cloudBase=cloudClone(payload);
+    const current=cloudPending(uid);
+    if(current&&cloudEqual(current.local,payload)){
+      setItem(cloudPendingKey(uid),'');
+    }else if(current){
+      const rebased={...current,base:cloudClone(payload)};
+      if(!setItem(cloudPendingKey(uid),JSON.stringify(rebased))){
+        cloudBlocked=true;return false;
+      }
+    }
+    return true;
+  })();
+  try{return await cloudFlight}
+  finally{
+    cloudFlight=null;
+    if(!cloudBlocked&&A?.authUid===uid&&cloudPending(uid))schedulePush();
   }
 }
 async function sbPull(){
