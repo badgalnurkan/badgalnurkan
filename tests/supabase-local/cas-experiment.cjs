@@ -71,16 +71,23 @@ async function main(){
   assert.equal(badName.data?.code,'22023');
   assert.deepEqual(await load(a),good);
 
-  // LIMITATION: prior iydu_save does not take expected_data. It is still
-  // callable and can overwrite newer JSON! Prove the risk rather than hide it.
-  ok(await request('/rest/v1/rpc/iydu_save',a,{
+  // Existing deployed clients are denied blind writes; the pending draft
+  // remains in their browser rather than destroying newer cloud edits.
+  const old=await request('/rest/v1/rpc/iydu_save',a,{
     p_username:username,p_nick:'Synthetic',p_data:fromA
-  }),'legacy full-JSON writer');
-  assert.deepEqual(await load(b),fromA,
-    'Existing writer did not behave as audited; update rollout assessment');
+  });
+  assert.equal(old.ok,false,'Legacy writer was not blocked');
+  assert.equal(old.data?.code,'P0001','Legacy writer should report client upgrade');
+  assert.deepEqual(await load(b),good,'Legacy writer changed CAS state');
 
-  console.log('PASS: local Supabase CAS prevents two concurrent new-RPC writes and stale retries.');
-  console.log('CONFIRMED RELEASE BLOCKER: legacy iydu_save can still overwrite a newer CAS state.');
-  console.log('This experimental RPC is NOT deployable without a safe legacy-writer cutover and client conflict UX.');
+  // Authenticated role cannot directly bypass RPC through the Data API.
+  const direct=await request('/rest/v1/user_data?user_id=eq.'+
+    (await request('/auth/v1/user',a,undefined,'GET')).data.id,a,
+    {data:fromA},'PATCH');
+  assert.equal(direct.ok,false,'Direct table writer bypassed CAS');
+
+  console.log('PASS: two concurrent CAS writes serialize; stale retries are rejected.');
+  console.log('PASS: legacy blind writer and direct UPDATE are denied by the staged server rollout.');
+  console.log('Not tested by this test: browser conflict UI, production rollout or Google provider.');
 }
 main().catch(e=>{console.error('CAS experiment failed:',e.stack||e);process.exitCode=1});
