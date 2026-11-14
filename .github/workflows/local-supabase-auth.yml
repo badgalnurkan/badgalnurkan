@@ -1,0 +1,74 @@
+name: Supabase Auth integration (free local stack)
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/supabase-local/**'
+      - 'supabase/rollouts/username-integrity-staging.sql'
+      - '.github/workflows/local-supabase-auth.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'tests/supabase-local/**'
+      - 'supabase/rollouts/username-integrity-staging.sql'
+      - '.github/workflows/local-supabase-auth.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  local-auth-api:
+    # Standard GitHub-hosted runners are free in this PUBLIC repository.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PGPASSWORD: postgres
+      SUPABASE_DISABLE_TELEMETRY: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Isolate CLI from repository and hosted project
+        run: |
+          mkdir -p "$RUNNER_TEMP/iydu-local-supabase"
+          cd "$RUNNER_TEMP/iydu-local-supabase"
+          supabase init
+          # No supabase login, link, db push, migrations, or project ref.
+          test -f supabase/config.toml
+          if grep -q '^enable_confirmations = true' supabase/config.toml; then
+            sed -i 's/^enable_confirmations = true/enable_confirmations = false/' supabase/config.toml
+          fi
+      - name: Start Docker-based Supabase Auth and PostgREST locally
+        working-directory: ${{ runner.temp }}/iydu-local-supabase
+        run: |
+          supabase start -x studio,imgproxy,realtime,storage-api,edge-runtime,postgres-meta,logflare,vector,supavisor
+      - name: Export ONLY local API address and anonymous test key
+        working-directory: ${{ runner.temp }}/iydu-local-supabase
+        run: |
+          supabase status -o env | grep -E '^(API_URL|ANON_KEY)=' >> "$GITHUB_ENV"
+          grep -q '^API_URL=http://127.0.0.1:' "$GITHUB_ENV"
+          grep -q '^ANON_KEY=' "$GITHUB_ENV"
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+      - name: Create synthetic public schema and audited signup triggers
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+            -f tests/supabase-local/bootstrap.sql
+      - name: Apply staged functions to LOCAL Supabase only
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+            -f supabase/rollouts/username-integrity-staging.sql
+          psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+            -c "NOTIFY pgrst, 'reload schema';"
+      - name: Test real Auth and REST endpoints with synthetic users
+        run: node tests/supabase-local/http-auth.cjs
+      - name: Explain which boundaries remain untested
+        if: always()
+        run: |
+          echo "No hosted project was connected. Local users are synthetic."
+          echo "Google OAuth redirect, browser UI, and full JSON conflict prevention are NOT proven by this job."
