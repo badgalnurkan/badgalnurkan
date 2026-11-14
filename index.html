@@ -1921,7 +1921,11 @@ function debounceNameCheck(){
   clearTimeout(nameTimer);
   const name=String(formDat.u||'');if(!userRe.test(name)){showNameHint('');return}
   nameTimer=setTimeout(async()=>{
-    if(findUser(name)){showNameHint(suggestNameHtml(name));return}
+    if(findUser(name)){
+      showNameHint(tr()?'Bu kullanıcı adında başka bir hesap bu tarayıcıda kayıtlı. Buluttaki müsaitlikten bağımsız olarak, yerel verileri korumak için farklı ad seç.':
+        'Another profile with this name is cached on this device. Choose a different name to protect local data, even if the name is available on the server.');
+      return;
+    }
     try{const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:name}});
       if(formDat.u!==name)return;
       showNameHint(available===false?suggestNameHtml(name):
@@ -2030,7 +2034,8 @@ async function setup(){
   formDat={u,n,b:String($('#b')?.value||'').slice(0,160),e,t:'',p:'',p2:''};
   if(!userRe.test(u))msg=t('usernameRules');
   else if(!n)msg=t('displayRequired');
-  else if(findUser(u))msg=t('usernameTaken');
+  else if(findUser(u))msg=tr()?'Bu kullanıcı adı bu tarayıcıda başka bir profil tarafından kullanılıyor. Veri çakışmasını önlemek için farklı ad seç.':
+    'This username is already used by another profile in this browser. Choose a different name to protect its data.';
   else if(!emailPattern.test(e))msg=t('emailInvalid');
   else if(p!==p2)msg=tr()?'Şifreler eşleşmiyor.':'Passwords do not match.';
   else msg=pwOk(p,u);
