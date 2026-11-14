@@ -1284,8 +1284,24 @@ if((!DBraw||!DBraw.accounts||!Object.keys(DBraw.accounts).length)&&DBbak&&DBbak.
 DB=DBraw&&DBraw.accounts?DBraw:{accounts:{},last:'',lastUser:'',lock:{},lang:'en',beige:false};
 if(!DB.lang)DB.lang='en';if(DB.beige===undefined)DB.beige=false;if(!DB.lastUser)DB.lastUser='';
 document.documentElement.lang=DB.lang;
-let pushT=null;
-function schedulePush(){clearTimeout(pushT);if(!A?.authUid)return;pushT=setTimeout(()=>{sbPush().then(ok=>{if(!ok&&A)console.warn('Cloud sync could not complete')})},850)}
+let pushT=null, lastCloudSyncWarning=0;
+function warnCloudSyncFailure(){
+  // The browser copy remains intact. Never represent a failed remote write as confirmed.
+  const now=Date.now();
+  if(now-lastCloudSyncWarning<30000)return;
+  lastCloudSyncWarning=now;
+  toast(tr()?'Bu cihazdaki değişiklik buluta kaydedilemedi. Bağlantını kontrol et; diğer cihazda henüz görünmeyebilir.':
+    'Your change was saved on this device but not in the cloud. Check your connection before switching devices.');
+}
+function schedulePush(){
+  clearTimeout(pushT);
+  if(!A?.authUid)return;
+  const userId=A.authUid;
+  pushT=setTimeout(()=>{
+    sbPush().then(ok=>{if(!ok&&A?.authUid===userId)warnCloudSyncFailure()})
+      .catch(()=>{if(A?.authUid===userId)warnCloudSyncFailure()});
+  },850);
+}
 const save=()=>{
   try{
     if(A)A.updatedAt=Date.now();
@@ -1542,7 +1558,33 @@ function norm(a){
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
   return a;
 }
-const findUser=u=>Object.keys(DB.accounts).find(k=>k.toLowerCase()===String(u).toLowerCase());
+// Use one Turkish-aware local identity comparison. Supabase remains authoritative for cloud name availability.
+const usernameIdentityKey=u=>String(u||'').normalize('NFC').toLocaleLowerCase('tr-TR');
+const findUser=u=>Object.keys(DB.accounts).find(k=>usernameIdentityKey(k)===usernameIdentityKey(u));
+function cachedUsernameConflict(name,account=A){
+  return Object.entries(DB.accounts).some(([key,entry])=>
+    usernameIdentityKey(key)===usernameIdentityKey(name) &&
+    entry!==account && !(account?.authUid && entry?.authUid===account.authUid));
+}
+// One Supabase user must have exactly one browser-cache entry. Never overwrite a different identity.
+function cacheCloudAccount(account){
+  if(!account?.authUid)throw new Error('CLOUD_ID_MISSING');
+  if(cachedUsernameConflict(account.u,account))throw new Error('LOCAL_USERNAME_CACHE_CONFLICT');
+  for(const [key,entry] of Object.entries(DB.accounts)){
+    if(entry?.authUid===account.authUid && key!==account.u)delete DB.accounts[key];
+  }
+  DB.accounts[account.u]=account;
+}
+function rekeyCachedAccount(account,nextName){
+  if(cachedUsernameConflict(nextName,account))throw new Error('LOCAL_USERNAME_CACHE_CONFLICT');
+  if(account.authUid){
+    for(const [key,entry] of Object.entries(DB.accounts)){
+      if(entry?.authUid===account.authUid)delete DB.accounts[key];
+    }
+  }else delete DB.accounts[account.u];
+  account.u=nextName;
+  DB.accounts[nextName]=account;
+}
 /* hesap kaydi her zaman localStorage'da tutulur: cerez reddedilse bile kullanici hatirlanir */
 const storeAcct=()=>{try{return localStorage}catch(e){return store()}};
 const rndHex=n=>{const a=new Uint8Array(n);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(let i=0;i<n;i++)a[i]=Math.floor(Math.random()*256);return[...a].map(x=>x.toString(16).padStart(2,'0')).join('')};
@@ -1889,8 +1931,9 @@ function checkEmailHint(){
 function authErrorMessage(err){
   if(err&&(/already registered|already exists|user_already_exists/i.test(err.message||'')||err.code==='user_already_exists'))return 'already-email';
   if(err&&(/duplicate key|unique|iydu_usernames|username/i.test(err.message||'')))return 'username';
-  if(err&&(/email not confirmed/i.test(err.message||'')))return 'email-unconfirmed';
-  if(err&&(/invalid login credentials/i.test(err.message||'')))return 'credentials';
+  if(err&&(err.code==='email_not_confirmed'||/email not confirmed/i.test(err.message||'')))return 'email-unconfirmed';
+  if(err&&(err.code==='invalid_credentials'||/invalid login credentials/i.test(err.message||'')))return 'credentials';
+  if(err&&(err.status===429||err.code==='over_request_rate_limit'))return 'rate-limit';
   return 'unknown';
 }
 function goExistingEmail(email){
@@ -1912,7 +1955,7 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   a.loginMethod=method==='google'?'google':'password';
   if(method==='google'||j.user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
   v13ProtectLegacyCollision(a.u,uid,options.allowLegacyReplacement===true);
-  DB.accounts[a.u]=a;DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
+  cacheCloudAccount(a);DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
   restorePomodoroState();applyTheme();save();loginDat={u:'',p:''};
   goTo('app','home');
   if(!fromCloud)await sbPush();
@@ -1933,7 +1976,17 @@ async function login(){
     if(email){
       try{
         const j=await sbSignIn(raw,password,email);
-        await activateCloudUser(j,raw,'password');
+        try{
+          await activateCloudUser(j,raw,'password');
+        }catch(profileErr){
+          loginDat.p='';
+          msg=profileErr.message==='LOCAL_USERNAME_CACHE_CONFLICT'?
+            (tr()?'Bu cihazda farklı bir hesaba ait eski kayıtla çakışma var. Hesabın ve şifren doğrulandı; yerel kayıtları silmeden önce destek al.':
+              'Your account and password are valid, but another cached account conflicts on this device. Do not erase the browser data.'):
+            (tr()?'Kimliğin doğrulandı ancak profil verilerin yüklenemedi. Kayıtların silinmedi; bağlantını veya sunucu durumunu kontrol et.':
+              'Your sign-in succeeded, but profile data could not be loaded. Your records were not deleted.');
+          return renderAppOrAuth();
+        }
         greetThen();return;
       }catch(e){
         if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
@@ -1941,8 +1994,11 @@ async function login(){
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
         loginDat.p='';
-        msg=authErrorMessage(e)==='email-unconfirmed'?(tr()?'E-posta doğrulaması gerekiyor. Demo için Supabase ayarını kontrol et.':'Email confirmation required. Check Supabase demo settings.'):
-          (tr()?'Giriş başarısız. E-posta ve şifreni kontrol et.':'Sign-in failed. Check email and password.');
+        const cause=authErrorMessage(e);
+        msg=cause==='email-unconfirmed'?(tr()?'E-posta doğrulaması gerekiyor.':'Email confirmation is required.'):
+          cause==='credentials'?(tr()?'E-posta veya şifre yanlış.':'Incorrect email or password.'):
+          cause==='rate-limit'?(tr()?'Çok sayıda giriş denemesi yapıldı. Daha sonra tekrar dene.':'Too many attempts. Try again later.'):
+          (tr()?'Giriş sunucusuna bağlanılamadı. Bir süre sonra tekrar dene.':'Could not reach the sign-in server. Try again shortly.');
         if(authErrorMessage(e)==='credentials'&&localAcc?.googleConnected)msg=tr()?'Bu hesap Google ile açılmış olabilir. Google ile devam et; manuel giriş için önce Ayarlar’da uygulama şifresi belirle.':'This account may use Google sign-in. Continue with Google, or set an app password in Settings first.';
         if(e.name==='AbortError')msg=tr()?'Bağlantı zaman aşımına uğradı.':'Connection timed out.';
         return renderAppOrAuth();
@@ -2092,17 +2148,32 @@ async function profileUsernameHint(name,targetId){
   if(!userRe.test(proposed)){
     el.innerHTML=`<small class="mut">${esc(t('usernameRules'))}</small>`;return;
   }
-  if(proposed===A.u){el.innerHTML=`<small class="username-available">${tr()?'Bu, mevcut kullanıcı adın.':'This is your current username.'}</small>`;return}
+  if(usernameIdentityKey(proposed)===usernameIdentityKey(A.u)){
+    el.innerHTML=`<small class="username-available">${tr()?'Bu, mevcut kullanıcı adın.':'This is your current username.'}</small>`;return;
+  }
   el.textContent=tr()?'Kullanıcı adı denetleniyor…':'Checking username…';
   profileHintTimer=setTimeout(async()=>{
-    let taken=!!(findUser(proposed)&&findUser(proposed)!==A.u);
-    if(!taken&&A.authUid){
-      try{const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:proposed}});taken=available===false}
-      catch(_){if(serial===profileHintSequence)el.textContent=tr()?'Kullanıcı adı şu an doğrulanamadı.':'Could not verify username availability.';return}
+    const deviceConflict=cachedUsernameConflict(proposed,A);
+    let taken=!!deviceConflict&&!A.authUid;
+    if(A.authUid){
+      try{
+        const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:proposed}});
+        if(available!==true&&available!==false)throw new Error('INVALID_USERNAME_CHECK');
+        taken=available===false;
+      }catch(_){
+        if(serial===profileHintSequence&&el.isConnected)
+          el.textContent=tr()?'Sunucu kontrolü başarısız. Bu isim henüz doğrulanmadı.':'Server check failed. This name is not verified.';
+        return;
+      }
     }
     if(serial!==profileHintSequence||!el.isConnected)return;
+    if(!taken&&deviceConflict){
+      el.textContent=tr()?'Sunucuda müsait, ancak bu cihazda başka bir hesabın eski kaydıyla çakışıyor. Veri kaybını önlemek için değişiklik engellendi.':
+        'Available on the server, but another account is cached under this name on this device. Rename blocked to protect local data.';
+      return;
+    }
     if(!taken){
-      el.innerHTML=`<small class="username-available">${tr()?(A.authUid?'Bu kullanıcı adı uygun.':'Bu cihazda uygun; bulut kontrolü yapılmadı.'):(A.authUid?'This username is available.':'Available on this device; cloud status not checked.')}</small>`;
+      el.innerHTML=`<small class="username-available">${tr()?(A.authUid?'Sunucuda uygun.':'Bu cihazda uygun; bulut kontrolü yapılmadı.'):(A.authUid?'Available on server.':'Available on this device only.')}</small>`;
       return;
     }
     const proposals=usernameSuggestions(proposed,Object.keys(DB.accounts));
@@ -2112,7 +2183,7 @@ async function profileUsernameHint(name,targetId){
         try{return await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:candidate}})===true?candidate:null}
         catch(_){return null}
       }));
-      suggestions=checks.filter(Boolean);
+      suggestions=checks.filter(candidate=>candidate&&!cachedUsernameConflict(candidate,A));
     }
     if(serial!==profileHintSequence||!el.isConnected)return;
     const target=targetId==='settings-name-hint'?'su':'prof-u';
@@ -2123,6 +2194,14 @@ async function profileUsernameHint(name,targetId){
     }));
     el.querySelector('[data-refresh-suggestions]')?.addEventListener('click',()=>profileUsernameHint(proposed,targetId));
   },300);
+}
+function usernameUpdateErrorMessage(error){
+  if(error?.code==='23505'||error?.status===409||/duplicate key|already taken/i.test(error?.message||''))return t('usernameTaken');
+  if(error?.code==='42501'||error?.status===401||error?.status===403)
+    return tr()?'Oturum veya yetki hatası. Yeniden giriş yapıp dene.':'Session or permission error. Sign in again.';
+  if(error?.name==='AbortError')return tr()?'Sunucu zaman aşımı. Kullanıcı adını değiştirmeden önce durumunu yeniden kontrol et.':'Server timeout. Check the name again before retrying.';
+  return tr()?'Kullanıcı adı güncellenemedi. Sunucu hatası oluştu; bu isim alınmış anlamına gelmez.':
+    'The username could not be updated due to a server error. It does not mean the name is taken.';
 }
 function profilePasswordMarkup(){
   if(A.authUid&&A.loginMethod==='google')return `<section class="profile-security"><h3>${tr()?'E-posta ve uygulama şifresi':'Email & app password'}</h3><p class="mut">${tr()?'Google şifreni değil, bu site için ayrı bir şifre belirle.':'Create a separate password for this site, not your Google password.'}</p><label for="prof-google-app-pass">${t('newPassword')}</label><input id="prof-google-app-pass" type="password" autocomplete="new-password" minlength="8"><label for="prof-google-app-pass-confirm">${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="prof-google-app-pass-confirm" type="password" autocomplete="new-password" minlength="8"><button id="prof-google-app-pass-submit" onclick="setGoogleAccountPassword('profile')">${tr()?'Uygulama şifresini belirle':'Set app password'}</button></section>`;
@@ -2137,15 +2216,24 @@ async function saveProfile(){
   const username=String($('#prof-u')?.value||'').trim(),nick=String($('#prof-n')?.value||'').trim(),bio=String($('#prof-b')?.value||'').trim();
   if(!userRe.test(username)||!nick){toast(tr()?'Kullanıcı adı veya isim geçersiz.':'Invalid username or display name.');return}
   if(username!==A.u){
-    const other=findUser(username);if(other&&other!==A.u){await profileUsernameHint(username,'profile-name-hint');toast(t('usernameTaken'));return}
+    if(cachedUsernameConflict(username,A)){
+      await profileUsernameHint(username,'profile-name-hint');
+      toast(tr()?'Bu cihazda farklı bir hesap kaydıyla çakışıyor. Mevcut verileri korumak için işlem durduruldu.':
+        'Another account is cached under that name on this device. Rename blocked to protect its data.');
+      return;
+    }
     try{
       if(A.authUid)await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:username}});
-      const previous=A.u;delete DB.accounts[previous];A.u=username;DB.accounts[A.u]=A;
-    }catch(_){await profileUsernameHint(username,'profile-name-hint');toast(t('usernameTaken'));return}
+      rekeyCachedAccount(A,username);
+    }catch(error){await profileUsernameHint(username,'profile-name-hint');toast(usernameUpdateErrorMessage(error));return}
   }
   A.nick=nick.slice(0,30);A.bio=bio.slice(0,160);DB.last=A.nick;
   // Treat Supabase's user_data row as the canonical profile record for this app.
-  save();closeModal('profile-modal');shell();toast(t('saved'));
+  save();
+  if(A.authUid&&!await sbPush()){
+    closeModal('profile-modal');shell();warnCloudSyncFailure();return;
+  }
+  closeModal('profile-modal');shell();toast(t('saved'));
 }
 /* Return one month of header buttons without rebuilding the page or any draft inputs. */
 function miniCalendarData(dayKey){
@@ -2799,15 +2887,22 @@ async function chg(k){
   const v=String($(k==='u'?'#su':'#sn')?.value||'').trim();if(!v)return;
   if(k==='u'){
     if(!userRe.test(v)){msg=t('usernameRules');return P.set()}
-    const other=findUser(v);if(other&&other!==A.u){await profileUsernameHint(v,'settings-name-hint');toast(t('usernameTaken'));return}
-    if(v===A.u)return;
+    if(usernameIdentityKey(v)===usernameIdentityKey(A.u))return;
+    if(cachedUsernameConflict(v,A)){
+      await profileUsernameHint(v,'settings-name-hint');
+      toast(tr()?'Bu cihazdaki farklı bir hesapla çakışıyor. Veriler korunuyor.':
+        'Another cached account uses that name on this device. Its data was preserved.');return;
+    }
     if(A.authUid){
       try{await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:v}})}
-      catch(_){await profileUsernameHint(v,'settings-name-hint');toast(t('usernameTaken'));return}
+      catch(error){await profileUsernameHint(v,'settings-name-hint');toast(usernameUpdateErrorMessage(error));return}
     }
-    delete DB.accounts[A.u];A.u=v;DB.accounts[v]=A;
+    rekeyCachedAccount(A,v);
   }else{A.nick=v.slice(0,30)}
-  DB.last=A.nick;DB.lastUser=A.u;save();msg=t('saved');shell();
+  DB.last=A.nick;DB.lastUser=A.u;save();
+  if(A.authUid&&!await sbPush()){msg=tr()?'Bu cihazda değişti, ancak bulut kaydı doğrulanamadı.':
+    'Changed on this device, but the cloud update was not confirmed.';warnCloudSyncFailure();shell();return}
+  msg=t('saved');shell();
 }
 
 const EMAIL_TRANSACTIONS_ENABLED=false; // Turn on only after verified custom SMTP/Send Email Hook and end-to-end tests.
@@ -3389,12 +3484,16 @@ async function restoreCloudOnLoad(){
     a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
     if(user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
     v13ProtectLegacyCollision(a.u,user.id);
-    DB.accounts[a.u]=a;DB.lastUser=a.u;DB.last=a.nick;A=a;
+    cacheCloudAccount(a);DB.lastUser=a.u;DB.last=a.nick;A=a;
     view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();
     if(!remote)await sbPush();
   }catch(e){
     // Do not auto-login from unverified localStorage contents.
     if(e.status===401)sbClear();
+    if(e.message==='LOCAL_USERNAME_CACHE_CONFLICT'){
+      sbClear();msg=tr()?'Bu cihazda farklı bir hesaba ait eski kullanıcı adı kaydı var. Veri güvenliği için giriş durduruldu; kayıtları silmeden önce incele.':
+        'A different cached account uses this username. Sign-in was stopped to protect local data.';
+    }
     if(e.message==='V13_LOCAL_USERNAME_COLLISION'){
       sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki eski yerel hesapla çakışıyor. Eski veri korunuyor. Yerel hesabından JSON yedeği al ve aktarım adımını kullan.':'A cloud username conflicts with a legacy profile on this device. Local data was preserved. Export it and use the migration flow.';
     }
