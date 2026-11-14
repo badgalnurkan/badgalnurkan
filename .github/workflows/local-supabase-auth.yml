@@ -55,7 +55,7 @@ jobs:
             /^(API_URL|ANON_KEY)=/ {
               value=substr($0,index($0,"=")+1)
               gsub(/^"|"$/,"",value)
-              printf "%s=%s\\n",$1,value
+              printf "%s=%s\n",$1,value
             }' >> "$GITHUB_ENV"
           grep -q '^API_URL=http://127.0.0.1:' "$GITHUB_ENV"
           grep -q '^ANON_KEY=' "$GITHUB_ENV"
