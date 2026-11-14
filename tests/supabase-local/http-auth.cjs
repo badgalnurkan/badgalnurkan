@@ -88,21 +88,29 @@ async function run(){
   // Independent identity may not see or mutate first account's RLS rows.
   const second=await register('second',{username:'SecondUser',nickname:'Second Display'});
   await assertNewSignup(second,'SecondUser');
-  check(await rpc('iydu_save',second.token,{
-    p_username:'SecondUser',p_nick:'Second Display',p_data:{u:'SecondUser'}
-  }),'second first app save');
+  assert.equal(check(await rpc('iydu_save_cas',second.token,{
+    p_expected_data:{},p_data:{u:'SecondUser'}
+  }),'second CAS first app save'),true);
   await assertTriple(second,'SecondUser');
   assert.deepEqual(await rows('user_data',second.token,'&user_id=eq.'+first.uid),[],
     'User 2 read User 1 data via PostgREST');
   assert.deepEqual(await rows('profiles',second.token,'&id=eq.'+first.uid),[],
     'User 2 read User 1 profile via PostgREST');
 
-  // Old clients submit a stale name with task/journal data. Preserve their content,
-  // force the name to the server reservation.
-  check(await rpc('iydu_save',first.token,{
+  // CAS requires canonical name; old blind writes must fail closed.
+  const oldWriter=await rpc('iydu_save',first.token,{
     p_username:'OldAlias',p_nick:'A',
-    p_data:{u:'OldAlias',tasks:[{id:'task-ci'}],journal:{today:'synthetic journal'}}
-  }),'stale-name save');
+    p_data:{u:'OldAlias',tasks:[{id:'obsolete'}]}
+  });
+  assert.equal(oldWriter.ok,false,'Old blind writer still allowed');
+  const wrongName=await rpc('iydu_save_cas',first.token,{
+    p_expected_data:{},p_data:{u:'OldAlias',tasks:[{id:'task-ci'}]}
+  });
+  assert.equal(wrongName.ok,false,'CAS accepted username mismatch');
+  assert.equal(check(await rpc('iydu_save_cas',first.token,{
+    p_expected_data:{},
+    p_data:{u:'FirstUser',tasks:[{id:'task-ci'}],journal:{today:'synthetic journal'}}
+  }),'first CAS write'),true);
   await assertTriple(first,'FirstUser');
   const before=check(await rpc('iydu_load',first.token,{p_username:''}),'load');
   assert.equal(before[0].data.tasks[0].id,'task-ci');
@@ -130,9 +138,8 @@ async function run(){
   // (NOT a claim that Google OAuth redirect itself was tested.)
   const noName=await register('no-username',{nickname:'No Name Yet'});
   assert.equal(await readName(noName),null,'Missing metadata unexpectedly reserved name');
-  const unclaimed=await rpc('iydu_save',noName.token,{
-    p_username:'Unverified',p_nick:'Missing',
-    p_data:{u:'Unverified',tasks:[]}
+  const unclaimed=await rpc('iydu_save_cas',noName.token,{
+    p_expected_data:{},p_data:{u:'Unverified',tasks:[]}
   });
   assert.equal(unclaimed.ok,false,'Unclaimed identity wrote cloud JSON');
   assert.equal(unclaimed.data?.code,'P0001');
@@ -149,6 +156,13 @@ async function run(){
   assert.equal(duplicate.ok,false,
     'Duplicate username bypassed auth.users signup trigger');
 
+  const directOverwrite=await call('/rest/v1/user_data?user_id=eq.'+first.uid,{
+    method:'PATCH',token:first.token,
+    body:{data:{u:'NewFirst',tasks:[{id:'blocked'}]}}
+  });
+  assert.equal(directOverwrite.ok,false,'Direct table UPDATE bypasses CAS');
+  const directTruncate=await rows('user_data',first.token);
+  assert.equal(directTruncate.length,1);
   const anonLookup=await rpc('iydu_my_username',undefined);
   assert.equal(anonLookup.ok,false,'Anonymous role called a private identity RPC');
 
