@@ -73,3 +73,32 @@ Docker servisleri GitHub job'u bittiğinde silinir. Sadece herkese açık depoda
 standart GitHub-hosted çalıştırıcı kullanılır. Lütfen daha sonra repo özel
 (private) yapılırsa GitHub'ın o tarihteki kota/fiyatlandırmasını yeniden
 kontrol edin.
+
+
+## Güncel CAS ve iki Chrome oturumu testi
+
+Üretime uygulanmamış PR #6'nın `3f4c67a2c888bc4523a9fc3cbf2e4229acbb163e`
+sürümünde tüm üç test iş akışı başarıyla tamamlandı:
+https://github.com/badgalnurkan/badgalnurkan/actions/runs/43654357943
+
+Artık `tests/supabase-local/browser-login.cjs` iki ayrı Chrome
+tarayıcı bağlamında gerçek eşzamanlılık deneyini de çalıştırır:
+A cihazı görev kaydeder; eski veri taşıyan B cihazı günlük
+kaydetmeye çalışınca CAS B'nin yazmasını durdurur. B'nin
+yerel düzenlemeleri sayfa yenilendiğinde de korunur ve
+indirilebilir. Bulut sürümü tercih edildiğinde taslak
+önce kurtarma kaydına arşivlenir. Sonraki güncel CAS
+yazması başarılı olur.
+
+`tests/supabase-local/cas-experiment.cjs` gerçek Supabase
+Auth oturumlarında iki eşzamanlı CAS isteğinden yalnız birinin
+başarılı olduğunu, eski `iydu_save` endpoint'inin ve
+doğrudan tablo UPDATE yetkilerinin test SQL'iyle
+engellendiğini doğrular. Bu fonksiyonlar hâlâ **yalnızca
+geçici test ortamında** kurulmuştur.
+
+Önemli: gerçek Google kullanıcı onayı, SMTP ve üretim
+dağıtımı **test edilmedi**. SQL önce dağıtıldığında eski
+açık istemcilerin bulut yazmaları reddedilir; koordinasyon
+ve özel yedek/geri alma planı üretim için zorunludur.
+Bkz. `docs/cas-rollout-release-plan.md`.
