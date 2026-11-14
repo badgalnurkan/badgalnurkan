@@ -3576,12 +3576,16 @@ async function cloudUseRemote(){
 
 
 function signInWithGoogle(){
-  const redirect=location.origin+location.pathname;
-  if(!redirect.startsWith('https://')&&!redirect.startsWith('http://localhost')){
+  // Only HTTPS origins or exact loopback hosts during local development.
+  // Do not trust a startsWith('http://localhost') test for other hostnames.
+  const localHost=location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.hostname==='[::1]';
+  if(location.protocol!=='https:'&&!(location.protocol==='http:'&&localHost)){
     toast(tr()?'Google girişi güvenli HTTPS adresinde kullanılabilir.':'Google sign-in requires HTTPS.');return;
   }
+  const redirect=location.origin+location.pathname;
   const url=new URL(SUPABASE_URL+'/auth/v1/authorize');
-  url.searchParams.set('provider','google');url.searchParams.set('redirect_to',redirect);
+  url.searchParams.set('provider','google');
+  url.searchParams.set('redirect_to',redirect);
   location.assign(url.toString());
 }
 async function bootstrapCloudAuth(){
