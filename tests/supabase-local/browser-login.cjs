@@ -131,13 +131,91 @@ async function main(){
   assert.equal(await denyPage.evaluate(()=>location.hash),'',
     'Denied callback must clear error parameters from the URL');
 
+  // Two genuine browser contexts against the same Supabase account.
+  // Device B starts with an old snapshot; after A saves, B MUST NOT erase it.
+  const sync=await signup('two-device',{username:'SyncProbe',nick:'Two Device'});
+  const ctxA=await browser.newContext({viewport:{width:390,height:844}});
+  const deviceA=await ctxA.newPage();
+  await flow(deviceA,sync,'SyncProbe');
+  await deviceA.evaluate(()=>{A.tasks=[{id:'seed',text:'original'}];save()});
+  await deviceA.waitForFunction(async()=>{
+    try{
+      const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}});
+      return rows[0]?.data?.tasks?.[0]?.id==='seed';
+    }catch(_){return false}
+  },null,{timeout:22000});
+
+  const ctxB=await browser.newContext({viewport:{width:390,height:844},acceptDownloads:true});
+  const deviceB=await ctxB.newPage();
+  await flow(deviceB,sync,'SyncProbe');
+
+  await deviceA.evaluate(()=>{
+    A.tasks.push({id:'device-a',text:'new A'});
+    save();
+  });
+  await deviceA.waitForFunction(async()=>{
+    try{
+      const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}});
+      return rows[0]?.data?.tasks?.length===2;
+    }catch(_){return false}
+  },null,{timeout:22000});
+
+  await deviceB.evaluate(()=>{
+    A.journal={...(A.journal||{}),deviceB:'draft from B'};
+    save();
+  });
+  await deviceB.waitForFunction(()=>cloudBlocked===true,null,{timeout:22000});
+  const conflict=await deviceB.evaluate(async()=>{
+    const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}});
+    return {
+      remote:rows[0]?.data,
+      draft:cloudPending(A.authUid)?.local,
+      banner:!!document.querySelector('.shell main [role="alert"]')
+    };
+  });
+  assert.equal(conflict.remote.tasks.length,2,'Stale device deleted new tasks');
+  assert.equal(conflict.remote.journal?.deviceB,undefined,'Stale writer incorrectly committed');
+  assert.equal(conflict.draft.journal.deviceB,'draft from B','Local draft lost');
+  assert.equal(conflict.banner,true,'Conflict warning is not visible');
+
+  await deviceB.reload({waitUntil:'domcontentloaded'});
+  await deviceB.waitForFunction(()=>A?.u==='SyncProbe'&&cloudBlocked===true,
+    null,{timeout:22000});
+  assert.equal(await deviceB.evaluate(()=>A.journal.deviceB),'draft from B',
+    'Reload discarded unsynced local draft');
+
+  const downloadPromise=deviceB.waitForEvent('download',{timeout:15000});
+  await deviceB.evaluate(()=>cloudBackupFile());
+  const download=await downloadPromise;
+  assert.match(download.suggestedFilename(),/iydu-yerel-yedek/);
+  await deviceB.evaluate(()=>cloudUseRemote());
+  await deviceB.waitForFunction(()=>A?.tasks?.length===2&&!cloudBlocked,
+    null,{timeout:22000});
+  const archived=await deviceB.evaluate(()=>{
+    const key=Object.keys(localStorage).find(k=>k.startsWith('b1.sync.archive.'));
+    return key?JSON.parse(localStorage.getItem(key)):null;
+  });
+  assert.equal(archived?.local?.journal?.deviceB,'draft from B',
+    'Discarded conflict draft was not archived');
+  await deviceB.evaluate(()=>{
+    A.journal={...A.journal,deviceB:'resolved after checking cloud'};
+    save();
+  });
+  await deviceB.waitForFunction(async()=>{
+    try{
+      const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}});
+      return rows[0]?.data?.tasks?.length===2&&
+        rows[0]?.data?.journal?.deviceB==='resolved after checking cloud';
+    }catch(_){return false}
+  },null,{timeout:22000});
+
   const claimed=await fresh.evaluate(()=>({
     name:A?.u,
     stored:typeof sbSession==='function'&&!!sbSession()?.access_token
   }));
   assert.equal(claimed.name,'BrowserClaim');
   assert.equal(claimed.stored,true);
-  console.log('PASS Chrome mobile viewport: password login, synthetic OAuth fragment callback, error callback, claim and reload.');
+  console.log('PASS Chrome: email, OAuth-style callback, account claim, two-browser conflict/reload/recovery, CAS and backup.');
   console.log('Not tested: external Google OAuth consent, production deployment, multi-device JSON CAS.');
 }
 main().catch(err=>{
