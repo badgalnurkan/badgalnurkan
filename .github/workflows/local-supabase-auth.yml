@@ -73,6 +73,12 @@ jobs:
             -c "NOTIFY pgrst, 'reload schema';"
       - name: Test real Auth and REST endpoints with synthetic users
         run: node tests/supabase-local/http-auth.cjs
+      - name: Install pinned browser automation driver (system Chrome)
+        run: npm install --no-save --no-package-lock --no-audit --no-fund playwright-core@1.56.1
+      - name: Test real index.html in Chrome against LOCAL Supabase
+        run: |
+          command -v google-chrome
+          node tests/supabase-local/browser-login.cjs
       - name: Explain which boundaries remain untested
         if: always()
         run: |
