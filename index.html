@@ -1302,13 +1302,13 @@ function schedulePush(){
       .catch(()=>{if(A?.authUid===userId)warnCloudSyncFailure()});
   },850);
 }
-const save=()=>{
+const save=(options={})=>{
   try{
     if(A)A.updatedAt=Date.now();
     DB.savedAt=Date.now();
     setItem(LSK,JSON.stringify(DB));
     touchSession();
-    schedulePush();
+    if(!options.skipCloudPush)schedulePush();
   }catch(e){}
 };
 /* oturum: kullanici bilgisi kucuk ve ayri tutulur -> ana kayit bozulsa da geri donus var */
@@ -2010,13 +2010,14 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   }
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
   const a=norm(fromCloud||fromLocal||{u:reserved,nick:meta.nick||meta.nickname||reserved,email:j.user.email});
-  a.u=reserved;a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
+  a.u=reserved;if(!a.nick)a.nick=String(meta.nick||meta.nickname||reserved);
+  a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
   a.pw='';delete a.salt;a.loginMethod=method==='google'?'google':'password';
   if(method==='google'||j.user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
   v13ProtectLegacyCollision(a.u,uid,options.allowLegacyReplacement===true);
   cacheCloudAccount(a);DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
   pendingCloudUsername=null;claimDraftName='';
-  restorePomodoroState();applyTheme();save();loginDat={u:'',p:''};
+  restorePomodoroState();applyTheme();save({skipCloudPush:true});loginDat={u:'',p:''};
   goTo('app','home');
   if(!fromCloud&&!await sbPush())warnCloudSyncFailure();
   return a;
