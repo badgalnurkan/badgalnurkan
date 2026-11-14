@@ -79,13 +79,7 @@ jobs:
         run: |
           command -v google-chrome
           node tests/supabase-local/browser-login.cjs
-      - name: Install isolated CAS experiment (never production)
-        run: |
-          psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 54322 -U postgres -d postgres \
-            -f supabase/rollouts/sync-cas-experimental.sql
-          psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 54322 -U postgres -d postgres \
-            -c "NOTIFY pgrst, 'reload schema';"
-      - name: Demonstrate multi-device CAS and legacy-write bypass
+      - name: Test staged CAS plus old-client write rejection
         run: node tests/supabase-local/cas-experiment.cjs
       - name: Explain which boundaries remain untested
         if: always()
