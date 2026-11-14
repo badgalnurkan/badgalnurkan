@@ -17,7 +17,7 @@ Use disposable test accounts, not a real person's account. Test case-insensitive
 - Server says name available; local browser has unrelated old account: UI identifies the **local cache conflict** instead of claiming the name is globally taken, and never replaces the unrelated account.
 - Server says name taken: both profile and settings flows reject it, with no partial local mutation.
 - Network timeout, permission error and expired session: no generic “username taken” message.
-- Successful rename: `user_data.username`, username reservation (if any), and account JSON contain the intended identity; old local keys do not shadow it.
+- Successful rename: `iydu_usernames.username`, `profiles.username`, and `user_data.data->>'u'` contain the intended identity; the `user_data` table has NO standalone username column, and old local aliases do not shadow the account.
 - Re-login from a different browser and after a page refresh: exactly one visible cloud profile per `auth.uid()`, with tasks, journals, and progress intact.
 - Failed alias backup (browser quota full): existing local records remain unchanged.
 - A login with correct password but failing profile-load RPC reports **profile unavailable** rather than **wrong password**.
@@ -45,3 +45,51 @@ Do not merge the draft PR until:
 - A rollback plan and backups exist.
 
 After a successful staged rollout, log the released changes in the site's planned Updates feature. Do not publish changelog claims for unshipped features.
+
+
+## Username integrity implementation — STAGED, NOT RELEASED
+
+The audited live project (2026-11-15) had 5 Auth users, 5 `profiles` rows,
+5 `user_data` rows, and 4 username reservations. The one unclaimed account had
+a Google identity and no `raw_user_meta_data.username`. Three profiles had
+`NULL` usernames, and another profile disagreed with the matching
+reservation/JSON. No existing account records were modified by the audit.
+
+- `supabase/rollouts/username-integrity-staging.sql` is deliberately **not**
+  under `supabase/migrations/` and must not be auto-applied or run on production.
+  Create the reviewed versioned migration with the Supabase CLI only after
+  backup, staging SQL integration tests and deployment approval.
+- `tests/sql/bootstrap.sql` mirrors audited tables, indexes, RLS and signup
+  triggers on **synthetic records**. CI applies the staged script to a disposable
+  PostgreSQL 17 service and verifies Google claiming, email signup uniqueness,
+  exact readback, old-tab stale-name overwrites, collision rollbacks and a
+  two-connection concurrent claim race.
+- Frontend login, OAuth callback and session restoration all require a canonical
+  `iydu_my_username()` lookup before entering the app. A Google account with
+  no reservation sees an explicit, cancelable username claim screen. Existing
+  journals/tasks are not rewritten by the claim itself. Local cache aliases are
+  archived before rekey.
+- The atomic `iydu_set_username` RPC updates the reservation, profiles row and
+  JSON `u` field in one transaction. `iydu_save` locks the row and rewrites
+  only the canonical `u` field during a full-JSON save. No unclaimed account
+  can push an invented username. `iydu_username_available` checks BOTH
+  existing unique indexes, but actual uniqueness still relies on the DB indexes.
+- **No automatic backfill**: historical mismatches and the missing Google
+  reservation remain unchanged until the account holder claims a name. Do not
+  overwrite historical `profiles.username` values without an identity-linked
+  audit and private backup.
+- Order for an approved release: verified backups and private function-definition
+  export; apply staged SQL to a disposable environment; run GitHub Actions and
+  user-facing browser tests; deploy SQL/functions **before** the new frontend;
+  verify `anon`/`authenticated` function privileges; verify two new
+  accounts and a renamed account; then release the frontend with rollback ready.
+- The Supabase SQL is staged separately because GitHub preview for `index.html`
+  still points at the production Supabase URL; never perform test registrations
+  from that preview against the real project.
+- **Open risk:** the entire JSON state is still a last-writer-wins write across
+  devices, except the `u` field is server-forced. Implement a separate server
+  revision/CAS protocol for all fields before declaring multi-device sync safe.
+- The security advisor flagged legacy SECURITY DEFINER APIs, especially
+  `handle_new_user` with anonymous EXECUTE. Audit/restrict privileges in a
+  separately tested, reversible security change; a privileged trigger should
+  not automatically become a public RPC.
