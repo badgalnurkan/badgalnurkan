@@ -2015,9 +2015,13 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   cloudUid=uid;cloudBase=cloudClone(pending?.base||fromCloud||{});
   cloudBlocked=!!(pending&&!cloudEqual(pending.base,fromCloud||{}));
   if(fromLocal&&!pending&&!cloudEqual(cloudSnapshot(fromLocal),fromCloud||{})){
-    const archive='b1.login-cache-backup.'+uid+'.'+Date.now();
-    if(!setItem(archive,JSON.stringify(cloudSnapshot(fromLocal))))
-      throw new Error('LOCAL_ALIAS_BACKUP_FAILED');
+    // Preserve one pre-upgrade snapshot without unbounded archives on every login.
+    // It is explicitly presented for recovery; never silently merge stale JSON.
+    const archive=cloudLegacyKey(uid);
+    if(!readJson(archive)&&!setItem(archive,JSON.stringify({
+      format:'iydu-legacy-local-recovery-v1',uid,at:Date.now(),
+      account:cloudSnapshot(fromLocal)
+    })))throw new Error('LOCAL_ALIAS_BACKUP_FAILED');
   }
   const a=norm(cloudClone(pending?.local||fromCloud||{u:reserved,nick:meta.nick||meta.nickname||reserved,email:j.user.email}));
   a.u=reserved;if(!a.nick)a.nick=String(meta.nick||meta.nickname||reserved);
@@ -2293,7 +2297,9 @@ async function saveProfile(){
   if(!userRe.test(username)||!nick){toast(tr()?'Kullanıcı adı veya isim geçersiz.':'Invalid username or display name.');return}
   if(username!==A.u){
     if(A.authUid&&cloudPending(A.authUid)&&!(await sbPush())){
-      cloudConflictPanel();return;
+      if(cloudBlocked)cloudConflictPanel();
+      else warnCloudSyncFailure();
+      return;
     }
     if(cachedUsernameConflict(username,A)){
       await profileUsernameHint(username,'profile-name-hint');
@@ -3461,6 +3467,7 @@ const cloud=()=>true;
 // replace offline edits with a newer cloud snapshot.
 let cloudBase=null,cloudUid=null,cloudBlocked=false,cloudFlight=null;
 const cloudPendingKey=uid=>'b1.sync.pending.'+uid;
+const cloudLegacyKey=uid=>'b1.sync.legacy-backup.'+uid;
 const cloudClone=x=>JSON.parse(JSON.stringify(x));
 const cloudEqual=(x,y)=>JSON.stringify(x)===JSON.stringify(y);
 function cloudSnapshot(a){
@@ -3483,6 +3490,16 @@ function cloudDraft(){
     if(!setItem(cloudPendingKey(uid),JSON.stringify(pending)))throw new Error('LOCAL_SYNC_BACKUP_FAILED');
     return true;
   }catch(_){cloudBlocked=true;warnCloudSyncFailure();return false}
+}
+function cloudBackupLegacy(){
+  const uid=A?.authUid,legacy=uid&&readJson(cloudLegacyKey(uid));
+  if(!legacy||legacy.uid!==uid)return;
+  const blob=new Blob([JSON.stringify(legacy,null,2)],{type:'application/json'});
+  const href=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=href;link.download='iydu-onceki-yerel-profil-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(href),60000);
+  setItem(cloudLegacyKey(uid)+'.dismissed','1');
 }
 function cloudBackupFile(){
   const uid=A?.authUid;
@@ -3507,7 +3524,20 @@ function cloudConflictPanel(){
     'Choosing the cloud version archives your current draft separately. Versions are not auto-merged.'}</p>`);
 }
 function cloudSyncBanner(){
-  if(!A?.authUid||!cloudBlocked)return;
+  if(!A?.authUid)return;
+  const uid=A.authUid,legacy=readJson(cloudLegacyKey(uid));
+  if(legacy&&legacy.uid===uid&&!getItem(cloudLegacyKey(uid)+'.dismissed')){
+    const main=document.querySelector('.shell main');
+    if(main){
+      const node=document.createElement('section');node.setAttribute('role','status');node.className='card';
+      node.innerHTML=`<strong>${tr()?'Önceki cihaz kaydının yedeği var':'Previous local account backup available'}</strong>
+      <p>${tr()?'Eski tarayıcıda kaydedilmiş bir profil ile bulut sürümü farklı olabilir. Eski kayıt korunmuştur.':
+        'A previous browser profile may differ from the cloud version. We preserved its recovery copy.'}</p>
+      <button type="button" onclick="cloudBackupLegacy();shell()">${tr()?'Önceki profil yedeğini indir':'Download previous profile backup'}</button>`;
+      main.prepend(node);
+    }
+  }
+  if(!cloudBlocked)return;
   const main=document.querySelector('.shell main');
   if(!main)return;
   const node=document.createElement('section');
@@ -3528,11 +3558,12 @@ async function cloudUseRemote(){
   if(!setItem(archive,JSON.stringify(pending))){
     toast(tr()?'Kurtarma kopyası kaydedilemedi; hiçbir veri değiştirilmedi.':'Recovery backup failed. Nothing changed.');return;
   }
-  let latest;
-  try{latest=await sbPull()}catch(_){warnCloudSyncFailure();return}
+  let latest,reserved;
+  try{latest=await sbPull();reserved=await cloudReservedUsername()}
+  catch(_){warnCloudSyncFailure();return}
   if(!latest||typeof latest!=='object')return;
   const next=norm(cloudClone(latest));
-  next.authUid=uid;next.u=await cloudReservedUsername();
+  next.authUid=uid;next.u=reserved;
   if(!next.u)return;
   next.accountOrigin='cloud';next.email=A.email;next.mail=A.mail;next.pw='';
   try{cacheCloudAccount(next)}catch(_){warnCloudSyncFailure();return}
