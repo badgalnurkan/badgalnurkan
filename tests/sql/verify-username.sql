@@ -75,7 +75,27 @@ END;
 $claim$;
 
 -- Old tabs are not allowed to revert the canonical username through iydu_save.
-SELECT public.iydu_save('staleAlias','ignored','{"u":"staleAlias","tasks":[{"id":"t1"}]}'::jsonb);
+DO $legacy_disabled$
+DECLARE rejected boolean:=false;
+BEGIN
+  BEGIN
+    PERFORM public.iydu_save('staleAlias','ignored','{"u":"staleAlias"}'::jsonb);
+  EXCEPTION WHEN sqlstate 'P0001' THEN rejected:=true;
+  END;
+  IF NOT rejected THEN RAISE EXCEPTION 'Old blind save is still usable'; END IF;
+END;
+$legacy_disabled$;
+SELECT public.iydu_save_cas('{}'::jsonb,'{"u":"Öznur","tasks":[{"id":"t1"}]}'::jsonb);
+DO $auth_privileges$
+BEGIN
+  IF has_table_privilege('authenticated','public.user_data','UPDATE') OR
+     has_table_privilege('authenticated','public.user_data','TRUNCATE') OR
+     has_table_privilege('authenticated','public.iydu_usernames','UPDATE') OR
+     has_table_privilege('authenticated','public.profiles','UPDATE') THEN
+    RAISE EXCEPTION 'Direct table write privileges were not removed';
+  END IF;
+END;
+$auth_privileges$;
 DO $save$
 BEGIN
  IF (SELECT data->>'u' FROM public.user_data WHERE user_id=auth.uid()) <> 'Öznur'
@@ -170,7 +190,7 @@ DO $unclaimed_save$
 DECLARE rejected boolean:=false;
 BEGIN
  BEGIN
-   PERFORM public.iydu_save('fake','nick','{"u":"fake"}'::jsonb);
+   PERFORM public.iydu_save_cas('{}'::jsonb,'{"u":"fake"}'::jsonb);
  EXCEPTION WHEN sqlstate 'P0001' THEN rejected:=true;
  END;
  IF NOT rejected THEN RAISE EXCEPTION 'Unclaimed account must not push JSON'; END IF;
