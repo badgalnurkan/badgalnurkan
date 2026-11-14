@@ -205,7 +205,150 @@ BEGIN
     RAISE EXCEPTION 'not authenticated' USING ERRCODE='28000';
   END IF;
   IF v_name IS NULL
-     OR v_name !~ '^[A-Za-z0-9ÇĞİÖŞÜçğıöşü_.-]{3,20} THEN
+     OR v_name !~ '^[A-Za-z0-9ÇĞİÖŞÜçğıöşü_.-]{3,20}
+    RAISE EXCEPTION 'invalid username' USING ERRCODE='22023';
+  END IF;
+
+  PERFORM 1 FROM public.user_data WHERE user_id=v_uid FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'profile data missing' USING ERRCODE='P0002'; END IF;
+  PERFORM 1 FROM public.profiles WHERE id=v_uid FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'profile missing' USING ERRCODE='P0002'; END IF;
+
+  INSERT INTO public.iydu_usernames(user_id,username)
+  VALUES(v_uid,v_name)
+  ON CONFLICT(user_id) DO UPDATE SET username=EXCLUDED.username;
+
+  UPDATE public.profiles SET username=v_name WHERE id=v_uid;
+  UPDATE public.user_data
+  SET data=jsonb_set(data,'{u}',to_jsonb(v_name),true),
+      updated_at=now()
+  WHERE user_id=v_uid;
+END;
+$rename_guarded$;
+REVOKE ALL ON FUNCTION public.iydu_set_username(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.iydu_set_username(text) TO authenticated;
+
+-- CAS: the caller supplies the LAST SERVER-ACKNOWLEDGED raw JSON, not a guess.
+-- In READ COMMITTED, UPDATE atomically rechecks the predicate under the row lock.
+-- jsonb equality covers every field (tasks, journals, preferences, etc.).
+CREATE OR REPLACE FUNCTION public.iydu_save_cas(
+  p_expected_data jsonb, p_data jsonb
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO ''
+AS $cas_guarded$
+DECLARE
+  v_uid uuid := (SELECT auth.uid());
+  v_name text;
+  v_rows integer;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not authenticated' USING ERRCODE='28000';
+  END IF;
+  IF p_expected_data IS NULL
+     OR jsonb_typeof(p_expected_data) IS DISTINCT FROM 'object'
+     OR p_data IS NULL
+     OR jsonb_typeof(p_data) IS DISTINCT FROM 'object' THEN
+    RAISE EXCEPTION 'invalid compare-and-swap data' USING ERRCODE='22023';
+  END IF;
+  SELECT n.username INTO v_name
+  FROM public.iydu_usernames AS n WHERE n.user_id=v_uid;
+  IF v_name IS NULL THEN
+    RAISE EXCEPTION 'claim a username first' USING ERRCODE='P0001';
+  END IF;
+  IF p_data->>'u' IS DISTINCT FROM v_name THEN
+    RAISE EXCEPTION 'username must match reservation' USING ERRCODE='22023';
+  END IF;
+
+  UPDATE public.user_data AS ud
+  SET data=p_data,updated_at=now()
+  WHERE ud.user_id=v_uid AND ud.data=p_expected_data;
+  GET DIAGNOSTICS v_rows=ROW_COUNT;
+  RETURN v_rows=1;
+END;
+$cas_guarded$;
+REVOKE ALL ON FUNCTION public.iydu_save_cas(jsonb,jsonb)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.iydu_save_cas(jsonb,jsonb)
+  TO authenticated;
+
+-- Old deployed clients have no expected revision and cannot prove freshness.
+-- Reject their writes rather than allow silent loss of another device's data.
+-- Old clients will retain local browser state and display a sync warning.
+CREATE OR REPLACE FUNCTION public.iydu_save(
+  p_username text,p_nick text,p_data jsonb
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path TO ''
+AS $blocked$
+BEGIN
+  RAISE EXCEPTION 'client update required: stale writer disabled'
+    USING ERRCODE='P0001';
+END;
+$blocked$;
+REVOKE ALL ON FUNCTION public.iydu_save(text,text,jsonb)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.iydu_save(text,text,jsonb)
+  TO authenticated;
+
+-- The existing account-migration RPC is already conditional, but needs a
+-- narrowly scoped definer function after direct table UPDATE is revoked.
+CREATE OR REPLACE FUNCTION public.iydu_migrate_legacy(
+  p_data jsonb, p_expected_data jsonb DEFAULT NULL::jsonb
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO ''
+AS $migrate_guarded$
+DECLARE
+  v_uid uuid := (SELECT auth.uid());
+  v_name text;
+  v_rows integer := 0;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not authenticated' USING ERRCODE='28000';
+  END IF;
+  IF p_data IS NULL OR jsonb_typeof(p_data) IS DISTINCT FROM 'object'
+     OR p_data->>'authUid' IS DISTINCT FROM v_uid::text
+     OR p_data->>'accountOrigin' IS DISTINCT FROM 'cloud' THEN
+    RAISE EXCEPTION 'Invalid migration data' USING ERRCODE='22023';
+  END IF;
+  SELECT n.username INTO v_name FROM public.iydu_usernames n
+  WHERE n.user_id=v_uid;
+  IF v_name IS NULL OR p_data->>'u' IS DISTINCT FROM v_name THEN
+    RAISE EXCEPTION 'Username reservation mismatch' USING ERRCODE='22023';
+  END IF;
+  IF p_expected_data IS NULL THEN
+    INSERT INTO public.user_data(user_id,data,updated_at)
+    VALUES(v_uid,p_data,now())
+    ON CONFLICT(user_id) DO NOTHING;
+  ELSE
+    IF jsonb_typeof(p_expected_data) IS DISTINCT FROM 'object' THEN
+      RAISE EXCEPTION 'Invalid expected data' USING ERRCODE='22023';
+    END IF;
+    UPDATE public.user_data
+    SET data=p_data,updated_at=now()
+    WHERE user_id=v_uid AND data=p_expected_data;
+  END IF;
+  GET DIAGNOSTICS v_rows=ROW_COUNT;
+  RETURN v_rows=1;
+END;
+$migrate_guarded$;
+REVOKE ALL ON FUNCTION public.iydu_migrate_legacy(jsonb,jsonb)
+  FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.iydu_migrate_legacy(jsonb,jsonb)
+  TO authenticated;
+
+-- There should be no mutation paths through anonymous or authenticated
+-- table grants; PostgreSQL owner/trigger functions can still write.
+
+COMMIT;
+ THEN
     RAISE EXCEPTION 'invalid username' USING ERRCODE='22023';
   END IF;
 
