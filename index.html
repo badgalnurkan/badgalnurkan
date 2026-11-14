@@ -979,14 +979,6 @@ footer .legal-links{margin:.15rem auto .3rem}
 .account-delete-form input{width:100%;max-width:100%;box-sizing:border-box}
 .account-delete-form button:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:420px){.account-data-actions{flex-direction:column;align-items:stretch}.account-data-actions button{width:100%}}
-/* V13: local-to-Google migration panel */
-.legacy-migrate-card{border:1px solid var(--line,#ddd);border-radius:1rem;padding:1rem;margin:.6rem 0}
-.legacy-migrate-card p{line-height:1.55}
-.legacy-migrate-status{font-size:.84rem;line-height:1.5;color:var(--mut,#777)}
-.legacy-migrate-warning{font-size:.87rem;line-height:1.55;max-width:65ch}
-.legacy-migrate-actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem}
-.legacy-migrate-confirm{display:flex;align-items:flex-start;gap:.55rem;margin:1rem 0;line-height:1.45}
-.legacy-migrate-confirm input{width:auto;margin-top:.22rem}
 .account-connection{margin:.75rem 0;padding:.85rem 1rem;border:1px solid var(--line, #ddd);border-radius:1rem;font-size:.87rem;line-height:1.5}
 .account-connection strong{display:block;margin-bottom:.3rem}
 .account-connection p{margin:0;color:var(--mut, #777)}
@@ -1500,8 +1492,8 @@ function closeModal(id){
   },reduced?0:(el.dataset.kind==='day'?205:210));
 }
 function openGuideModal(){
-  const body=tr()?`<p>Improvin' your day: yapılacaklar, yarın planlaması, günlük, Pomodoro, kronometre, ilerleme ve raporlar.</p><p>Yeni bulut hesapları Supabase ile eşitlenir; aynı e-posta ve şifreyle başka tarayıcıda giriş yapılabilir. Eski yerel hesaplar Ayarlar bölümünden yedek alınarak Google'a taşınabilir.</p><p class="mut"><b>Demo uyarısı:</b> Bu aşamada e-posta sahipliği doğrulanmayabilir ve şifre sıfırlama e-postası çalışmayabilir. Hassas kişisel bilgi girmeyin.</p>`
-    :`<p>Track tasks, plan tomorrow, write a daily journal, focus with Pomodoro, review your progress and reports.</p><p>New cloud accounts use Supabase and can be opened on another device with the same email/password. Legacy local accounts can be moved to Google from Settings after making a backup.</p><p class="mut"><b>Demo:</b> Email ownership may not be verified, and password reset emails may not work. Avoid sensitive personal information.</p>`;
+  const body=tr()?`<p>Improvin' your day: yapılacaklar, yarın planlaması, günlük, Pomodoro, kronometre, ilerleme ve raporlar.</p><p>Yeni bulut hesapları Supabase ile eşitlenir; aynı e-posta ve şifreyle başka tarayıcıda giriş yapılabilir. Eski yerel hesaplar otomatik olarak buluta taşınmaz.</p><p class="mut"><b>Demo uyarısı:</b> Bu aşamada e-posta sahipliği doğrulanmayabilir ve şifre sıfırlama e-postası çalışmayabilir. Hassas kişisel bilgi girmeyin.</p>`
+    :`<p>Track tasks, plan tomorrow, write a daily journal, focus with Pomodoro, review your progress and reports.</p><p>New cloud accounts use Supabase and can be opened on another device with the same email/password. Legacy local accounts do not sync automatically.</p><p class="mut"><b>Demo:</b> Email ownership may not be verified, and password reset emails may not work. Avoid sensitive personal information.</p>`;
   openModal('guide-modal',`<h2>${t('howItWorks')}</h2>${body}<div class="row"><button onclick="closeModal('guide-modal')">${tr()?'Anladım':'Got it'}</button></div>`);
 }
 
@@ -1569,7 +1561,7 @@ function goExistingEmail(email){
   msg=tr()?'Bu e-posta zaten kayıtlı. Yeni hesap yerine giriş yap.':'Email already registered. Sign in instead of creating another account.';
   softPaint();
 }
-async function activateCloudUser(j,preferredName='',method='password',options={}){
+async function activateCloudUser(j,preferredName='',method='password'){
   const uid=j&&j.user&&j.user.id;
   if(!uid||!j.access_token)throw new Error('Missing authenticated session');
   sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
@@ -1582,7 +1574,6 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   a.pw='';delete a.salt; // Cloud passwords are checked by Supabase, never stored in user_data.
   a.loginMethod=method==='google'?'google':'password';
   if(method==='google'||j.user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
-  v13ProtectLegacyCollision(a.u,uid,options.allowLegacyReplacement===true);
   DB.accounts[a.u]=a;DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
   restorePomodoroState();applyTheme();save();loginDat={u:'',p:''};
   goTo('app','home');
@@ -2326,7 +2317,6 @@ P.set=()=>{
   <div class="card"><h2>${tr()?'Gizlilik ve veri saklama':'Privacy and storage'}</h2><p class="mut">${tr()?'Uygulama giriş ve tercih verilerini bu tarayıcıda saklar. Bulut hesaplarının görev ve notları Supabase ile eşitlenir. Reddet düğmesiyle kapatılabilecek bir izleme çerezi kullanılmıyor; gerekli depolama çalışmaya devam eder.':'The app stores necessary session and preference data in this browser. Cloud account tasks and notes are synced with Supabase. This notice is not an opt-in for analytics cookies.'}</p><p class="mut">${accountConnection(A)==='cloud'?(tr()?'Bulut profiline bağlı oturum var; sunucu işlemi ayrıca doğrular.':'Cloud session is present; the server separately verifies protected actions.'):accountConnection(A)==='local'?(tr()?'Eski yerel profil: başka cihazlarla eşitlenmez.':'Legacy local profile: no cross-device sync.'):(tr()?'Bu profilin bulut bağlantısı doğrulanamadı.':'Cloud connection for this profile has not been verified.')}</p><p class="mut">${tr()?'Demo e-posta sahipliğini doğrulamaz; şifre sıfırlama e-postası çalışmayabilir.':'Demo does not verify email ownership; password reset email may be unavailable.'}</p><p class="legal-intro">${tr()?'Ayrıntılı bilgilendirme ve hakların:':'Full notices and your rights:'}</p>${legalLinks()}</div>
   ${ac?`<div class="card"><h2>${tr()?'Bu cihazdaki diğer profiller':'Other profiles on this device'}</h2>${ac}</div>`:''}
   <div class="card"><h2>${t('resetSystem')}</h2><p class="mut">${tr()?'Görevler, notlar, günlükler, ilerleme ve raporlar sıfırlanır. Hesap kimliğin kalır.':'Tasks, journals, progress and reports will be reset. Account identity is retained.'}</p><button style="background:var(--no)" onclick="resetSys()">${t('reset')}</button></div>
-  ${accountConnection(A)==='local'?`<div class="card legacy-migrate-card"><h2>${tr()?'V13 · Yerel hesabı Google’a taşı':'V13 · Move local account to Google'}</h2><p class="legacy-migrate-warning">${tr()?'Eski hesabının görevlerini, günlüklerini, notlarını ve mevcut ilerleme hesabını bir Google oturumuyla Supabase’e taşı. Önce JSON yedeği alacağız. Google hesabının bulut verileri zaten varsa aktarım durur; hiçbir veri otomatik birleştirilmez veya üzerine yazılmaz.':'Move your legacy tasks, journals, notes, and progress to Supabase using a Google sign-in. First download a JSON backup. If the chosen Google account already has cloud app data, migration stops without merging or overwriting anything.'}</p><div class="legacy-migrate-actions"><button onclick="v13ShowMigration()">${tr()?'Google hesabına taşı':'Move to Google'}</button></div></div>`:''}
   <div class="card"><h2>${tr()?'Verilerim ve hesabım':'My data and account'}</h2>${accountConnectionHtml(A)}<p class="mut account-data-help">${tr()?'Yüklü hesabının görevlerini, notlarını, günlüklerini ve ilerleme kayıtlarını JSON dosyası olarak dışa aktar. Bu dosya hassas bilgiler içerebilir; güvenli bir yerde sakla.':'Export your loaded tasks, notes, journals and progress as a JSON file. The file may contain private information, so store it securely.'}</p><div class="account-data-actions"><button class="g" onclick="exportMyData()">${tr()?'Verilerimi indir (JSON)':'Download my data (JSON)'}</button><button class="g d" onclick="delAcc()">${accountRemovalButtonLabel(A)}</button></div><p class="mut account-data-help">${accountConnection(A)==='cloud'?(tr()?'Bulut hesabını silmek için yakın zamanda giriş, açık onay ve sunucu doğrulaması gerekir.':'Cloud account deletion requires a recent sign-in, explicit confirmation and server verification.'):accountConnection(A)==='local'?(tr()?'Bu cihazdaki profil kopyasını kaldırmak bulut hesabı silmez.':'Removing this device profile never deletes a cloud account.'):(tr()?'Bağlantı belirsizken silme kapalıdır. Önce yeniden giriş yap.':'Deletion is blocked until the account connection is verified.')}</p></div>
   <div class="card"><h2>${tr()?'Oturum':'Session'}</h2><p class="mut">${tr()?'Hesabından güvenli şekilde çıkış yap.':'Sign out of your account.'}</p><button class="danger-logout" onclick="confirmLogout()">${t('logout')}</button></div>`);
 };
@@ -2436,8 +2426,7 @@ function exportMyData(){
     a.href=url;a.download=`improvin-${safeName}-${new Date().toISOString().slice(0,10)}.json`;
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
     toast(tr()?'JSON dosyası hazır. Gizli notlar içerebilir.':'JSON export prepared. It may contain private notes.');
-    return true;
-  }catch(e){toast(tr()?'Dosya oluşturulamadı. Tarayıcı indirme izinlerini kontrol et.':'Could not create the file. Check your browser download settings.');return false}
+  }catch(e){toast(tr()?'Dosya oluşturulamadı. Tarayıcı indirme izinlerini kontrol et.':'Could not create the file. Check your browser download settings.')}
 }
 
 let accountDeletionBusy=false;
@@ -2574,135 +2563,6 @@ async function deleteCloudConfirmed(){
   }finally{accountDeletionBusy=false;checkCloudDeletionConsent()}
 }
 
-
-/* V13 — safe, explicitly authorized legacy-local to Google cloud migration.
-   Not Supabase identity linking: a browser-only profile has no Auth identity.
-   Credentials never enter the migrated record. Existing cloud data is NEVER upserted. */
-const V13_MIGRATION_KEY='iydu.v13.pending-local-google';
-const V13_MAX_PENDING_AGE=12*60*1000;
-let v13BackupDownloaded=false;
-let v13MigrationBusy=false;
-function v13ReadMigration(){
-  let raw=null;
-  try{raw=sessionStorage.getItem(V13_MIGRATION_KEY)}catch(_){return null}
-  if(!raw)return null;
-  let data=null;try{data=JSON.parse(raw)}catch(_){}
-  if(!data||data.version!==13||typeof data.username!=='string'||!data.nonce||
-     !Number.isFinite(data.at)||Date.now()-data.at>V13_MAX_PENDING_AGE||data.at>Date.now()+15000){
-    v13ClearMigration();return null;
-  }
-  return data;
-}
-function v13HasMigrationMarker(){try{return sessionStorage.getItem(V13_MIGRATION_KEY)!==null}catch(_){return false}}
-function v13ClearMigration(){try{sessionStorage.removeItem(V13_MIGRATION_KEY)}catch(_){}}
-function v13WriteMigration(username){
-  const marker={version:13,username,nonce:rndHex(16),at:Date.now()};
-  try{sessionStorage.setItem(V13_MIGRATION_KEY,JSON.stringify(marker));return true}
-  catch(_){return false}
-}
-function v13ShowMigration(){
-  if(!A||accountConnection(A)!=='local'||v13MigrationBusy){toast(tr()?'Yalnızca doğrulanmış yerel profiller taşınabilir.':'Only a verified local profile can be moved.');return}
-  v13BackupDownloaded=false;
-  openModal('v13-migrate',`<h2>${tr()?'Yerel hesabı Google’a taşı':'Move local account to Google'}</h2>
-  <p class="legacy-migrate-warning">${tr()?`@${esc(A.u)} profilinin tüm günlükleri ve ilerleme geçmişi taşınacaktır. Başka Google hesabındaki mevcut veriler ASLA ezilmez. Bu işlem aynı cihazda ve aynı tarayıcı sekmesinde tamamlanmalıdır.`:`All journals and progress of @${esc(A.u)} will be transferred. Existing data in a Google account is NEVER overwritten. Complete the flow on the same device and browser tab.`}</p>
-  <div class="legacy-migrate-actions"><button type="button" class="g" onclick="v13DownloadBackup()">${tr()?'1. JSON yedeğimi indir':'1. Download JSON backup'}</button></div>
-  <p class="legacy-migrate-status" id="v13-backup-state">${tr()?'Yedek henüz indirilmedi.':'Backup not downloaded yet.'}</p>
-  <label for="v13-local-password">${tr()?'2. Eski yerel hesabının şifresi':'2. Legacy local account password'}</label>
-  <input id="v13-local-password" type="password" autocomplete="current-password" oninput="v13UpdateMigrationControls()">
-  <label class="legacy-migrate-confirm"><input id="v13-consent" type="checkbox" onchange="v13UpdateMigrationControls()"><span>${tr()?'Yedeğimi aldım. Google hesabımın boş olması gerektiğini ve eski yerel hesabımın yalnızca başarılı aktarım sonrasında buluta dönüşeceğini anladım.':'I have backed up my data. I understand the Google account must have no existing app data and the legacy profile changes only after a verified migration.'}</span></label>
-  <p id="v13-migrate-error" class="legacy-migrate-status" role="alert"></p>
-  <div class="legacy-migrate-actions"><button id="v13-migrate-submit" disabled onclick="v13BeginMigration()">${tr()?'3. Google ile güvenli aktarımı başlat':'3. Continue securely with Google'}</button><button class="g" onclick="closeModal('v13-migrate')">${t('cancel')}</button></div>`);
-}
-function v13DownloadBackup(){
-  v13BackupDownloaded=exportMyData()===true;
-  const state=document.getElementById('v13-backup-state');
-  if(state)state.textContent=v13BackupDownloaded?(tr()?'Yedek indirme işlemi başlatıldı. İndirilen dosyayı kontrol et.':'Backup download started. Check the downloaded file.'):(tr()?'Yedek indirilemedi.':'Backup download failed.');
-  v13UpdateMigrationControls();
-}
-function v13UpdateMigrationControls(){
-  const el=document.getElementById('v13-migrate-submit');
-  if(el)el.disabled=v13MigrationBusy||!v13BackupDownloaded||!document.getElementById('v13-consent')?.checked||
-    !document.getElementById('v13-local-password')?.value;
-}
-async function v13BeginMigration(){
-  if(v13MigrationBusy||!A||accountConnection(A)!=='local')return;
-  const password=document.getElementById('v13-local-password')?.value||'';
-  const error=document.getElementById('v13-migrate-error');
-  if(!v13BackupDownloaded||!document.getElementById('v13-consent')?.checked||!password)return;
-  v13MigrationBusy=true;v13UpdateMigrationControls();
-  try{
-    if(!await pwMatch(A,password))throw new Error('WRONG_LOCAL_PASSWORD');
-    if(sbSession()?.access_token)throw new Error('ACTIVE_CLOUD_SESSION');
-    const redirect=location.origin+location.pathname;
-    if(!redirect.startsWith('https://')&&!redirect.startsWith('http://localhost'))throw new Error('HTTPS_REQUIRED');
-    const name=A.u;
-    if(!v13WriteMigration(name))throw new Error('STORAGE_NOT_AVAILABLE');
-    // The legacy profile remains untouched in localStorage until remote INSERT + readback succeeds.
-    save();backupTick();
-    // Clear the password input before navigating; it is never stored in sessionStorage.
-    const el=document.getElementById('v13-local-password');if(el)el.value='';
-    signInWithGoogle();
-  }catch(e){
-    if(error)error.textContent=({
-      WRONG_LOCAL_PASSWORD:tr()?'Eski hesabının şifresi yanlış.':'Legacy account password is incorrect.',
-      ACTIVE_CLOUD_SESSION:tr()?'Önce diğer bulut oturumundan çık.':'Sign out of the other cloud session first.',
-      HTTPS_REQUIRED:tr()?'HTTPS bağlantısı gerekiyor.':'HTTPS is required.',
-      STORAGE_NOT_AVAILABLE:tr()?'Bu sekmede güvenli geçiş bilgisi saklanamıyor.':'This browser tab cannot store the migration marker.'
-    })[e.message]||(tr()?'Aktarım başlatılamadı.':'Could not start migration.');
-    v13ClearMigration();
-  }finally{v13MigrationBusy=false;v13UpdateMigrationControls()}
-}
-function v13ProtectLegacyCollision(username,uid,allowLegacyReplacement=false){
-  const existingKey=findUser(username);
-  const existing=existingKey?DB.accounts[existingKey]:null;
-  if(!allowLegacyReplacement&&existing&&existing.accountOrigin==='local'&&!accountCloudHints(existing)&&existing.pw&&existing.authUid!==uid){
-    throw new Error('V13_LOCAL_USERNAME_COLLISION');
-  }
-}
-async function v13FinishMigration(j){
-  const pending=v13ReadMigration();if(!pending)return false;
-  v13ClearMigration(); // single use; never auto-replay a potentially committed write
-  const source=DB.accounts[pending.username];
-  try{
-    if(!source||source.accountOrigin!=='local'||accountCloudHints(source)||!source.pw)throw new Error('LOCAL_NOT_FOUND');
-    const uid=j?.user?.id;
-    if(!uid||!j.access_token||!j.user?.email)throw new Error('OAUTH_INVALID');
-    sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
-    const existing=await sbPull();
-    if(existing)throw new Error('CLOUD_ALREADY_HAS_DATA');
-    const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:source.u}});
-    if(available!==true)throw new Error('USERNAME_TAKEN');
-    // The configured RPC reserves the username for the verified current auth.uid().
-    const claimed=await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:source.u}});
-    if(claimed===false)throw new Error('USERNAME_TAKEN');
-    const snapshot=exportDataSnapshot(source).account;
-    const migration={...snapshot,u:source.u,authUid:uid,accountOrigin:'cloud',loginMethod:'google',googleConnected:true,
-      email:String(j.user.email).toLowerCase(),mail:String(j.user.email).toLowerCase(),pw:'',
-      legacyMigrationId:pending.nonce,legacyMigratedAt:new Date().toISOString()};
-    // INSERT, never UPSERT. A second tab/identity that writes first causes a conflict, not data loss.
-    await sb('/rest/v1/user_data',{method:'POST',headers:{Prefer:'return=representation'},
-      body:{user_id:uid,data:migration}});
-    const verified=await sbPull();
-    if(!verified||verified.legacyMigrationId!==pending.nonce||verified.authUid!==uid||verified.u!==source.u||
-       verified.pctFrom!==source.pctFrom)throw new Error('READBACK_MISMATCH');
-    await activateCloudUser(j,source.u,'google',{allowLegacyReplacement:true});
-    toast(tr()?'Eski hesabın Google’a taşındı. Diğer cihazdan giriş yaparak doğrula.':'Legacy profile moved to Google. Verify by signing in on another device.');
-  }catch(e){
-    // Fail closed: DB.accounts[source.u] is unchanged until the readback was verified.
-    sbClear();A=null;view='login';pg='home';
-    const message={
-      CLOUD_ALREADY_HAS_DATA:tr()?'Google hesabında zaten uygulama verisi var; üzerine yazmadık. Eski yerel kayıt bu cihazda korundu.':'Google already has app data; nothing was overwritten. The legacy profile remains on this device.',
-      USERNAME_TAKEN:tr()?'Kullanıcı adı başka bir bulut hesabında kullanılıyor; hiçbir veri aktarılmadı.':'The username is already registered in the cloud; nothing was migrated.',
-      LOCAL_NOT_FOUND:tr()?'Yerel hesap artık doğrulanamıyor. Yedek dosyanı sakla.':'The legacy profile could not be verified. Keep your backup.',
-      READBACK_MISMATCH:tr()?'Sunucu yazma sonucunu doğrulayamadık. Tekrar denemeden önce Supabase’deki veriyi kontrol et.':'The server write could not be verified. Check Supabase before retrying.',
-      V13_LOCAL_USERNAME_COLLISION:tr()?'Yerel ve Google profillerinin kullanıcı adları çakışıyor. Eski veriler korunuyor.':'Legacy and Google account usernames collide; legacy data is protected.'
-    };
-    msg=message[e.message]||(tr()?'Aktarım doğrulanamadı. Yerel kayıt korundu. Tekrar denemeden önce bulut hesabındaki verileri kontrol et.':'Migration could not be verified. Local data is preserved. Check the cloud account before retrying.');
-    renderAppOrAuth();
-  }
-  return true;
-}
-
 /* ================= Auth + RLS-protected Supabase sync ================= */
 const SUPABASE_URL='https://flcfqwndqfmbritaywfb.supabase.co';
 // Public publishable key is intended for browsers. Never place secret/service_role here.
@@ -2724,13 +2584,8 @@ async function bootstrapCloudAuth(){
   const at=frag.get('access_token'),rt=frag.get('refresh_token');
   const error=frag.get('error_description')||frag.get('error');
   if(at||error){try{history.replaceState(history.state||{},'',location.pathname+location.search)}catch(_){}}
-  if(error){v13ClearMigration();msg=tr()?'Google ile giriş tamamlanamadı. Yerel hesabın korundu.':'Google sign-in failed. Your local profile is preserved.';view='login';renderAppOrAuth();return}
+  if(error){msg=tr()?'Google ile giriş tamamlanamadı. Lütfen tekrar dene.':'Google sign-in failed. Please try again.';view='login';renderAppOrAuth();return}
   if(at&&rt){
-    const hadMigration=v13HasMigrationMarker();
-    if(hadMigration&&!v13ReadMigration()){
-      sbClear();msg=tr()?'Google aktarımının süresi doldu. Yerel verilerin korundu. Yeniden denemeden önce bulut hesabını kontrol et.':'The Google migration expired. Local data is preserved. Check the cloud account before retrying.';
-      view='login';renderAppOrAuth();return;
-    }
     try{
       const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
       let response;
@@ -2738,17 +2593,8 @@ async function bootstrapCloudAuth(){
       finally{clearTimeout(timer)}
       if(!response.ok)throw new Error('OAuth verification failed');
       const user=await response.json();if(!user?.id)throw new Error('Invalid OAuth user');
-      const identity={user,access_token:at,refresh_token:rt};
-       if(await v13FinishMigration(identity)){if(A)greetThen();return}
-       await activateCloudUser(identity,'','google');greetThen();return;
+      await activateCloudUser({user,access_token:at,refresh_token:rt},'','google');greetThen();return;
     }catch(err){sbClear();msg=tr()?'Google oturumu doğrulanamadı. Lütfen tekrar dene.':'Google session could not be verified.';view='login';renderAppOrAuth();return}
-  }
-  // A reload in the middle of migration is not evidence of a completed cloud transfer.
-  // Clear a half-finished cloud session and retain the legacy profile unchanged.
-  if(v13HasMigrationMarker()){
-    v13ClearMigration();sbClear();
-    msg=tr()?'Google aktarımı yarıda kesildi. Eski profilin korunuyor. Yeniden denemeden önce bulut hesabının durumunu kontrol et.':'Google migration was interrupted. Your legacy profile remains intact. Check your cloud account before trying again.';
-    view='login';renderAppOrAuth();return;
   }
   await restoreCloudOnLoad();
 }
@@ -2823,16 +2669,12 @@ async function restoreCloudOnLoad(){
     const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
     a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
     if(user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
-    v13ProtectLegacyCollision(a.u,user.id);
     DB.accounts[a.u]=a;DB.lastUser=a.u;DB.last=a.nick;A=a;
     view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();
     if(!remote)await sbPush();
   }catch(e){
     // Do not auto-login from unverified localStorage contents.
     if(e.status===401)sbClear();
-    if(e.message==='V13_LOCAL_USERNAME_COLLISION'){
-      sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki eski yerel hesapla çakışıyor. Eski veri korunuyor. Yerel hesabından JSON yedeği al ve aktarım adımını kullan.':'A cloud username conflicts with a legacy profile on this device. Local data was preserved. Export it and use the migration flow.';
-    }
     if(!A){view='login';renderAppOrAuth()}
   }
 }
