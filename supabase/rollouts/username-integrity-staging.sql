@@ -205,7 +205,7 @@ BEGIN
     RAISE EXCEPTION 'not authenticated' USING ERRCODE='28000';
   END IF;
   IF v_name IS NULL
-     OR v_name !~ '^[A-Za-z0-9ÇĞİÖŞÜçğıöşü_.-]{3,20}
+     OR v_name !~ '^[A-Za-z0-9ÇĞİÖŞÜçğıöşü_.-]{3,20}$' THEN
     RAISE EXCEPTION 'invalid username' USING ERRCODE='22023';
   END IF;
 
