@@ -14,8 +14,10 @@ function section(start,end){
 }
 function helpers(accounts,A=null){
   const code=section('const usernameIdentityKey=', '/* hesap kaydi her zaman localStorage');
-  const DB={accounts};
-  return {DB,...new Function('DB','A',code+';return {findUser,cachedUsernameConflict,cacheCloudAccount,rekeyCachedAccount};')(DB,A)};
+  const DB={accounts},archives=new Map();
+  const setItem=(k,v)=>{archives.set(k,v);return true};
+  const rndHex=()=> 'beefcafe';
+  return {DB,archives,...new Function('DB','A','setItem','rndHex',code+';return {findUser,cachedUsernameConflict,cacheCloudAccount,rekeyCachedAccount};')(DB,A,setItem,rndHex)};
 }
 
 test('deployed index.html JavaScript has valid syntax',()=>{
@@ -29,10 +31,12 @@ test('Turkish username case-folding agrees on İ / i and Ö / ö',()=>{
 });
 test('cloud restore removes old username alias for the same auth UID',()=>{
   const a={u:'Eski',authUid:'uid-1'},other={u:'Diger',authUid:'uid-2'};
-  const {DB,cacheCloudAccount}=helpers({Eski:a,Diger:other},a);
+  const {DB,archives,cacheCloudAccount}=helpers({Eski:a,Diger:other},a);
   cacheCloudAccount({u:'Öznur',authUid:'uid-1'});
   assert.deepEqual(Object.keys(DB.accounts).sort(),['Diger','Öznur']);
   assert.strictEqual(DB.accounts.Diger,other);
+  assert.equal(archives.size,1);
+  assert.equal(JSON.parse([...archives.values()][0]).accounts.Eski.u,'Eski');
 });
 test('cloud restore must not overwrite a different identity under the same name',()=>{
   const a={u:'Eski',authUid:'uid-1'},other={u:'Öznur',authUid:'uid-2'};
@@ -40,6 +44,17 @@ test('cloud restore must not overwrite a different identity under the same name'
   assert.throws(()=>cacheCloudAccount({u:'Öznur',authUid:'uid-1'}),/LOCAL_USERNAME_CACHE_CONFLICT/);
   assert.strictEqual(DB.accounts['Öznur'],other);
   assert.strictEqual(DB.accounts.Eski, a);
+});
+test('cloud alias cleanup fails closed when durable backup storage is unavailable',()=>{
+  const old={u:'Eski',authUid:'uid-1'};
+  const DB={accounts:{Eski:old}};
+  const code=section('const usernameIdentityKey=', '/* hesap kaydi her zaman localStorage');
+  const f=new Function('DB','A','setItem','rndHex',code+';return {cacheCloudAccount};')(
+    DB,old,()=>false,()=> 'beefcafe'
+  );
+  assert.throws(()=>f.cacheCloudAccount({u:'Yeni',authUid:'uid-1'}),/LOCAL_ALIAS_BACKUP_FAILED/);
+  assert.strictEqual(DB.accounts.Eski,old);
+  assert.equal(DB.accounts.Yeni,undefined);
 });
 test('local rename preserves all unrelated accounts and removes the old alias',()=>{
   const a={u:'Eski',authUid:'uid-1'},other={u:'Diger',authUid:'uid-2'};
@@ -54,7 +69,7 @@ test('username update differentiates network, permission, and actual uniqueness 
   const message=new Function('tr','t',code+';return usernameUpdateErrorMessage;')(()=>true,()=> 'Bu kullanıcı adı alınmış.');
   assert.match(message({name:'AbortError'}),/zaman aşımı/);
   assert.match(message({status:403}),/yetki/);
-  assert.match(message({message:'Failed to fetch'}),/sunucu hatası/);
+  assert.match(message({message:'Failed to fetch'}),/sunucu hatası/i);
   assert.equal(message({code:'23505'}),'Bu kullanıcı adı alınmış.');
 });
 test('profile rename checks server independently and sync errors are visible',()=>{
