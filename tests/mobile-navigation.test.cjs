@@ -103,7 +103,7 @@ function transitionFixture(reduced=false){
   window:{scrollY:0,matchMedia:()=>({matches:reduced}),scrollTo(){}},history:{pushState(){}},
   renderPage:()=>renders.push(context.pg),centerNav(){},softPaint(){renders.push('auth')},navLabel:key=>key,
  };
- vm.createContext(context);vm.runInContext(section('function uiMotionTime(name,fallback){','/* yumusak sayfa gecisi:')+section('let pageSwapTimer=0;','/* mobil/tablet: secilen sekme'),context);
+ vm.createContext(context);vm.runInContext(section('function uiMotionTime(name,fallback){','const feedbackAnimations=')+section('let pageSwapTimer=0;','/* mobil/tablet: secilen sekme'),context);
  return {context,renders,timers,flush:()=>{for(const [id,fn] of [...timers]){timers.delete(id);fn()}}};
 }
 test('rapid menu taps render only the most recently selected page',()=>{
@@ -142,7 +142,7 @@ test('menu closing waits for its exit animation and ignores duplicate close requ
   addEventListener:(name,fn)=>{events[name]=fn},close(){closes++;this.open=false}};
  const context={document:{getElementById:()=>dialog},window:{matchMedia:()=>({matches:false})},
   setTimeout:fn=>{timers.set(1,fn);return 1},clearTimeout:id=>timers.delete(id)};
- vm.createContext(context);vm.runInContext(section('function uiMotionTime(name,fallback){','/* yumusak sayfa gecisi:')+section('function closeNavMenu(){','function selectNavPage('),context);
+ vm.createContext(context);vm.runInContext(section('function uiMotionTime(name,fallback){','const feedbackAnimations=')+section('function closeNavMenu(){','function selectNavPage('),context);
  context.closeNavMenu();context.closeNavMenu();assert.equal(closes,0);assert.equal(timers.size,1);
  events.animationend({target:dialog,animationName:'mobileMenuOut'});
  assert.equal(closes,1);assert.equal(timers.size,0);

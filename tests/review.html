@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Improvin’ Your Day · Mobil önizleme</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f3ee;color:#542a0c;font:14px/1.5 system-ui,sans-serif}header{padding:14px 20px;background:#fffaf7;border-bottom:1px solid #e6d9d1}h1{font:600 20px/1.3 Georgia,serif;margin:0 0 4px}p{margin:0;color:#796858;font-size:12px}.controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}label{display:flex;align-items:center;gap:6px;font-size:12px}select{font:inherit;background:white;border:1px solid #d6c6ba;color:#542a0c;border-radius:9px;padding:7px}main{padding:20px;overflow:auto}.device{margin:0 auto;width:max-content;max-width:none;border:1px solid #d8c9bc;border-radius:22px;overflow:hidden;box-shadow:0 10px 35px #542a0c12;background:#fff}iframe{border:0;display:block;width:390px;height:844px}.caption{font:12px/1.5 system-ui;text-align:center;margin:10px 0 0}@media(max-width:600px){header{padding:12px}.controls{gap:8px}main{padding:10px}.device{border-radius:16px}iframe{width:calc(100vw - 22px)!important;height:calc(100dvh - 190px);min-height:540px}.width-control{display:none}}
+</style>
+</head>
+<body>
+<header>
+<h1>Improvin’ Your Day <span style="font-weight:400">· Mobil önizleme</span></h1>
+<p>Örnek hesapla gezinebilirsin. Buradaki değişiklikler gerçek hesabına kaydedilmez.</p>
+<div class="controls">
+<label class="width-control">Ekran <select id="width" aria-label="Ekran genişliği"><option value="320">320 px</option><option value="360">360 px</option><option value="390" selected>390 px</option><option value="430">430 px</option><option value="768">768 px</option><option value="844">844 px</option><option value="900">900 px</option><option value="1024">1024 px</option><option value="1280">1280 px</option><option value="1920">1920 px</option><option value="2560">2560 px</option><option value="3840">3840 px</option></select></label>
+<label class="width-control">Yükseklik <select id="height" aria-label="Ekran yüksekliği"><option value="390">390 px</option><option value="568">568 px</option><option value="844" selected>844 px</option><option value="900">900 px</option><option value="1080">1080 px</option><option value="2160">2160 px</option></select></label>
+<label>Sayfa <select id="page" aria-label="Önizleme sayfası"><option value="welcome">Karşılama</option><option value="welcome-google">Hatırlanan Google</option><option value="home" selected>Ana sayfa</option><option value="pomo">Pomodoro</option><option value="todo">Yapılacaklar</option><option value="pc">İlerleme</option><option value="rep">Raporlar</option><option value="set">Ayarlar</option></select></label>
+<label>Dil <select id="lang" aria-label="Önizleme dili"><option value="tr">Türkçe</option><option value="en">English</option></select></label>
+<label>Tema <select id="theme" aria-label="Önizleme teması"><option value="white">Açık</option><option value="black">Koyu</option></select></label>
+<button type="button" id="replay-entry" style="font:inherit;color:inherit;background:#fff;border:1px solid #d6c6ba;border-radius:9px;padding:7px 10px;cursor:pointer">Giriş geçişini izle</button>
+</div>
+</header>
+<main><div class="device"><iframe id="app-preview" title="Uygulama önizlemesi" sandbox="allow-scripts" src="review-app.html?lang=tr&amp;theme=white&amp;page=home"></iframe></div><p class="caption" id="size-caption">390 × 844</p></main>
+<script>
+const fields=['width','height','page','lang','theme'];
+let revision=0;
+function updatePreview(){
+ const width=Number(document.getElementById('width').value),frame=document.getElementById('app-preview');
+ const height=Number(document.getElementById('height').value);
+ frame.style.width=width+'px';frame.style.height=height+'px';
+ const params=new URLSearchParams(['page','lang','theme'].map(k=>[k,document.getElementById(k).value]));
+ params.set('rev',String(++revision));
+ frame.src='review-app.html?'+params;
+ document.getElementById('size-caption').textContent=width+' × '+height;
+}
+fields.forEach(k=>document.getElementById(k).addEventListener('change',updatePreview));
+document.getElementById('replay-entry').addEventListener('click',()=>document.getElementById('app-preview').contentWindow.postMessage('preview-entry','*'));
+</script>
+</body></html>

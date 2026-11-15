@@ -1364,6 +1364,33 @@ body{font-size:1rem!important}
   .shell main.an,.mobile-menu[open],.mobile-menu[open].is-closing,.modal:not(.is-closing) .card{animation:none!important;transition:none!important}
   #login-portal.entry-portal,#login-portal.entry-portal :is(.portal-disc,.portal-brand,.portal-ring,.portal-greeting){animation:none!important}
 }
+/* Welcome, shared interaction feedback and the notification system. */
+.welcome-refresh{max-width:100rem;width:100%;margin:0 auto;padding:clamp(1rem,3.8vw,3rem);gap:2.5rem;background:radial-gradient(ellipse at 80% 35%,color-mix(in srgb,var(--acc2) 25%,transparent),transparent 55%)}
+.welcome-refresh .welcome-top{flex-wrap:nowrap;align-items:center;gap:1rem}.welcome-refresh .brand-badge{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.6rem;letter-spacing:-.04em;font-weight:600;line-height:1}.welcome-refresh .brand-badge span{display:block;margin-top:.6rem;font:500 .65rem/1.4 'Nunito',sans-serif;letter-spacing:.06em;color:var(--mut)}
+.welcome-preferences{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;justify-content:flex-end}.welcome-preferences .langbar{margin:0!important}
+.welcome-hero{width:min(100%,76rem);margin:auto;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:center;gap:clamp(2rem,5vw,6rem);padding:2rem 1rem}.welcome-copy{min-width:0}.welcome-eyebrow{font-size:.8rem;letter-spacing:.08em;color:var(--acc);margin:0 0 1.25rem;overflow-wrap:anywhere}
+.welcome-refresh h1{font:500 clamp(3.4rem,7.2vw,7rem)/.98 'Fraunces',Georgia,serif;letter-spacing:-.065em;color:var(--ink);margin:0 0 1.8rem;overflow-wrap:normal}.welcome-refresh h1 em{font-weight:500;color:var(--acc)}
+.welcome-lead{font-size:clamp(1.05rem,1.6vw,1.4rem);font-weight:600;line-height:1.5;margin:0 0 .7rem;max-width:28rem}.welcome-refresh .welcome-description{font:400 1rem/1.8 'Nunito',sans-serif;color:var(--mut);max-width:27rem;margin:0 0 1.6rem;text-wrap:pretty}
+.welcome-cta{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center}.welcome-cta button{min-height:48px;padding:.75rem 1.4rem;max-width:100%;overflow-wrap:anywhere;white-space:normal}.welcome-cta #welcome-continue{display:inline-flex;align-items:center;justify-content:center;gap:.8rem}.welcome-cta #welcome-continue svg{flex-shrink:0}.welcome-cta button[aria-busy=true]{opacity:.6}.welcome-footnote{font-size:.75rem;color:var(--mut);margin:1rem 0 0}
+.welcome-art{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.8rem;min-width:0;padding:1rem 0}.orbit-label{font:.65rem/1.4 'Nunito',sans-serif;letter-spacing:.24em;color:var(--mut)}.day-orbit{position:relative;width:min(100%,25rem);aspect-ratio:1;border:1px solid var(--ln);border-radius:50%;display:grid;place-items:center;padding:1.8rem;transform:rotate(-8deg)}.day-orbit:after{content:'';position:absolute;inset:.9rem;border:1px dashed var(--ln);border-radius:50%}.orbit-point{position:absolute;left:18%;top:7%;width:.9rem;height:.9rem;border-radius:50%;background:var(--acc);outline:.4rem solid var(--bg);z-index:1}
+.day-disc{background:var(--acc);color:var(--on-acc);border-radius:50%;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 20px 70px color-mix(in srgb,var(--acc) 15%,transparent)}.day-disc>span:first-child{font:400 1rem/1.4 'Nunito',sans-serif;letter-spacing:.1em}.day-disc strong{font:500 clamp(2.3rem,4.5vw,4rem)/1.05 'Fraunces',Georgia,serif;text-align:center;letter-spacing:-.04em;margin:.6rem 0}.day-spark{font-size:1.8rem;line-height:1}.welcome-ritual{display:flex;gap:1.4rem;font-size:.75rem;color:var(--acc)}
+.welcome-refresh .welcome-footer-bar{border-top:1px solid var(--ln);padding-top:1.2rem;align-items:center;font-size:.72rem;flex-wrap:wrap}.welcome-refresh .social-links{flex-direction:row;gap:1.1rem;text-align:left}.welcome-contact{color:var(--acc);text-decoration:none}
+:is(button,a,[role="button"],summary,[onclick]){-webkit-tap-highlight-color:transparent;touch-action:manipulation}:is(input,textarea,select){transition:border-color .24s var(--motion-ease),box-shadow .24s var(--motion-ease),background-color .24s var(--motion-ease)}:is(input,textarea,select):focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 12%,transparent)}
+.release-list{display:grid;gap:1rem}.release-entry{border-top:1px solid var(--ln);padding-top:1rem}.release-entry time{font-size:.75rem;color:var(--mut)}.release-entry h3{margin:.4rem 0}.release-entry ul{padding-left:1.2rem;font-size:.9rem}.release-entry li{margin:.45rem 0}
+.notification-toggle{position:relative;display:inline-grid;place-items:center;flex:0 0 44px;width:44px;min-width:44px;min-height:44px;padding:.6rem;color:var(--acc);background:var(--card);border:1px solid var(--ln);box-shadow:none}.notification-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.notification-dot{display:none;position:absolute;right:7px;top:7px;width:8px;height:8px;border-radius:50%;background:#dc2626;box-shadow:0 0 0 2px var(--card)}.has-unread .notification-dot{display:block}
+.notification-banners{position:fixed;top:max(.8rem,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:min(28rem,calc(100vw - 1.5rem));z-index:10010;display:grid;gap:.55rem;pointer-events:none}.notification-banner{display:flex;align-items:flex-start;background:var(--card);color:var(--ink);border:1px solid var(--ln);border-radius:20px;box-shadow:0 12px 45px #0002;animation:noticeIn .38s var(--motion-spring) both;pointer-events:auto;overflow:hidden}.notification-banner.is-leaving{animation:noticeOut .24s var(--motion-return) both}
+.notification-banner-main{flex:1;min-width:0;background:none;color:inherit;box-shadow:none!important;text-align:left;border-radius:0;padding:.85rem 1rem;display:grid;gap:.15rem;font-weight:400}.notification-banner-main:hover{transform:none}.notification-banner-main small{font-size:.58rem;letter-spacing:.15em;color:var(--mut)}.notification-banner-main strong{font-size:.9rem}.notification-banner-main>span{font-size:.8rem;overflow-wrap:anywhere}.notification-banner-close{background:none;box-shadow:none;color:var(--mut);min-width:44px;min-height:44px;padding:.4rem;font-size:1.2rem}
+.notification-list{display:grid;gap:.65rem}.notification-item{display:flex;align-items:flex-start;border:1px solid var(--ln);border-radius:16px;overflow:hidden}.notification-item-main{background:none;color:var(--ink);box-shadow:none!important;border-radius:0;text-align:left;flex:1;min-width:0;display:grid;gap:.3rem;padding:.85rem;font-weight:400}.notification-item-main:hover{transform:none;background:var(--bg)}.notification-item-main strong{font-size:.92rem}.notification-item-main span{font-size:.82rem;overflow-wrap:anywhere}.notification-item-main time{font-size:.7rem;color:var(--mut)}.notification-item>button.g{margin:.4rem;min-width:36px}
+.notification-preferences{border-top:1px solid var(--ln);padding-top:1rem;margin-top:1rem;font-size:.85rem}.notification-preferences summary{cursor:pointer}.notification-preferences label,.reminder-enabled{display:flex;align-items:center;gap:.6rem;margin:.7rem 0}.notification-preferences input[type=checkbox],.reminder-enabled input{width:20px;height:20px;margin:0;accent-color:var(--acc)}.notification-preferences p,.reminder-help{font-size:.78rem!important;line-height:1.6}.project-task>span{min-width:0;overflow-wrap:anywhere}
+.report-kicker{font-size:.65rem!important;letter-spacing:.15em;margin:0;color:var(--mut)}.report-summary .report-heading{justify-content:space-between;flex-wrap:nowrap;align-items:center}.report-summary .report-heading p.mut{font-size:.8rem;margin:.4rem 0}.report-percent{font-family:var(--fs);font-size:2.7rem;color:var(--acc);line-height:1}.report-percent small{font-size:1rem}.report-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;margin:1rem 0}.report-stats strong{display:block;font-size:1.5rem;color:var(--acc)}.report-stats span{display:block;font-size:.75rem;color:var(--mut)}.report-summary .report-more{margin-top:1.2rem;width:100%;display:flex;justify-content:space-between;align-items:center}.report-task-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.1rem;padding:1rem 0 .4rem}.report-day{border-top:1px solid var(--ln);padding:.8rem 0}.report-day summary{cursor:pointer;display:flex;justify-content:space-between;gap:1rem;align-items:center;list-style:none}.report-day summary:after{content:'+';color:var(--acc)}.report-day[open] summary:after{content:'−'}.report-day summary small{margin-left:auto;color:var(--mut);font-size:.75rem}.report-task-columns h3{font-size:.85rem!important}.report-task-list{list-style:none;padding:0;margin:0;font-size:.85rem}.report-task-list li{display:flex;align-items:flex-start;gap:.5rem;padding:.4rem 0;overflow-wrap:anywhere}.report-task-list li>span:last-child{min-width:0}.report-status{color:var(--mut)}.report-status.is-done{color:var(--ok)}.report-lock-note{background:var(--bg);border:1px solid var(--ln);border-radius:14px;padding:1rem;color:var(--mut);font-size:.85rem}.report-lock-hint{font-size:.8rem!important}.report-archives .row>button{flex:1}
+@keyframes noticeIn{from{opacity:0;transform:translateY(-18px) scale(.985)}to{opacity:1;transform:none}}@keyframes noticeOut{to{opacity:0;transform:translateY(-12px)}}
+@media(max-width:700px){.welcome-refresh{gap:1.5rem;padding:1rem 1.15rem}.welcome-refresh .welcome-top{align-items:flex-start;gap:.5rem}.welcome-refresh .brand-badge{font-size:1.25rem;padding-top:.45rem}.welcome-refresh .brand-badge span{font-size:.55rem;max-width:8rem}.welcome-preferences{gap:.5rem;max-width:60%}.welcome-preferences .themebar{gap:.25rem!important}.welcome-preferences .themebar button{font-size:.65rem;padding:.3rem .5rem}.welcome-preferences .langbar button{min-height:36px;min-width:36px;padding:.25rem .5rem}.welcome-hero{padding:.5rem 0 1.25rem;grid-template-columns:1fr;gap:1.6rem}.welcome-refresh h1{font-size:clamp(3.4rem,16vw,5.3rem);margin-bottom:1.4rem}.welcome-eyebrow{margin-bottom:1rem;font-size:.7rem}.welcome-refresh .welcome-description{font-size:.9rem;margin-bottom:1.25rem}.welcome-lead{font-size:1.05rem}.welcome-art{gap:1rem;padding:0}.day-orbit{width:min(68vw,17rem);padding:1.2rem}.day-disc strong{font-size:2.6rem}.day-disc>span:first-child{font-size:.8rem}.day-spark{font-size:1.3rem}.orbit-top{display:none}.orbit-bottom{font-size:.55rem}.welcome-ritual{gap:1.2rem;font-size:.7rem}.welcome-refresh .welcome-footer-bar{font-size:.65rem;gap:.8rem}.welcome-refresh .social-links{gap:.75rem}}
+@media(max-width:600px){header.top{grid-template-columns:44px minmax(0,1fr) 44px 44px!important}header.top .header-title-group{grid-column:2/4}header.top .account-chip{grid-column:4}header.top .top-clock{grid-column:1/3}header.top #top-date-trigger{grid-column:3}header.top #notification-toggle{grid-column:4;grid-row:2;justify-self:end}header.top .notification-toggle{border-radius:14px}.welcome-preferences{column-gap:.35rem}.welcome-preferences #theme-anchor{order:3;width:100%}.welcome-preferences .notification-toggle{min-width:36px;min-height:36px;width:36px;height:36px;padding:.4rem}.project-task{flex-wrap:wrap}.project-task>span{flex-basis:100%}}
+@media(max-width:500px){.report-task-columns{grid-template-columns:1fr}.report-stats{gap:.5rem}.report-percent{font-size:2.25rem}.report-summary .report-heading h2{font-size:1.1rem}.report-day summary{gap:.5rem}.report-day summary small{font-size:.68rem}}
+@media(prefers-reduced-motion:reduce){:is(button,a,[role="button"],input,textarea,select){transition:none!important}.notification-banner,.notification-banner.is-leaving{animation:none!important}}
+
+
+#notifications-modal>.card,#release-details>.card,#project-reminder-settings>.card{width:100%!important;max-width:32rem;min-width:0}.notification-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.8rem}.notification-heading h2{margin:0;min-width:0}.notification-heading>button{flex:0 0 44px;width:44px;min-width:44px;min-height:44px;padding:.4rem;border-radius:50%;margin:0}
 </style>
 </head>
 <body>
@@ -1459,6 +1486,20 @@ function paint(){renderAppOrAuth()}
 function uiMotionTime(name,fallback){
   try{const value=parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));return Number.isFinite(value)&&value>=0?value:fallback}catch(_){return fallback}
 }
+const feedbackAnimations=new WeakMap();
+function motionReveal(element){
+ if(!element||window.matchMedia?.('(prefers-reduced-motion:reduce)').matches||typeof element.animate!=='function')return;
+ feedbackAnimations.get(element)?.cancel();
+ const animation=element.animate([{opacity:.72},{opacity:1}],{duration:260,easing:'cubic-bezier(.22,.61,.36,1)'});
+ feedbackAnimations.set(element,animation);animation.onfinish=()=>{if(feedbackAnimations.get(element)===animation)feedbackAnimations.delete(element)};
+}
+function smoothClickFeedback(event){
+ if(event.button>0)return;
+ const target=event.target?.closest?.('button,a,[role="button"],[role="checkbox"],summary,[onclick]');
+ if(!target||target.matches(':disabled,[aria-disabled="true"],input,textarea,select')||target.closest('[inert]'))return;
+ motionReveal(target);
+}
+document.addEventListener('click',smoothClickFeedback,true);
 /* yumusak sayfa gecisi: destekleyen tarayicida View Transitions, digerlerinde ayni davranis */
 let softPaintTimer=0;
 function softPaint(){
@@ -1666,7 +1707,7 @@ const USERNAME_ALLOWED='a-zA-Z0-9çÇğĞıİöÖşŞüÜ_.-';
 const userRe=new RegExp('^['+USERNAME_ALLOWED+']{3,20}$');
 function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today(),reportCalendarRule:'full-period-v1'})}
 function norm(a){
-  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},planningQs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
+  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},planningQs:{},planningLocks:{},ql:{},notifications:[],noticeDelivered:{},notificationPrefs:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
   // Preserve when reporting began independently of the percentage counter.
   // Older accounts have no reportStart; use their saved pctFrom as a one-time
@@ -1932,24 +1973,168 @@ function welcomeDisplayName(){
   const name=String(account?.nick||DB?.last||'').trim().slice(0,40);
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
+/* One inbox for release news, project dates, tasks and focus reminders. */
+const SITE_RELEASE='2026-11-15-welcome-notifications';
+const SITE_CHANGES=[
+ {date:'2026-11-15',trTitle:'Gününe daha sakin bir başlangıç',enTitle:'A calmer start to your day',items:[
+ ['Karşılama ekranı yenilendi. Daire, döngeç ve saate uygun selamlama artık başarılı girişten sonra oynar.','The welcome screen is refreshed. The circle, spinner and time-based greeting now appear after successful sign-in.'],
+ ['Hatırlanan Google hesabı e-posta adresiyle gösterilir. Geçerli oturumla tek tıklamayla hesaba dönülür.','Remembered Google accounts show their email. A valid session lets you return in one click.'],
+ ['Tıklamalar, sayfalar ve pencereler ortak, yumuşak hareket kullanır; hareketi azaltma tercihi desteklenir.','Clicks, pages and dialogs share gentle motion and respect reduced-motion preferences.'],
+ ['Raporlar kısa özet gösterir. Daha fazlası bölümünde tamamlanan ve tamamlanmayan görevler gün gün incelenir.','Reports show a short summary. More details lists completed and unfinished tasks day by day.'],
+ ['Tüm cevaplar tamamlanıp son alandan çıkılınca soru grubu kilitlenir. Cevaplar ilgili yıl bitince arşivde açılır.','A question group locks when every answer is filled and the last field is left. Answers open in the archive after that year ends.'],
+ ['Bildirim kutusu eklendi: site yenilikleri, proje tarihleri, günlük görevler ve Pomodoro uyarıları üstten görünür ve kutuda saklanır. Bildirimler silinebilir; kutuyu açınca kırmızı işaret söner.','The notification inbox collects site news, project dates, daily tasks and Pomodoro alerts. Alerts appear at the top, can be deleted, and opening the inbox clears the red indicator.']
+ ]},
+ {date:'2026-11-15',trTitle:'Mobil kullanım ve rapor soruları',enTitle:'Mobile navigation and report questions',items:[
+ ['Mobil menü, duyarlı kaydırma, klavye odağı ve yatay ekran düzeni iyileştirildi.','Mobile menus, swipe navigation, keyboard focus and landscape layouts were improved.'],
+ ['Her yeni görevden sonra imleç New task alanına döner.','The New task field regains focus after every added task.'],
+ ['Hazır ve rastgele rapor soruları TR/EN seçimine uyar. Özel sorular ve cevaplar değiştirilmez.','Built-in and random report questions follow TR/EN. Custom questions and answers are preserved.'],
+ ['Gelecek hafta ve ay için değerlendirme sorularından ayrı planlama soruları eklendi.','Next-week and next-month planning use separate questions from period reviews.'],
+ ['Mevcut hesapların rapor tarihleri korundu; yeni hesaplar tam takvim dönemiyle başlar.','Existing report dates are preserved; new accounts start with a complete calendar period.']
+ ]}
+];
+function siteChangesContent(){
+ return `<h2>${tr()?'Site güncellenmiştir!':'The site has been updated!'}</h2><p class="mut">${tr()?'Nelerin değiştiğini buradan takip edebilirsin.':'See what has changed here.'}</p><div class="release-list">${SITE_CHANGES.map(release=>`<article class="release-entry"><time datetime="${release.date}">${new Date(release.date+'T12:00').toLocaleDateString(tr()?'tr-TR':'en-GB',{day:'numeric',month:'long',year:'numeric'})}</time><h3>${tr()?release.trTitle:release.enTitle}</h3><ul>${release.items.map(pair=>`<li>${esc(pair[tr()?0:1])}</li>`).join('')}</ul></article>`).join('')}</div><button class="g" onclick="closeModal('release-details')">${tr()?'Kapat':'Close'}</button>`;
+}
+function noticeOwner(){return A||DB}
+function ensureNoticeState(){
+ const owner=noticeOwner();
+ if(!Array.isArray(owner.notifications))owner.notifications=[];
+ owner.notifications=owner.notifications.filter(item=>item&&/^[a-zA-Z0-9:._-]{1,180}$/.test(String(item.id||''))&&['release','project','tasks','pomo-five','pomo-break','pomo-focus'].includes(item.type)&&Number.isFinite(Date.parse(item.at)));
+ if(!owner.noticeDelivered||typeof owner.noticeDelivered!=='object'||Array.isArray(owner.noticeDelivered))owner.noticeDelivered={};
+ if(!owner.notificationPrefs||typeof owner.notificationPrefs!=='object')owner.notificationPrefs={};
+ return owner;
+}
+function notificationCopy(item){
+ const data=item.data||{};
+ if(item.type==='release')return {title:tr()?'Site güncellenmiştir!':'The site has been updated!',body:tr()?'Yapılan değişiklikleri görmek için tıkla.':'Open to see the latest changes.'};
+ if(item.type==='project')return {title:tr()?'Proje hatırlatması':'Project reminder',body:String(data.name||'')+' · '+(tr()?'Projene göz atma zamanı.':'Time to check your project.')};
+ if(item.type==='tasks')return {title:tr()?'Bugünkü planlarına dön':'Back to today’s plans',body:tr()?`Bugün tamamlanmayı bekleyen ${data.count} görevin var. ${(data.items||[]).join(' · ')}`:`You have ${data.count} unfinished tasks today. ${(data.items||[]).join(' · ')}`};
+ if(item.type==='pomo-five')return {title:tr()?'Molaya 5 dakika kaldı':'5 minutes until your break',body:tr()?'Son adımlarını toparla; molan yaklaşıyor.':'Wrap up your current steps; your break is coming.'};
+ if(item.type==='pomo-break')return {title:tr()?'Mola zamanı':'Time for a break',body:tr()?'Odak oturumun tamamlandı. Biraz dinlen.':'Your focus session is complete. Take a little rest.'};
+ return {title:tr()?'Yeniden odaklanma zamanı':'Time to focus again',body:tr()?'Molan bitti; yeni odak oturumun başladı.':'Your break is over; a new focus session has started.'};
+}
+function notificationButton(){
+ const owner=ensureNoticeState(),unread=owner.notifications.some(item=>!item.read)||!owner.noticeDelivered['release:'+SITE_RELEASE];
+ return `<button type="button" id="notification-toggle" class="notification-toggle ${unread?'has-unread':''}" onclick="openNotifications()" aria-haspopup="dialog" aria-label="${tr()?'Bildirimler':'Notifications'}${unread?(tr()?', yeni bildirim var':', new notifications'):''}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg><span class="notification-dot" aria-hidden="true"></span></button>`;
+}
+function updateNotificationBadge(){
+ const button=document.getElementById('notification-toggle');if(!button)return;
+ const unread=ensureNoticeState().notifications.some(item=>!item.read);
+ button.classList.toggle('has-unread',unread);button.setAttribute('aria-label',(tr()?'Bildirimler':'Notifications')+(unread?(tr()?', yeni bildirim var':', new notifications'):''));
+}
+function showTopNotification(item){
+ if(document.visibilityState!=='visible')return;
+ if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',2000)+200);return}
+ let stack=document.getElementById('notification-banners');
+ if(!stack){stack=document.createElement('div');stack.id='notification-banners';stack.className='notification-banners';stack.setAttribute('aria-live','polite');stack.setAttribute('aria-relevant','additions');document.body.appendChild(stack)}
+ const copy=notificationCopy(item),banner=document.createElement('div');banner.className='notification-banner';
+ banner.innerHTML=`<button class="notification-banner-main" onclick="openNotification('${item.id}')"><small>${tr()?'BİLDİRİM':'NOTIFICATION'}</small><strong>${esc(copy.title)}</strong><span>${esc(copy.body)}</span></button><button class="notification-banner-close" aria-label="${tr()?'Bildirimi gizle':'Dismiss alert'}" onclick="this.parentElement.remove()">×</button>`;
+ stack.appendChild(banner);while(stack.children.length>3)stack.firstElementChild.remove();
+ setTimeout(()=>{banner.classList.add('is-leaving');setTimeout(()=>banner.remove(),240)},8000);
+}
+function addNotification(id,type,data={},announce=true){
+ const owner=ensureNoticeState();if(owner.noticeDelivered[id])return false;
+ const inbox=document.getElementById('notifications-modal');
+ const item={id,type,data,at:new Date().toISOString(),read:!!inbox&&!inbox.classList?.contains('is-closing')};
+ owner.noticeDelivered[id]=Date.now();owner.notifications.unshift(item);owner.notifications=owner.notifications.slice(0,200);
+ save();updateNotificationBadge();
+ if(document.getElementById('notification-list'))document.getElementById('notification-list').innerHTML=notificationList();
+ if(announce)showTopNotification(item);return true;
+}
+function ensureReleaseNotification(){addNotification('release:'+SITE_RELEASE,'release',{},true)}
+function notificationList(){
+ return ensureNoticeState().notifications.map(item=>{const copy=notificationCopy(item);return `<article class="notification-item"><button class="notification-item-main" onclick="openNotification('${item.id}')"><strong>${esc(copy.title)}</strong><span>${esc(copy.body)}</span><time datetime="${esc(item.at)}">${new Date(item.at).toLocaleString(tr()?'tr-TR':'en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time></button><button class="g s" aria-label="${tr()?'Bildirimi sil':'Delete notification'}" onclick="deleteNotification('${item.id}')">×</button></article>`}).join('')||`<p class="mut">${tr()?'Bildirimin yok. Yeni hatırlatmalar burada görünecek.':'No notifications. New reminders will appear here.'}</p>`;
+}
+function openNotifications(){
+ const owner=ensureNoticeState();owner.notifications.forEach(item=>item.read=true);save();updateNotificationBadge();
+ const prefs=owner.notificationPrefs;
+ openModal('notifications-modal',`<div class="notification-heading"><h2>${tr()?'Bildirimler':'Notifications'}</h2><button class="g s" onclick="closeModal('notifications-modal')" aria-label="${tr()?'Bildirimleri kapat':'Close notifications'}">×</button></div><div id="notification-list" class="notification-list">${notificationList()}</div>${A?`<details class="notification-preferences"><summary>${tr()?'Hatırlatma tercihleri':'Reminder preferences'}</summary>${[['projects',tr()?'Proje hatırlatmaları':'Project reminders'],['tasks',tr()?'Günlük görevler':'Daily tasks'],['pomo',tr()?'Pomodoro uyarıları':'Pomodoro alerts']].map(([key,label])=>`<label><input type="checkbox" ${prefs[key]===false?'':'checked'} onchange="setNotificationPreference('${key}',this.checked)">${label}</label>`).join('')}<p class="mut">${tr()?'Görev hatırlatmaları: Türkiye saatiyle 09.00, 14.00 ve 19.00. Site açıkken çalışır; geri döndüğünde yalnızca en son zaman dilimi hatırlatılır.':'Task reminders: 09:00, 14:00 and 19:00 Türkiye time. They run while the site is open; on return, only the latest time slot is shown.'}</p></details>`:''}`);
+}
+function setNotificationPreference(key,enabled){if(A&&['projects','tasks','pomo'].includes(key)){ensureNoticeState().notificationPrefs[key]=!!enabled;save()}}
+function deleteNotification(id){
+ const owner=ensureNoticeState();owner.notifications=owner.notifications.filter(item=>item.id!==id);save();updateNotificationBadge();
+ const list=document.getElementById('notification-list');if(list){list.innerHTML=notificationList();motionReveal(list)}
+}
+function openNotification(id){
+ const item=ensureNoticeState().notifications.find(item=>item.id===id);if(!item)return;
+ item.read=true;save();updateNotificationBadge();closeModal('notifications-modal');document.getElementById('notification-banners')?.remove();
+ if(item.type==='release'){openModal('release-details',siteChangesContent());return}
+ if(!A)return;
+ goTo('app',item.type==='tasks'?'todo':item.type.startsWith('pomo')?'pomo':'home');
+}
+function projectId(project){if(!/^[a-zA-Z0-9_-]+$/.test(String(project.id||'')))project.id=window.crypto?.randomUUID?.()||('p'+Date.now().toString(36)+Math.random().toString(36).slice(2));return project.id}
+function projectReminderTime(project){
+ if(project.reminderEnabled===false)return NaN;
+ return Date.parse(project.reminderAt||(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(project.d)?project.d+'T09:00:00+03:00':''));
+}
+function checkAppReminders(now=Date.now()){
+ if(!A||view!=='app'||document.visibilityState!=='visible')return;
+ const owner=ensureNoticeState();ensureReleaseNotification();
+ if(owner.notificationPrefs.projects!==false){
+  for(const project of A.projects||[]){
+   const due=projectReminderTime(project);if(!Number.isFinite(due)||due>now)continue;
+   addNotification('project:'+projectId(project)+':'+due,'project',{name:project.n});
+  }
+ }
+ if(owner.notificationPrefs.tasks!==false){
+  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Istanbul',hour:'2-digit',hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(now));
+  const get=type=>parts.find(p=>p.type===type).value,hour=Number(get('hour')),slot=[9,14,19].filter(h=>hour>=h).pop();
+  const pending=(A.tasks||[]).filter(task=>task.s!=='done'&&task.s!=='miss'),count=pending.length;
+  if(slot!==undefined&&count)addNotification('tasks:'+get('year')+'-'+get('month')+'-'+get('day')+':'+slot,'tasks',{count,items:pending.slice(0,2).map(task=>task.t)});
+ }
+}
+function editProjectReminder(index){
+ const project=A?.projects?.[index];if(!project)return;projectId(project);
+ const date=new Date(projectReminderTime({...project,reminderEnabled:true}));
+ const value=Number.isFinite(date.getTime())?new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16):'';
+ openModal('project-reminder-settings',`<h2>${tr()?'Proje hatırlatması':'Project reminder'}</h2><p>${esc(project.n)}</p><label for="project-remind-at">${tr()?'Hatırlatma zamanı (cihazının yerel saati)':'Reminder time (your device’s local time)'}</label><input id="project-remind-at" type="datetime-local" value="${value}"><label class="reminder-enabled"><input id="project-remind-enabled" type="checkbox" ${project.reminderEnabled===false?'':'checked'}>${tr()?'Hatırlatmayı aç':'Enable reminder'}</label><p id="project-reminder-error" role="status"></p><div class="row"><button onclick="saveProjectReminder('${project.id}')">${t('save')}</button><button class="g" onclick="closeModal('project-reminder-settings')">${tr()?'Kapat':'Close'}</button></div>`);
+}
+function saveProjectReminder(id){
+ const project=A?.projects?.find(p=>p.id===id);if(!project)return;
+ const time=new Date(document.getElementById('project-remind-at').value).getTime(),enabled=document.getElementById('project-remind-enabled').checked;
+ if(enabled&&!Number.isFinite(time)){document.getElementById('project-reminder-error').textContent=tr()?'Geçerli tarih ve saat seç.':'Choose a valid date and time.';return}
+ if(Number.isFinite(time))project.reminderAt=new Date(time).toISOString();project.reminderEnabled=enabled;save();closeModal('project-reminder-settings');if(pg==='home')P.home();checkAppReminders();
+}
+setInterval(checkAppReminders,30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkAppReminders();if(A&&pm.run)pTick(true)}});
+/* End shared notification inbox. */
+
+function rememberedGoogleAccount(username=DB.lastUser){const account=DB.accounts?.[username];return account?.authUid&&account.loginMethod==='google'&&(account.email||account.mail)?account:null}
+let rememberedSignInBusy=false;
+async function continueWithRememberedGoogle(username=DB.lastUser){
+ if(rememberedSignInBusy)return;
+ const account=rememberedGoogleAccount(username);if(!account){goTo('login','home');return}
+ rememberedSignInBusy=true;const button=document.getElementById('welcome-continue');if(button){button.disabled=true;button.setAttribute('aria-busy','true')}
+ try{if(await restoreCloudOnLoad(account.authUid))return;await signInWithGoogle()}
+ finally{rememberedSignInBusy=false;if(button?.isConnected){button.disabled=false;button.removeAttribute('aria-busy')}}
+}
+function welcomeScreen(){
+ const remembered=rememberedGoogleAccount(),email=remembered?.email||remembered?.mail||'';
+ return `<div class="welcome-screen welcome-refresh"><div class="welcome-top"><div class="brand-badge">badgalnurkan<span>made with a little intention.</span></div><div class="welcome-preferences"><div class="langbar">${langBtns(true)}</div><div id="theme-anchor">${themePick(true,false)}</div>${notificationButton()}</div></div>
+ <div class="welcome-hero"><div class="welcome-copy"><p class="welcome-eyebrow">${welcomeDisplayName()}</p><h1>Improvin’<br><em>your day.</em></h1><p class="welcome-lead">${tr()?'Her gün, kendin için küçük bir adım.':'A little step for yourself, every day.'}</p><p class="welcome-description">${tr()?'Gününü planla. Odaklanmak için alan aç. Küçük ilerlemelerinin birikmesini izle.':'Plan your day. Make room to focus. Watch your small steps add up.'}</p><div class="welcome-cta"><button id="welcome-continue" onclick="${remembered?'continueWithRememberedGoogle()':'continueFromWelcome()'}">${remembered?(tr()?esc(email)+' ile devam et':'Continue with '+esc(email)):(tr()?'Devam':'Continue')} <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path d="M5 19 19 5M6 5h13v13" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><p class="welcome-footnote">${tr()?'Kendi ritminde, her gün biraz daha.':'At your own pace, a little more each day.'}</p></div>
+ <div class="welcome-art" aria-hidden="true"><span class="orbit-label orbit-top">${tr()?'KÜÇÜK ADIMLAR':'SMALL STEPS'}</span><div class="day-orbit"><span class="orbit-point"></span><div class="day-disc"><span>${tr()?'bugün':'today'}</span><strong>${tr()?'sana<br>ait.':'is<br>yours.'}</strong><span class="day-spark">✳︎</span></div></div><div class="welcome-ritual"><span>01 ${tr()?'Planla':'Plan'}</span><span>02 ${tr()?'Odaklan':'Focus'}</span><span>03 ${tr()?'İlerle':'Grow'}</span></div><span class="orbit-label orbit-bottom">${tr()?'BİR GÜN, BİR ADIM.':'ONE DAY, ONE STEP.'}</span></div></div>
+ <div class="welcome-footer-bar"><div>© 2026 nurkancanbulat</div><a class="welcome-contact" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=nurkancanbulat89%40gmail.com" target="_blank" rel="noopener noreferrer">${t('contact')} ↗</a><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">TikTok</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">Instagram</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">X</a></div></div></div>`;
+}
 function renderAppOrAuth(){
+ if(!A){document.getElementById('notification-banners')?.remove();document.getElementById('notifications-modal')?.remove()}
+
   if(A){try{sessionStorage.setItem('b1.view','app')}catch(e){}shell();return}
   try{sessionStorage.setItem('b1.view',view==='app'?'login':view)}catch(e){}
   document.title=TITLE;
   if(view==='app')view=Object.keys(DB.accounts).length?'login':'welcome';
   let h='';
-  if(view==='welcome')h=`<div class="welcome-screen"><div class="welcome-top"><div class="brand-badge">badgalnurkan</div><div id="theme-anchor">${themePick(true)}</div></div><div class="welcome-center"><div class="langbar">${langBtns()}</div><h1 class="big">${welcomeDisplayName()}</h1><p class="welcome-description">${tr()?'Görevlerini planla, Pomodoro ile odaklan, günlük tut ve ilerlemeni takip et.':'Plan your tasks, stay focused with Pomodoro, keep a journal, and track your progress.'}</p><div class="row" style="justify-content:center;gap:.8rem;margin-top:.5rem"><button onclick="continueFromWelcome()">${t('continue')}</button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><div class="contact-actions"><a class="contact-primary" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=nurkancanbulat89%40gmail.com&amp;su=Improvin%27%20your%20day%20-%20Hello" target="_blank" rel="noopener noreferrer" aria-label="${tr()?'Bana ulaş - Gmail’de yeni e-posta oluştur':'Contact me - compose in Gmail'}">${t('contact')}</a></div></div><div class="welcome-footer-bar"><div>© 2026 nurkancanbulat — All rights reserved.</div><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">tiktok/@badgalnurkan</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">instagram/@badgalnurkann</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">x/@badgalnurk</a></div></div></div>`;
+  if(view==='welcome')h=welcomeScreen();
   else if(view==='login'){
     const rem=(skipRem?null:rememberedUser()),others=Object.keys(DB.accounts).filter(k=>k!==rem);
     if(!loginDat.u&&rem)loginDat.u=rem;
     const googleRemembered=!!(rem&&DB.accounts[rem].authUid&&DB.accounts[rem].loginMethod==='google');
-    const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" onclick="${googleRemembered?'signInWithGoogle()':`useAccount('${esc(rem)}')` }">${googleRemembered?(tr()?'Google ile gir':'Google sign-in'):t('useAccount')}</button></div>`:``;
+    const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" data-user="${esc(rem)}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':`useAccount('${esc(rem)}')` }">${googleRemembered?(tr()?esc(DB.accounts[rem].email||DB.accounts[rem].mail)+' ile devam et':'Continue with '+esc(DB.accounts[rem].email||DB.accounts[rem].mail)):t('useAccount')}</button></div>`:``;
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
-    h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" onclick="signInWithGoogle()">${tr()?'Google ile devam et':'Continue with Google'}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
+    h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" data-user="${esc(rem||'')}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':'signInWithGoogle()'}">${googleRemembered?(tr()?esc(DB.accounts[rem].email||DB.accounts[rem].mail)+' ile devam et':'Continue with '+esc(DB.accounts[rem].email||DB.accounts[rem].mail)):(tr()?'Google ile devam et':'Continue with Google')}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
-  else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+box(`<h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button></div><p class="mut">${tr()?'Demo aşamasında e-posta servisi kapalıysa bağlantı gönderilemez; lütfen hesabını oluştururken güçlü bir şifre seç.':'Password reset email requires an email sending provider, which may be unavailable during the demo.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
-  $('#app').innerHTML=h;
+  $('#app').innerHTML=h;ensureReleaseNotification();
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
 }
 
@@ -1976,12 +2161,11 @@ function toast(txt){
   el.classList.add('on');clearTimeout(el._t);
   el._t=setTimeout(()=>{el.classList.remove('on','focus-toast')},2600);
 }
-let entryIntroSeen=false;
-function continueFromWelcome(){if(!document.getElementById('login-portal'))greetThen(()=>goTo('login','home'))}
-/* One welcome entry per page load, also usable after a direct interactive sign-in. */
+function continueFromWelcome(){goTo('login','home')}
+/* Only verified activation may show the greeting. */
 function greetThen(cb){
-  if(entryIntroSeen){if(cb)cb();return}
-  entryIntroSeen=true;
+  if(!A||view!=='app'){if(cb)cb();return}
+  if(document.getElementById('login-portal'))return;
   const reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
   if(reduced){if(cb)cb();return}
   document.getElementById('login-portal')?.remove();
@@ -1995,7 +2179,7 @@ function greetThen(cb){
   root.addEventListener('animationend',e=>{if(e.target===root&&e.animationName==='entryPortalOut')cleanup()});
   fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',2000)+200);
 }
-function goHome(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
+function goHome(){reportDetail='';stopTimers();if(A?.loginMethod!=='google')sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 function backToLogin(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 
 function langBtns(short){return ['en','tr'].map(l=>`<button class="${DB.lang===l?'on':''}" onclick="pickLang('${l}')" title="${LANG_NAMES[l]}" aria-label="${LANG_NAMES[l]}">${short?l.toUpperCase():LANG_NAMES[l]}</button>`).join('')}
@@ -2007,7 +2191,9 @@ function openModal(id,html){
   d._returnFocus=document.activeElement;
   d.innerHTML=`<div class="card" style="max-width:32rem;width:100%;max-height:85vh;overflow-y:auto">${html}</div>`;
   d.addEventListener('click',e=>{if(e.target===d)closeModal(id)});
-  document.body.appendChild(d);
+  const title=d.querySelector('h2');if(title){title.id=id+'-title';d.setAttribute('aria-labelledby',title.id)}
+  d.tabIndex=-1;d.addEventListener('keydown',event=>{if(event.key!=='Tab')return;const controls=[...d.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),textarea:not([readonly]),select,summary,[tabindex="0"]')].filter(el=>el.getClientRects().length),first=controls[0],last=controls[controls.length-1];if(!first){event.preventDefault();d.focus();return}if(event.shiftKey&&(document.activeElement===first||!d.contains(document.activeElement))){event.preventDefault();last.focus()}else if(!event.shiftKey&&(document.activeElement===last||!d.contains(document.activeElement))){event.preventDefault();first.focus()}});
+  document.body.appendChild(d);requestAnimationFrame(()=>{if(d.isConnected)(d.querySelector('button:not([disabled]),input:not([disabled])')||d).focus({preventScroll:true})});
 }
 function closeModal(id){
   const el=document.getElementById(id);
@@ -2017,7 +2203,7 @@ function closeModal(id){
   const reduced=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   setTimeout(()=>{
     el.remove();
-    if(opener?.isConnected)try{opener.focus({preventScroll:true})}catch(_){}
+    if(opener?.isConnected&&!document.querySelector('.modal:not(.is-closing)'))try{opener.focus({preventScroll:true})}catch(_){}
   },reduced?0:uiMotionTime('--motion-surface-close-ms',240));
 }
 function openGuideModal(){
@@ -2367,9 +2553,9 @@ function shell(){
   const firstShell=!document.querySelector('.shell aside');
   document.querySelectorAll('body > #mini-cal').forEach(el=>el.remove());
   const oldBackdrop=document.getElementById('mini-backdrop');if(oldBackdrop)oldBackdrop.remove();
-  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button><button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navIcon(k)}<span>${navLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navIcon(k)}<span>${navLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
-  renderPage();
+  renderPage();setTimeout(checkAppReminders,0);
   requestAnimationFrame(()=>centerNav(true));
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),650)}
   const cal=$('#mini-cal');if(cal&&cal.parentElement!==document.body)document.body.appendChild(cal);
@@ -2428,18 +2614,18 @@ function renderPage(){
 
 setInterval(()=>{if(A&&A.day!==today())shell()},60000);
 
-const P={};const M=h=>$('#mn').innerHTML=h;
+const P={};const M=h=>{const main=$('#mn');if(main){main.innerHTML=h;motionReveal(main)}};
 P.home=()=>{
   const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length;
   const j=A.journal?.[today()]?.text||'';
   const pr=(A.projects||[]).map((p,i)=>{
     const d=dd(today(),p.d);
-    return`<div class="task"><span>${esc(p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
+    return`<div class="task project-task"><span>${esc(p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
   }).join('');
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
   <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${tr()?'Önceki yüzdeliğin korunur; yeni artışlar yalnızca etkinlik yaptığın günlerde olur.':'Existing progress is kept; additional points require activity with tasks, notes or focus.'}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="1000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/1000</span></div></div>
-  <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<div class="project-add"><input id="pn" maxlength="40" aria-label="${t('projectName')}" placeholder="${t('projectName')}"><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}"><button onclick="addProj()">${t('add')}</button></div></div>`);
+  <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<div class="project-add"><input id="pn" maxlength="40" aria-label="${t('projectName')}" placeholder="${t('projectName')}"><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}"><button onclick="addProj()">${t('add')}</button></div><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
 };
 function updateJournalCounter(el){const e=document.getElementById('journal-counter');if(e)e.textContent=String(el?.value?.length||0)+'/1000'}
 function saveJournal(){
@@ -2485,7 +2671,7 @@ function deleteJournal(key){
   if(A?.journal&&Object.hasOwn(A.journal,key)){delete A.journal[key];save()}
   closeModal('delete-journal-modal');if(pg==='rep')P.rep();else if(pg==='home')P.home();toast(t('saved'));
 }
-function addProj(){const n=$('#pn').value.trim(),d=$('#pd').value;if(n&&d){A.projects.push({n,d});recordActivity();P.home()}}
+function addProj(){const n=$('#pn').value.trim().slice(0,40),d=$('#pd').value;if(n&&/^\d{4}-\d{2}-\d{2}$/.test(d)){const project={n,d,reminderAt:new Date(d+'T09:00:00+03:00').toISOString(),reminderEnabled:true};projectId(project);A.projects.push(project);recordActivity();P.home();checkAppReminders()}}
 
 /* eski/bozuk kayitlar (telefonda eski surumden kalan veri) To-do'yu cokertmesin */
 function fixTodoData(){
@@ -2638,13 +2824,26 @@ function reportQuestionStore(scope='review'){
   if(!A.planningQs||typeof A.planningQs!=='object'||Array.isArray(A.planningQs))A.planningQs={};
   return A.planningQs;
 }
-const qb=(k,arr,ro,scope='review')=>arr.map((x,i)=>`<label for="report-${scope}-${k}-${i}">${esc(reportQuestionText(x))}</label><div class="qa"><textarea id="report-${scope}-${k}-${i}" rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this,'${scope}')">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i},'${scope}')">${t('delete')}</button>`}</div><div class="qcap mut">${x.a.length}/400</div>`).join('');
-function qa(k,i,el,scope='review'){const question=reportQuestionStore(scope)[k]?.[i];if(!question)return;question.a=el.value.slice(0,400);save();el.parentElement.nextElementSibling.textContent=el.value.length+'/400'}
-function delQ(k,i,scope='review'){reportQuestionStore(scope)[k].splice(i,1);save();P.rep()}
-function addRandQ(k,scope='review'){const kind=k.length===7?'month':'week',R=scope==='plan'?(tr()?PLAN_RQ_TR[kind]:PLAN_RQ_EN[kind]):rqFor();reportQuestionStore(scope)[k].push(makeReportQuestion(R[Math.floor(Math.random()*R.length)]));save();P.rep()}
-function addQ(k,scope='review'){const e=$('#nq-'+k),v=e.value.trim().slice(0,150);if(v){reportQuestionStore(scope)[k].push(makeReportQuestion(v,true));save();P.rep()}}
-function lockQ(k,b){if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent=tr()?'Emin misin? Bu işlem geri alınamaz':'Are you sure? This cannot be undone';return}A.ql[k]=1;save();P.rep()}
-
+function reportQuestionLocks(scope='review'){
+ const field=scope==='plan'?'planningLocks':'ql';
+ if(!A[field]||typeof A[field]!=='object'||Array.isArray(A[field]))A[field]={};return A[field];
+}
+function reportLockedNotice(k){const year=Number(k.slice(0,4));return `<p class="report-lock-note" role="status">🔒 ${tr()?`Cevapların kilitlendi. ${year+1} yılının başında Yanıt arşivinden okuyabilirsin.`:`Your answers are locked. Read them in the Answer archive at the beginning of ${year+1}.`}</p>`}
+function reportAutoLockHint(){return `<p class="mut report-lock-hint">${tr()?'Tüm soruları cevaplayıp son alandan çıktığında bu grup otomatik kilitlenir. Cevaplar ilgili yılın sonuna kadar gizli kalır.':'This group locks automatically when every question is answered and you leave the last field. Answers stay hidden until that year ends.'}</p>`}
+function commitReportGroup(k,scope='review'){
+ const questions=reportQuestionStore(scope)[k];
+ if(reportQuestionLocks(scope)[k]||!Array.isArray(questions)||!questions.length||!questions.every(q=>String(q.a||'').trim()))return false;
+ reportQuestionLocks(scope)[k]=1;save();
+ // Only this section changes, preserving a pending navigation click.
+ const group=typeof document==='undefined'?null:document.getElementById('report-group-'+scope+'-'+k);if(group)group.innerHTML=reportLockedNotice(k);return true;
+}
+const qb=(k,arr,ro,scope='review')=>arr.map((x,i)=>`<label for="report-${scope}-${k}-${i}">${esc(reportQuestionText(x))}</label><div class="qa"><textarea id="report-${scope}-${k}-${i}" rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this,'${scope}')" onblur="finishReportAnswer('${k}',${i},this,'${scope}')">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i},'${scope}')">${t('delete')}</button>`}</div><div class="qcap mut">${String(x.a||'').length}/400</div>`).join('');
+function qa(k,i,el,scope='review'){if(reportQuestionLocks(scope)[k])return;const question=reportQuestionStore(scope)[k]?.[i];if(!question)return;question.a=el.value.slice(0,400);save();const counter=el.parentElement?.nextElementSibling;if(counter)counter.textContent=question.a.length+'/400'}
+function finishReportAnswer(k,i,el,scope='review'){qa(k,i,el,scope);commitReportGroup(k,scope)}
+function delQ(k,i,scope='review'){if(reportQuestionLocks(scope)[k])return;const questions=reportQuestionStore(scope)[k];if(!Array.isArray(questions)||!questions[i])return;questions.splice(i,1);commitReportGroup(k,scope);save();P.rep()}
+function addRandQ(k,scope='review'){if(reportQuestionLocks(scope)[k])return;const kind=k.length===7?'month':'week',R=scope==='plan'?(tr()?PLAN_RQ_TR[kind]:PLAN_RQ_EN[kind]):rqFor();(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(R[Math.floor(Math.random()*R.length)]));save();P.rep()}
+function addQ(k,scope='review'){if(reportQuestionLocks(scope)[k])return;const e=$('#nq-'+k),v=String(e?.value||'').trim().slice(0,150);if(v){(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(v,true));save();P.rep()}}
+function lockQ(k,b){if(reportQuestionLocks()[k])return;if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent=tr()?'Emin misin? Bu işlem geri alınamaz':'Are you sure? This cannot be undone';return}reportQuestionLocks()[k]=1;save();P.rep()}
 /* Weekly/monthly reports unlock on the last calendar day of their period.
    Keep showing the most recently unlocked period after the week/month changes. */
 function reportPeriodEnded(now,end){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}-\d{2}$/.test(String(end))&&now>=end}
@@ -2708,12 +2907,12 @@ function repCard(title,per,a,b,pa,pb,key,nk,defs){
   if(!A.qs[key])A.qs[key]=defs.map(q=>makeReportQuestion(q));
   const kind=key.length===7?'month':'week',planning=reportQuestionStore('plan');
   if(!Array.isArray(planning[nk]))planning[nk]=(tr()?PLANQ_TR:PLANQ_EN)[kind].map(q=>makeReportQuestion(q));
-  const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p,cur=A.qs[key]||[],ro=!!A.ql[key];
+  const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p,cur=A.qs[key]||[],ro=!!reportQuestionLocks()[key],planRo=!!reportQuestionLocks('plan')[nk];
   const rows=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
   return`<div class="card"><h2>${title} <small class="mut" style="display:block;font-size:.75rem;font-weight:400">${fmt(a)} – ${fmt(b)}</small></h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}
-<h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3>${cur.length?(ro?`<p class="mut">🔒 ${tr()?'Yanıtların kilitlendi. Yıl bitene kadar Yanıt arşivinde gizli kalacak.':'Your answers are locked and will stay hidden in the answer archive until the end of the year.'}</p>`:qb(key,cur,false)+`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
-${!ro&&planning[key]?.length?`<details class="report-plan-review" style="margin-top:1rem"><summary>${tr()?'Bu dönem için yaptığın planlar':'Your earlier plans for this period'}</summary>${qb(key,planning[key],true,'plan')}</details>`:''}
-<h3 style="margin-top:1.2rem">${tr()?(kind==='week'?'Gelecek hafta için plan':'Gelecek ay için plan'):(kind==='week'?'Plan for next week':'Plan for next month')}</h3>${qb(nk,planning[nk],false,'plan')}<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="${t('addOwnQuestion')}"><button class="s" onclick="addQ('${nk}','plan')">${t('addQuestion')}</button><button class="g s" onclick="addRandQ('${nk}','plan')">${t('randomQuestion')}</button></div></div>`;
+<h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3><section id="report-group-review-${key}">${cur.length?(ro?(answerArchiveUnlocked(td,key)?qb(key,cur,true):reportLockedNotice(key)):reportAutoLockHint()+qb(key,cur,false)+`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
+${!ro&&planning[key]?.length?`<details class="report-plan-review" style="margin-top:1rem"><summary>${tr()?'Bu dönem için yaptığın planlar':'Your earlier plans for this period'}</summary>${reportQuestionLocks('plan')[key]&&!answerArchiveUnlocked(td,key)?reportLockedNotice(key):qb(key,planning[key],true,'plan')}</details>`:''}</section>
+<h3 style="margin-top:1.2rem">${tr()?(kind==='week'?'Gelecek hafta için plan':'Gelecek ay için plan'):(kind==='week'?'Plan for next week':'Plan for next month')}</h3><section id="report-group-plan-${nk}">${planRo?(answerArchiveUnlocked(td,nk)?qb(nk,planning[nk],true,'plan'):reportLockedNotice(nk)):reportAutoLockHint()+qb(nk,planning[nk],false,'plan')+`<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="${t('addOwnQuestion')}"><button class="s" onclick="addQ('${nk}','plan')">${t('addQuestion')}</button><button class="g s" onclick="addRandQ('${nk}','plan')">${t('randomQuestion')}</button></div>`}</section></div>`;
 }
 /* ---- gecmis raporlar: kisa ozet (haftalik / aylik) ---- */
 function briefRow(label,val,sub){
@@ -2741,19 +2940,20 @@ ${briefRow(tr()?'Tamamlanan':'Completed',mNow.d+'/'+mNow.t+' · %'+mNow.p,(tr()?
 ${briefRow(tr()?'Kayıtlı gün':'Days recorded',monthDone+'/'+(dd(ma,mb)+1))}</div><div style="margin-top:1.2rem"><div class="row report-heading"><h3>${tr()?'Günlükler':'Daily journals'}</h3><button class="g s report-more" onclick="showReportDetail('journals')">${tr()?'Daha fazlası':'More details'} →</button></div><div class="journal-grid">${Object.entries(A.journal||{}).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,90).map(([k,v])=>`<div class="note-tile"><b>${journalEntryStamp(v)}</b><p>${esc(v.text||'')}</p><button class="g s" onclick="openJournalEntry('${k}')">${tr()?'Aç':'Open'}</button></div>`).join('')||'<p class="mut">'+(tr()?'Henüz günlük yok.':'No journals yet.')+'</p>'}</div></div></div>`;
 }
 let reportDetail='';
-function showReportDetail(key){if(!['summary','journals','answers'].includes(key))return;reportDetail=key;P.rep();window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'})}
+function showReportDetail(key){if(!['summary','journals','answers','week','month'].includes(key))return;reportDetail=key;P.rep();window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'})}
 function reportBack(){reportDetail='';P.rep()}
 function reportDetailView(){
+  if(reportDetail==='week'||reportDetail==='month')return periodReportDetail(reportDetail);
   const header=`<div class="card"><div class="row report-heading"><h2>${reportDetail==='summary'?(tr()?'Geçmiş özetler':'Past summaries'):reportDetail==='journals'?(tr()?'Günlük arşivi':'Journal archive'):(tr()?'Yanıt arşivi':'Answer archive')}</h2><button class="g s" onclick="reportBack()">← ${t('back')}</button></div></div>`;
   if(reportDetail==='journals'){
     const entries=Object.entries(A.journal||{}).filter(([k,v])=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&v&&typeof v==='object').sort((a,b)=>b[0].localeCompare(a[0]));
     return header+`<div class="card"><div class="journal-grid">${entries.map(([k,v])=>`<article class="note-tile"><b>${journalEntryStamp(v)}</b><p>${esc(v.text||'')}</p><button class="g s" onclick="openJournalEntry('${k}')">${tr()?'Görüntüle / düzenle':'View / edit'}</button></article>`).join('')||`<p class="mut">${tr()?'Henüz günlük yok.':'No journal entries yet.'}</p>`}</div></div>`;
   }
   if(reportDetail==='answers'){
-    const keys=Object.keys(A.qs||{}).filter(k=>/^\d{4}-(\d{2}(-\d{2})?)$/.test(k)).sort().reverse();
-    const rows=keys.filter(k=>A.ql&&A.ql[k]).map(k=>{
-      const year=Number(k.slice(0,4)),locked=!answerArchiveUnlocked(today(),k),qs=Array.isArray(A.qs[k])?A.qs[k]:[];
-      const plans=Array.isArray(A.planningQs?.[k])?A.planningQs[k]:[];
+    const keys=[...new Set([...Object.keys(A.ql||{}),...Object.keys(A.planningLocks||{})])].filter(k=>/^\d{4}-(\d{2}(-\d{2})?)$/.test(k)).sort().reverse();
+    const rows=keys.filter(k=>A.ql?.[k]||A.planningLocks?.[k]).map(k=>{
+      const year=Number(k.slice(0,4)),locked=!answerArchiveUnlocked(today(),k),qs=A.ql?.[k]&&Array.isArray(A.qs[k])?A.qs[k]:[];
+      const plans=(A.planningLocks?.[k]||A.ql?.[k])&&Array.isArray(A.planningQs?.[k])?A.planningQs[k]:[];
       const renderQuestion=q=>`<div><b>${esc(reportQuestionText(q))}</b><p>${esc(q.a||'')}</p></div>`;
       return `<article class="note-tile"><b>${esc(k)} ${locked?'🔒':''}</b>${locked?`<p class="mut">${tr()?`Yanıtlar ${year+1} yılının başında açılır.`:`Answers unlock at the beginning of ${year+1}.`}</p>`:`${plans.length?`<h3>${tr()?'Dönem başındaki planların':'Plans made before this period'}</h3>${plans.map(renderQuestion).join('')}<h3>${tr()?'Dönem değerlendirmen':'Your period review'}</h3>`:''}${qs.map(renderQuestion).join('')}`}</article>`;
     });
@@ -2767,22 +2967,37 @@ function reportDetailView(){
   }).join('');
   return header+`<div class="card"><button class="g s" onclick="showReportDetail('answers')">${tr()?'🔒 Yıl sonu yanıt arşivi':'🔒 Year-end answer archive'}</button><p class="mut">${tr()?'Yanıtlar kilitlendikten sonra yıl bitene kadar gizli kalır.':'Locked answers stay hidden until the year ends.'}</p></div>${cards||`<div class="card"><p class="mut">${tr()?'Henüz geçmiş kayıt yok.':'No past records yet.'}</p></div>`}`;
 }
+function reportAvailability(kind,td=today()){
+ const full=A?.reportCalendarRule==='full-period-v1';
+ const since=full&&/^\d{4}-\d{2}-\d{2}$/.test(String(A?.reportStart))?A.reportStart:(/^\d{4}-\d{2}-\d{2}$/.test(String(A?.pctFrom))?A.pctFrom:td);
+ return {since,unlock:reportInitialUnlockDate(kind,since,full)};
+}
+function reportSummaryCard(kind,period){
+ const {since,unlock}=reportAvailability(kind),title=t(kind==='week'?'weeklyReport':'monthlyReport');if(today()<unlock)return pendingReportCard(title,since,unlock);
+ // Keep original question initialization and dates, without displaying answers here.
+ repCard(title,kind,period.a,period.b,period.pa,period.pb,period.key,period.nk,defQ(kind));
+ const summary=st(period.a,period.b),previous=st(period.pa,period.pb),change=summary.p-previous.p;
+ return `<section class="card report-summary"><div class="row report-heading"><div><p class="report-kicker">${tr()?'DÖNEM ÖZETİ':'PERIOD SUMMARY'}</p><h2>${title}</h2><p class="mut">${fmt(period.a)} – ${fmt(period.b)}</p></div><span class="report-percent">${summary.p}<small>%</small></span></div><div class="report-stats"><div><strong>${summary.d}</strong><span>${tr()?'Tamamlanan':'Completed'}</span></div><div><strong>${summary.t-summary.d}</strong><span>${tr()?'Tamamlanmayan':'Unfinished'}</span></div><div><strong>${change>0?'+':''}${change}</strong><span>${tr()?'Önceki döneme göre puan':'Points vs previous period'}</span></div></div><div class="bar"><i style="width:${summary.p}%"></i></div><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Daha fazlası':'More details'} <span aria-hidden="true">↗</span></button></section>`;
+}
+function periodTaskBreakdown(a,b){
+ const days=[];for(let day=a;day<=b;day=addD(day,1)){
+  const tasks=items(day).filter(task=>task&&typeof task.t==='string');if(!tasks.length)continue;
+  const done=tasks.filter(task=>task.done),unfinished=tasks.filter(task=>!task.done);
+  const list=(tasks,completed)=>tasks.length?`<ul class="report-task-list">${tasks.map(task=>`<li><span class="report-status ${completed?'is-done':''}">${completed?'✓':'○'}</span><span>${esc(task.t)}</span></li>`).join('')}</ul>`:`<p class="mut">${tr()?'Görev yok.':'No tasks.'}</p>`;
+  days.push(`<details class="report-day"><summary><span>${fmt(day)}</span><small>${done.length}/${tasks.length} ${t('tasksDone')}</small></summary><div class="report-task-columns"><section><h3>${tr()?'Tamamlanan':'Completed'} · ${done.length}</h3>${list(done,true)}</section><section><h3>${tr()?'Tamamlanmayan':'Unfinished'} · ${unfinished.length}</h3>${list(unfinished,false)}</section></div></details>`);
+ }
+ return `<section class="card"><h2>${tr()?'Gün gün görevlerin':'Your tasks, day by day'}</h2><p class="mut">${tr()?'Tamamlanmayanlar, yapılmadı olarak işaretlenen ve tamamlanmadan kalan görevleri içerir. Kayıt olmayan günler listelenmez.':'Unfinished includes tasks marked not done and tasks left incomplete. Days without records are omitted.'}</p>${days.reverse().join('')||`<p class="mut">${tr()?'Bu dönemde kayıtlı görev yok.':'No tasks recorded for this period.'}</p>`}</section>`;
+}
+function periodReportDetail(kind){
+ const td=today(),period=latestUnlockedReportPeriod(kind,td),{since,unlock}=reportAvailability(kind),title=t(kind==='week'?'weeklyReport':'monthlyReport');
+ const header=`<div class="card"><div class="row report-heading"><h2>${title} · ${tr()?'Ayrıntılar':'Details'}</h2><button class="g s" onclick="reportBack()">← ${t('back')}</button></div></div>`;
+ if(td<unlock)return header+pendingReportCard(title,since,unlock);
+ return header+periodTaskBreakdown(period.a,period.b)+repCard(title,tr()?(kind==='week'?'hafta':'ay'):kind,period.a,period.b,period.pa,period.pb,period.key,period.nk,defQ(kind));
+}
 P.rep=()=>{
-  if(reportDetail){M(reportDetailView());return}
-  const td=today(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
-  const fullPeriod=A?.reportCalendarRule==='full-period-v1';
-  // The previous release populated reportStart for older profiles, but those
-  // profiles must retain the previous countdown; never treat that migration
-  // field as a fresh signup.
-  const since=fullPeriod&&/^\d{4}-\d{2}-\d{2}$/.test(String(A?.reportStart))?A.reportStart:
-    (/^\d{4}-\d{2}-\d{2}$/.test(String(A?.pctFrom))?A.pctFrom:td);
-  const wUnlock=reportInitialUnlockDate('week',since,fullPeriod);
-  const mUnlock=reportInitialUnlockDate('month',since,fullPeriod);
-  M((td<wUnlock?pendingReportCard(t('weeklyReport'),since,wUnlock):
-       repCard(t('weeklyReport'),tr()?'hafta':'week',w.a,w.b,w.pa,w.pb,w.key,w.nk,defQ('week')))+
-    (td<mUnlock?pendingReportCard(t('monthlyReport'),since,mUnlock):
-       repCard(t('monthlyReport'),tr()?'ay':'month',m.a,m.b,m.pa,m.pb,m.key,m.nk,defQ('month')))+
-    historySection());
+ if(reportDetail){M(reportDetailView());return}
+ const td=today(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
+ M(reportSummaryCard('week',w)+reportSummaryCard('month',m)+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'} 🔒</button></div></section>`);
 };
 
 let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};
@@ -2791,7 +3006,7 @@ function persistPomodoroState(){
   A.pomo={
     w:pm.w,b:pm.b,ph:pm.ph,
     left:pm.run?Math.max(0,Math.ceil((pm.end-Date.now())/1000)):pm.left,
-    run:!!pm.run,end:pm.run?pm.end:0,n:pm.n,lg:pm.lg,updatedAt:Date.now()
+    run:!!pm.run,end:pm.run?pm.end:0,n:pm.n,lg:pm.lg,noticeFive:!!pm.noticeFive,updatedAt:Date.now()
   };
   save();
 }
@@ -2804,7 +3019,7 @@ function restorePomodoroState(){
   const defaultB=Number(first.b)>0&&Number(first.b)<=600?Number(first.b):5;
   if(!saved||typeof saved!=='object'){
     if(A?.stopwatch?.running){clearInterval(pm.swI);pm.swI=setInterval(swRender,40)}
-    pm={...pm,w:defaultW,b:defaultB,ph:'w',left:defaultW*60,run:0,end:0,n:0,lg:0,iv:0};
+    pm={...pm,w:defaultW,b:defaultB,ph:'w',left:defaultW*60,run:0,end:0,n:0,lg:0,noticeFive:false,iv:0};
     return;
   }
   const w=Number(saved.w),b=Number(saved.b),left=Number(saved.left),end=Number(saved.end);
@@ -2816,7 +3031,7 @@ function restorePomodoroState(){
     run:saved.run?1:0,
     end:Number.isFinite(end)&&end>0?end:0,
     n:Number.isFinite(Number(saved.n))?Math.max(0,Math.floor(Number(saved.n))):0,
-    lg:saved.lg?1:0,iv:0
+    lg:saved.lg?1:0,noticeFive:!!saved.noticeFive,iv:0
   };
   if(A?.stopwatch?.running){clearInterval(pm.swI);pm.swI=setInterval(swRender,40)}
   if(pm.run&&pm.end){
@@ -2984,7 +3199,7 @@ function pi(){
   l.textContent=pm.ph==='w'?`${t('session')} ${pm.n%5+1}/5 · ${fmtDuration(pm.w)}`:(pm.lg?t('longBreak'):t('break'));
   e.textContent=pm.run?`${t('pomoEnds')}: ${clk(pm.left*1000)}`:(pm.w>60&&pm.ph==='w'?`${pm.w} ${t('minutes')} · ${t('alreadyEnds')} ${clk(pm.left*1000)}`:'');updatePomoOverlay();
 }
-function setP(w,b){clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,end:0,n:0,lg:0,iv:0};persistPomodoroState();document.title=TITLE;closePomoOverlay();P.pomo()}
+function setP(w,b){clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,end:0,n:0,lg:0,noticeFive:false,iv:0};persistPomodoroState();document.title=TITLE;closePomoOverlay();P.pomo()}
 let editIdx=-1;
 function editP(i){const p=A.presets[i];$('#cw').value=p.w;$('#cb').value=p.b;editIdx=i}
 function delP(i){A.presets.splice(i,1);save();P.pomo()}
@@ -3010,6 +3225,8 @@ function pTick(silent=false){
   }
   if(pm.end<=now)pm.end=now+1000;
   pm.left=Math.max(0,Math.ceil((pm.end-now)/1000));
+  if(changed){pm.noticeFive=false;if(A&&ensureNoticeState().notificationPrefs.pomo!==false)addNotification('pomo-phase:'+pm.end+':'+pm.ph,pm.ph==='b'?'pomo-break':'pomo-focus',{session:pm.n})}
+  if(A&&pm.ph==='w'&&pm.w>5&&pm.left>0&&pm.left<=300&&!pm.noticeFive){pm.noticeFive=true;changed=true;if(ensureNoticeState().notificationPrefs.pomo!==false)addNotification('pomo-five:'+pm.end,'pomo-five')}
   const t2=$('#pt');if(t2)t2.textContent=ft(pm.left);
   if(A)document.title=ft(pm.left)+' · '+TITLE;
   if(changed)persistPomodoroState();
@@ -3029,7 +3246,7 @@ function pS(){
 }
 function pR(){
   clearInterval(pm.iv);
-  pm={...pm,run:0,ph:'w',left:pm.w*60,end:0,n:0,lg:0,iv:0};
+  pm={...pm,run:0,ph:'w',left:pm.w*60,end:0,n:0,lg:0,noticeFive:false,iv:0};
   persistPomodoroState();document.title=TITLE;closePomoOverlay();if(pg==='pomo')P.pomo();
 }
 function swS(){
@@ -3099,7 +3316,7 @@ P.set=()=>{
 
 function switchAcc(u){stopTimers();A=null;sbClear();loginDat={u,p:''};goTo('login','home')}
 /* oturum kapaninca sayac ve kronometre durur, sonraki kullaniciya gecmez */
-function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,end:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0};persistPomodoroState();document.title=TITLE}catch(e){}}
+function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,end:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0,noticeFive:false};persistPomodoroState();document.title=TITLE}catch(e){}}
 function goLogin(){pendingDeleteUid=null;stopTimers();sbClear();A=null;loginDat={u:'',p:''};goTo('login','home')}
 async function chg(k){
   const v=String($(k==='u'?'#su':'#sn')?.value||'').trim();if(!v)return;
@@ -3681,30 +3898,30 @@ async function sbPull(){
   if(row?.data&&(!row.data||typeof row.data!=='object'||Array.isArray(row.data)))throw new Error('Invalid cloud data');
   return row?.data||null;
 }
-async function restoreCloudOnLoad(){
+async function restoreCloudOnLoad(expectedUid=''){
   if(!sbSession()?.access_token){if(sbSession()?.refresh_token&&!await sbRefresh())return;else if(!sbSession()?.access_token)return}
   try{
     const user=await sbCurrentUser();
-    if(!user?.id)return;
-    const session=sbSession();if(!session)return;
+    if(!user?.id||(expectedUid&&user.id!==expectedUid))return false;
+    const session=sbSession();if(!session)return false;
     sbSave({...session,user});
     const remote=await sbPull();
     const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
     const meta=user.user_metadata||{};
     const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
     a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
-    if(user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
+    if(user.app_metadata?.providers?.includes('google')){a.googleConnected=true;if(!a.loginMethod)a.loginMethod='google'}
     v13ProtectLegacyCollision(a.u,user.id);
     DB.accounts[a.u]=a;DB.lastUser=a.u;DB.last=a.nick;A=a;
-    view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();
-    if(!remote)await sbPush();
+    view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();greetThen();
+    if(!remote)await sbPush();return true;
   }catch(e){
     // Do not auto-login from unverified localStorage contents.
     if(e.status===401)sbClear();
     if(e.message==='V13_LOCAL_USERNAME_COLLISION'){
       sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki eski yerel hesapla çakışıyor. Eski veri korunuyor. Yerel hesabından JSON yedeği al ve aktarım adımını kullan.':'A cloud username conflicts with a legacy profile on this device. Local data was preserved. Export it and use the migration flow.';
     }
-    if(!A){view='login';renderAppOrAuth()}
+    if(!A&&!expectedUid){view='login';renderAppOrAuth()}return false;
   }
 }
 
