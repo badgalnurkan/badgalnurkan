@@ -233,7 +233,7 @@ test('both reports retain three defaults, random question addition and two-step 
     ['Weekly 1','Weekly 2','Weekly 3']);
   assert.deepEqual(Array.from(context.A.qs['2026-11'].map(x=>x.q)),
     ['Monthly 1','Monthly 2','Monthly 3']);
-  assert.equal(context.A.qs['2026-12-01'].length,3);
+  assert.equal(context.A.qs['2026-12'].length,3); // Monthly keys are YYYY-MM
   const nextWeek=latestUnlockedReportPeriod('week',context.current).nk;
   const nextMonth=latestUnlockedReportPeriod('month',context.current).nk;
   assert.equal(context.A.qs[nextWeek].length,3);
