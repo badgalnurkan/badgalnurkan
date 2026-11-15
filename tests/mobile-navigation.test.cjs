@@ -103,7 +103,7 @@ function transitionFixture(reduced=false){
   window:{scrollY:0,matchMedia:()=>({matches:reduced}),scrollTo(){}},history:{pushState(){}},
   renderPage:()=>renders.push(context.pg),centerNav(){},softPaint(){renders.push('auth')},navLabel:key=>key,
  };
- vm.createContext(context);vm.runInContext(section('let pageSwapTimer=0;','/* mobil/tablet: secilen sekme'),context);
+ vm.createContext(context);vm.runInContext(section('function uiMotionTime(name,fallback){','/* yumusak sayfa gecisi:')+section('let pageSwapTimer=0;','/* mobil/tablet: secilen sekme'),context);
  return {context,renders,timers,flush:()=>{for(const [id,fn] of [...timers]){timers.delete(id);fn()}}};
 }
 test('rapid menu taps render only the most recently selected page',()=>{
@@ -134,4 +134,22 @@ test('keyboard arrows, Home and End activate and focus navigation links',()=>{
  }
  context.navKeydown({key:'Tab',target:links[0],currentTarget:{querySelectorAll:()=>links},preventDefault:()=>assert.fail('Tab must retain normal keyboard behavior')});
  assert.equal(chosen.length,4);
+});
+
+test('menu closing waits for its exit animation and ignores duplicate close requests',()=>{
+ const classes=new Set(),timers=new Map(),events={};let closes=0;
+ const dialog={open:true,classList:{contains:x=>classes.has(x),add:x=>classes.add(x)},
+  addEventListener:(name,fn)=>{events[name]=fn},close(){closes++;this.open=false}};
+ const context={document:{getElementById:()=>dialog},window:{matchMedia:()=>({matches:false})},
+  setTimeout:fn=>{timers.set(1,fn);return 1},clearTimeout:id=>timers.delete(id)};
+ vm.createContext(context);vm.runInContext(section('function uiMotionTime(name,fallback){','/* yumusak sayfa gecisi:')+section('function closeNavMenu(){','function selectNavPage('),context);
+ context.closeNavMenu();context.closeNavMenu();assert.equal(closes,0);assert.equal(timers.size,1);
+ events.animationend({target:dialog,animationName:'mobileMenuOut'});
+ assert.equal(closes,1);assert.equal(timers.size,0);
+});
+test('reduced motion closes a menu immediately without delaying focus restoration',()=>{
+ let closed=false;const dialog={open:true,classList:{contains:()=>false},close:()=>{closed=true}};
+ const context={document:{getElementById:()=>dialog},window:{matchMedia:()=>({matches:true})},setTimeout:()=>assert.fail('Reduced motion must not wait')};
+ vm.createContext(context);vm.runInContext(section('function closeNavMenu(){','function selectNavPage('),context);
+ context.closeNavMenu();assert.equal(closed,true);
 });

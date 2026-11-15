@@ -14,7 +14,7 @@ function fixture(reduced=false){
    body:{appendChild:root=>roots.push(root)}},
  };
  vm.createContext(context);
- vm.runInContext(extract('const greetKey=','const RANDOM_Q=')+extract('let entryIntroSeen=false;','function goHome(){')+'\nthis.f={greetKey,greetText,greetThen,continueFromWelcome};',context);
+ vm.runInContext(extract('function uiMotionTime(name,fallback){','/* yumusak sayfa gecisi:')+extract('const greetKey=','const RANDOM_Q=')+extract('let entryIntroSeen=false;','function goHome(){')+'\nthis.f={greetKey,greetText,greetThen,continueFromWelcome,uiMotionTime};',context);
  return {context,f:context.f,roots,timers,navigations};
 }
 test('Turkish greetings follow the time of day and use İyi günler at midday',()=>{
@@ -46,10 +46,18 @@ test('reduced motion bypasses the animated overlay and completes immediately',()
  const {f,roots,timers,navigations}=fixture(true);f.continueFromWelcome();
  assert.equal(roots.length,0);assert.equal(timers.size,0);assert.deepEqual(navigations,[['login','home']]);
 });
-test('the circular pass assigns 30ms forward and 20ms reverse within 50ms',()=>{
- assert.match(html,/#login-portal\.entry-portal \.portal-disc\{[^}]*animation:entryCirclePass \.05s linear \.18s both!important/);
+test('the circular pass eases forward for 420ms and back for 300ms',()=>{
+ assert.match(html,/#login-portal\.entry-portal \.portal-disc\{[^}]*animation:entryCirclePass \.72s linear \.24s both!important/);
  const frames=html.match(/@keyframes entryCirclePass\{([^\n]+)\}/)[1];
- assert.match(frames,/60%\{transform:translate\(-50%,-50%\) scale\(1\)\}/);
+ assert.match(frames,/58\.333333%\{transform:translate\(-50%,-50%\) scale\(1\.5\);animation-timing-function:var\(--motion-return\)\}/);
  assert.match(frames,/100%\{transform:translate\(-50%,-50%\) scale\(0\)\}/);
- assert.equal(50*.6,30);assert.equal(50*(1-.6),20);
+ assert.ok(Math.abs(720*.58333333-420)<.001);assert.ok(Math.abs(720*(1-.58333333)-300)<.001);
+});
+test('JavaScript completion uses the duration configured in CSS',()=>{
+ const {f,context,timers}=fixture();
+ context.getComputedStyle=()=>({getPropertyValue:()=> '2600'});
+ assert.equal(f.uiMotionTime('--entry-total-ms',2000),2600);
+ f.greetThen();assert.equal([...timers.values()][0].delay,2800);
+ context.getComputedStyle=()=>({getPropertyValue:()=> 'invalid'});
+ assert.equal(f.uiMotionTime('--entry-total-ms',2000),2000);
 });

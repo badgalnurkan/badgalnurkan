@@ -10,11 +10,11 @@
 - Yeni görev ekleme düğmesi ve Enter sonrasında temizlenen `New task` alanı tekrar odaklanır. Bugün tamamlanınca yarına yönlendirilen görevlerde de aynı davranış vardır.
 - Hazır ve rastgele rapor soruları, mevcut eski kayıtlar dahil, TR/EN seçimine göre gösterilir. Cevap metinleri değiştirilmez; kullanıcı tarafından yazılan özel sorular yazıldıkları dilde kalır.
 - Gelecek hafta ve ay için üçer farklı planlama sorusu ve ayrıca geleceğe yönelik rastgele soru havuzları bulunur. Plan cevapları `planningQs` içinde tutulur; mevcut `qs` değerlendirme cevapları değiştirilmez. Dönem sonunda önceki planlar ayrıca görülebilir; kilitleme ve yıl sonu arşivinin gizlilik süresi korunur.
-- Karşılama ekranındaki Devam, marka ve döngeçten sonra dairenin 30 ms genişleyip 20 ms ters yönde çekildiği geçişi oynatır. 180 ms marka aşamasından sonra, 230 ms'de saate uygun selamlama başlar; harf aralıkları hızla açılır. Toplam giriş 900 ms'dir. Aynı sayfa yüklemesinde tekrar oynatılmaz; hareketi azaltma tercihi animasyonu atlar.
+- Karşılama ekranındaki Devam, marka ve döngeçten sonra dairenin 420 ms genişleyip 300 ms ters yönde çekildiği geçişi oynatır. 240 ms marka aşamasından sonra, 960 ms'de saate uygun selamlama başlar; harf aralıkları yumuşakça açılır. Toplam giriş 2000 ms'dir. Aynı sayfa yüklemesinde tekrar oynatılmaz; hareketi azaltma tercihi animasyonu atlar.
 
 ## Doğrulama
 
-`npm test`: **79/79 geçti**. Bunların 27'si değiştirilmeyen eski `deneme.html` yapısal testleri; 52'si güncel `index.html` rapor tarihleri, soru dilleri ve ayrı plan kayıtları, menü hareketleri ve karşılama geçişi davranışlarını kontrol eder.
+`npm test`: **82/82 geçti**. Bunların 27'si değiştirilmeyen eski `deneme.html` yapısal testleri; 55'i güncel `index.html` rapor tarihleri, soru dilleri ve ayrı plan kayıtları, menü hareketleri ve karşılama geçişi davranışlarını kontrol eder.
 
 Chrome önizlemesinde:
 
@@ -23,7 +23,15 @@ Chrome önizlemesinde:
 - Menü açma, sayfa seçme, seçili öğeyi görünür tutma, Escape ve ileri/geri Tab odağı; sayfa kayarken menü görünürlüğü kontrol edildi.
 - Görev ekleme: düğme, Enter ve tamamlanan günden sonra yarına ekleme senaryolarında yeni alanın değeri boş ve etkin öğe `nt` olarak doğrulandı.
 - İngilizce rapora dört cevap yazılıp bir rastgele soru eklendi. Uygulamanın dil düğmesiyle Türkçeye geçince 13/13 soru Türkçeleşti, dört cevap aynen korundu.
-- Canlı CSS ölçümünde daire animasyonu 50 ms, başlangıç gecikmesi 180 ms; selamlama başlangıcı 230 ms ve süresi 670 ms olarak doğrulandı. Dairenin %60 noktasında tam genişlemesi, ileri 30 ms ve geri 20 ms dağılımını verir. Gerçek çizilen kareler ekranın yenileme hızına bağlıdır.
+- Canlı CSS ölçümünde daire animasyonu 720 ms, başlangıç gecikmesi 240 ms; selamlama başlangıcı 960 ms ve süresi 1040 ms olarak doğrulandı. Dairenin %58,333333 noktasında tam genişlemesi, ileri 420 ms ve geri 300 ms dağılımını verir. Toplam giriş 2 saniye; menü açılışı 380 ms, kapanışı 240 ms; sayfa sönmesi 160 ms ve açılması 340 ms. JavaScript temizleme zamanları ortak CSS sürelerinden okunur. Gerçek çizilen kareler ekranın yenileme hızına bağlıdır.
+
+## Daha yumuşak hareket güncellemesi
+
+Apple Motion rehberindeki doğal hızlanma/yavaşlama ve aynı yönden geri çekilme yaklaşımı standart web CSS animasyonlarına uyarlandı; UIKit/SwiftUI kodu veya Apple'ın yerel animasyon motoru kullanılmadı. Hafif yay hissi için sınırlı bir bezier eğrisi; hareketi azaltma için anında tamamlanan alternatifler kullanılır. Daire tabakası 100vmax olarak çizilip ölçeklenir; büyük ekranlarda önceki 200vmax tabakanın gereksiz boyutu azaltılır.
+
+Yeni sürümde 320×568, 390×844, 768×900, 844×390, 1024×900, 1920×1080 ve 3840×2160 görünümlerinde sayfa ve karşılama geçişleri ölçüldü; taşma veya başlık çakışması bulunmadı. Menü kapanırken pencerenin animasyon bitene kadar açık kaldığı ve sonrasında odağın açan düğmeye döndüğü doğrulandı.
+
+Kaynaklar: https://developer.apple.com/design/human-interface-guidelines/motion ve https://developer.apple.com/videos/play/wwdc2023/10158/ .
 
 ## Sınırlar
 
