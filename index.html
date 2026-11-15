@@ -1536,7 +1536,7 @@ const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
 // Usernames: letters, digits, underscore, dot and hyphen. Keep quotes and @ out of inline handlers and email detection.
 const USERNAME_ALLOWED='a-zA-Z0-9çÇğĞıİöÖşŞüÜ_.-';
 const userRe=new RegExp('^['+USERNAME_ALLOWED+']{3,20}$');
-function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today()})}
+function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today(),reportCalendarRule:'full-period-v1'})}
 function norm(a){
   const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
@@ -2432,18 +2432,23 @@ function latestUnlockedReportPeriod(kind,day){
   }
   throw new RangeError('Invalid report period');
 }
-/* An enrollment on Monday/1st includes that calendar period; a partial
-   signup week/month is skipped. First unlock is the last day of the FIRST
-   COMPLETE reporting period, not seven days/a month after signup. */
-function reportInitialUnlockDate(kind,start){
+/* Never retroactively change a pre-existing account's earned unlock.
+   Legacy accounts keep their original month-end and first-week progress.
+   Only accounts explicitly created with full-period-v1 use next COMPLETE
+   calendar period if they join mid-period. A normalizer-derived reportStart
+   on an old account is not evidence that the user opted into new timing. */
+function reportInitialUnlockDate(kind,start,fullPeriod=false){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(start)))return null;
   if(kind==='week'){
     const firstMonday=mon(start);
-    return addD(firstMonday===start?firstMonday:addD(firstMonday,7),6);
+    const firstSunday=addD(firstMonday,6);
+    if(fullPeriod)return addD(firstMonday===start?firstMonday:addD(firstMonday,7),6);
+    // Legacy Sunday signup starts its first complete seven-day cycle next week.
+    return start===firstSunday?addD(firstSunday,7):firstSunday;
   }
   if(kind==='month'){
     const [y,m,d]=start.split('-').map(Number);
-    return D(new Date(y,m+(d===1?0:1),0));
+    return D(new Date(y,m+(fullPeriod&&d!==1?1:0),0));
   }
   throw new RangeError('Invalid report kind');
 }
@@ -2524,10 +2529,14 @@ function reportDetailView(){
 P.rep=()=>{
   if(reportDetail){M(reportDetailView());return}
   const td=today(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
-  const since=/^\d{4}-\d{2}-\d{2}$/.test(String(A?.reportStart))?A.reportStart:
+  const fullPeriod=A?.reportCalendarRule==='full-period-v1';
+  // The previous release populated reportStart for older profiles, but those
+  // profiles must retain the previous countdown; never treat that migration
+  // field as a fresh signup.
+  const since=fullPeriod&&/^\d{4}-\d{2}-\d{2}$/.test(String(A?.reportStart))?A.reportStart:
     (/^\d{4}-\d{2}-\d{2}$/.test(String(A?.pctFrom))?A.pctFrom:td);
-  const wUnlock=reportInitialUnlockDate('week',since);
-  const mUnlock=reportInitialUnlockDate('month',since);
+  const wUnlock=reportInitialUnlockDate('week',since,fullPeriod);
+  const mUnlock=reportInitialUnlockDate('month',since,fullPeriod);
   M((td<wUnlock?pendingReportCard(t('weeklyReport'),since,wUnlock):
        repCard(t('weeklyReport'),tr()?'hafta':'week',w.a,w.b,w.pa,w.pb,w.key,w.nk,defQ('week')))+
     (td<mUnlock?pendingReportCard(t('monthlyReport'),since,mUnlock):
