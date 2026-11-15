@@ -1,0 +1,251 @@
+'use strict';
+// Real Chromium browser integration against a LOCAL Supabase test instance.
+// The production URL/key are replaced ONLY in an in-memory HTML response.
+// No modified HTML is committed or deployed. All accounts are synthetic.
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const http=require('node:http');
+const path=require('node:path');
+const {chromium}=require('playwright-core');
+
+const base=(process.env.API_URL||'').trim();
+const anon=process.env.ANON_KEY||'';
+if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base)){
+  throw Error('Safety gate: refusing to run browser E2E against non-local Supabase');
+}
+if(!anon)throw Error('Missing local anon key');
+
+const source=fs.readFileSync(path.join(__dirname,'..','..','index.html'),'utf8');
+const patched=source.replace(/const SUPABASE_URL='https:\/\/[^']+';/,
+  "const SUPABASE_URL='"+base+"';")
+  .replace(/const SUPABASE_KEY='[^']+';/,
+    "const SUPABASE_KEY='"+anon+"';");
+if(patched===source||!patched.includes("const SUPABASE_URL='"+base+"';")||
+   !patched.includes("const SUPABASE_KEY='"+anon+"';")){
+  throw Error('Could not safely replace production API settings in CI-only HTML');
+}
+
+const password='LocalBrowserPassphrase-2026!';
+const prefix='iydu-browser-ci-'+Date.now().toString(36)+'-';
+async function signup(n,data){
+  const email=prefix+n+'@example.com';
+  const res=await fetch(base+'/auth/v1/signup',{
+    method:'POST',headers:{apikey:anon,'Content-Type':'application/json'},
+    body:JSON.stringify({email,password,data}),
+    signal:AbortSignal.timeout(15000)
+  });
+  const body=await res.json();
+  assert.equal(res.ok,true,'Synthetic browser account signup failed: '+(body.code||res.status));
+  assert.ok(body?.user?.id);
+  return {email,uid:body.user.id};
+}
+async function flow(page,account,expected){
+  await page.goto(site,{waitUntil:'domcontentloaded'});
+  await page.evaluate(()=>goTo('login','home'));
+  await page.locator('#login-submit').waitFor({timeout:15000});
+  await page.locator('#u').fill(account.email);
+  await page.locator('#p').fill(password);
+  await page.locator('#login-submit').click();
+  if(expected==='claim'){
+    await page.locator('#claim-name').waitFor({timeout:20000});
+    const unclaimed=await page.evaluate(()=>({a:A,view}));
+    assert.equal(unclaimed.a,null);
+    assert.equal(unclaimed.view,'claim-username');
+  }else{
+    await page.waitForFunction(name=>typeof A!=='undefined' && A?.u===name,expected,{timeout:20000});
+    assert.equal(await page.evaluate(()=>view),'app');
+  }
+}
+
+let server,site,browser;
+async function main(){
+  const first=await signup('first',{username:'BrowserOne',nick:'Browser Display'});
+  const unclaimed=await signup('no-name',{nickname:'Fresh Browser'});
+  server=http.createServer((req,res)=>{
+    if(req.method==='GET'&&(req.url==='/'||req.url==='/index.html')){
+      res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});
+      res.end(patched);
+    }else{res.writeHead(404);res.end('Not found')}
+  });
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  site='http://127.0.0.1:'+server.address().port+'/';
+
+  browser=await chromium.launch({
+    executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome',
+    headless:true,args:['--no-sandbox','--disable-dev-shm-usage']
+  });
+  // The real Google provider requires an explicitly authorized test account,
+  // so intercept the outbound request here; no request reaches production.
+  // This tests the actual Google button's redirect origin/provider/return URL.
+  const launchContext=await browser.newContext({viewport:{width:390,height:844}});
+  const launchPage=await launchContext.newPage();
+  await launchPage.route('**/auth/v1/authorize**',async route=>{
+    await route.fulfill({status:200,contentType:'text/html',body:'OAuth navigation intercepted safely in CI'});
+  });
+  await launchPage.goto(site,{waitUntil:'domcontentloaded'});
+  await launchPage.evaluate(()=>goTo('login','home'));
+  const requestPromise=launchPage.waitForRequest(req=>
+    req.url().startsWith(base+'/auth/v1/authorize?'),{timeout:15000});
+  await launchPage.locator('.google-signin').click();
+  const launchRequest=new URL((await requestPromise).url());
+  assert.equal(launchRequest.origin,new URL(base).origin,
+    'Google sign-in attempted to use unexpected Supabase project');
+  assert.equal(launchRequest.pathname,'/auth/v1/authorize');
+  assert.equal(launchRequest.searchParams.get('provider'),'google');
+  assert.equal(launchRequest.searchParams.get('redirect_to'),site,
+    'Redirect must return to exactly the current app URL, no wildcards');
+  assert.equal(launchRequest.searchParams.has('access_token'),false,
+    'OAuth launch must not include an existing session token');
+  console.log('PASS Google button: real browser constructs local authorize URL with correct redirect; external provider intentionally intercepted.');
+
+  const normalContext=await browser.newContext({viewport:{width:390,height:844}});
+  const normal=await normalContext.newPage();
+  await flow(normal,first,'BrowserOne');
+  await normal.reload({waitUntil:'domcontentloaded'});
+  await normal.waitForFunction(()=>typeof A!=='undefined'&&A?.u==='BrowserOne',null,{timeout:20000});
+  assert.equal(await normal.evaluate(()=>view),'app',
+    'Verified account did not restore after browser reload');
+
+  const freshContext=await browser.newContext({viewport:{width:390,height:844}});
+  const fresh=await freshContext.newPage();
+  await flow(fresh,unclaimed,'claim');
+  await fresh.locator('#claim-name').fill('BrowserClaim');
+  await fresh.locator('#claim-username-submit').click();
+  await fresh.waitForFunction(()=>typeof A!=='undefined'&&A?.u==='BrowserClaim',null,{timeout:20000});
+  assert.equal(await fresh.evaluate(()=>view),'app');
+  await fresh.reload({waitUntil:'domcontentloaded'});
+  await fresh.waitForFunction(()=>typeof A!=='undefined'&&A?.u==='BrowserClaim',null,{timeout:20000});
+  assert.equal(await fresh.evaluate(()=>view),'app');
+
+  // Callback-path test using a REAL local GoTrue access token from a password
+  // session in a URL fragment. The token is real; the Google provider is NOT.
+  // This validates the frontend OAuth callback parser without claiming Google
+  // consent or provider configuration has been tested.
+  const callbackAccount=await signup('callback-synthetic',{nickname:'Synthetic Callback'});
+  const tokenResponse=await fetch(base+'/auth/v1/token?grant_type=password',{
+    method:'POST',headers:{apikey:anon,'Content-Type':'application/json'},
+    body:JSON.stringify({email:callbackAccount.email,password}),
+    signal:AbortSignal.timeout(15000)
+  });
+  assert.equal(tokenResponse.ok,true,'Failed to mint local session for callback test');
+  const token=await tokenResponse.json();
+  assert.ok(token.access_token&&token.refresh_token);
+  const oauthContext=await browser.newContext({viewport:{width:390,height:844}});
+  const oauthPage=await oauthContext.newPage();
+  const params=new URLSearchParams({
+    access_token:token.access_token,refresh_token:token.refresh_token,
+    token_type:'bearer',type:'oauth'
+  });
+  await oauthPage.goto(site+'#'+params.toString(),{waitUntil:'domcontentloaded'});
+  await oauthPage.locator('#claim-name').waitFor({timeout:20000});
+  assert.equal(await oauthPage.evaluate(()=>A),null);
+  assert.equal(await oauthPage.evaluate(()=>location.hash),'',
+    'Auth callback tokens must be removed from the visible URL');
+  await oauthPage.locator('#claim-name').fill('CallbackName');
+  await oauthPage.locator('#claim-username-submit').click();
+  await oauthPage.waitForFunction(()=>typeof A!=='undefined'&&A?.u==='CallbackName',
+    null,{timeout:20000});
+
+  const denyContext=await browser.newContext();
+  const denyPage=await denyContext.newPage();
+  await denyPage.goto(site+'#error=access_denied&error_description=synthetic-denial',{
+    waitUntil:'domcontentloaded'
+  });
+  await denyPage.waitForFunction(()=>view==='login',null,{timeout:15000});
+  assert.equal(await denyPage.evaluate(()=>location.hash),'',
+    'Denied callback must clear error parameters from the URL');
+
+  // Two genuine browser contexts against the same Supabase account.
+  // Device B starts with an old snapshot; after A saves, B MUST NOT erase it.
+  const sync=await signup('two-device',{username:'SyncProbe',nick:'Two Device'});
+  const ctxA=await browser.newContext({viewport:{width:390,height:844}});
+  const deviceA=await ctxA.newPage();
+  await flow(deviceA,sync,'SyncProbe');
+  await deviceA.evaluate(()=>{A.tasks=[{id:'seed',text:'original'}];save()});
+  await deviceA.waitForFunction(async()=>{
+    try{
+      const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}});
+      return rows[0]?.data?.tasks?.[0]?.id==='seed';
+    }catch(_){return false}
+  },null,{timeout:22000});
+
+  const ctxB=await browser.newContext({viewport:{width:390,height:844},acceptDownloads:true});
+  const deviceB=await ctxB.newPage();
+  await flow(deviceB,sync,'SyncProbe');
+
+  await deviceA.evaluate(()=>{
+    A.tasks.push({id:'device-a',text:'new A'});
+    save();
+  });
+  await deviceA.waitForFunction(async()=>{
+    try{
+      const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}});
+      return rows[0]?.data?.tasks?.length===2;
+    }catch(_){return false}
+  },null,{timeout:22000});
+
+  await deviceB.evaluate(()=>{
+    A.journal={...(A.journal||{}),deviceB:'draft from B'};
+    save();
+  });
+  await deviceB.waitForFunction(()=>cloudBlocked===true,null,{timeout:22000});
+  const conflict=await deviceB.evaluate(async()=>{
+    const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}});
+    return {
+      remote:rows[0]?.data,
+      draft:cloudPending(A.authUid)?.local,
+      banner:!!document.querySelector('.shell main [role="alert"]')
+    };
+  });
+  assert.equal(conflict.remote.tasks.length,2,'Stale device deleted new tasks');
+  assert.equal(conflict.remote.journal?.deviceB,undefined,'Stale writer incorrectly committed');
+  assert.equal(conflict.draft.journal.deviceB,'draft from B','Local draft lost');
+  assert.equal(conflict.banner,true,'Conflict warning is not visible');
+
+  await deviceB.reload({waitUntil:'domcontentloaded'});
+  await deviceB.waitForFunction(()=>A?.u==='SyncProbe'&&cloudBlocked===true,
+    null,{timeout:22000});
+  assert.equal(await deviceB.evaluate(()=>A.journal.deviceB),'draft from B',
+    'Reload discarded unsynced local draft');
+
+  const downloadPromise=deviceB.waitForEvent('download',{timeout:15000});
+  await deviceB.evaluate(()=>cloudBackupFile());
+  const download=await downloadPromise;
+  assert.match(download.suggestedFilename(),/iydu-yerel-yedek/);
+  await deviceB.evaluate(()=>cloudUseRemote());
+  await deviceB.waitForFunction(()=>A?.tasks?.length===2&&!cloudBlocked,
+    null,{timeout:22000});
+  const archived=await deviceB.evaluate(()=>{
+    const key=Object.keys(localStorage).find(k=>k.startsWith('b1.sync.archive.'));
+    return key?JSON.parse(localStorage.getItem(key)):null;
+  });
+  assert.equal(archived?.local?.journal?.deviceB,'draft from B',
+    'Discarded conflict draft was not archived');
+  await deviceB.evaluate(()=>{
+    A.journal={...A.journal,deviceB:'resolved after checking cloud'};
+    save();
+  });
+  await deviceB.waitForFunction(async()=>{
+    try{
+      const rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}});
+      return rows[0]?.data?.tasks?.length===2&&
+        rows[0]?.data?.journal?.deviceB==='resolved after checking cloud';
+    }catch(_){return false}
+  },null,{timeout:22000});
+
+  const claimed=await fresh.evaluate(()=>({
+    name:A?.u,
+    stored:typeof sbSession==='function'&&!!sbSession()?.access_token
+  }));
+  assert.equal(claimed.name,'BrowserClaim');
+  assert.equal(claimed.stored,true);
+  console.log('PASS Chrome: email, OAuth-style callback, account claim, two-browser conflict/reload/recovery, CAS and backup.');
+  console.log('Not tested: external Google OAuth consent, production deployment, multi-device JSON CAS.');
+}
+main().catch(err=>{
+  console.error('FAIL browser integration:',err.stack||err);
+  process.exitCode=1;
+}).finally(async()=>{
+  if(browser)await browser.close().catch(()=>{});
+  if(server)await new Promise(resolve=>server.close(resolve));
+});

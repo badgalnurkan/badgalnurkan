@@ -1,0 +1,77 @@
+name: Username integrity (isolated PostgreSQL)
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'supabase/rollouts/**'
+      - 'tests/sql/**'
+      - '.github/workflows/username-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'supabase/rollouts/**'
+      - 'tests/sql/**'
+      - '.github/workflows/username-integrity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-17-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: iydu_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d iydu_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: ci-only-password
+      PGDATABASE: iydu_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+      - name: Prepare production-shaped, synthetic schema
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/bootstrap.sql
+      - name: Apply staged SQL (never against production)
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/rollouts/username-integrity-staging.sql
+      - name: Verify server invariants and failure rollback
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/verify-username.sql
+      - name: Race two independent username claims
+        run: node tests/sql/concurrent-claims.cjs
+      - name: Rehearse offline backup and restore of synthetic data (no production)
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "iydu_test"
+          pg_dump --format=custom --file="$RUNNER_TEMP/iydu-ci-only.dump"
+          createdb iydu_restore_ci
+          pg_restore --exit-on-error --no-owner --dbname=iydu_restore_ci "$RUNNER_TEMP/iydu-ci-only.dump"
+          sql="SELECT count(*)::text || ':' || coalesce(md5(string_agg(user_id::text || '=' || data::text,'|' ORDER BY user_id)),'') FROM public.user_data;"
+          original="$(psql -X -qAt -c "$sql")"
+          restored="$(PGDATABASE=iydu_restore_ci psql -X -qAt -c "$sql")"
+          test -n "$original"
+          test "$original" = "$restored"
+          # Verify the indexes, reservation counts and names survived as well.
+          check="SELECT (SELECT count(*) FROM public.iydu_usernames)::text || ':' || (SELECT count(*) FROM public.profiles)::text || ':' || (SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexname IN ('iydu_usernames_case_insensitive_key','profiles_username_lower_key'))::text;"
+          test "$(psql -X -qAt -c "$check")" = "$(PGDATABASE=iydu_restore_ci psql -X -qAt -c "$check")"
+          rm -f "$RUNNER_TEMP/iydu-ci-only.dump"
+          echo "PASS synthetic backup/restore rehearsal: account JSON, reservations and indexes preserved."
+

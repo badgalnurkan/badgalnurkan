@@ -1284,16 +1284,33 @@ if((!DBraw||!DBraw.accounts||!Object.keys(DBraw.accounts).length)&&DBbak&&DBbak.
 DB=DBraw&&DBraw.accounts?DBraw:{accounts:{},last:'',lastUser:'',lock:{},lang:'en',beige:false};
 if(!DB.lang)DB.lang='en';if(DB.beige===undefined)DB.beige=false;if(!DB.lastUser)DB.lastUser='';
 document.documentElement.lang=DB.lang;
-let pushT=null;
-function schedulePush(){clearTimeout(pushT);if(!A?.authUid)return;pushT=setTimeout(()=>{sbPush().then(ok=>{if(!ok&&A)console.warn('Cloud sync could not complete')})},850)}
-const save=()=>{
+let pushT=null, lastCloudSyncWarning=0;
+function warnCloudSyncFailure(){
+  // The browser copy remains intact. Never represent a failed remote write as confirmed.
+  const now=Date.now();
+  if(now-lastCloudSyncWarning<30000)return;
+  lastCloudSyncWarning=now;
+  toast(tr()?'Bu cihazdaki değişiklik buluta kaydedilemedi. Bağlantını kontrol et; diğer cihazda henüz görünmeyebilir.':
+    'Your change was saved on this device but not in the cloud. Check your connection before switching devices.');
+}
+function schedulePush(){
+  clearTimeout(pushT);
+  if(!A?.authUid||cloudBlocked)return;
+  const userId=A.authUid;
+  pushT=setTimeout(()=>{
+    sbPush().then(ok=>{if(!ok&&A?.authUid===userId)warnCloudSyncFailure()})
+      .catch(()=>{if(A?.authUid===userId)warnCloudSyncFailure()});
+  },850);
+}
+const save=(options={})=>{
   try{
-    if(A)A.updatedAt=Date.now();
+    if(A&&!options.skipCloudPush)A.updatedAt=Date.now();
     DB.savedAt=Date.now();
-    setItem(LSK,JSON.stringify(DB));
+    if(A?.authUid&&!options.skipCloudPush&&!cloudDraft())return;
+    if(!setItem(LSK,JSON.stringify(DB)))throw new Error('LOCAL_STORAGE_FAILED');
     touchSession();
-    schedulePush();
-  }catch(e){}
+    if(!options.skipCloudPush)schedulePush();
+  }catch(e){warnCloudSyncFailure()}
 };
 /* oturum: kullanici bilgisi kucuk ve ayri tutulur -> ana kayit bozulsa da geri donus var */
 function touchSession(){
@@ -1536,13 +1553,48 @@ const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
 // Usernames: letters, digits, underscore, dot and hyphen. Keep quotes and @ out of inline handlers and email detection.
 const USERNAME_ALLOWED='a-zA-Z0-9çÇğĞıİöÖşŞüÜ_.-';
 const userRe=new RegExp('^['+USERNAME_ALLOWED+']{3,20}$');
-function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme()})}
+function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today()})}
 function norm(a){
   const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
+  // Preserve when reporting began independently of the percentage counter.
+  // Older accounts have no reportStart; use their saved pctFrom as a one-time
+  // compatibility fallback, without discarding any existing report answers.
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(a.reportStart||'')))
+    a.reportStart=/^\d{4}-\d{2}-\d{2}$/.test(String(a.pctFrom||''))?a.pctFrom:today();
   return a;
 }
-const findUser=u=>Object.keys(DB.accounts).find(k=>k.toLowerCase()===String(u).toLowerCase());
+// Use one Turkish-aware local identity comparison. Supabase remains authoritative for cloud name availability.
+const usernameIdentityKey=u=>String(u||'').normalize('NFC').toLocaleLowerCase('tr-TR');
+const findUser=u=>Object.keys(DB.accounts).find(k=>usernameIdentityKey(k)===usernameIdentityKey(u));
+function cachedUsernameConflict(name,account=A){
+  return Object.entries(DB.accounts).some(([key,entry])=>
+    usernameIdentityKey(key)===usernameIdentityKey(name) &&
+    entry!==account && !(account?.authUid && entry?.authUid===account.authUid));
+}
+// One Supabase user must have exactly one browser-cache entry. Never overwrite a different identity.
+function cacheCloudAccount(account){
+  if(!account?.authUid)throw new Error('CLOUD_ID_MISSING');
+  if(cachedUsernameConflict(account.u,account))throw new Error('LOCAL_USERNAME_CACHE_CONFLICT');
+  const aliases=Object.entries(DB.accounts).filter(([key,entry])=>
+    entry?.authUid===account.authUid && key!==account.u);
+  if(aliases.length){
+    // Restore must never discard a potentially newer local copy without a durable recovery path.
+    const archiveKey='b1.alias-backup.'+account.authUid+'.'+Date.now()+'-'+rndHex(4);
+    const archive=JSON.stringify({format:'iydu-local-alias-backup',at:new Date().toISOString(),accounts:Object.fromEntries(aliases)});
+    if(!setItem(archiveKey,archive))throw new Error('LOCAL_ALIAS_BACKUP_FAILED');
+    for(const [key] of aliases)delete DB.accounts[key];
+  }
+  DB.accounts[account.u]=account;
+}
+function rekeyCachedAccount(account,nextName){
+  if(cachedUsernameConflict(nextName,account))throw new Error('LOCAL_USERNAME_CACHE_CONFLICT');
+  if(account.authUid){
+    const next={...account,u:nextName};
+    cacheCloudAccount(next); // back up existing aliases before changing the local key
+    Object.assign(account,next);DB.accounts[nextName]=account;
+  }else{delete DB.accounts[account.u];account.u=nextName;DB.accounts[nextName]=account}
+}
 /* hesap kaydi her zaman localStorage'da tutulur: cerez reddedilse bile kullanici hatirlanir */
 const storeAcct=()=>{try{return localStorage}catch(e){return store()}};
 const rndHex=n=>{const a=new Uint8Array(n);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(let i=0;i<n;i++)a[i]=Math.floor(Math.random()*256);return[...a].map(x=>x.toString(16).padStart(2,'0')).join('')};
@@ -1754,9 +1806,11 @@ function renderAppOrAuth(){
     h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" onclick="signInWithGoogle()">${tr()?'Google ile devam et':'Continue with Google'}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
   else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='claim-username')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+boxWide(`<h2>${tr()?'Kullanıcı adını belirle':'Choose your username'}</h2><p class="mut">${tr()?'Hesabın doğrulandı. Devam etmeden önce benzersiz bir kullanıcı adı seç. Mevcut verilerin korunur.':'Your account is verified. Choose a unique username before continuing. Your data is preserved.'}</p>${m()}<form onsubmit="event.preventDefault();claimCloudUsername()"><label for="claim-name">${t('username')} (3–20)</label><input id="claim-name" maxlength="20" autocomplete="username" autocapitalize="none" spellcheck="false" required value="${esc(claimDraftName)}" oninput="claimDraftName=this.value"><p class="mut">${t('usernameRules')}</p><div class="row"><button id="claim-username-submit" type="submit">${tr()?'Kullanıcı adını kaydet':'Save username'}</button><button type="button" class="g" onclick="cancelCloudUsernameClaim()">${tr()?'Girişe dön':'Back to sign-in'}</button></div></form>`)+`</div>`;
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button></div><p class="mut">${tr()?'Demo aşamasında e-posta servisi kapalıysa bağlantı gönderilemez; lütfen hesabını oluştururken güçlü bir şifre seç.':'Password reset email requires an email sending provider, which may be unavailable during the demo.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
+  if(view==='claim-username')document.getElementById('claim-name')?.focus();
 }
 
 
@@ -1873,11 +1927,17 @@ function debounceNameCheck(){
   clearTimeout(nameTimer);
   const name=String(formDat.u||'');if(!userRe.test(name)){showNameHint('');return}
   nameTimer=setTimeout(async()=>{
-    if(findUser(name)){showNameHint(suggestNameHtml(name));return}
+    if(findUser(name)){
+      showNameHint(tr()?'Bu kullanıcı adında başka bir hesap bu tarayıcıda kayıtlı. Buluttaki müsaitlikten bağımsız olarak, yerel verileri korumak için farklı ad seç.':
+        'Another profile with this name is cached on this device. Choose a different name to protect local data, even if the name is available on the server.');
+      return;
+    }
     try{const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:name}});
       if(formDat.u!==name)return;
-      showNameHint(available===false?suggestNameHtml(name):`<small class="username-available">${tr()?'Bu kullanıcı adı uygun.':'This username is available.'}</small>`);
-    }catch(_){showNameHint('')}
+      showNameHint(available===false?suggestNameHtml(name):
+        available===true?`<small class="username-available">${tr()?'Bu kullanıcı adı uygun.':'This username is available.'}</small>`:
+        (tr()?'Kullanıcı adı doğrulanamadı.':'Username availability was not confirmed.'));
+    }catch(_){showNameHint(tr()?'Kullanıcı adı şu an kontrol edilemiyor.':'Username availability cannot be checked right now.')}
   },360);
 }
 function checkEmailHint(){
@@ -1889,8 +1949,9 @@ function checkEmailHint(){
 function authErrorMessage(err){
   if(err&&(/already registered|already exists|user_already_exists/i.test(err.message||'')||err.code==='user_already_exists'))return 'already-email';
   if(err&&(/duplicate key|unique|iydu_usernames|username/i.test(err.message||'')))return 'username';
-  if(err&&(/email not confirmed/i.test(err.message||'')))return 'email-unconfirmed';
-  if(err&&(/invalid login credentials/i.test(err.message||'')))return 'credentials';
+  if(err&&(err.code==='email_not_confirmed'||/email not confirmed/i.test(err.message||'')))return 'email-unconfirmed';
+  if(err&&(err.code==='invalid_credentials'||/invalid login credentials/i.test(err.message||'')))return 'credentials';
+  if(err&&(err.status===429||err.code==='over_request_rate_limit'))return 'rate-limit';
   return 'unknown';
 }
 function goExistingEmail(email){
@@ -1898,24 +1959,86 @@ function goExistingEmail(email){
   msg=tr()?'Bu e-posta zaten kayıtlı. Yeni hesap yerine giriş yap.':'Email already registered. Sign in instead of creating another account.';
   softPaint();
 }
+let pendingCloudUsername=null,claimDraftName='',claimBusy=false;
+async function cloudReservedUsername(){
+  const name=await sb('/rest/v1/rpc/iydu_my_username',{method:'POST',body:{}});
+  if(name===null)return null;
+  if(typeof name!=='string'||!userRe.test(name))throw new Error('INVALID_CLOUD_USERNAME');
+  return name;
+}
+function cancelCloudUsernameClaim(){
+  if(claimBusy)return;
+  pendingCloudUsername=null;claimDraftName='';sbClear();A=null;view='login';msg='';renderAppOrAuth();
+}
+async function claimCloudUsername(){
+  if(claimBusy||!pendingCloudUsername)return;
+  const name=String(document.getElementById('claim-name')?.value||claimDraftName).trim();
+  claimDraftName=name;
+  if(!userRe.test(name)){msg=t('usernameRules');return renderAppOrAuth()}
+  const pending=pendingCloudUsername,uid=pending.identity?.user?.id;
+  if(!uid||sbSession()?.user?.id!==uid){
+    msg=tr()?'Oturum süresi doldu. Yeniden giriş yap.':'Session expired. Sign in again.';
+    return renderAppOrAuth();
+  }
+  if(cachedUsernameConflict(name,{authUid:uid})){
+    msg=tr()?'Bu cihazda farklı bir hesabın yerel kaydı bu adı kullanıyor. Verileri korumak için farklı ad seç.':
+      'Another local account uses this name on this device. Choose another to protect its data.';
+    return renderAppOrAuth();
+  }
+  claimBusy=true;const button=document.getElementById('claim-username-submit');
+  if(button)button.disabled=true;
+  try{
+    await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:name}});
+    if(await cloudReservedUsername()!==name)throw new Error('USERNAME_READBACK_MISMATCH');
+    const account=await activateCloudUser(pending.identity,name,pending.method,pending.options);
+    if(!account)throw new Error('USERNAME_CLAIM_UNCONFIRMED');
+    pendingCloudUsername=null;claimDraftName='';greetThen();
+  }catch(error){
+    // A response timeout may happen after commit: preserve the identity for safe retry.
+    msg=error?.code==='23505'||error?.status===409?t('usernameTaken'):
+      (tr()?'Kullanıcı adı doğrulanamadı. Verilerin korundu; bağlantını kontrol edip tekrar dene.':
+        'Username was not confirmed. Your data is preserved; check connection and retry.');
+    view='claim-username';if(!A)renderAppOrAuth();
+  }finally{claimBusy=false;if(button?.isConnected)button.disabled=false}
+}
 async function activateCloudUser(j,preferredName='',method='password',options={}){
   const uid=j&&j.user&&j.user.id;
   if(!uid||!j.access_token)throw new Error('Missing authenticated session');
   sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
   const meta=j.user.user_metadata||{};
-  const fromCloud=await sbPull(); // may throw, never replace cloud data with empty after a failure
+  const fromCloud=await sbPull();
+  const reserved=await cloudReservedUsername(); // canonical username comes from server, never email guess
+  if(!reserved){
+    pendingCloudUsername={identity:j,preferredName,method,options};
+    const proposed=String(fromCloud?.u||preferredName||meta.username||'');
+    claimDraftName=userRe.test(proposed)?proposed:'';
+    A=null;view='claim-username';msg='';renderAppOrAuth();return null;
+  }
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
-  const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
-  const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
-  a.u=username;a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
-  a.pw='';delete a.salt; // Cloud passwords are checked by Supabase, never stored in user_data.
-  a.loginMethod=method==='google'?'google':'password';
+  const pending=cloudPending(uid);
+  // An unsynced draft is authoritative ONLY on this device until CAS confirms it.
+  cloudUid=uid;cloudBase=cloudClone(pending?.base||fromCloud||{});
+  cloudBlocked=!!(pending&&!cloudEqual(pending.base,fromCloud||{}));
+  if(fromLocal&&!pending&&!cloudEqual(cloudSnapshot(fromLocal),fromCloud||{})){
+    // Preserve one pre-upgrade snapshot without unbounded archives on every login.
+    // It is explicitly presented for recovery; never silently merge stale JSON.
+    const archive=cloudLegacyKey(uid);
+    if(!readJson(archive)&&!setItem(archive,JSON.stringify({
+      format:'iydu-legacy-local-recovery-v1',uid,at:Date.now(),
+      account:cloudSnapshot(fromLocal)
+    })))throw new Error('LOCAL_ALIAS_BACKUP_FAILED');
+  }
+  const a=norm(cloudClone(pending?.local||fromCloud||{u:reserved,nick:meta.nick||meta.nickname||reserved,email:j.user.email}));
+  a.u=reserved;if(!a.nick)a.nick=String(meta.nick||meta.nickname||reserved);
+  a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
+  a.pw='';delete a.salt;a.loginMethod=method==='google'?'google':'password';
   if(method==='google'||j.user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
   v13ProtectLegacyCollision(a.u,uid,options.allowLegacyReplacement===true);
-  DB.accounts[a.u]=a;DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
-  restorePomodoroState();applyTheme();save();loginDat={u:'',p:''};
+  cacheCloudAccount(a);DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
+  pendingCloudUsername=null;claimDraftName='';
+  restorePomodoroState();applyTheme();save({skipCloudPush:true});loginDat={u:'',p:''};
   goTo('app','home');
-  if(!fromCloud)await sbPush();
+  if(pending&&!cloudBlocked)schedulePush();
   return a;
 }
 async function login(){
@@ -1933,16 +2056,32 @@ async function login(){
     if(email){
       try{
         const j=await sbSignIn(raw,password,email);
-        await activateCloudUser(j,raw,'password');
-        greetThen();return;
+        try{
+          await activateCloudUser(j,raw,'password');
+        }catch(profileErr){
+          loginDat.p='';
+          msg=profileErr.message==='LOCAL_ALIAS_BACKUP_FAILED'?
+            (tr()?'Bu cihazdaki eski profil güvenle yedeklenemedi. Veri silinmedi; depolama alanını kontrol et.':
+              'Your older profile could not be backed up safely. No data was removed; check storage space.'):
+            profileErr.message==='LOCAL_USERNAME_CACHE_CONFLICT'?
+            (tr()?'Bu cihazda farklı bir hesaba ait eski kayıtla çakışma var. Hesabın ve şifren doğrulandı; yerel kayıtları silmeden önce destek al.':
+              'Your account and password are valid, but another cached account conflicts on this device. Do not erase the browser data.'):
+            (tr()?'Kimliğin doğrulandı ancak profil verilerin yüklenemedi. Kayıtların silinmedi; bağlantını veya sunucu durumunu kontrol et.':
+              'Your sign-in succeeded, but profile data could not be loaded. Your records were not deleted.');
+          return renderAppOrAuth();
+        }
+        if(A)greetThen();return;
       }catch(e){
         if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
           sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home');greetThen();
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
         loginDat.p='';
-        msg=authErrorMessage(e)==='email-unconfirmed'?(tr()?'E-posta doğrulaması gerekiyor. Demo için Supabase ayarını kontrol et.':'Email confirmation required. Check Supabase demo settings.'):
-          (tr()?'Giriş başarısız. E-posta ve şifreni kontrol et.':'Sign-in failed. Check email and password.');
+        const cause=authErrorMessage(e);
+        msg=cause==='email-unconfirmed'?(tr()?'E-posta doğrulaması gerekiyor.':'Email confirmation is required.'):
+          cause==='credentials'?(tr()?'E-posta veya şifre yanlış.':'Incorrect email or password.'):
+          cause==='rate-limit'?(tr()?'Çok sayıda giriş denemesi yapıldı. Daha sonra tekrar dene.':'Too many attempts. Try again later.'):
+          (tr()?'Giriş sunucusuna bağlanılamadı. Bir süre sonra tekrar dene.':'Could not reach the sign-in server. Try again shortly.');
         if(authErrorMessage(e)==='credentials'&&localAcc?.googleConnected)msg=tr()?'Bu hesap Google ile açılmış olabilir. Google ile devam et; manuel giriş için önce Ayarlar’da uygulama şifresi belirle.':'This account may use Google sign-in. Continue with Google, or set an app password in Settings first.';
         if(e.name==='AbortError')msg=tr()?'Bağlantı zaman aşımına uğradı.':'Connection timed out.';
         return renderAppOrAuth();
@@ -1963,7 +2102,8 @@ async function setup(){
   formDat={u,n,b:String($('#b')?.value||'').slice(0,160),e,t:'',p:'',p2:''};
   if(!userRe.test(u))msg=t('usernameRules');
   else if(!n)msg=t('displayRequired');
-  else if(findUser(u))msg=t('usernameTaken');
+  else if(findUser(u))msg=tr()?'Bu kullanıcı adı bu tarayıcıda başka bir profil tarafından kullanılıyor. Veri çakışmasını önlemek için farklı ad seç.':
+    'This username is already used by another profile in this browser. Choose a different name to protect its data.';
   else if(!emailPattern.test(e))msg=t('emailInvalid');
   else if(p!==p2)msg=tr()?'Şifreler eşleşmiyor.':'Passwords do not match.';
   else msg=pwOk(p,u);
@@ -1979,6 +2119,7 @@ async function setup(){
       renderAppOrAuth();return;
     }
     await activateCloudUser(j,u);
+    if(!A)return;
     formDat={u:'',n:'',b:'',e:'',t:'',p:''};greetThen();
     toast(tr()?'Bulut hesabın oluşturuldu. E-posta sahipliği kontrol edilmedi (demo).':'Cloud account created. Email ownership was not checked (demo).');
   }catch(err){
@@ -2092,17 +2233,32 @@ async function profileUsernameHint(name,targetId){
   if(!userRe.test(proposed)){
     el.innerHTML=`<small class="mut">${esc(t('usernameRules'))}</small>`;return;
   }
-  if(proposed===A.u){el.innerHTML=`<small class="username-available">${tr()?'Bu, mevcut kullanıcı adın.':'This is your current username.'}</small>`;return}
+  if(usernameIdentityKey(proposed)===usernameIdentityKey(A.u)){
+    el.innerHTML=`<small class="username-available">${tr()?'Bu, mevcut kullanıcı adın.':'This is your current username.'}</small>`;return;
+  }
   el.textContent=tr()?'Kullanıcı adı denetleniyor…':'Checking username…';
   profileHintTimer=setTimeout(async()=>{
-    let taken=!!(findUser(proposed)&&findUser(proposed)!==A.u);
-    if(!taken&&A.authUid){
-      try{const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:proposed}});taken=available===false}
-      catch(_){if(serial===profileHintSequence)el.textContent=tr()?'Kullanıcı adı şu an doğrulanamadı.':'Could not verify username availability.';return}
+    const deviceConflict=cachedUsernameConflict(proposed,A);
+    let taken=!!deviceConflict&&!A.authUid;
+    if(A.authUid){
+      try{
+        const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:proposed}});
+        if(available!==true&&available!==false)throw new Error('INVALID_USERNAME_CHECK');
+        taken=available===false;
+      }catch(_){
+        if(serial===profileHintSequence&&el.isConnected)
+          el.textContent=tr()?'Sunucu kontrolü başarısız. Bu isim henüz doğrulanmadı.':'Server check failed. This name is not verified.';
+        return;
+      }
     }
     if(serial!==profileHintSequence||!el.isConnected)return;
+    if(!taken&&deviceConflict){
+      el.textContent=tr()?'Sunucuda müsait, ancak bu cihazda başka bir hesabın eski kaydıyla çakışıyor. Veri kaybını önlemek için değişiklik engellendi.':
+        'Available on the server, but another account is cached under this name on this device. Rename blocked to protect local data.';
+      return;
+    }
     if(!taken){
-      el.innerHTML=`<small class="username-available">${tr()?(A.authUid?'Bu kullanıcı adı uygun.':'Bu cihazda uygun; bulut kontrolü yapılmadı.'):(A.authUid?'This username is available.':'Available on this device; cloud status not checked.')}</small>`;
+      el.innerHTML=`<small class="username-available">${tr()?(A.authUid?'Sunucuda uygun.':'Bu cihazda uygun; bulut kontrolü yapılmadı.'):(A.authUid?'Available on server.':'Available on this device only.')}</small>`;
       return;
     }
     const proposals=usernameSuggestions(proposed,Object.keys(DB.accounts));
@@ -2112,7 +2268,7 @@ async function profileUsernameHint(name,targetId){
         try{return await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:candidate}})===true?candidate:null}
         catch(_){return null}
       }));
-      suggestions=checks.filter(Boolean);
+      suggestions=checks.filter(candidate=>candidate&&!cachedUsernameConflict(candidate,A));
     }
     if(serial!==profileHintSequence||!el.isConnected)return;
     const target=targetId==='settings-name-hint'?'su':'prof-u';
@@ -2123,6 +2279,14 @@ async function profileUsernameHint(name,targetId){
     }));
     el.querySelector('[data-refresh-suggestions]')?.addEventListener('click',()=>profileUsernameHint(proposed,targetId));
   },300);
+}
+function usernameUpdateErrorMessage(error){
+  if(error?.code==='23505'||error?.status===409||/duplicate key|already taken/i.test(error?.message||''))return t('usernameTaken');
+  if(error?.code==='42501'||error?.status===401||error?.status===403)
+    return tr()?'Oturum veya yetki hatası. Yeniden giriş yapıp dene.':'Session or permission error. Sign in again.';
+  if(error?.name==='AbortError')return tr()?'Sunucu zaman aşımı. Kullanıcı adını değiştirmeden önce durumunu yeniden kontrol et.':'Server timeout. Check the name again before retrying.';
+  return tr()?'Kullanıcı adı güncellenemedi. Sunucu hatası oluştu; bu isim alınmış anlamına gelmez.':
+    'The username could not be updated due to a server error. It does not mean the name is taken.';
 }
 function profilePasswordMarkup(){
   if(A.authUid&&A.loginMethod==='google')return `<section class="profile-security"><h3>${tr()?'E-posta ve uygulama şifresi':'Email & app password'}</h3><p class="mut">${tr()?'Google şifreni değil, bu site için ayrı bir şifre belirle.':'Create a separate password for this site, not your Google password.'}</p><label for="prof-google-app-pass">${t('newPassword')}</label><input id="prof-google-app-pass" type="password" autocomplete="new-password" minlength="8"><label for="prof-google-app-pass-confirm">${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="prof-google-app-pass-confirm" type="password" autocomplete="new-password" minlength="8"><button id="prof-google-app-pass-submit" onclick="setGoogleAccountPassword('profile')">${tr()?'Uygulama şifresini belirle':'Set app password'}</button></section>`;
@@ -2137,15 +2301,32 @@ async function saveProfile(){
   const username=String($('#prof-u')?.value||'').trim(),nick=String($('#prof-n')?.value||'').trim(),bio=String($('#prof-b')?.value||'').trim();
   if(!userRe.test(username)||!nick){toast(tr()?'Kullanıcı adı veya isim geçersiz.':'Invalid username or display name.');return}
   if(username!==A.u){
-    const other=findUser(username);if(other&&other!==A.u){await profileUsernameHint(username,'profile-name-hint');toast(t('usernameTaken'));return}
+    if(A.authUid&&cloudPending(A.authUid)&&!(await sbPush())){
+      if(cloudBlocked)cloudConflictPanel();
+      else warnCloudSyncFailure();
+      return;
+    }
+    if(cachedUsernameConflict(username,A)){
+      await profileUsernameHint(username,'profile-name-hint');
+      toast(tr()?'Bu cihazda farklı bir hesap kaydıyla çakışıyor. Mevcut verileri korumak için işlem durduruldu.':
+        'Another account is cached under that name on this device. Rename blocked to protect its data.');
+      return;
+    }
     try{
-      if(A.authUid)await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:username}});
-      const previous=A.u;delete DB.accounts[previous];A.u=username;DB.accounts[A.u]=A;
-    }catch(_){await profileUsernameHint(username,'profile-name-hint');toast(t('usernameTaken'));return}
+      if(A.authUid){
+        await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:username}});
+        cloudBase=await sbPull(); // atomic rename also changes JSON.u
+      }
+      rekeyCachedAccount(A,username);
+    }catch(error){await profileUsernameHint(username,'profile-name-hint');toast(usernameUpdateErrorMessage(error));return}
   }
   A.nick=nick.slice(0,30);A.bio=bio.slice(0,160);DB.last=A.nick;
   // Treat Supabase's user_data row as the canonical profile record for this app.
-  save();closeModal('profile-modal');shell();toast(t('saved'));
+  save();
+  if(A.authUid&&!await sbPush()){
+    closeModal('profile-modal');shell();warnCloudSyncFailure();return;
+  }
+  closeModal('profile-modal');shell();toast(t('saved'));
 }
 /* Return one month of header buttons without rebuilding the page or any draft inputs. */
 function miniCalendarData(dayKey){
@@ -2173,6 +2354,7 @@ function shell(){
   $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button><button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><aside id="nav-aside" class="${firstShell?'intro':''}"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navLabel(k)}</a>`).join('')}</aside><main id="mn"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();
+  cloudSyncBanner();
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),650)}
   const cal=$('#mini-cal');if(cal&&cal.parentElement!==document.body)document.body.appendChild(cal);
 }
@@ -2404,8 +2586,53 @@ function addRandQ(k){const R=rqFor();A.qs[k].push({q:R[Math.floor(Math.random()*
 function addQ(k){const e=$('#nq-'+k),v=e.value.trim().slice(0,150);if(v){A.qs[k].push({q:v,a:''});save();P.rep()}}
 function lockQ(k,b){if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent=tr()?'Emin misin? Bu işlem geri alınamaz':'Are you sure? This cannot be undone';return}A.ql[k]=1;save();P.rep()}
 
-/* Pure date gates: a report is available only on the day after the completed period. */
-function reportPeriodEnded(now,end){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}-\d{2}$/.test(String(end))&&now>end}
+/* Weekly/monthly reports unlock on the last calendar day of their period.
+   Keep showing the most recently unlocked period after the week/month changes. */
+function reportPeriodEnded(now,end){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}-\d{2}$/.test(String(end))&&now>=end}
+function latestUnlockedReportPeriod(kind,day){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(day)))return null;
+  if(kind==='week'){
+    let start=mon(day);
+    if(!reportPeriodEnded(day,addD(start,6)))start=addD(start,-7);
+    return {a:start,b:addD(start,6),pa:addD(start,-7),pb:addD(start,-1),
+      key:start,nk:addD(start,7)};
+  }
+  if(kind==='month'){
+    const first=new Date(Number(day.slice(0,4)),Number(day.slice(5,7))-1,1);
+    const currentEnd=D(new Date(first.getFullYear(),first.getMonth()+1,0));
+    if(!reportPeriodEnded(day,currentEnd))first.setMonth(first.getMonth()-1);
+    const y=first.getFullYear(),m=first.getMonth();
+    const a=D(new Date(y,m,1));
+    return {a,b:D(new Date(y,m+1,0)),
+      pa:D(new Date(y,m-1,1)),pb:D(new Date(y,m,0)),
+      key:a.slice(0,7),nk:D(new Date(y,m+1,1)).slice(0,7)};
+  }
+  throw new RangeError('Invalid report period');
+}
+/* An enrollment on Monday/1st includes that calendar period; a partial
+   signup week/month is skipped. First unlock is the last day of the FIRST
+   COMPLETE reporting period, not seven days/a month after signup. */
+function reportInitialUnlockDate(kind,start){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(start)))return null;
+  if(kind==='week'){
+    const firstMonday=mon(start);
+    return addD(firstMonday===start?firstMonday:addD(firstMonday,7),6);
+  }
+  if(kind==='month'){
+    const [y,m,d]=start.split('-').map(Number);
+    return D(new Date(y,m+(d===1?0:1),0));
+  }
+  throw new RangeError('Invalid report kind');
+}
+function pendingReportCard(title,start,available){
+  const td=today();
+  const total=Math.max(1,dd(start,available)+1);
+  const elapsed=Math.min(total,Math.max(0,dd(start,td)+1));
+  const left=Math.max(0,dd(td,available));
+  return `<div class="card"><h2>🔒 ${title}</h2>
+    <p class="mut">${t('opensOn')} ${fmt(available)} — ${left} ${t('daysLeft')}</p>
+    <div class="bar"><i style="width:${Math.min(100,elapsed/total*100)}%"></i></div></div>`;
+}
 function answerArchiveUnlocked(now,periodKey){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}(?:-\d{2})?$/.test(String(periodKey))&&Number(now.slice(0,4))>Number(periodKey.slice(0,4))}
 function repCard(title,per,a,b,pa,pb,key,nk,defs){
   const td=today();
@@ -2417,7 +2644,7 @@ function repCard(title,per,a,b,pa,pb,key,nk,defs){
   if(!A.qs[key])A.qs[key]=defs.map(q=>({q,a:''}));
   const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p,cur=A.qs[key]||[],ro=!!A.ql[key];
   const rows=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
-  return`<div class="card"><h2>${title}</h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}
+  return`<div class="card"><h2>${title} <small class="mut" style="display:block;font-size:.75rem;font-weight:400">${fmt(a)} – ${fmt(b)}</small></h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}
 <h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3>${cur.length?(ro?`<p class="mut">🔒 ${tr()?'Yanıtların kilitlendi. Yıl bitene kadar Yanıt arşivinde gizli kalacak.':'Your answers are locked and will stay hidden in the answer archive until the end of the year.'}</p>`:qb(key,cur,false)+`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
 <h3 style="margin-top:1.2rem">${tr()?'Sonraki':'Next'} ${per}</h3>${qb(nk,A.qs[nk],false)}<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="${t('addOwnQuestion')}"><button class="s" onclick="addQ('${nk}')">${t('addQuestion')}</button><button class="g s" onclick="addRandQ('${nk}')">${t('randomQuestion')}</button></div></div>`;
 }
@@ -2473,10 +2700,16 @@ function reportDetailView(){
 }
 P.rep=()=>{
   if(reportDetail){M(reportDetailView());return}
-  const td=today(),wa=mon(td),wb=addD(wa,6),x=new Date();
-  const ma=D(new Date(x.getFullYear(),x.getMonth(),1)),mb=D(new Date(x.getFullYear(),x.getMonth()+1,0)),pma=D(new Date(x.getFullYear(),x.getMonth()-1,1)),pmb=D(new Date(x.getFullYear(),x.getMonth(),0));
-  const mNext=D(new Date(x.getFullYear(),x.getMonth()+1,1)).slice(0,7);
-  M(repCard(t('weeklyReport'),tr()?'hafta':'week',wa,wb,addD(wa,-7),addD(wa,-1),wa,addD(wa,7),defQ('week'))+repCard(t('monthlyReport'),tr()?'ay':'month',ma,mb,pma,pmb,ma.slice(0,7),mNext,defQ('month'))+historySection());
+  const td=today(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
+  const since=/^\d{4}-\d{2}-\d{2}$/.test(String(A?.reportStart))?A.reportStart:
+    (/^\d{4}-\d{2}-\d{2}$/.test(String(A?.pctFrom))?A.pctFrom:td);
+  const wUnlock=reportInitialUnlockDate('week',since);
+  const mUnlock=reportInitialUnlockDate('month',since);
+  M((td<wUnlock?pendingReportCard(t('weeklyReport'),since,wUnlock):
+       repCard(t('weeklyReport'),tr()?'hafta':'week',w.a,w.b,w.pa,w.pb,w.key,w.nk,defQ('week')))+
+    (td<mUnlock?pendingReportCard(t('monthlyReport'),since,mUnlock):
+       repCard(t('monthlyReport'),tr()?'ay':'month',m.a,m.b,m.pa,m.pb,m.key,m.nk,defQ('month')))+
+    historySection());
 };
 
 let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};
@@ -2799,15 +3032,22 @@ async function chg(k){
   const v=String($(k==='u'?'#su':'#sn')?.value||'').trim();if(!v)return;
   if(k==='u'){
     if(!userRe.test(v)){msg=t('usernameRules');return P.set()}
-    const other=findUser(v);if(other&&other!==A.u){await profileUsernameHint(v,'settings-name-hint');toast(t('usernameTaken'));return}
-    if(v===A.u)return;
+    if(usernameIdentityKey(v)===usernameIdentityKey(A.u))return;
+    if(cachedUsernameConflict(v,A)){
+      await profileUsernameHint(v,'settings-name-hint');
+      toast(tr()?'Bu cihazdaki farklı bir hesapla çakışıyor. Veriler korunuyor.':
+        'Another cached account uses that name on this device. Its data was preserved.');return;
+    }
     if(A.authUid){
       try{await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:v}})}
-      catch(_){await profileUsernameHint(v,'settings-name-hint');toast(t('usernameTaken'));return}
+      catch(error){await profileUsernameHint(v,'settings-name-hint');toast(usernameUpdateErrorMessage(error));return}
     }
-    delete DB.accounts[A.u];A.u=v;DB.accounts[v]=A;
+    rekeyCachedAccount(A,v);
   }else{A.nick=v.slice(0,30)}
-  DB.last=A.nick;DB.lastUser=A.u;save();msg=t('saved');shell();
+  DB.last=A.nick;DB.lastUser=A.u;save();
+  if(A.authUid&&!await sbPush()){msg=tr()?'Bu cihazda değişti, ancak bulut kaydı doğrulanamadı.':
+    'Changed on this device, but the cloud update was not confirmed.';warnCloudSyncFailure();shell();return}
+  msg=t('saved');shell();
 }
 
 const EMAIL_TRANSACTIONS_ENABLED=false; // Turn on only after verified custom SMTP/Send Email Hook and end-to-end tests.
@@ -3233,6 +3473,13 @@ async function v13FinishMigration(j){
     try{
       await sb('/rest/v1/rpc/iydu_set_username',{method:'POST',body:{p_username:source.u}});
     }catch(e){if(e?.code==='23505'||e?.status===409)throw new Error('USERNAME_TAKEN');throw e}
+    // Username claim changes data.u; verify that this is the ONLY difference
+    // before using the refreshed JSON as the migration compare-and-swap base.
+    const afterClaim=await sbPull();
+    const claimOnly=afterClaim&&afterClaim.u===source.u&&
+      Object.keys(afterClaim).every(k=>k==='u'||(existing&&JSON.stringify(afterClaim[k])===JSON.stringify(existing[k])))&&
+      Object.keys(existing||{}).every(k=>k==='u'||Object.prototype.hasOwnProperty.call(afterClaim,k));
+    if(!claimOnly)throw new Error('CLOUD_CHANGED');
     const snapshot=exportDataSnapshot(source).account;
     const migration={...snapshot,u:source.u,authUid:uid,accountOrigin:'cloud',loginMethod:'google',googleConnected:true,
       email:String(j.user.email).toLowerCase(),mail:String(j.user.email).toLowerCase(),pw:'',
@@ -3241,7 +3488,7 @@ async function v13FinishMigration(j){
     // replaced when it equals the exact empty snapshot we reviewed above.
     // Missing row: INSERT ... ON CONFLICT DO NOTHING; existing row: UPDATE ... WHERE data=p_expected_data.
     const written=await sb('/rest/v1/rpc/iydu_migrate_legacy',{method:'POST',
-      body:{p_data:migration,p_expected_data:existing||null}});
+      body:{p_data:migration,p_expected_data:afterClaim}});
     if(written!==true)throw new Error('CLOUD_CHANGED');
     const verified=await sbPull();
     if(!verified||verified.legacyMigrationId!==pending.nonce||verified.authUid!==uid||verified.u!==source.u||
@@ -3271,14 +3518,130 @@ const SUPABASE_URL='https://flcfqwndqfmbritaywfb.supabase.co';
 const SUPABASE_KEY='sb_publishable_4QTEEc6tSYV2QtNhmeP6Iw_B3sM6dtm';
 const SESS_KEY='b1sb', CLOUD_KEY='b1cloud';
 const cloud=()=>true;
+// Canonical server JSON base for compare-and-swap, never a guessed account object.
+// Pending drafts are stored separately from UI cache so reloads cannot silently
+// replace offline edits with a newer cloud snapshot.
+let cloudBase=null,cloudUid=null,cloudBlocked=false,cloudFlight=null;
+const cloudPendingKey=uid=>'b1.sync.pending.'+uid;
+const cloudLegacyKey=uid=>'b1.sync.legacy-backup.'+uid;
+const cloudClone=x=>JSON.parse(JSON.stringify(x));
+const cloudEqual=(x,y)=>JSON.stringify(x)===JSON.stringify(y);
+function cloudSnapshot(a){
+  const value=cloudClone(a);value.pw='';delete value.salt;
+  return value;
+}
+function cloudPending(uid){
+  const x=readJson(cloudPendingKey(uid));
+  return x&&x.uid===uid&&x.base&&typeof x.base==='object'&&!Array.isArray(x.base)&&
+    x.local&&typeof x.local==='object'&&!Array.isArray(x.local)?x:null;
+}
+function cloudDraft(){
+  if(!A?.authUid)return true;
+  const uid=A.authUid;
+  if(cloudUid!==uid||cloudBase===null){
+    cloudBlocked=true;warnCloudSyncFailure();return false;
+  }
+  const pending={uid,base:cloudClone(cloudBase),local:cloudSnapshot(A),at:Date.now()};
+  try{
+    if(!setItem(cloudPendingKey(uid),JSON.stringify(pending)))throw new Error('LOCAL_SYNC_BACKUP_FAILED');
+    return true;
+  }catch(_){cloudBlocked=true;warnCloudSyncFailure();return false}
+}
+function cloudBackupLegacy(){
+  const uid=A?.authUid,legacy=uid&&readJson(cloudLegacyKey(uid));
+  if(!legacy||legacy.uid!==uid)return;
+  const blob=new Blob([JSON.stringify(legacy,null,2)],{type:'application/json'});
+  const href=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=href;link.download='iydu-onceki-yerel-profil-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(href),60000);
+  setItem(cloudLegacyKey(uid)+'.dismissed','1');
+}
+function cloudBackupFile(){
+  const uid=A?.authUid;
+  if(!uid)return;
+  const local=cloudPending(uid)?.local||cloudSnapshot(A);
+  const blob=new Blob([JSON.stringify({format:'iydu-sync-recovery-v1',at:new Date().toISOString(),uid,account:local},null,2)],
+    {type:'application/json'});
+  const href=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=href;link.download='iydu-yerel-yedek-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(href),60000);
+}
+function cloudConflictPanel(){
+  if(!A?.authUid||!cloudBlocked)return;
+  openModal('cloud-sync-conflict',`<h2>${tr()?'Veri eşitleme çakışması':'Cloud sync conflict'}</h2>
+  <p>${tr()?'Bu cihazdaki değişikliklerle sunucudaki güncel kayıt farklı. Üzerine yazmayı durdurduk. Yerel değişikliklerin korunuyor.':
+    'Your local edits differ from the current cloud version. We stopped overwriting. Your local changes are preserved.'}</p>
+  <div class="row"><button onclick="cloudBackupFile()">${tr()?'Yerel verilerimi indir':'Download local backup'}</button>
+  <button class="g" onclick="cloudUseRemote()">${tr()?'Bulut sürümünü aç (önce yedekle)':'Use cloud version (backup first)'}</button>
+  <button class="g" onclick="closeModal('cloud-sync-conflict')">${t('cancel')}</button></div>
+  <p class="mut">${tr()?'Bulut sürümünü seçersen bu cihazın taslağı ayrıca kurtarma kaydına alınır. İki sürüm otomatik birleştirilmez.':
+    'Choosing the cloud version archives your current draft separately. Versions are not auto-merged.'}</p>`);
+}
+function cloudSyncBanner(){
+  if(!A?.authUid)return;
+  const uid=A.authUid,legacy=readJson(cloudLegacyKey(uid));
+  if(legacy&&legacy.uid===uid&&!getItem(cloudLegacyKey(uid)+'.dismissed')){
+    const main=document.querySelector('.shell main');
+    if(main){
+      const node=document.createElement('section');node.setAttribute('role','status');node.className='card';
+      node.innerHTML=`<strong>${tr()?'Önceki cihaz kaydının yedeği var':'Previous local account backup available'}</strong>
+      <p>${tr()?'Eski tarayıcıda kaydedilmiş bir profil ile bulut sürümü farklı olabilir. Eski kayıt korunmuştur.':
+        'A previous browser profile may differ from the cloud version. We preserved its recovery copy.'}</p>
+      <button type="button" onclick="cloudBackupLegacy();shell()">${tr()?'Önceki profil yedeğini indir':'Download previous profile backup'}</button>`;
+      main.prepend(node);
+    }
+  }
+  if(!cloudBlocked)return;
+  const main=document.querySelector('.shell main');
+  if(!main)return;
+  const node=document.createElement('section');
+  node.setAttribute('role','alert');
+  node.className='card';
+  node.style.margin='12px';
+  node.innerHTML=`<strong>${tr()?'Bulut eşitlemesi durduruldu':'Cloud synchronization paused'}</strong>
+    <p>${tr()?'Bu cihazın değişiklikleri korunuyor. Diğer cihazdaki kayıtların üzerine yazılmayacak.':
+      'Your local changes are preserved. They will not overwrite another device.'}</p>
+    <button type="button" onclick="cloudConflictPanel()">${tr()?'Sürümleri incele ve yedekle':'Review versions and backup'}</button>`;
+  main.prepend(node);
+}
+async function cloudUseRemote(){
+  if(!A?.authUid)return;
+  const uid=A.authUid,pending=cloudPending(uid);
+  if(!pending){toast(tr()?'Kurtarılacak yerel taslak bulunamadı.':'No recoverable local draft.');return}
+  const archive='b1.sync.archive.'+uid+'.'+Date.now();
+  if(!setItem(archive,JSON.stringify(pending))){
+    toast(tr()?'Kurtarma kopyası kaydedilemedi; hiçbir veri değiştirilmedi.':'Recovery backup failed. Nothing changed.');return;
+  }
+  let latest,reserved;
+  try{latest=await sbPull();reserved=await cloudReservedUsername()}
+  catch(_){warnCloudSyncFailure();return}
+  if(!latest||typeof latest!=='object')return;
+  const next=norm(cloudClone(latest));
+  next.authUid=uid;next.u=reserved;
+  if(!next.u)return;
+  next.accountOrigin='cloud';next.email=A.email;next.mail=A.mail;next.pw='';
+  try{cacheCloudAccount(next)}catch(_){warnCloudSyncFailure();return}
+  A=next;cloudUid=uid;cloudBase=cloudClone(latest);cloudBlocked=false;
+  setItem(cloudPendingKey(uid),'');
+  closeModal('cloud-sync-conflict');save({skipCloudPush:true});shell();
+  toast(tr()?'Bulut sürümü açıldı. Önceki yerel taslak ayrıca arşivlendi.':
+    'Cloud version loaded. Previous local draft was archived separately.');
+}
+
 
 function signInWithGoogle(){
-  const redirect=location.origin+location.pathname;
-  if(!redirect.startsWith('https://')&&!redirect.startsWith('http://localhost')){
+  // Only HTTPS origins or exact loopback hosts during local development.
+  // Do not trust a startsWith('http://localhost') test for other hostnames.
+  const localHost=location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.hostname==='[::1]';
+  if(location.protocol!=='https:'&&!(location.protocol==='http:'&&localHost)){
     toast(tr()?'Google girişi güvenli HTTPS adresinde kullanılabilir.':'Google sign-in requires HTTPS.');return;
   }
+  const redirect=location.origin+location.pathname;
   const url=new URL(SUPABASE_URL+'/auth/v1/authorize');
-  url.searchParams.set('provider','google');url.searchParams.set('redirect_to',redirect);
+  url.searchParams.set('provider','google');
+  url.searchParams.set('redirect_to',redirect);
   location.assign(url.toString());
 }
 async function bootstrapCloudAuth(){
@@ -3304,8 +3667,8 @@ async function bootstrapCloudAuth(){
       const identity={user,access_token:at,refresh_token:rt};
        if(await v13FinishMigration(identity)){if(A)greetThen();return}
        await activateCloudUser(identity,'',recovery?'password':'google');
-       if(recovery){openPasswordRecoveryModal();return}
-       greetThen();return;
+       if(recovery&&A){openPasswordRecoveryModal();return}
+       if(A)greetThen();return;
     }catch(err){sbClear();msg=tr()?'Google oturumu doğrulanamadı. Lütfen tekrar dene.':'Google session could not be verified.';view='login';renderAppOrAuth();return}
   }
   // A reload in the middle of migration is not evidence of a completed cloud transfer.
@@ -3353,17 +3716,49 @@ async function sbCurrentUser(){
   catch(e){if(e.status===401&&await sbRefresh())return sb('/auth/v1/user');throw e}
 }
 async function sbPush(){
-  const session=sbSession();
-  if(!A?.authUid||!session?.user?.id||A.authUid!==session.user.id)return false;
-  const sanitized=JSON.parse(JSON.stringify(A));sanitized.pw='';delete sanitized.salt;
-  try{
-    await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true;
-  }catch(e){
-    if(e.status===401&&await sbRefresh()){
-      const current=sbSession();if(current?.user?.id!==A.authUid)return false;
-      try{await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true}catch(_){return false}
+  if(cloudFlight)return cloudFlight;
+  const session=sbSession(),uid=A?.authUid;
+  if(!uid||session?.user?.id!==uid||cloudBlocked)return false;
+  const pending=cloudPending(uid);
+  if(!pending)return true;
+  if(cloudUid!==uid||cloudBase===null){cloudBlocked=true;return false}
+  const expected=cloudClone(pending.base),payload=cloudClone(pending.local);
+  if(!cloudEqual(expected,cloudBase)){cloudBlocked=true;return false}
+
+  cloudFlight=(async()=>{
+    let result;
+    for(let attempt=0;attempt<2;attempt++){
+      try{
+        result=await sb('/rest/v1/rpc/iydu_save_cas',{method:'POST',
+          body:{p_expected_data:expected,p_data:payload}});
+        break;
+      }catch(e){
+        if(e.status===401&&attempt===0&&await sbRefresh()&&
+           sbSession()?.user?.id===uid)continue;
+        return false;
+      }
     }
-    return false;
+    if(result!==true){
+      cloudBlocked=true; if(A?.authUid===uid){shell();cloudConflictPanel()}
+      return false;
+    }
+    // Commit was acknowledged. Persist a new CAS base for edits made during flight.
+    cloudBase=cloudClone(payload);
+    const current=cloudPending(uid);
+    if(current&&cloudEqual(current.local,payload)){
+      setItem(cloudPendingKey(uid),'');
+    }else if(current){
+      const rebased={...current,base:cloudClone(payload)};
+      if(!setItem(cloudPendingKey(uid),JSON.stringify(rebased))){
+        cloudBlocked=true;return false;
+      }
+    }
+    return true;
+  })();
+  try{return await cloudFlight}
+  finally{
+    cloudFlight=null;
+    if(!cloudBlocked&&A?.authUid===uid&&cloudPending(uid))schedulePush();
   }
 }
 async function sbPull(){
@@ -3376,28 +3771,29 @@ async function sbPull(){
   return row?.data||null;
 }
 async function restoreCloudOnLoad(){
-  if(!sbSession()?.access_token){if(sbSession()?.refresh_token&&!await sbRefresh())return;else if(!sbSession()?.access_token)return}
+  if(!sbSession()?.access_token){
+    if(sbSession()?.refresh_token&&!await sbRefresh())return;
+    if(!sbSession()?.access_token)return;
+  }
   try{
-    const user=await sbCurrentUser();
-    if(!user?.id)return;
+    const user=await sbCurrentUser();if(!user?.id)return;
     const session=sbSession();if(!session)return;
     sbSave({...session,user});
-    const remote=await sbPull();
-    const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
-    const meta=user.user_metadata||{};
-    const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
-    a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
-    if(user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
-    v13ProtectLegacyCollision(a.u,user.id);
-    DB.accounts[a.u]=a;DB.lastUser=a.u;DB.last=a.nick;A=a;
-    view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();
-    if(!remote)await sbPush();
+    // The same identity check must run after reload, not just after sign-in.
+    await activateCloudUser({...session,user},'',
+      user.app_metadata?.providers?.includes('google')?'google':'password');
   }catch(e){
-    // Do not auto-login from unverified localStorage contents.
     if(e.status===401)sbClear();
-    if(e.message==='V13_LOCAL_USERNAME_COLLISION'){
-      sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki eski yerel hesapla çakışıyor. Eski veri korunuyor. Yerel hesabından JSON yedeği al ve aktarım adımını kullan.':'A cloud username conflicts with a legacy profile on this device. Local data was preserved. Export it and use the migration flow.';
-    }
+    if(e.message==='LOCAL_USERNAME_CACHE_CONFLICT'||e.message==='LOCAL_ALIAS_BACKUP_FAILED'){
+      sbClear();msg=e.message==='LOCAL_ALIAS_BACKUP_FAILED'?
+        (tr()?'Eski profil güvenle yedeklenemedi; hiçbir yerel veri silinmedi.':'The older profile could not be backed up; no local data was removed.'):
+        (tr()?'Bu cihazda farklı bir hesaba ait eski kayıtla çakışma var. Kayıtları silme.':
+          'A different cached account conflicts here. Do not erase browser data.');
+    }else if(e.message==='V13_LOCAL_USERNAME_COLLISION'){
+      sbClear();msg=tr()?'Bulut kullanıcı adı eski yerel hesapla çakışıyor. Yerel veriler korundu.':
+        'Cloud username conflicts with a legacy account. Local data was preserved.';
+    }else msg=tr()?'Bulut oturumu veya kullanıcı adı doğrulanamadı. Verilerin korunuyor; yeniden giriş yap.':
+      'Could not verify cloud session or username. Your data is preserved; sign in again.';
     if(!A){view='login';renderAppOrAuth()}
   }
 }

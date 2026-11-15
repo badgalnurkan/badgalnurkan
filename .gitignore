@@ -1,0 +1,24 @@
+# OAuth client secrets and local environment
+.env
+.env.*
+!.env.example
+supabase/.env
+supabase/.env.*
+!supabase/.env.example
+
+# Local Supabase state and dependencies
+supabase/.temp/
+supabase/.branches/
+node_modules/
+
+# Database exports contain private user data; NEVER commit them.
+*.dump
+*.backup
+*.sql.gz
+*.sqlite
+*.sqlite3
+
+# OS / editor caches
+.DS_Store
+Thumbs.db
+.vscode/
