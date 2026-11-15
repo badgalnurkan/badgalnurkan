@@ -1,0 +1,41 @@
+name: Report period unlock regression
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'package.json'
+      - 'tests/report-unlock.test.cjs'
+      - '.github/workflows/report-unlock-hotfix.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'package.json'
+      - 'tests/report-unlock.test.cjs'
+      - '.github/workflows/report-unlock-hotfix.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  reports:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Confirm script syntax
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const source=fs.readFileSync('index.html','utf8')
+            .match(/<script>([\s\S]*?)<\/script>/)?.[1];
+          if(!source)throw Error('Cannot find HTML application script');
+          new Function(source);
+          if(source.includes('iydu_save_cas'))throw Error('Unfinished auth sync accidentally included in hotfix');
+          console.log('PASS: index.html script syntax and isolated report patch');
+          NODE
+      - name: Test existing site and weekly/monthly unlocks
+        run: npm test
