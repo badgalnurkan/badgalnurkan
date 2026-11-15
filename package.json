@@ -4,8 +4,8 @@
   "version": "1.1.0",
   "description": "Improvin' your day — tek dosyalık günlük disiplin uygulaması (TR/EN)",
   "scripts": {
-    "test": "node --test tests/deneme.test.cjs tests/account-consistency.test.cjs tests/username-onboarding.test.cjs",
+    "test": "node --test tests/deneme.test.cjs tests/account-consistency.test.cjs tests/username-onboarding.test.cjs tests/report-unlock.test.cjs",
     "test:e2e": "node tests/e2e.cjs deneme.html && node tests/e2e-new.cjs deneme.html",
-    "test:index": "node --test tests/account-consistency.test.cjs tests/username-onboarding.test.cjs"
+    "test:index": "node --test tests/account-consistency.test.cjs tests/username-onboarding.test.cjs tests/report-unlock.test.cjs"
   }
 }
