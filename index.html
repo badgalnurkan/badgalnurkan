@@ -2604,6 +2604,29 @@ function latestUnlockedReportPeriod(kind,day){
   }
   throw new RangeError('Invalid report period');
 }
+/* First reports need seven recorded calendar days / one calendar month from
+   the account's progress start; don't expose empty pre-account reports. */
+function reportInitialUnlockDate(kind,start){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(start)))return null;
+  if(kind==='week')return addD(start,6);
+  if(kind==='month'){
+    const [y,m,d]=start.split('-').map(Number);
+    const nextMonthDays=new Date(y,m+1,0).getDate();
+    const anniversary=new Date(y,m,Math.min(d,nextMonthDays));
+    anniversary.setDate(anniversary.getDate()-1);
+    return D(anniversary);
+  }
+  throw new RangeError('Invalid report kind');
+}
+function pendingReportCard(title,start,available){
+  const td=today();
+  const total=Math.max(1,dd(start,available)+1);
+  const elapsed=Math.min(total,Math.max(0,dd(start,td)+1));
+  const left=Math.max(0,dd(td,available));
+  return `<div class="card"><h2>🔒 ${title}</h2>
+    <p class="mut">${t('opensOn')} ${fmt(available)} — ${left} ${t('daysLeft')}</p>
+    <div class="bar"><i style="width:${Math.min(100,elapsed/total*100)}%"></i></div></div>`;
+}
 function answerArchiveUnlocked(now,periodKey){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}(?:-\d{2})?$/.test(String(periodKey))&&Number(now.slice(0,4))>Number(periodKey.slice(0,4))}
 function repCard(title,per,a,b,pa,pb,key,nk,defs){
   const td=today();
@@ -2672,8 +2695,13 @@ function reportDetailView(){
 P.rep=()=>{
   if(reportDetail){M(reportDetailView());return}
   const td=today(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
-  M(repCard(t('weeklyReport'),tr()?'hafta':'week',w.a,w.b,w.pa,w.pb,w.key,w.nk,defQ('week'))+
-    repCard(t('monthlyReport'),tr()?'ay':'month',m.a,m.b,m.pa,m.pb,m.key,m.nk,defQ('month'))+
+  const since=/^\d{4}-\d{2}-\d{2}$/.test(String(A?.pctFrom))?A.pctFrom:td;
+  const wUnlock=reportInitialUnlockDate('week',since);
+  const mUnlock=reportInitialUnlockDate('month',since);
+  M((td<wUnlock?pendingReportCard(t('weeklyReport'),since,wUnlock):
+       repCard(t('weeklyReport'),tr()?'hafta':'week',w.a,w.b,w.pa,w.pb,w.key,w.nk,defQ('week')))+
+    (td<mUnlock?pendingReportCard(t('monthlyReport'),since,mUnlock):
+       repCard(t('monthlyReport'),tr()?'ay':'month',m.a,m.b,m.pa,m.pb,m.key,m.nk,defQ('month')))+
     historySection());
 };
 
