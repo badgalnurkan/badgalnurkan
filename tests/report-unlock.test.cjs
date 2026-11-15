@@ -25,10 +25,10 @@ const dd=(a,b)=>Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5);
 ${extract('const RQ_EN=','const NAV_KEYS=')}
 ${extract('function reportQuestionId(text){','const qb=')}
 ${extract('function reportPeriodEnded(now,end)','function answerArchiveUnlocked')}
-${extract('function repCard(title,per,a,b,pa,pb,key,nk,defs)','/* ---- gecmis raporlar')}
+${extract('function answerArchiveUnlocked(now,periodKey)','/* ---- gecmis raporlar')}
 ${extract('function qa(k,i,el,','/* Weekly/monthly reports')} 
 ${extract('function newAcc(u,n,b,pw,em,ph)','const findUser=')}
-${extract('P.rep=()=>{','let pm=')}
+${extract('function reportAvailability(kind,td=today()){','let pm=')}
 this.fixture={reportPeriodEnded,latestUnlockedReportPeriod,reportInitialUnlockDate,
   pendingReportCard,repCard,newAcc,norm,qa,addRandQ,lockQ};
 `;
