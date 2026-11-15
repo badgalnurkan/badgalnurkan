@@ -1553,10 +1553,15 @@ const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
 // Usernames: letters, digits, underscore, dot and hyphen. Keep quotes and @ out of inline handlers and email detection.
 const USERNAME_ALLOWED='a-zA-Z0-9çÇğĞıİöÖşŞüÜ_.-';
 const userRe=new RegExp('^['+USERNAME_ALLOWED+']{3,20}$');
-function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme()})}
+function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today()})}
 function norm(a){
   const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
+  // Preserve when reporting began independently of the percentage counter.
+  // Older accounts have no reportStart; use their saved pctFrom as a one-time
+  // compatibility fallback, without discarding any existing report answers.
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(a.reportStart||'')))
+    a.reportStart=/^\d{4}-\d{2}-\d{2}$/.test(String(a.pctFrom||''))?a.pctFrom:today();
   return a;
 }
 // Use one Turkish-aware local identity comparison. Supabase remains authoritative for cloud name availability.
@@ -2604,17 +2609,18 @@ function latestUnlockedReportPeriod(kind,day){
   }
   throw new RangeError('Invalid report period');
 }
-/* First reports need seven recorded calendar days / one calendar month from
-   the account's progress start; don't expose empty pre-account reports. */
+/* An enrollment on Monday/1st includes that calendar period; a partial
+   signup week/month is skipped. First unlock is the last day of the FIRST
+   COMPLETE reporting period, not seven days/a month after signup. */
 function reportInitialUnlockDate(kind,start){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(start)))return null;
-  if(kind==='week')return addD(start,6);
+  if(kind==='week'){
+    const firstMonday=mon(start);
+    return addD(firstMonday===start?firstMonday:addD(firstMonday,7),6);
+  }
   if(kind==='month'){
     const [y,m,d]=start.split('-').map(Number);
-    const nextMonthDays=new Date(y,m+1,0).getDate();
-    const anniversary=new Date(y,m,Math.min(d,nextMonthDays));
-    anniversary.setDate(anniversary.getDate()-1);
-    return D(anniversary);
+    return D(new Date(y,m+(d===1?0:1),0));
   }
   throw new RangeError('Invalid report kind');
 }
@@ -2695,7 +2701,8 @@ function reportDetailView(){
 P.rep=()=>{
   if(reportDetail){M(reportDetailView());return}
   const td=today(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
-  const since=/^\d{4}-\d{2}-\d{2}$/.test(String(A?.pctFrom))?A.pctFrom:td;
+  const since=/^\d{4}-\d{2}-\d{2}$/.test(String(A?.reportStart))?A.reportStart:
+    (/^\d{4}-\d{2}-\d{2}$/.test(String(A?.pctFrom))?A.pctFrom:td);
   const wUnlock=reportInitialUnlockDate('week',since);
   const mUnlock=reportInitialUnlockDate('month',since);
   M((td<wUnlock?pendingReportCard(t('weeklyReport'),since,wUnlock):
