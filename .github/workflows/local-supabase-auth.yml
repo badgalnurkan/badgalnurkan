@@ -59,6 +59,8 @@ jobs:
             }' >> "$GITHUB_ENV"
           grep -q '^API_URL=http://127.0.0.1:' "$GITHUB_ENV"
           grep -q '^ANON_KEY=' "$GITHUB_ENV"
+      - name: Verify safe manual Google OAuth test server targets LOCAL project
+        run: node tests/supabase-local/local-google-test-server.cjs --check
       - name: Install PostgreSQL client
         run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
       - name: Create synthetic public schema and audited signup triggers
