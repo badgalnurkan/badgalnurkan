@@ -22,9 +22,11 @@ const D=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 function mon(d){const x=new Date(d+'T00:00');x.setDate(x.getDate()-((x.getDay()+6)%7));return D(x)}
 function addD(d,n){const x=new Date(d+'T00:00');x.setDate(x.getDate()+n);return D(x)}
 const dd=(a,b)=>Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5);
+${extract('const RQ_EN=','const NAV_KEYS=')}
+${extract('function reportQuestionId(text){','const qb=')}
 ${extract('function reportPeriodEnded(now,end)','function answerArchiveUnlocked')}
 ${extract('function repCard(title,per,a,b,pa,pb,key,nk,defs)','/* ---- gecmis raporlar')}
-${extract('function qa(k,i,el)','/* Weekly/monthly reports')} 
+${extract('function qa(k,i,el,','/* Weekly/monthly reports')} 
 ${extract('function newAcc(u,n,b,pw,em,ph)','const findUser=')}
 ${extract('P.rep=()=>{','let pm=')}
 this.fixture={reportPeriodEnded,latestUnlockedReportPeriod,reportInitialUnlockDate,
@@ -303,3 +305,4 @@ test('legacy question drafts and answer locks remain intact through the unlock f
   assert.equal(context.A.qs['2026-11-09'][0].a,'Do not erase');
   assert.equal(context.A.ql['2026-11-09'],1);
 });
+
