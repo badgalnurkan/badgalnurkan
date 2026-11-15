@@ -56,3 +56,22 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/verify-username.sql
       - name: Race two independent username claims
         run: node tests/sql/concurrent-claims.cjs
+      - name: Rehearse offline backup and restore of synthetic data (no production)
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "iydu_test"
+          pg_dump --format=custom --file="$RUNNER_TEMP/iydu-ci-only.dump"
+          createdb iydu_restore_ci
+          pg_restore --exit-on-error --no-owner --dbname=iydu_restore_ci "$RUNNER_TEMP/iydu-ci-only.dump"
+          sql="SELECT count(*)::text || ':' || coalesce(md5(string_agg(user_id::text || '=' || data::text,'|' ORDER BY user_id)),'') FROM public.user_data;"
+          original="$(psql -X -qAt -c "$sql")"
+          restored="$(PGDATABASE=iydu_restore_ci psql -X -qAt -c "$sql")"
+          test -n "$original"
+          test "$original" = "$restored"
+          # Verify the indexes, reservation counts and names survived as well.
+          check="SELECT (SELECT count(*) FROM public.iydu_usernames)::text || ':' || (SELECT count(*) FROM public.profiles)::text || ':' || (SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexname IN ('iydu_usernames_case_insensitive_key','profiles_username_lower_key'))::text;"
+          test "$(psql -X -qAt -c "$check")" = "$(PGDATABASE=iydu_restore_ci psql -X -qAt -c "$check")"
+          rm -f "$RUNNER_TEMP/iydu-ci-only.dump"
+          echo "PASS synthetic backup/restore rehearsal: account JSON, reservations and indexes preserved."
+
