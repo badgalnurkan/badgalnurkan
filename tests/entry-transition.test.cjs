@@ -41,18 +41,18 @@ test('real instants use the Türkiye clock, including midnight and the 18:00 bou
   assert.equal(context.f.greetText(context.f.greetKey(actual)),expected);
  }
 });
-test('welcome stays until Continue, then the full branded transition finishes before sign-in',()=>{
+test('Continue opens manual sign-in directly; the greeting is reserved for auth submission',()=>{
  const {f,context,roots,navigations}=fixture();context.A=null;context.view='welcome';assert.equal(roots.length,0);
- f.continueFromWelcome();assert.equal(roots.length,1);assert.equal(navigations.length,0);
- roots[0].listeners.animationend({target:{},animationName:'entryCirclePass'});assert.equal(navigations.length,0);
- roots[0].listeners.animationend({target:roots[0],animationName:'entryPortalOut'});assert.deepEqual(navigations,[['login','home']]);
+ f.continueFromWelcome();assert.equal(roots.length,0);
+ assert.deepEqual(navigations,[['login','home']]);
 });
-test('welcome transition includes the time-based greeting before authentication',()=>{
- const {f,context,roots}=fixture();context.A=null;context.view='welcome';f.continueFromWelcome();assert.ok(roots[0].innerHTML.includes('Günaydın'));
+test('the branded transition still includes the time-based greeting',()=>{
+ const {f,context,roots}=fixture();context.A=null;context.view='login';f.playWelcomeTransition();
+ assert.ok(roots[0].innerHTML.includes('Günaydın'));
 });
-test('repeated Continue taps cannot skip or duplicate the entry transition',()=>{
- const {f,roots,navigations}=fixture();f.continueFromWelcome();f.continueFromWelcome();assert.equal(roots.length,1);
- roots[0].listeners.animationend({target:roots[0],animationName:'entryPortalOut'});assert.equal(navigations.length,1);
+test('repeated Continue taps cannot navigate twice',()=>{
+ const {f,roots,navigations}=fixture();f.continueFromWelcome();f.continueFromWelcome();
+ assert.equal(roots.length,0);assert.equal(navigations.length,1);
 });
 test('animation end and timeout cannot invoke the completion twice',()=>{
  const {f,roots,timers}=fixture();let calls=0;f.playWelcomeTransition(()=>calls++);const root=roots[0],timeout=[...timers.values()][0];
