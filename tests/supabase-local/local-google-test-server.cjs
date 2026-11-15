@@ -13,7 +13,11 @@ function localConfig(){
   if(process.env.API_URL&&process.env.ANON_KEY){
     output='API_URL='+process.env.API_URL+'\nANON_KEY='+process.env.ANON_KEY;
   }else{
-    const cli=process.platform==='win32'?'supabase.cmd':'supabase';
+    const win=process.platform==='win32';
+    const cliInProject=path.join(root,'node_modules','.bin',
+      win?'supabase.cmd':'supabase');
+    const cli=fs.existsSync(cliInProject)?cliInProject:
+      (win?'supabase.cmd':'supabase');
     const result=spawnSync(cli,['status','-o','env'],{
       cwd:root,encoding:'utf8',timeout:20000,windowsHide:true
     });
