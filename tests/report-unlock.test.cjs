@@ -24,15 +24,19 @@ function addD(d,n){const x=new Date(d+'T00:00');x.setDate(x.getDate()+n);return 
 const dd=(a,b)=>Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5);
 ${extract('function reportPeriodEnded(now,end)','function answerArchiveUnlocked')}
 ${extract('function repCard(title,per,a,b,pa,pb,key,nk,defs)','/* ---- gecmis raporlar')}
-this.fixture={reportPeriodEnded,latestUnlockedReportPeriod,repCard};
+${extract('P.rep=()=>{','let pm=')}
+this.fixture={reportPeriodEnded,latestUnlockedReportPeriod,reportInitialUnlockDate,
+  pendingReportCard,repCard};
 `;
 const context={
-  A:{qs:{},ql:{}},tr:()=>false,t:x=>x,fmt:x=>x,
+  A:{qs:{},ql:{},pctFrom:'2026-11-09'},tr:()=>false,t:x=>x,fmt:x=>x,
+  P:{},reportDetail:'',reportDetailView:()=>'',historySection:()=>'',
+  defQ:()=>['Review question'],M:h=>{context.rendered=h},
   st:()=>({t:2,d:1,p:50,by:{}}),qb:()=>'',esc:x=>x,today:()=>context.current,
 };
 vm.createContext(context);
 vm.runInContext(code,context);
-const {reportPeriodEnded,latestUnlockedReportPeriod,repCard}=context.fixture;
+const {reportPeriodEnded,latestUnlockedReportPeriod,reportInitialUnlockDate,repCard}=context.fixture;
 
 const same=(period,expected)=>{
   for(const [k,v] of Object.entries(expected))assert.equal(period[k],v,k+' differs');
@@ -118,4 +122,52 @@ test('report page is wired to the latest unlocked week and month, not current we
   assert.match(renderer,/latestUnlockedReportPeriod\('week',td\)/);
   assert.match(renderer,/latestUnlockedReportPeriod\('month',td\)/);
   assert.doesNotMatch(renderer,/wb=addD\(wa,6\)/);
+});
+
+test('first weekly report requires seven tracked dates, even if a calendar week just ended',()=>{
+  assert.equal(reportInitialUnlockDate('week','2026-11-09'),'2026-11-15');
+  assert.equal(reportInitialUnlockDate('week','2026-11-10'),'2026-11-16');
+  assert.equal(reportInitialUnlockDate('month','2026-11-01'),'2026-11-30');
+  assert.equal(reportInitialUnlockDate('month','2026-11-10'),'2026-12-09');
+  assert.equal(reportInitialUnlockDate('month','2028-01-31'),'2028-02-28');
+});
+
+test('actual report UI unlocks Weekly for an established user on Sunday while Monthly stays locked',()=>{
+  context.current='2026-11-15';
+  context.A.pctFrom='2026-11-09';
+  context.P.rep();
+  assert.match(context.rendered,/Weekly report/);
+  assert.doesNotMatch(context.rendered,/🔒 Weekly report/);
+  assert.match(context.rendered,/2026-11-09 – 2026-11-15/);
+  assert.match(context.rendered,/🔒 Monthly report/);
+  assert.match(context.rendered,/opensOn 08.12/); // One calendar month from 9 November
+});
+
+test('actual report UI keeps completed week available on Monday after rollover',()=>{
+  context.current='2026-11-16';
+  context.A.pctFrom='2026-11-09';
+  context.P.rep();
+  assert.doesNotMatch(context.rendered,/🔒 Weekly report/);
+  assert.match(context.rendered,/2026-11-09 – 2026-11-15/);
+  assert.match(context.rendered,/🔒 Monthly report/);
+});
+
+test('new accounts do not see empty reports from before they started tracking',()=>{
+  context.current='2026-11-15';
+  context.A.pctFrom='2026-11-15';
+  context.P.rep();
+  assert.match(context.rendered,/🔒 Weekly report/);
+  assert.match(context.rendered,/🔒 Monthly report/);
+});
+
+test('actual report UI shows an unlocked month after tracking a full calendar month',()=>{
+  context.current='2026-11-30';
+  context.A.pctFrom='2026-11-01';
+  context.P.rep();
+  assert.doesNotMatch(context.rendered,/🔒 Monthly report/);
+  assert.match(context.rendered,/2026-11-01 – 2026-11-30/);
+  context.current='2026-12-01';
+  context.P.rep();
+  assert.doesNotMatch(context.rendered,/🔒 Monthly report/);
+  assert.match(context.rendered,/2026-11-01 – 2026-11-30/);
 });
