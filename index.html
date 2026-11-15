@@ -1670,7 +1670,7 @@ takeNote:'Note',newAccountTitle:'Create account',back:'Back',signInTitle:'Sign i
 remembered:'Remembered on this device',notYou:'Not you?',savedUsers:'Accounts on this device',useAccount:'Sign in',
 wrongLogin:'Wrong username or password. Attempts left:',wrongLoginKnown:'Password is wrong for {u}. Attempts left:',
 totalDays:'Total days',everyDayCounts:'Your progress grows on days you work on tasks, write notes, or focus.',
-daysRecorded:'days logged',pctTitle:'Daily percentage',pctHint:'Without activity, progress stays at 1%. Each active day adds one point, once per day.',backWelcome:'Back to the welcome screen',beigeOn:'Light beige look is on',beigeOff:'Light beige look is off',welcomeUser:'Welcome back,',
+daysRecorded:'days logged',pctTitle:'Daily percentage',pctHint:'Once you start using the app, progress increases once every day. Accounts with no activity stay at 1%.',backWelcome:'Back to the welcome screen',beigeOn:'Light beige look is on',beigeOff:'Light beige look is off',welcomeUser:'Welcome back,',
 noAccountYet:'No saved accounts on this device yet.',currentAccount:'Current account',
 },
 tr:{welcome:'HOŞ GELDİN',continue:'Devam →',howItWorks:'Nasıl çalışır',contact:'Bana ulaş',login:'Giriş yap',create:'Hesap oluştur',forgot:'Şifremi unuttum',
@@ -1702,7 +1702,7 @@ takeNote:'Not',newAccountTitle:'Hesap oluştur',back:'Geri',signInTitle:'Giriş 
 remembered:'Bu cihazda hatırlanıyor',notYou:'Sen değil misin?',savedUsers:'Bu cihazdaki hesaplar',useAccount:'Giriş yap',
 wrongLogin:'Kullanıcı adı veya şifre yanlış. Kalan deneme:',wrongLoginKnown:'{u} için şifre yanlış. Kalan deneme:',
 totalDays:'Toplam gün',everyDayCounts:'Görev, not veya odak etkinliği yaptığın günlerde ilerleme artar.',
-daysRecorded:'kayıtlı gün',pctTitle:'Günlük yüzde',pctHint:'Hiç kullanım verin yoksa %1’de kalır. Her etkin gün için yalnızca bir kez artar.',backWelcome:'Karşılama ekranına dön',beigeOn:'Açık bej görünüm açık',beigeOff:'Açık bej görünüm kapalı',welcomeUser:'Tekrar hoş geldin,',
+daysRecorded:'kayıtlı gün',pctTitle:'Günlük yüzde',pctHint:'Kullanmaya başladıktan sonra yüzde her gün bir kez artar. Hiç etkileşimi olmayan hesap %1’de kalır.',backWelcome:'Karşılama ekranına dön',beigeOn:'Açık bej görünüm açık',beigeOff:'Açık bej görünüm kapalı',welcomeUser:'Tekrar hoş geldin,',
 noAccountYet:'Bu cihazda henüz hesap yok',currentAccount:'Aktif hesap',
 }
 };
@@ -1845,21 +1845,43 @@ function hasProgressActivity(account,asOf){
  if(account.stopwatch&&(account.stopwatch.running||Number(account.stopwatch.elapsed)>0))return true;
  return Array.isArray(account.laps)&&account.laps.some(value=>Number(value)>0);
 }
+function progressPreviousDay(day){return new Date(Date.parse(day+'T00:00:00Z')-86400000).toISOString().slice(0,10)}
+function progressFirstActivityDay(account,day){
+ return Object.entries(account.activeDays||{}).filter(([key,active])=>active===true&&validProgressDate(key)&&key<=day).map(([key])=>key).sort()[0]||day;
+}
 function ensureProgressState(account,asOf){
- const state=account.progressState;
- if(state?.version===2&&Number.isFinite(state.base)&&state.base>=1&&validProgressDate(state.through))return state;
- const day=validProgressDate(asOf)?asOf:new Date().toISOString().slice(0,10);
- const earned=hasProgressActivity(account,day);
- account.progressState={version:2,base:earned?progressPercent(account.activeDays,account.pctFrom,day):1,
-   through:earned?day:new Date(Date.parse(day+'T00:00:00Z')-86400000).toISOString().slice(0,10)};
- return account.progressState;
+ const day=validProgressDate(asOf)?asOf:new Date().toISOString().slice(0,10),state=account.progressState;
+ const valid=state&&Number.isFinite(state.base)&&state.base>=1&&validProgressDate(state.through);
+ if(valid&&state.version===3&&(state.startedOn===''||validProgressDate(state.startedOn))){
+  if(!state.startedOn&&hasProgressActivity(account,day)){
+   state.startedOn=progressFirstActivityDay(account,day);state.base=1;state.through=progressPreviousDay(state.startedOn);
+  }
+  return state;
+ }
+ const used=hasProgressActivity(account,day),next={version:3,base:1,through:day,startedOn:''};
+ if(used){
+  next.startedOn=progressFirstActivityDay(account,day);
+  if(valid&&state.version===2){
+   next.base=state.base;next.through=state.through;
+   // A previously empty account starts from its first actual interaction,
+   // without earning old idle days between signup and that interaction.
+   if(next.base===1){
+    const hasDatedActivity=Object.entries(account.activeDays||{}).some(([key,active])=>active===true&&validProgressDate(key)&&key<=day);
+    if(!hasDatedActivity)next.through=day;
+    else if(next.startedOn>next.through)next.through=progressPreviousDay(next.startedOn);
+   }
+  }else{
+   // Preserve the amount already displayed for genuine legacy usage.
+   next.base=progressPercent(account.activeDays,account.pctFrom,day);next.through=day;
+  }
+ }
+ account.progressState=next;return next;
 }
 function accountProgressPercent(account,asOf){
  if(!account||typeof account!=='object')return 1;
- const state=ensureProgressState(account,asOf);
- const active=account.activeDays&&typeof account.activeDays==='object'?account.activeDays:{};
- const additional=Object.keys(active).filter(day=>active[day]===true&&validProgressDate(day)&&day>state.through&&day<=asOf).length;
- return Math.max(1,state.base+additional);
+ const day=validProgressDate(asOf)?asOf:new Date().toISOString().slice(0,10),state=ensureProgressState(account,day);
+ if(!state.startedOn||state.startedOn>day)return 1;
+ return Math.max(1,state.base+Math.max(0,progressDayDistance(state.through,day)));
 }
 function stopwatchFormat(ms){
   const v=Number.isFinite(ms)?Math.max(0,ms):0;
@@ -1901,8 +1923,9 @@ function usernameSuggestions(name,used=[]){
 function recordActivity(){
   if(!A)return;
   if(!A.activeDays||typeof A.activeDays!=='object')A.activeDays={};
-  ensureProgressState(A,today());
-  A.activeDays[today()]=true;
+  const day=today(),state=ensureProgressState(A,day);
+  if(!state.startedOn){state.startedOn=day;state.base=1;state.through=progressPreviousDay(day)}
+  A.activeDays[day]=true;
   save();
 }
 const pct=()=>accountProgressPercent(A,today());
@@ -2072,8 +2095,13 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-15-manual-entry-mobile-inbox';
+const SITE_RELEASE='2026-11-16-existing-daily-progress';
 const SITE_CHANGES=[
+ {date:'2026-11-16',trTitle:'Mevcut hesaplarda günlük yüzde artışı',enTitle:'Daily progress for existing accounts',items:[
+  ['Kullanım geçmişi olan hesaplarda günlük yüzde artışı devam eder; her gün yeni görev veya not eklemek gerekmez.','Accounts with real usage history continue gaining daily progress; a new task or note is not required every day.'],
+  ['Hiç etkileşimi veya kullanım verisi olmayan hesaplar %1’de kalır. İlk gerçek etkileşim öncesindeki boş günler geriye dönük eklenmez.','Accounts with no interactions or usage data remain at 1%. Idle days before the first real interaction are not added retroactively.'],
+  ['Kazanılmış yüzdeler, görevler, notlar ve rapor kayıtları korunur.','Earned progress, tasks, notes and reports are preserved.']
+ ]},
  {date:'2026-11-15',trTitle:'Giriş seçenekleri ve mobil kullanım',enTitle:'Entry choices and mobile comfort',items:[
   ['Hatırlanan Google hesabının yanında manuel Sign in seçeneği var; hesabı kendin girebilirsin.','A manual Sign in option appears beside remembered Google entry, so you can enter your credentials yourself.'],
   ['Normal Continue artık giriş formunu açar. Selamlama geçişi geçerli Sign in veya Create account tıklamasından sonra oynar.','Normal Continue now opens the sign-in form. The greeting transition plays after a valid Sign in or Create account submission.'],

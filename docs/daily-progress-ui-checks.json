@@ -1,0 +1,218 @@
+[
+  {
+    "language": "tr",
+    "width": 320,
+    "profile": "empty-progress",
+    "date": "2026-11-15",
+    "percent": "%1",
+    "content": 320,
+    "viewport": 320
+  },
+  {
+    "language": "tr",
+    "width": 320,
+    "profile": "empty-progress",
+    "date": "2026-11-16",
+    "percent": "%1",
+    "content": 320,
+    "viewport": 320
+  },
+  {
+    "language": "tr",
+    "width": 320,
+    "profile": "empty-progress",
+    "date": "2026-11-30",
+    "percent": "%1",
+    "content": 320,
+    "viewport": 320
+  },
+  {
+    "language": "tr",
+    "width": 320,
+    "profile": "ongoing-progress",
+    "date": "2026-11-15",
+    "percent": "%20",
+    "content": 320,
+    "viewport": 320
+  },
+  {
+    "language": "tr",
+    "width": 320,
+    "profile": "ongoing-progress",
+    "date": "2026-11-16",
+    "percent": "%21",
+    "content": 320,
+    "viewport": 320
+  },
+  {
+    "language": "tr",
+    "width": 320,
+    "profile": "ongoing-progress",
+    "date": "2026-11-30",
+    "percent": "%35",
+    "content": 320,
+    "viewport": 320
+  },
+  {
+    "language": "tr",
+    "width": 390,
+    "profile": "empty-progress",
+    "date": "2026-11-15",
+    "percent": "%1",
+    "content": 390,
+    "viewport": 390
+  },
+  {
+    "language": "tr",
+    "width": 390,
+    "profile": "empty-progress",
+    "date": "2026-11-16",
+    "percent": "%1",
+    "content": 390,
+    "viewport": 390
+  },
+  {
+    "language": "tr",
+    "width": 390,
+    "profile": "empty-progress",
+    "date": "2026-11-30",
+    "percent": "%1",
+    "content": 390,
+    "viewport": 390
+  },
+  {
+    "language": "tr",
+    "width": 390,
+    "profile": "ongoing-progress",
+    "date": "2026-11-15",
+    "percent": "%20",
+    "content": 390,
+    "viewport": 390
+  },
+  {
+    "language": "tr",
+    "width": 390,
+    "profile": "ongoing-progress",
+    "date": "2026-11-16",
+    "percent": "%21",
+    "content": 390,
+    "viewport": 390
+  },
+  {
+    "language": "tr",
+    "width": 390,
+    "profile": "ongoing-progress",
+    "date": "2026-11-30",
+    "percent": "%35",
+    "content": 390,
+    "viewport": 390
+  },
+  {
+    "language": "en",
+    "width": 320,
+    "profile": "empty-progress",
+    "date": "2026-11-15",
+    "percent": "%1",
+    "content": 320,
+    "viewport": 320
+  },
+  {
+    "language": "en",
+    "width": 320,
+    "profile": "empty-progress",
+    "date": "2026-11-16",
+    "percent": "%1",
+    "content": 320,
+    "viewport": 320
+  },
+  {
+    "language": "en",
+    "width": 320,
+    "profile": "empty-progress",
+    "date": "2026-11-30",
+    "percent": "%1",
+    "content": 320,
+    "viewport": 320
+  },
+  {
+    "language": "en",
+    "width": 320,
+    "profile": "ongoing-progress",
+    "date": "2026-11-15",
+    "percent": "%20",
+    "content": 320,
+    "viewport": 320
+  },
+  {
+    "language": "en",
+    "width": 320,
+    "profile": "ongoing-progress",
+    "date": "2026-11-16",
+    "percent": "%21",
+    "content": 320,
+    "viewport": 320
+  },
+  {
+    "language": "en",
+    "width": 320,
+    "profile": "ongoing-progress",
+    "date": "2026-11-30",
+    "percent": "%35",
+    "content": 320,
+    "viewport": 320
+  },
+  {
+    "language": "en",
+    "width": 390,
+    "profile": "empty-progress",
+    "date": "2026-11-15",
+    "percent": "%1",
+    "content": 390,
+    "viewport": 390
+  },
+  {
+    "language": "en",
+    "width": 390,
+    "profile": "empty-progress",
+    "date": "2026-11-16",
+    "percent": "%1",
+    "content": 390,
+    "viewport": 390
+  },
+  {
+    "language": "en",
+    "width": 390,
+    "profile": "empty-progress",
+    "date": "2026-11-30",
+    "percent": "%1",
+    "content": 390,
+    "viewport": 390
+  },
+  {
+    "language": "en",
+    "width": 390,
+    "profile": "ongoing-progress",
+    "date": "2026-11-15",
+    "percent": "%20",
+    "content": 390,
+    "viewport": 390
+  },
+  {
+    "language": "en",
+    "width": 390,
+    "profile": "ongoing-progress",
+    "date": "2026-11-16",
+    "percent": "%21",
+    "content": 390,
+    "viewport": 390
+  },
+  {
+    "language": "en",
+    "width": 390,
+    "profile": "ongoing-progress",
+    "date": "2026-11-30",
+    "percent": "%35",
+    "content": 390,
+    "viewport": 390
+  }
+]

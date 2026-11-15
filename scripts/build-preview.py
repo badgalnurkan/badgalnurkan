@@ -22,9 +22,13 @@ A.pctFrom=addD(today(),-50);A.reportStart=A.pctFrom;
 A.tasks=DB.lang==='tr'?[{t:'Bugünün önceliklerini belirle',s:'done'},{t:'Kendine odaklanmak için zaman ayır',s:''}]:[{t:'Set today’s priorities',s:'done'},{t:'Make time to focus on yourself',s:''}];
 A.projects=[{n:DB.lang==='tr'?'Küçük bir adım, her gün':'A small step, every day',d:addD(today(),5)}];
 if(previewParams.get('page')==='empty-progress'){A.tasks=[];A.projects=[];}else A.activeDays[today()]=true;
+if(previewParams.get('page')==='ongoing-progress'){
+ A.tasks=[];A.projects=[];A.activeDays={'2026-11-15':true};
+ A.progressState={version:2,base:20,through:'2026-11-15'};
+}
 DB.accounts[A.u]=A;DB.last=A.nick;DB.lastUser=A.u;
 view=['welcome','welcome-google'].includes(previewParams.get('page'))?'welcome':'app';if(view==='welcome')A=null;pg=NAV.some(([k])=>k===previewParams.get('page'))?previewParams.get('page'):'home';
-if(previewParams.get('page')==='empty-progress')pg='pc';
+if(['empty-progress','ongoing-progress'].includes(previewParams.get('page')))pg='pc';
 applyTheme();renderAppOrAuth();
 document.fonts.ready.then(()=>requestAnimationFrame(()=>{centerNav(true);document.body.dataset.previewReady=previewParams.get('rev')||'0'}));
 window.addEventListener('message',event=>{if(event.source===parent&&event.data==='preview-entry'){playWelcomeTransition()}});

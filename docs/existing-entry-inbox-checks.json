@@ -1,0 +1,17 @@
+{
+  "manualEntryCheck": {
+    "loginFormVisible": true,
+    "greetingOverlayCount": 0,
+    "email": "<redacted>"
+  },
+  "oneBinBefore": {
+    "bins": 1,
+    "rowBins": 0,
+    "items": 1
+  },
+  "binOpening": "g s notification-clear is-emptying",
+  "oneBinAfter": {
+    "items": 0,
+    "disabled": true
+  }
+}

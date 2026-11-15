@@ -1,3 +1,30 @@
+# 16 Kasım 2026 — Mevcut hesaplarda günlük yüzde artışı
+
+Bu sürüm, GitHub main 36a09f16cb4c8b371889d9cb59e4e9754017477f (birleştirilmiş PR #13) üzerine kuruludur. Manuel giriş, mobil proje tarih alanı, tek kapaklı çöp kutusu ve giriş/üyelik gönderimindeki selamlama geçişi korunmuştur. Aşağıdaki eski sürüm notları arşiv niteliğindedir.
+
+## Son kural
+
+- Hiç gerçek kullanım/etkileşim geçmişi olmayan hesap, kayıt tarihinden bağımsız olarak %1'de kalır. Kimlik, tema, bildirim, boş üretilmiş soru ve kullanılmamış odak sayacı etkileşim kanıtı sayılmaz.
+- Gerçek kullanım başladıktan sonra yüzde takvim günü başına +1 artmaya devam eder; sonraki her gün görev veya not girmek gerekmez. Aynı gün yeni kayıt yapmak, sayfayı yenilemek veya tekrar hesaplamak ek puan oluşturmaz.
+- progressState v3, başlangıç değerini, o değerin tarihini ve kullanımın başladığı günü saklar. V2'de gerçek kullanım varsa kazanılmış başlangıç değeri korunur ve son tarihten itibaren takvim günleri sayılır. Hiç etkileşimi olmayan eski yapay sayaçlar kullanım kanıtı kabul edilmez.
+- Önceden boş olan hesapta ilk etkileşim %1 → %2 yapar; kayıt ile ilk etkileşim arasındaki boş günler geriye dönük verilmez. Kullanım başladıktan sonra görevleri/notları silmek, bir kez etkileşim olmuş olmasını silmez. Ayarlar'daki açık sistem sıfırlaması yeni boş durumla yine %1 başlatır.
+- Görev/not/rapor geçmişi yeniden yazılmaz; eski yüzde gövdesi gerçek kullanım için korunur. TR/EN açıklamaları ve yeni Site güncellenmiştir kaydı bu kurala göre yenilendi.
+
+## Doğrulama
+
+- **npm test: 171/171 geçti** (27 eski deneme.html kontrolü ve 144 güncel uygulama kontrolü). Tam betik sözdizimi, günlük tek artış, uzun boş kayıt dönemi, eski V2 geçişi, gerçek kullanımın korunması, hiç kullanılmamış hesaplar, ay/yıl sınırı ve artık gün kapsamda.
+- **python scripts/build-preview.py** ve **git diff --check** başarılı.
+- Gerçek Chrome arayüzünde 24 durum: TR/EN × 320/390 px × verisiz/mevcut kullanım × 15/16/30 Kasım. Verisiz hesap her tarihte %1; V2 başlangıcı 15 Kasım %20 olan örnek mevcut hesap 16 Kasım %21 ve 30 Kasım %35. Yatay taşma yok.
+- Hatırlanan Google örneğindeki manuel giriş düğmesi parola formunu açtı; Continue aşamasında selamlama katmanı yoktu. Bu, gerçek Google veya Supabase girişi testi değildir.
+- Bildirim merkezi: yalnızca bir genel çöp kutusu, satırlarda sıfır çöp kutusu. Tıklamada is-emptying sınıfıyla kapak açıldı; kapanıştan sonra liste boş ve düğme pasif oldu. Üretim kullanıcı bildirimi silinmedi; izole örnek kullanıldı.
+- Mobil proje tarih alanı 390 px örnekte 340 px form sınırına sığdı. iPhone Safari/WebKit fiziksel testi yapılmadı; bu kontrol Chrome içindir.
+
+Kanıtlar: docs/daily-progress-ui-checks.json, docs/existing-entry-inbox-checks.json, docs/daily-progress-existing-account.jpg. Tarih/kullanıcı senaryoları yalnızca izole review-app.html içine eklenir; gerçek index.html içine test hesabı veya tarih eklenmedi. Gerçek kullanıcı veritabanı kaydı değiştirilmedi, SQL/RLS/Auth kuralı değişmedi. Eski istemciyle açık kalmış sekmelerin yeni kuralı alması için sayfanın yenilenmesi gerekir.
+
+---
+
+## Önceki sürüm kayıtları
+
 # 15 Kasım 2026 — Manuel giriş, mobil proje formu ve tek çöp kutusu (PR #13)
 
 Bu bölüm önceki sürüm notlarını günceller. Önceki 1,6 saniyelik animasyon korunur ancak **normal Continue yerine** doğrulamaları geçen manuel Sign in / Create account gönderiminde başlatılır. Hatırlanan Google hesabının hızlı devam akışı mevcut sunucu doğrulamasını kullanmaya devam eder.
