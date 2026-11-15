@@ -39,3 +39,5 @@ jobs:
           NODE
       - name: Test existing site and weekly/monthly unlocks
         run: npm test
+      - name: Build isolated static preview
+        run: python scripts/build-preview.py

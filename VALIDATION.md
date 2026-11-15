@@ -1,3 +1,22 @@
+# 15 Kasım 2026 — Manuel giriş, mobil proje formu ve tek çöp kutusu (PR #13)
+
+Bu bölüm önceki sürüm notlarını günceller. Önceki 1,6 saniyelik animasyon korunur ancak **normal Continue yerine** doğrulamaları geçen manuel Sign in / Create account gönderiminde başlatılır. Hatırlanan Google hesabının hızlı devam akışı mevcut sunucu doğrulamasını kullanmaya devam eder.
+
+## Uygulanan davranış
+- Hatırlanan Google hesabının yanındaki ayrı **Sign in** tuşu, hesap e-postası önceden doldurulmuş parola formunu açar. Otomatik Google devamı zorunlu değildir; parola yoksa kullanıcı önceden uygulama parolası belirlemiş olmalıdır.
+- Boş veya yerel olarak geçersiz form girişleri animasyonu başlatmaz. Giriş/üyelik doğrulaması yapılırken animasyon başlar; yalnızca gerçekten geçerli bir oturum oluştuğunda uygulamaya geçiş yapılır. Sunucu reddederse giriş formunda hata görülür.
+- Proje ekleme tarih alanı etiketli bir kapsayıcıya taşındı; özellikle 600 px ve altında tek sütun, sınırlı genişlik, WebKit tarih düzeni ve uzun proje adları ele alındı.
+- Bildirim merkezinde her kayıt için ayrı silme kontrolü kaldırıldı; erişilebilir etiketli tek toplu silme kontrolü var. Kapak açıldıktan sonra yalnızca o sırada mevcut kayıtlar silinir, animasyon sonunda kapanır. İşlem sırasında gelen yeni kayıtlar korunur; teslim edilmiş bildirim işaretleri silinmez.
+- Animasyon sistemin azaltılmış hareket tercihini gözetir. Eski tekil silme fonksiyonu geriye dönük test uyumluluğu için durur; görünür arayüzde kullanılmaz.
+
+## Doğrulama ve sınırlar
+- JavaScript kaynağı sözdizimi kontrolünden geçti.
+- GitHub Actions: [başarılı çalıştırma](https://github.com/badgalnurkan/badgalnurkan/actions/runs/43723469627). **npm test**, betik sözdizimi ve **python scripts/build-preview.py** adımlarının tamamı başarılı. Yeni testler manuel giriş seçeneği, kimlik doğrulaması sırasında animasyon, tek çöp kutusu, yeni gelen bildirimlerin korunması, azaltılmış hareket ve mobil CSS sınırlamalarını kapsar.
+- Gerçek iPhone Safari, küçük Android ekranları ve gerçek Supabase/Google giriş akışı bu PR üzerinde uçtan uca doğrulanmadı. Bu test sonucu üretim ortamında fiziksel cihaz onayı anlamına gelmez.
+- PR taslak; `main` ve üretim dağıtımı değiştirilmedi.
+
+---
+
 # Selamlama, tema, mobil form ve bildirim düzeltmeleri
 
 15 Kasım 2026. Başlangıç GitHub main: a51c4cd5c1501fca056012bed337a7bd5438aaba.
