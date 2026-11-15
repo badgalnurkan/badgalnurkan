@@ -20,9 +20,10 @@
 <label>Dil <select id="lang" aria-label="Önizleme dili"><option value="tr">Türkçe</option><option value="en">English</option></select></label>
 <label>Tema <select id="theme" aria-label="Önizleme teması"><option value="white">Açık</option><option value="black">Koyu</option></select></label>
 <button type="button" id="replay-entry" style="font:inherit;color:inherit;background:#fff;border:1px solid #d6c6ba;border-radius:9px;padding:7px 10px;cursor:pointer">Giriş geçişini izle</button>
+<button type="button" id="sample-login" style="font:inherit;color:inherit;background:#fff;border:1px solid #d6c6ba;border-radius:9px;padding:7px 10px;cursor:pointer">Örnek hesaba gir</button>
 </div>
 </header>
-<main><div class="device"><iframe id="app-preview" title="Uygulama önizlemesi" sandbox="allow-scripts" src="review-app.html?lang=tr&amp;theme=white&amp;page=home"></iframe></div><p class="caption" id="size-caption">390 × 844</p></main>
+<main><div class="device"><iframe id="app-preview" title="Uygulama önizlemesi" sandbox="allow-scripts allow-forms" src="review-app.html?lang=tr&amp;theme=white&amp;page=home"></iframe></div><p class="caption" id="size-caption">390 × 844</p></main>
 <script>
 const fields=['width','height','page','lang','theme','date'];
 let revision=0;
@@ -37,5 +38,6 @@ function updatePreview(){
 }
 fields.forEach(k=>document.getElementById(k).addEventListener('change',updatePreview));
 document.getElementById('replay-entry').addEventListener('click',()=>document.getElementById('app-preview').contentWindow.postMessage('preview-entry','*'));
+document.getElementById('sample-login').addEventListener('click',()=>document.getElementById('app-preview').contentWindow.postMessage('preview-login','*'));
 </script>
 </body></html>

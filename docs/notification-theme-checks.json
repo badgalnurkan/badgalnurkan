@@ -1,0 +1,157 @@
+{
+  "swipe": {
+    "before": 2,
+    "afterLeft": 1,
+    "afterRight": 0,
+    "inboxRetained": 2,
+    "trashButtons": 2
+  },
+  "afterTrashCount": 1,
+  "inboxLayouts": [
+    {
+      "language": "tr",
+      "theme": "white",
+      "deviceWidth": 320,
+      "contentWidth": 286,
+      "trashSizes": [
+        {
+          "height": 43.998443603515625,
+          "width": 43.99842834472656
+        },
+        {
+          "height": 43.9984130859375,
+          "width": 43.99842834472656
+        }
+      ],
+      "width": 286
+    },
+    {
+      "language": "tr",
+      "theme": "white",
+      "deviceWidth": 390,
+      "contentWidth": 356,
+      "trashSizes": [
+        {
+          "height": 43.9984130859375,
+          "width": 43.9984130859375
+        },
+        {
+          "height": 43.9984130859375,
+          "width": 43.9984130859375
+        }
+      ],
+      "width": 356
+    },
+    {
+      "language": "tr",
+      "theme": "black",
+      "deviceWidth": 320,
+      "contentWidth": 286,
+      "trashSizes": [
+        {
+          "height": 43.9984130859375,
+          "width": 43.99839782714844
+        },
+        {
+          "height": 43.9984130859375,
+          "width": 43.99839782714844
+        }
+      ],
+      "width": 286
+    },
+    {
+      "language": "tr",
+      "theme": "black",
+      "deviceWidth": 390,
+      "contentWidth": 356,
+      "trashSizes": [
+        {
+          "height": 43.9984130859375,
+          "width": 43.9984130859375
+        },
+        {
+          "height": 43.9984130859375,
+          "width": 43.9984130859375
+        }
+      ],
+      "width": 356
+    },
+    {
+      "language": "en",
+      "theme": "white",
+      "deviceWidth": 320,
+      "contentWidth": 286,
+      "trashSizes": [
+        {
+          "height": 43.9984130859375,
+          "width": 43.99842834472656
+        },
+        {
+          "height": 43.9984130859375,
+          "width": 43.99842834472656
+        }
+      ],
+      "width": 286
+    },
+    {
+      "language": "en",
+      "theme": "white",
+      "deviceWidth": 390,
+      "contentWidth": 356,
+      "trashSizes": [
+        {
+          "height": 43.9984130859375,
+          "width": 43.9984130859375
+        },
+        {
+          "height": 43.9984130859375,
+          "width": 43.9984130859375
+        }
+      ],
+      "width": 356
+    },
+    {
+      "language": "en",
+      "theme": "black",
+      "deviceWidth": 320,
+      "contentWidth": 286,
+      "trashSizes": [
+        {
+          "height": 43.998443603515625,
+          "width": 43.99839782714844
+        },
+        {
+          "height": 43.9984130859375,
+          "width": 43.99839782714844
+        }
+      ],
+      "width": 286
+    },
+    {
+      "language": "en",
+      "theme": "black",
+      "deviceWidth": 390,
+      "contentWidth": 356,
+      "trashSizes": [
+        {
+          "height": 43.9984130859375,
+          "width": 43.9984130859375
+        },
+        {
+          "height": 43.9984130859375,
+          "width": 43.9984130859375
+        }
+      ],
+      "width": 356
+    }
+  ],
+  "entry": {
+    "circle": "0.58s",
+    "greeting": "İyi günler",
+    "total": "1.6s"
+  },
+  "themes": {
+    "whiteAccountWelcomeBlackHome": "black",
+    "blackAccountWelcomeWhiteHome": "white"
+  }
+}
