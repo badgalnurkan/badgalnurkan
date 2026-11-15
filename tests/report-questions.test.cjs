@@ -4,8 +4,8 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 function extract(from,to){const start=source.indexOf(from),end=source.indexOf(to,start+from.length);assert.ok(start>=0&&end>start,from);return source.slice(start,end)}
 function fixture(){
- const context={DB:{lang:'en'},A:{qs:{},planningQs:{},ql:{}},current:'2026-11-30',P:{rep(){}},
-  esc:s=>String(s),tr:()=>context.DB.lang==='tr',t:key=>key,save(){},fmt:s=>s,today:()=>context.current,
+ const context={DB:{lang:'en'},A:{qs:{},planningQs:{},ql:{}},current:'2026-11-29',P:{rep(){}},
+  addD:(value,days)=>new Date(Date.parse(value+'T00:00:00Z')+days*86400000).toISOString().slice(0,10),recordActivity(){},esc:s=>String(s),tr:()=>context.DB.lang==='tr',t:key=>key,save(){},fmt:s=>s,today:()=>context.current,
   st:()=>({t:2,d:1,p:50,by:{}}),reportPeriodEnded:(now,end)=>now>=end,reportDetail:'answers',
   answerArchiveUnlocked:(now,key)=>Number(now.slice(0,4))>Number(key.slice(0,4)),
   Math:Object.assign(Object.create(Math),{random:()=>0}),$:()=>({value:'A custom question'}),
@@ -17,7 +17,7 @@ function fixture(){
  ${extract('function reportQuestionId(text){','/* Weekly/monthly reports')}
  ${extract('function repCard(title,per,a,b,pa,pb,key,nk,defs)','/* ---- gecmis raporlar')}
  ${extract('function reportDetailView(){','P.rep=()=>{')}
- this.f={reportQuestionText,makeReportQuestion,qa,finishReportAnswer,commitReportGroup,addQ,addRandQ,delQ,repCard,reportDetailView,
+ this.f={reportQuestionText,reportQuestionForPeriod,makeReportQuestion,qa,finishReportAnswer,commitReportGroup,addQ,addRandQ,delQ,repCard,reportDetailView,
   banks:REPORT_QUESTION_BANKS,defaults:DEFQ_EN,plans:PLANQ_EN};`,context);
  const f=context.f;
  const render=(kind='week',key=kind==='week'?'2026-11-23':'2026-11',next=kind==='week'?'2026-11-30':'2026-12')=>
@@ -132,4 +132,11 @@ test('empty, partial and whitespace answers never lock; custom questions partici
 test('future plans unlock after their own year; partial reviews do not leak into their archive entry',()=>{
  const {context,f,render}=fixture();render('month','2026-12','2027-01');context.A.planningQs['2027-01'].forEach(q=>q.a='Private future plan');f.commitReportGroup('2027-01','plan');context.A.qs['2027-01']=[{q:'Partial review',a:'Keep draft private'}];
  context.current='2027-12-31';assert.equal(f.reportDetailView().includes('Private future plan'),false);context.current='2028-01-01';const result=f.reportDetailView();assert.ok(result.includes('Private future plan'));assert.equal(result.includes('Keep draft private'),false);
+});
+
+test('planning wording follows the target period across rollover without modifying stored questions',()=>{
+ const {context,f,render}=fixture();render();const key='2026-11-30',q=context.A.planningQs[key][0],before=JSON.stringify(q);
+ assert.ok(f.reportQuestionForPeriod(q,key,'plan').includes('next week'));context.current='2026-11-30';assert.ok(f.reportQuestionForPeriod(q,key,'plan').includes('this week'));
+ context.DB.lang='tr';assert.ok(f.reportQuestionForPeriod(q,key,'plan').includes('Bu hafta'));assert.equal(JSON.stringify(q),before);
+ const custom={qid:'custom',q:'Gelecek hafta kendime ne söylerim?',a:''};assert.equal(f.reportQuestionForPeriod(custom,key,'plan'),custom.q);
 });

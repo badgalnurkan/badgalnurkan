@@ -1,0 +1,290 @@
+{
+  "periods": [
+    {
+      "day": "2026-11-15",
+      "text": "DÖNEM ÖZETİ\n\nHaftalık rapor\n\n09.11 – 15.11\n\n50%\n1\nTamamlanan\n1\nTamamlanmayan\n+50\nÖnceki döneme göre puan\nDaha fazlası\n↗\nÖnceki hafta raporu\n02.11 – 08.11\n→\n🔒 Aylık rapor\n\nBu rapor şu tarihte açılır: 30.11 — 15 gün kaldı\n\nÖnceki ay raporu\n01.10 – 31.10\n→\nArşivlerin\nGeçmiş özetler\nGünlükler\nYanıt arşivi 🔒"
+    },
+    {
+      "day": "2026-11-16",
+      "text": "🔒 Haftalık rapor\n\nBu rapor şu tarihte açılır: 22.11 — 6 gün kaldı\n\nÖnceki hafta raporu\n09.11 – 15.11\n→\n🔒 Aylık rapor\n\nBu rapor şu tarihte açılır: 30.11 — 14 gün kaldı\n\nÖnceki ay raporu\n01.10 – 31.10\n→\nArşivlerin\nGeçmiş özetler\nGünlükler\nYanıt arşivi 🔒"
+    },
+    {
+      "day": "2026-11-30",
+      "text": "🔒 Haftalık rapor\n\nBu rapor şu tarihte açılır: 06.12 — 6 gün kaldı\n\nÖnceki hafta raporu\n23.11 – 29.11\n→\n\nDÖNEM ÖZETİ\n\nAylık rapor\n\n01.11 – 30.11\n\n50%\n1\nTamamlanan\n1\nTamamlanmayan\n+50\nÖnceki döneme göre puan\nDaha fazlası\n↗\nArşivlerin\nGeçmiş özetler\nGünlükler\nYanıt arşivi 🔒"
+    },
+    {
+      "day": "2026-12-01",
+      "text": "🔒 Haftalık rapor\n\nBu rapor şu tarihte açılır: 06.12 — 5 gün kaldı\n\nÖnceki hafta raporu\n23.11 – 29.11\n→\n🔒 Aylık rapor\n\nBu rapor şu tarihte açılır: 31.12 — 30 gün kaldı\n\nÖnceki ay raporu\n01.11 – 30.11\n→\nArşivlerin\nGeçmiş özetler\nGünlükler\nYanıt arşivi 🔒"
+    },
+    {
+      "day": "2027-02-28",
+      "text": "DÖNEM ÖZETİ\n\nHaftalık rapor\n\n22.02 – 28.02\n\n50%\n1\nTamamlanan\n1\nTamamlanmayan\n+50\nÖnceki döneme göre puan\nDaha fazlası\n↗\nÖnceki hafta raporu\n15.02 – 21.02\n→\n\nDÖNEM ÖZETİ\n\nAylık rapor\n\n01.02 – 28.02\n\n50%\n1\nTamamlanan\n1\nTamamlanmayan\n+50\nÖnceki döneme göre puan\nDaha fazlası\n↗\nArşivlerin\nGeçmiş özetler\nGünlükler\nYanıt arşivi 🔒"
+    },
+    {
+      "day": "2027-03-01",
+      "text": "🔒 Haftalık rapor\n\nBu rapor şu tarihte açılır: 07.03 — 6 gün kaldı\n\nÖnceki hafta raporu\n22.02 – 28.02\n→\n🔒 Aylık rapor\n\nBu rapor şu tarihte açılır: 31.03 — 30 gün kaldı\n\nÖnceki ay raporu\n01.02 – 28.02\n→\nArşivlerin\nGeçmiş özetler\nGünlükler\nYanıt arşivi 🔒"
+    },
+    {
+      "day": "2028-02-29",
+      "text": "🔒 Haftalık rapor\n\nBu rapor şu tarihte açılır: 05.03 — 5 gün kaldı\n\nÖnceki hafta raporu\n21.02 – 27.02\n→\n\nDÖNEM ÖZETİ\n\nAylık rapor\n\n01.02 – 29.02\n\n50%\n1\nTamamlanan\n1\nTamamlanmayan\n+50\nÖnceki döneme göre puan\nDaha fazlası\n↗\nArşivlerin\nGeçmiş özetler\nGünlükler\nYanıt arşivi 🔒"
+    },
+    {
+      "day": "2028-03-01",
+      "text": "🔒 Haftalık rapor\n\nBu rapor şu tarihte açılır: 05.03 — 4 gün kaldı\n\nÖnceki hafta raporu\n21.02 – 27.02\n→\n🔒 Aylık rapor\n\nBu rapor şu tarihte açılır: 31.03 — 30 gün kaldı\n\nÖnceki ay raporu\n01.02 – 29.02\n→\nArşivlerin\nGeçmiş özetler\nGünlükler\nYanıt arşivi 🔒"
+    }
+  ],
+  "layouts": [
+    {
+      "lang": "tr",
+      "width": 320,
+      "page": "welcome-google",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 320,
+      "page": "rep",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 320,
+      "page": "empty-progress",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 390,
+      "page": "welcome-google",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 390,
+      "page": "rep",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 390,
+      "page": "empty-progress",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 768,
+      "page": "welcome-google",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 768,
+      "page": "rep",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 768,
+      "page": "empty-progress",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 844,
+      "page": "welcome-google",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 844,
+      "page": "rep",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 844,
+      "page": "empty-progress",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 1280,
+      "page": "welcome-google",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 1280,
+      "page": "rep",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 1280,
+      "page": "empty-progress",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 1920,
+      "page": "welcome-google",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 1920,
+      "page": "rep",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "tr",
+      "width": 1920,
+      "page": "empty-progress",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "page": "welcome-google",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "page": "rep",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 320,
+      "page": "empty-progress",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "page": "welcome-google",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "page": "rep",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "page": "empty-progress",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 768,
+      "page": "welcome-google",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 768,
+      "page": "rep",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 768,
+      "page": "empty-progress",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 844,
+      "page": "welcome-google",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 844,
+      "page": "rep",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 844,
+      "page": "empty-progress",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 1280,
+      "page": "welcome-google",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 1280,
+      "page": "rep",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 1280,
+      "page": "empty-progress",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 1920,
+      "page": "welcome-google",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 1920,
+      "page": "rep",
+      "overflow": false,
+      "theme": "white"
+    },
+    {
+      "lang": "en",
+      "width": 1920,
+      "page": "empty-progress",
+      "overflow": false,
+      "theme": "white"
+    }
+  ]
+}

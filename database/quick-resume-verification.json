@@ -1,0 +1,54 @@
+{
+  "checked_date": "2026-11-15",
+  "uses_synthetic_claims": true,
+  "checks": [
+    {
+      "scenario": "fresh_oauth",
+      "decision": {
+        "allowed": true,
+        "expires_at": "2026-11-15T12:42:25+00:00",
+        "remaining_seconds": 1799
+      }
+    },
+    {
+      "scenario": "before_boundary",
+      "decision": {
+        "allowed": true,
+        "expires_at": "2026-11-15T12:12:31+00:00",
+        "remaining_seconds": 0
+      }
+    },
+    {
+      "scenario": "at_boundary",
+      "decision": {
+        "allowed": false,
+        "expires_at": "2026-11-15T12:12:28+00:00",
+        "remaining_seconds": 0
+      }
+    },
+    {
+      "scenario": "refresh_does_not_extend",
+      "decision": {
+        "allowed": false,
+        "expires_at": "2026-11-15T12:12:35+00:00",
+        "remaining_seconds": 0
+      }
+    },
+    {
+      "scenario": "password_is_not_google",
+      "decision": {
+        "allowed": false,
+        "expires_at": null,
+        "remaining_seconds": 0
+      }
+    },
+    {
+      "scenario": "missing_amr_denied",
+      "decision": {
+        "allowed": false,
+        "expires_at": null,
+        "remaining_seconds": 0
+      }
+    }
+  ]
+}

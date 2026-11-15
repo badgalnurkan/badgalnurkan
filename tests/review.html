@@ -15,7 +15,8 @@
 <div class="controls">
 <label class="width-control">Ekran <select id="width" aria-label="Ekran genişliği"><option value="320">320 px</option><option value="360">360 px</option><option value="390" selected>390 px</option><option value="430">430 px</option><option value="768">768 px</option><option value="844">844 px</option><option value="900">900 px</option><option value="1024">1024 px</option><option value="1280">1280 px</option><option value="1920">1920 px</option><option value="2560">2560 px</option><option value="3840">3840 px</option></select></label>
 <label class="width-control">Yükseklik <select id="height" aria-label="Ekran yüksekliği"><option value="390">390 px</option><option value="568">568 px</option><option value="844" selected>844 px</option><option value="900">900 px</option><option value="1080">1080 px</option><option value="2160">2160 px</option></select></label>
-<label>Sayfa <select id="page" aria-label="Önizleme sayfası"><option value="welcome">Karşılama</option><option value="welcome-google">Hatırlanan Google</option><option value="home" selected>Ana sayfa</option><option value="pomo">Pomodoro</option><option value="todo">Yapılacaklar</option><option value="pc">İlerleme</option><option value="rep">Raporlar</option><option value="set">Ayarlar</option></select></label>
+<label>Sayfa <select id="page" aria-label="Önizleme sayfası"><option value="welcome">Karşılama</option><option value="welcome-google">Hatırlanan Google</option><option value="home" selected>Ana sayfa</option><option value="empty-progress">Verisiz hesap · %1</option><option value="pomo">Pomodoro</option><option value="todo">Yapılacaklar</option><option value="pc">İlerleme</option><option value="rep">Raporlar</option><option value="set">Ayarlar</option></select></label>
+<label>Takvim <select id="date" aria-label="İnceleme tarihi"><option value="">Bugün</option><option value="2026-11-15">15 Kas · Pazar</option><option value="2026-11-16">16 Kas · Pazartesi</option><option value="2026-11-30">30 Kas · Ay sonu</option><option value="2026-12-01">1 Ara · Ay başı</option><option value="2027-02-28">28 Şub 2027</option><option value="2027-03-01">1 Mar 2027</option><option value="2028-02-29">29 Şub 2028</option><option value="2028-03-01">1 Mar 2028</option></select></label>
 <label>Dil <select id="lang" aria-label="Önizleme dili"><option value="tr">Türkçe</option><option value="en">English</option></select></label>
 <label>Tema <select id="theme" aria-label="Önizleme teması"><option value="white">Açık</option><option value="black">Koyu</option></select></label>
 <button type="button" id="replay-entry" style="font:inherit;color:inherit;background:#fff;border:1px solid #d6c6ba;border-radius:9px;padding:7px 10px;cursor:pointer">Giriş geçişini izle</button>
@@ -23,13 +24,13 @@
 </header>
 <main><div class="device"><iframe id="app-preview" title="Uygulama önizlemesi" sandbox="allow-scripts" src="review-app.html?lang=tr&amp;theme=white&amp;page=home"></iframe></div><p class="caption" id="size-caption">390 × 844</p></main>
 <script>
-const fields=['width','height','page','lang','theme'];
+const fields=['width','height','page','lang','theme','date'];
 let revision=0;
 function updatePreview(){
  const width=Number(document.getElementById('width').value),frame=document.getElementById('app-preview');
  const height=Number(document.getElementById('height').value);
  frame.style.width=width+'px';frame.style.height=height+'px';
- const params=new URLSearchParams(['page','lang','theme'].map(k=>[k,document.getElementById(k).value]));
+ const params=new URLSearchParams(['page','lang','theme','date'].map(k=>[k,document.getElementById(k).value]));
  params.set('rev',String(++revision));
  frame.src='review-app.html?'+params;
  document.getElementById('size-caption').textContent=width+' × '+height;
