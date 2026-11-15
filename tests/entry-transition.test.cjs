@@ -17,10 +17,29 @@ function fixture(reduced=false){
  vm.runInContext(extract('function uiMotionTime(name,fallback){','const feedbackAnimations=')+extract('const greetKey=','const RANDOM_Q=')+extract('let welcomeEntryBusy=false;','function goHome(){')+'\nthis.f={greetKey,greetText,playWelcomeTransition,continueFromWelcome,uiMotionTime};',context);
  return {context,f:context.f,roots,timers,navigations};
 }
-test('Turkish greetings follow the time of day and use İyi günler at midday',()=>{
+test('Turkish greetings keep the afternoon until 18:00 and handle every boundary',()=>{
  const {f}=fixture();
- for(const [hour,expected] of [[5,'Günaydın'],[10,'Günaydın'],[11,'İyi günler'],[15,'İyi günler'],[16,'İyi akşamlar'],[20,'İyi akşamlar'],[21,'İyi geceler'],[0,'İyi geceler']])
+ for(const [hour,expected] of [[0,'İyi geceler'],[4,'İyi geceler'],[5,'Günaydın'],[11,'Günaydın'],[12,'İyi günler'],[15,'İyi günler'],[16,'İyi günler'],[17,'İyi günler'],[18,'İyi akşamlar'],[21,'İyi akşamlar'],[22,'İyi geceler'],[23,'İyi geceler']])
   assert.equal(f.greetText(f.greetKey(hour)),expected);
+});
+test('English greetings use the same afternoon and evening boundaries',()=>{
+ const {f,context}=fixture();context.tr=()=>false;
+ for(const [hour,expected] of [[5,'Good morning'],[11,'Good morning'],[12,'Good afternoon'],[16,'Good afternoon'],[17,'Good afternoon'],[18,'Good evening'],[21,'Good evening'],[22,'Good night']])
+  assert.equal(f.greetText(f.greetKey(hour)),expected);
+});
+test('real instants use the Türkiye clock, including midnight and the 18:00 boundary',()=>{
+ const context={tr:()=>true};vm.createContext(context);
+ vm.runInContext(extract('const greetingHour=','const RANDOM_Q=')+'\nthis.f={greetingHour,greetKey,greetText};',context);
+ for(const [instant,hour,expected] of [
+  ['2026-11-15T13:00:00Z',16,'İyi günler'],
+  ['2026-11-15T14:59:59Z',17,'İyi günler'],
+  ['2026-11-15T15:00:00Z',18,'İyi akşamlar'],
+  ['2026-11-15T21:00:00Z',0,'İyi geceler'],
+  ['2026-11-16T02:00:00Z',5,'Günaydın']
+ ]){
+  const actual=context.f.greetingHour(new Date(instant));assert.equal(actual,hour);
+  assert.equal(context.f.greetText(context.f.greetKey(actual)),expected);
+ }
 });
 test('welcome stays until Continue, then the full branded transition finishes before sign-in',()=>{
  const {f,context,roots,navigations}=fixture();context.A=null;context.view='welcome';assert.equal(roots.length,0);
@@ -48,12 +67,14 @@ test('reduced motion bypasses the animated overlay and completes immediately',()
  const {f,roots,timers}=fixture(true);let calls=0;f.playWelcomeTransition(()=>calls++);
  assert.equal(roots.length,0);assert.equal(timers.size,0);assert.equal(calls,1);
 });
-test('the circular pass eases forward for 420ms and back for 300ms',()=>{
- assert.match(html,/#login-portal\.entry-portal \.portal-disc\{[^}]*animation:entryCirclePass \.72s linear \.24s both!important/);
+test('the 1.6-second entry eases forward for 340ms and back for 240ms',()=>{
+ assert.match(html,/--entry-total-ms:1600/);
+ assert.match(html,/#login-portal\.entry-portal \.portal-disc\{[^}]*animation:entryCirclePass \.58s linear \.18s both!important/);
  const frames=html.match(/@keyframes entryCirclePass\{([^\n]+)\}/)[1];
- assert.match(frames,/58\.333333%\{transform:translate\(-50%,-50%\) scale\(1\.5\);animation-timing-function:var\(--motion-return\)\}/);
+ assert.match(frames,/58\.62069%\{transform:translate\(-50%,-50%\) scale\(1\.5\);animation-timing-function:var\(--motion-return\)\}/);
  assert.match(frames,/100%\{transform:translate\(-50%,-50%\) scale\(0\)\}/);
- assert.ok(Math.abs(720*.58333333-420)<.001);assert.ok(Math.abs(720*(1-.58333333)-300)<.001);
+ assert.ok(Math.abs(580*.5862069-340)<.001);assert.ok(Math.abs(580*(1-.5862069)-240)<.001);
+ assert.ok(Math.abs(.18+.58+.84-1.6)<.001);
 });
 test('JavaScript completion uses the duration configured in CSS',()=>{
  const {f,context,timers}=fixture();

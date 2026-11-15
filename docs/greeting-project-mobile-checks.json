@@ -1,0 +1,927 @@
+{
+  "projectLayouts": [
+    {
+      "language": "tr",
+      "theme": "white",
+      "width": 320,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1096.006103515625,
+            "left": 24.984375,
+            "right": 295.015625,
+            "tag": "INPUT",
+            "top": 1046.834228515625,
+            "width": 270.03125
+          },
+          {
+            "bottom": 1156.771728515625,
+            "left": 24.984375,
+            "right": 295.015625,
+            "tag": "INPUT",
+            "top": 1105.599853515625,
+            "width": 270.03125
+          },
+          {
+            "bottom": 1210.365478515625,
+            "left": 24.984375,
+            "right": 295.015625,
+            "tag": "BUTTON",
+            "top": 1166.365478515625,
+            "width": 270.03125
+          }
+        ],
+        "formWidth": 270.03125,
+        "pageWidth": 320,
+        "stacked": true,
+        "viewport": 320
+      },
+      "modal": {
+        "cardWidth": 285.1199951171875,
+        "contained": true,
+        "fieldWidth": 253.0687561035156,
+        "pageWidth": 320,
+        "viewport": 320
+      }
+    },
+    {
+      "language": "tr",
+      "theme": "white",
+      "width": 390,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1095.5784912109375,
+            "left": 24.984375,
+            "right": 365.015625,
+            "tag": "INPUT",
+            "top": 1046.4066162109375,
+            "width": 340.03125
+          },
+          {
+            "bottom": 1156.3441162109375,
+            "left": 24.984375,
+            "right": 365.015625,
+            "tag": "INPUT",
+            "top": 1105.1722412109375,
+            "width": 340.03125
+          },
+          {
+            "bottom": 1209.9378662109375,
+            "left": 24.984375,
+            "right": 365.015625,
+            "tag": "BUTTON",
+            "top": 1165.9378662109375,
+            "width": 340.03125
+          }
+        ],
+        "formWidth": 340.03125,
+        "pageWidth": 390,
+        "stacked": true,
+        "viewport": 390
+      },
+      "modal": {
+        "cardWidth": 354.4200439453125,
+        "contained": true,
+        "fieldWidth": 322.3687744140625,
+        "pageWidth": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "language": "tr",
+      "theme": "white",
+      "width": 768,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1111.8489990234375,
+            "left": 53,
+            "right": 433.40625,
+            "tag": "INPUT",
+            "top": 1062.6771240234375,
+            "width": 380.40625
+          },
+          {
+            "bottom": 1112.8489990234375,
+            "left": 442.203125,
+            "right": 618.203125,
+            "tag": "INPUT",
+            "top": 1061.6771240234375,
+            "width": 176
+          },
+          {
+            "bottom": 1109.2552490234375,
+            "left": 627,
+            "right": 715,
+            "tag": "BUTTON",
+            "top": 1065.2552490234375,
+            "width": 88
+          }
+        ],
+        "formWidth": 662,
+        "pageWidth": 768,
+        "stacked": false,
+        "viewport": 768
+      },
+      "modal": {
+        "cardWidth": 506.8800048828125,
+        "contained": true,
+        "fieldWidth": 468.486572265625,
+        "pageWidth": 768,
+        "viewport": 768
+      }
+    },
+    {
+      "language": "tr",
+      "theme": "white",
+      "width": 1280,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1032.0166015625,
+            "left": 347.21875,
+            "right": 888.671875,
+            "tag": "INPUT",
+            "top": 981.8447265625,
+            "width": 541.453125
+          },
+          {
+            "bottom": 1033.0166015625,
+            "left": 897.65625,
+            "right": 1077.34375,
+            "tag": "INPUT",
+            "top": 980.8447265625,
+            "width": 179.6875
+          },
+          {
+            "bottom": 1029.3916015625,
+            "left": 1086.328125,
+            "right": 1176.171875,
+            "tag": "BUTTON",
+            "top": 984.4697265625,
+            "width": 89.84375
+          }
+        ],
+        "formWidth": 828.953125,
+        "pageWidth": 1280,
+        "stacked": false,
+        "viewport": 1280
+      },
+      "modal": {
+        "cardWidth": 517.5224609375,
+        "contained": true,
+        "fieldWidth": 464.8669128417969,
+        "pageWidth": 1280,
+        "viewport": 1280
+      }
+    },
+    {
+      "language": "tr",
+      "theme": "black",
+      "width": 320,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1096.0089111328125,
+            "left": 24.984375,
+            "right": 295.015625,
+            "tag": "INPUT",
+            "top": 1046.8370361328125,
+            "width": 270.03125
+          },
+          {
+            "bottom": 1156.7745361328125,
+            "left": 24.984375,
+            "right": 295.015625,
+            "tag": "INPUT",
+            "top": 1105.6026611328125,
+            "width": 270.03125
+          },
+          {
+            "bottom": 1210.3682861328125,
+            "left": 24.984375,
+            "right": 295.015625,
+            "tag": "BUTTON",
+            "top": 1166.3682861328125,
+            "width": 270.03125
+          }
+        ],
+        "formWidth": 270.03125,
+        "pageWidth": 320,
+        "stacked": true,
+        "viewport": 320
+      },
+      "modal": {
+        "cardWidth": 285.1199951171875,
+        "contained": true,
+        "fieldWidth": 253.0687561035156,
+        "pageWidth": 320,
+        "viewport": 320
+      }
+    },
+    {
+      "language": "tr",
+      "theme": "black",
+      "width": 390,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1096.155029296875,
+            "left": 24.984375,
+            "right": 365.015625,
+            "tag": "INPUT",
+            "top": 1046.983154296875,
+            "width": 340.03125
+          },
+          {
+            "bottom": 1156.920654296875,
+            "left": 24.984375,
+            "right": 365.015625,
+            "tag": "INPUT",
+            "top": 1105.748779296875,
+            "width": 340.03125
+          },
+          {
+            "bottom": 1210.514404296875,
+            "left": 24.984375,
+            "right": 365.015625,
+            "tag": "BUTTON",
+            "top": 1166.514404296875,
+            "width": 340.03125
+          }
+        ],
+        "formWidth": 340.03125,
+        "pageWidth": 390,
+        "stacked": true,
+        "viewport": 390
+      },
+      "modal": {
+        "cardWidth": 354.4200439453125,
+        "contained": true,
+        "fieldWidth": 322.3687744140625,
+        "pageWidth": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "language": "tr",
+      "theme": "black",
+      "width": 768,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1111.85205078125,
+            "left": 53,
+            "right": 433.40625,
+            "tag": "INPUT",
+            "top": 1062.68017578125,
+            "width": 380.40625
+          },
+          {
+            "bottom": 1112.85205078125,
+            "left": 442.203125,
+            "right": 618.203125,
+            "tag": "INPUT",
+            "top": 1061.68017578125,
+            "width": 176
+          },
+          {
+            "bottom": 1109.25830078125,
+            "left": 627,
+            "right": 715,
+            "tag": "BUTTON",
+            "top": 1065.25830078125,
+            "width": 88
+          }
+        ],
+        "formWidth": 662,
+        "pageWidth": 768,
+        "stacked": false,
+        "viewport": 768
+      },
+      "modal": {
+        "cardWidth": 506.8800048828125,
+        "contained": true,
+        "fieldWidth": 468.486572265625,
+        "pageWidth": 768,
+        "viewport": 768
+      }
+    },
+    {
+      "language": "tr",
+      "theme": "black",
+      "width": 1280,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1031.515625,
+            "left": 347.21875,
+            "right": 888.671875,
+            "tag": "INPUT",
+            "top": 981.34375,
+            "width": 541.453125
+          },
+          {
+            "bottom": 1032.515625,
+            "left": 897.65625,
+            "right": 1077.34375,
+            "tag": "INPUT",
+            "top": 980.34375,
+            "width": 179.6875
+          },
+          {
+            "bottom": 1028.890625,
+            "left": 1086.328125,
+            "right": 1176.171875,
+            "tag": "BUTTON",
+            "top": 983.96875,
+            "width": 89.84375
+          }
+        ],
+        "formWidth": 828.953125,
+        "pageWidth": 1280,
+        "stacked": false,
+        "viewport": 1280
+      },
+      "modal": {
+        "cardWidth": 517.5224609375,
+        "contained": true,
+        "fieldWidth": 464.8669128417969,
+        "pageWidth": 1280,
+        "viewport": 1280
+      }
+    },
+    {
+      "language": "en",
+      "theme": "white",
+      "width": 320,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1119.2259521484375,
+            "left": 24.984375,
+            "right": 295.015625,
+            "tag": "INPUT",
+            "top": 1070.0540771484375,
+            "width": 270.03125
+          },
+          {
+            "bottom": 1179.9915771484375,
+            "left": 24.984375,
+            "right": 295.015625,
+            "tag": "INPUT",
+            "top": 1128.8197021484375,
+            "width": 270.03125
+          },
+          {
+            "bottom": 1233.5853271484375,
+            "left": 24.984375,
+            "right": 295.015625,
+            "tag": "BUTTON",
+            "top": 1189.5853271484375,
+            "width": 270.03125
+          }
+        ],
+        "formWidth": 270.03125,
+        "pageWidth": 320,
+        "stacked": true,
+        "viewport": 320
+      },
+      "modal": {
+        "cardWidth": 285.1199951171875,
+        "contained": true,
+        "fieldWidth": 253.0687561035156,
+        "pageWidth": 320,
+        "viewport": 320
+      }
+    },
+    {
+      "language": "en",
+      "theme": "white",
+      "width": 390,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1072.93896484375,
+            "left": 24.984375,
+            "right": 365.015625,
+            "tag": "INPUT",
+            "top": 1023.7670288085938,
+            "width": 340.03125
+          },
+          {
+            "bottom": 1133.70458984375,
+            "left": 24.984375,
+            "right": 365.015625,
+            "tag": "INPUT",
+            "top": 1082.53271484375,
+            "width": 340.03125
+          },
+          {
+            "bottom": 1187.29833984375,
+            "left": 24.984375,
+            "right": 365.015625,
+            "tag": "BUTTON",
+            "top": 1143.29833984375,
+            "width": 340.03125
+          }
+        ],
+        "formWidth": 340.03125,
+        "pageWidth": 390,
+        "stacked": true,
+        "viewport": 390
+      },
+      "modal": {
+        "cardWidth": 354.4200439453125,
+        "contained": true,
+        "fieldWidth": 322.3687744140625,
+        "pageWidth": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "language": "en",
+      "theme": "white",
+      "width": 768,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1111.239990234375,
+            "left": 53,
+            "right": 433.40625,
+            "tag": "INPUT",
+            "top": 1062.068115234375,
+            "width": 380.40625
+          },
+          {
+            "bottom": 1112.239990234375,
+            "left": 442.203125,
+            "right": 618.203125,
+            "tag": "INPUT",
+            "top": 1061.068115234375,
+            "width": 176
+          },
+          {
+            "bottom": 1108.646240234375,
+            "left": 627,
+            "right": 715,
+            "tag": "BUTTON",
+            "top": 1064.646240234375,
+            "width": 88
+          }
+        ],
+        "formWidth": 662,
+        "pageWidth": 768,
+        "stacked": false,
+        "viewport": 768
+      },
+      "modal": {
+        "cardWidth": 506.8800048828125,
+        "contained": true,
+        "fieldWidth": 468.486572265625,
+        "pageWidth": 768,
+        "viewport": 768
+      }
+    },
+    {
+      "language": "en",
+      "theme": "white",
+      "width": 1280,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1031.7127685546875,
+            "left": 347.21875,
+            "right": 888.671875,
+            "tag": "INPUT",
+            "top": 981.5408935546876,
+            "width": 541.453125
+          },
+          {
+            "bottom": 1032.7127685546875,
+            "left": 897.65625,
+            "right": 1077.34375,
+            "tag": "INPUT",
+            "top": 980.5408935546876,
+            "width": 179.6875
+          },
+          {
+            "bottom": 1029.0877685546875,
+            "left": 1086.328125,
+            "right": 1176.171875,
+            "tag": "BUTTON",
+            "top": 984.1658935546876,
+            "width": 89.84375
+          }
+        ],
+        "formWidth": 828.953125,
+        "pageWidth": 1280,
+        "stacked": false,
+        "viewport": 1280
+      },
+      "modal": {
+        "cardWidth": 517.5224609375,
+        "contained": true,
+        "fieldWidth": 464.8669128417969,
+        "pageWidth": 1280,
+        "viewport": 1280
+      }
+    },
+    {
+      "language": "en",
+      "theme": "black",
+      "width": 320,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1118.800048828125,
+            "left": 24.984375,
+            "right": 295.015625,
+            "tag": "INPUT",
+            "top": 1069.628173828125,
+            "width": 270.03125
+          },
+          {
+            "bottom": 1179.565673828125,
+            "left": 24.984375,
+            "right": 295.015625,
+            "tag": "INPUT",
+            "top": 1128.393798828125,
+            "width": 270.03125
+          },
+          {
+            "bottom": 1233.159423828125,
+            "left": 24.984375,
+            "right": 295.015625,
+            "tag": "BUTTON",
+            "top": 1189.159423828125,
+            "width": 270.03125
+          }
+        ],
+        "formWidth": 270.03125,
+        "pageWidth": 320,
+        "stacked": true,
+        "viewport": 320
+      },
+      "modal": {
+        "cardWidth": 285.1199951171875,
+        "contained": true,
+        "fieldWidth": 253.0687561035156,
+        "pageWidth": 320,
+        "viewport": 320
+      }
+    },
+    {
+      "language": "en",
+      "theme": "black",
+      "width": 390,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1072.356201171875,
+            "left": 24.984375,
+            "right": 365.015625,
+            "tag": "INPUT",
+            "top": 1023.1842651367188,
+            "width": 340.03125
+          },
+          {
+            "bottom": 1133.121826171875,
+            "left": 24.984375,
+            "right": 365.015625,
+            "tag": "INPUT",
+            "top": 1081.949951171875,
+            "width": 340.03125
+          },
+          {
+            "bottom": 1186.715576171875,
+            "left": 24.984375,
+            "right": 365.015625,
+            "tag": "BUTTON",
+            "top": 1142.715576171875,
+            "width": 340.03125
+          }
+        ],
+        "formWidth": 340.03125,
+        "pageWidth": 390,
+        "stacked": true,
+        "viewport": 390
+      },
+      "modal": {
+        "cardWidth": 354.4200439453125,
+        "contained": true,
+        "fieldWidth": 322.3687744140625,
+        "pageWidth": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "language": "en",
+      "theme": "black",
+      "width": 768,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1111.8516845703125,
+            "left": 53,
+            "right": 433.40625,
+            "tag": "INPUT",
+            "top": 1062.6798095703125,
+            "width": 380.40625
+          },
+          {
+            "bottom": 1112.8516845703125,
+            "left": 442.203125,
+            "right": 618.203125,
+            "tag": "INPUT",
+            "top": 1061.6798095703125,
+            "width": 176
+          },
+          {
+            "bottom": 1109.2579345703125,
+            "left": 627,
+            "right": 715,
+            "tag": "BUTTON",
+            "top": 1065.2579345703125,
+            "width": 88
+          }
+        ],
+        "formWidth": 662,
+        "pageWidth": 768,
+        "stacked": false,
+        "viewport": 768
+      },
+      "modal": {
+        "cardWidth": 506.8800048828125,
+        "contained": true,
+        "fieldWidth": 468.486572265625,
+        "pageWidth": 768,
+        "viewport": 768
+      }
+    },
+    {
+      "language": "en",
+      "theme": "black",
+      "width": 1280,
+      "form": {
+        "contained": true,
+        "controls": [
+          {
+            "bottom": 1031.712890625,
+            "left": 347.21875,
+            "right": 888.671875,
+            "tag": "INPUT",
+            "top": 981.5409545898438,
+            "width": 541.453125
+          },
+          {
+            "bottom": 1032.712890625,
+            "left": 897.65625,
+            "right": 1077.34375,
+            "tag": "INPUT",
+            "top": 980.5409545898438,
+            "width": 179.6875
+          },
+          {
+            "bottom": 1029.087890625,
+            "left": 1086.328125,
+            "right": 1176.171875,
+            "tag": "BUTTON",
+            "top": 984.1659545898438,
+            "width": 89.84375
+          }
+        ],
+        "formWidth": 828.953125,
+        "pageWidth": 1280,
+        "stacked": false,
+        "viewport": 1280
+      },
+      "modal": {
+        "cardWidth": 517.5224609375,
+        "contained": true,
+        "fieldWidth": 464.8669128417969,
+        "pageWidth": 1280,
+        "viewport": 1280
+      }
+    }
+  ],
+  "otherPages": [
+    {
+      "language": "tr",
+      "width": 320,
+      "page": "home",
+      "content": 320,
+      "renderError": false,
+      "viewport": 320
+    },
+    {
+      "language": "tr",
+      "width": 320,
+      "page": "pomo",
+      "content": 320,
+      "renderError": false,
+      "viewport": 320
+    },
+    {
+      "language": "tr",
+      "width": 320,
+      "page": "todo",
+      "content": 320,
+      "renderError": false,
+      "viewport": 320
+    },
+    {
+      "language": "tr",
+      "width": 320,
+      "page": "pc",
+      "content": 320,
+      "renderError": false,
+      "viewport": 320
+    },
+    {
+      "language": "tr",
+      "width": 320,
+      "page": "rep",
+      "content": 320,
+      "renderError": false,
+      "viewport": 320
+    },
+    {
+      "language": "tr",
+      "width": 320,
+      "page": "set",
+      "content": 320,
+      "renderError": false,
+      "viewport": 320
+    },
+    {
+      "language": "tr",
+      "width": 768,
+      "page": "home",
+      "content": 768,
+      "renderError": false,
+      "viewport": 768
+    },
+    {
+      "language": "tr",
+      "width": 768,
+      "page": "pomo",
+      "content": 768,
+      "renderError": false,
+      "viewport": 768
+    },
+    {
+      "language": "tr",
+      "width": 768,
+      "page": "todo",
+      "content": 768,
+      "renderError": false,
+      "viewport": 768
+    },
+    {
+      "language": "tr",
+      "width": 768,
+      "page": "pc",
+      "content": 768,
+      "renderError": false,
+      "viewport": 768
+    },
+    {
+      "language": "tr",
+      "width": 768,
+      "page": "rep",
+      "content": 768,
+      "renderError": false,
+      "viewport": 768
+    },
+    {
+      "language": "tr",
+      "width": 768,
+      "page": "set",
+      "content": 768,
+      "renderError": false,
+      "viewport": 768
+    },
+    {
+      "language": "en",
+      "width": 320,
+      "page": "home",
+      "content": 320,
+      "renderError": false,
+      "viewport": 320
+    },
+    {
+      "language": "en",
+      "width": 320,
+      "page": "pomo",
+      "content": 320,
+      "renderError": false,
+      "viewport": 320
+    },
+    {
+      "language": "en",
+      "width": 320,
+      "page": "todo",
+      "content": 320,
+      "renderError": false,
+      "viewport": 320
+    },
+    {
+      "language": "en",
+      "width": 320,
+      "page": "pc",
+      "content": 320,
+      "renderError": false,
+      "viewport": 320
+    },
+    {
+      "language": "en",
+      "width": 320,
+      "page": "rep",
+      "content": 320,
+      "renderError": false,
+      "viewport": 320
+    },
+    {
+      "language": "en",
+      "width": 320,
+      "page": "set",
+      "content": 320,
+      "renderError": false,
+      "viewport": 320
+    },
+    {
+      "language": "en",
+      "width": 768,
+      "page": "home",
+      "content": 768,
+      "renderError": false,
+      "viewport": 768
+    },
+    {
+      "language": "en",
+      "width": 768,
+      "page": "pomo",
+      "content": 768,
+      "renderError": false,
+      "viewport": 768
+    },
+    {
+      "language": "en",
+      "width": 768,
+      "page": "todo",
+      "content": 768,
+      "renderError": false,
+      "viewport": 768
+    },
+    {
+      "language": "en",
+      "width": 768,
+      "page": "pc",
+      "content": 768,
+      "renderError": false,
+      "viewport": 768
+    },
+    {
+      "language": "en",
+      "width": 768,
+      "page": "rep",
+      "content": 768,
+      "renderError": false,
+      "viewport": 768
+    },
+    {
+      "language": "en",
+      "width": 768,
+      "page": "set",
+      "content": 768,
+      "renderError": false,
+      "viewport": 768
+    }
+  ],
+  "observedGreeting": "İyi günler",
+  "observedTürkiyeHour": 16,
+  "formInteraction": {
+    "emptyNameRejected": true,
+    "emptyDateRejected": true,
+    "enterAddedOneProject": true,
+    "focusAfterAdd": "pn",
+    "longNameLength": 40
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-15",
+  "width": 320,
+  "observations": [
+    {
+      "contentWidth": 265,
+      "status": "done",
+      "text": "Bugünün önceliklerini belirle\n✓ Yapıldı",
+      "width": 265
+    },
+    {
+      "contentWidth": 265,
+      "status": "miss",
+      "text": "Kendine odaklanmak için zaman ayır\n✕ Yapılmadı",
+      "width": 265
+    },
+    {
+      "contentWidth": 265,
+      "status": "pending",
+      "text": "Su içmeyi hatırla\n○ Henüz yapılmadı",
+      "width": 265
+    }
+  ],
+  "interaction": "Added an unmarked task and explicitly crossed another task using To-do UI; opened today in Progress"
+}

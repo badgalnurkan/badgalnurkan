@@ -1,3 +1,40 @@
+# Selamlama, tema, mobil form ve bildirim düzeltmeleri
+
+15 Kasım 2026. Başlangıç GitHub main: a51c4cd5c1501fca056012bed337a7bd5438aaba.
+
+## Bu sürümdeki davranış
+
+- Selamlama uygulamanın Türkiye saatiyle aynı kaynağı kullanır: 05.00–12.00 sabah, 12.00–18.00 gün, 18.00–22.00 akşam, 22.00–05.00 gece. 16.00 artık İyi günler / Good afternoon verir.
+- Continue sonrasındaki giriş geçişi 2 saniyeden 1,6 saniyeye indirildi. İleri daire hareketi 340 ms, geri 240 ms; selamlama kalan zamanla uyumlu. Azaltılmış hareket tercihi ve Continue öncesi bekleme korunur.
+- Karşılama veya girişte açıkça seçilen tema, sonraki doğrulanmış hesabın eski temasına üstün gelir. Hesap atanıp normal kayıt/eşitleme yapılmadan önce uygulanır. Google geri yönlendirmesi boyunca sekme deposunda korunur; sekme deposu yoksa mevcut depolama katmanı kullanılır. Tercih bir kez tüketilir; başka hesaba yeni seçim yapılmadan taşınmaz. Yeni seçim yoksa hesabın kayıtlı teması korunur.
+- Mobil proje formu 600 px ve altında tek sütundur; ad, tarih ve Ekle düğmesi tam genişliktedir. Yerel tarih/saat alanı ve uzun proje adı için kutu sınırları tanımlandı. Gerçek form gönderimi Enter'ı destekler. Boş ad, eksik/geçersiz/geçmiş tarih açıklanır; geçersiz veriler kaydedilmez. Ekleme sonrası yeni proje adı odaklanır.
+- Gün görevleri artık üç durum taşır: done, miss, pending. Tik/çarpı seçilmemiş görev takvim tarih penceresinde ○ Henüz yapılmadı / Not done yet olarak gösterilir. Yalnızca açık çarpı miss olur. Gün devri ve tamamlanan grup arşivi s alanıyla durumu korur; toplam/tamamlanma hesapları aynı done bayrağını kullanmaya devam eder.
+- Eski geçmişte yalnızca done:false tutulduğunda bunun çarpı mı yoksa işaretlenmemiş görev mi olduğu geri çıkarılamaz. Bu kayıtlar değiştirilmeden, görünümde pending kabul edilir. Kanıt olmadan kullanıcıya çarpı atfedilmez. Bilinen done ve miss korunur. Açıkça boşaltılmış s, eski done:true alanı nedeniyle tekrar işaretlenmez.
+- Üst bildirim yatay sürüklemeyle iki yönde kapatılır. Dikey/çapraz, kısa ve çok parmaklı hareket kapatma yapmaz; hareket sonrası sentetik tıklama detayı açmaz. Dokunma yedeği, pointercancel ve azaltılmış hareket desteklenir. 8 saniyelik zamanlayıcı hareket sırasında durur.
+- Kaydırma yalnızca üst uyarıyı kapatır; merkez kaydı ve okunmamış işareti korunur. Merkezin açılması kırmızı işareti temizler. Merkezde 44 px çöp kutusu düğmesi kaydı siler; varsa eşleşen üst uyarı da kapanır. Silinen uyarı tekrar üretilmez.
+- İngilizce görev bildirimindeki tekil/çoğul düzeltildi. Yeni SITE_RELEASE ve TR/EN değişiklik kaydı eklendi. Haftalık/aylık takvim, yıl sonu cevap kilitleri, ilerleme kazanımı, 30 dakikalık Google hızlı dönüşü ve Supabase yetkilendirme akışı değiştirilmedi.
+
+## Doğrulama
+
+- npm test: **157/157 geçti** (27 önceki deneme.html kontrolü, 130 güncel uygulama kontrolü). Tam JavaScript ayrıştırması dahil. Yeni kontroller: gerçek zaman damgaları ve 18.00 sınırı; tema önceliği/hesap değişimi/yönlendirme/depolama yedeği; proje kaydı ve hata yolları; üç görev durumu ve gün devri; iki yönlü sürükleme, kısa/dikey/çok parmaklı iptal, sentetik tıklama ve azaltılmış hareket.
+- python scripts/build-preview.py ve git diff --check başarılı.
+- Chrome: saat 16.xx → İyi günler; gerçek CSS geçiş süresi 1.6 s, daire 0.58 s.
+- Örnek hesap UI'sinde beyaz kayıtlı hesap → karşılamada siyah → ana sayfa siyah; sonra siyah kayıtlı hesap → karşılamada beyaz → ana sayfa beyaz.
+- 16 proje formu + hatırlatma penceresi yerleşimi: TR/EN × açık/koyu × 320/390/768/1280 px. Kontroller kutularına sığdı. Ek olarak 24 sayfa görünümü: TR/EN × 320/768 px × altı ana sayfa; yatay taşma/render hatası görülmedi.
+- Proje arayüzünde boş ad ve boş tarih reddedildi. 40 karakterlik uzun ad, tarih girildikten sonra Enter ile tek kez eklendi; odak pn alanına döndü. Hatırlatma penceresi taşmadı.
+- 320 px İlerleme penceresinde gerçek To-do tıklamalarıyla ✓ Yapıldı, ✕ Yapılmadı ve ○ Henüz yapılmadı ayrı görüldü; satırlar taşmadı.
+- Gerçek tarayıcı sürüklemesiyle üst uyarı sayısı sola 2→1, sağa 1→0. Merkezde iki kayıt korundu; çöp kutusu tıklamasıyla 2→1. Sekiz ek bildirim merkezi yerleşimi (TR/EN × açık/koyu × 320/390 px) taşmadı.
+
+Ölçümler: docs/greeting-project-mobile-checks.json, docs/progress-task-state-checks.json, docs/notification-theme-checks.json. Ekranlar: docs/mobile-project-form-fixed.jpg, docs/progress-task-states.jpg, docs/notification-center-trash.jpg.
+
+Önizlemedeki örnek hesaba giriş sadece izole review-app.html içindedir. Üretim index.html içine test kimliği eklenmedi. Örnek iframe form olaylarına izin verir; connect-src ve form-action none ile dış istek ve form navigasyonu kapalıdır. Bu değişiklikte veritabanı şeması, RLS, SQL veya Auth token kuralları değiştirilmedi; gerçek kullanıcı kaydı test amacıyla okunmadı/yazılmadı.
+
+Fiziksel iOS/Android ve Safari/WebKit motoru sınanmadı. Pointer sürüklemesi Chrome'da, touch yedeği otomatik testte doğrulandı. Gerçek Google hesabıyla giriş/tema eşitlemesi uçtan uca yapılmadı; doğrulanmış hesap aktivasyonunda kullanılan ortak tema işlevi otomatik test ve izole örnek hesapla sınandı. Eski belirsiz görevlerin özgün tik/çarpı seçimi kurtarılamaz.
+
+---
+
+## Önceki sürümün doğrulama kaydı
+
 # Continue, takvim raporları ve 30 dakikalık hızlı dönüş
 
 15 Kasım 2026. Başlangıç GitHub main: 27ef6b88fe3604cf4200238d88dd083aca200844.
