@@ -131,16 +131,16 @@ test('report page is wired to the latest unlocked week and month, not current we
 });
 
 test('first report requires a complete calendar week/month after signup',()=>{
-  assert.equal(reportInitialUnlockDate('week','2026-11-09'),'2026-11-15');
-  assert.equal(reportInitialUnlockDate('week','2026-11-08'),'2026-11-15'); // Sunday signup -> next full week
-  assert.equal(reportInitialUnlockDate('week','2026-11-10'),'2026-11-22'); // Tuesday signup -> next full week
-  assert.equal(reportInitialUnlockDate('week','2026-11-15'),'2026-11-22');
-  assert.equal(reportInitialUnlockDate('week','2026-11-16'),'2026-11-22');
-  assert.equal(reportInitialUnlockDate('month','2026-11-01'),'2026-11-30');
-  assert.equal(reportInitialUnlockDate('month','2026-11-10'),'2026-12-31');
-  assert.equal(reportInitialUnlockDate('month','2026-11-30'),'2026-12-31');
-  assert.equal(reportInitialUnlockDate('month','2028-01-31'),'2028-02-29');
-  assert.equal(reportInitialUnlockDate('month','2027-01-31'),'2027-02-28');
+  assert.equal(reportInitialUnlockDate('week','2026-11-09',true),'2026-11-15');
+  assert.equal(reportInitialUnlockDate('week','2026-11-08',true),'2026-11-15'); // Sunday signup -> next full week
+  assert.equal(reportInitialUnlockDate('week','2026-11-10',true),'2026-11-22'); // Tuesday signup -> next full week
+  assert.equal(reportInitialUnlockDate('week','2026-11-15',true),'2026-11-22');
+  assert.equal(reportInitialUnlockDate('week','2026-11-16',true),'2026-11-22');
+  assert.equal(reportInitialUnlockDate('month','2026-11-01',true),'2026-11-30');
+  assert.equal(reportInitialUnlockDate('month','2026-11-10',true),'2026-12-31');
+  assert.equal(reportInitialUnlockDate('month','2026-11-30',true),'2026-12-31');
+  assert.equal(reportInitialUnlockDate('month','2028-01-31',true),'2028-02-29');
+  assert.equal(reportInitialUnlockDate('month','2027-01-31',true),'2027-02-28');
 });
 
 test('actual report UI unlocks Weekly for an established user on Sunday while Monthly stays locked',()=>{
@@ -152,7 +152,7 @@ test('actual report UI unlocks Weekly for an established user on Sunday while Mo
   assert.doesNotMatch(context.rendered,/🔒 Weekly report/);
   assert.match(context.rendered,/2026-11-09 – 2026-11-15/);
   assert.match(context.rendered,/🔒 Monthly report/);
-  assert.match(context.rendered,/opensOn 2026-12-31/); // First full month after 9 November
+  assert.match(context.rendered,/opensOn 2026-11-30/); // Existing accounts must keep November
 });
 
 test('actual report UI keeps completed week available on Monday after rollover',()=>{
@@ -192,8 +192,10 @@ test('new accounts keep a stable reporting start, legacy history is preserved',(
   context.current='2026-11-15';
   const account=newAcc('example','Name','','','', '');
   assert.equal(account.reportStart,'2026-11-15');
+  assert.equal(account.reportCalendarRule,'full-period-v1');
   const old=norm({pctFrom:'2026-11-08',qs:{'2026-11-09':[{q:'Keep me',a:'answer'}]},ql:{'2026-11-09':1}});
   assert.equal(old.reportStart,'2026-11-08');
+  assert.equal(old.reportCalendarRule,undefined);
   assert.equal(old.qs['2026-11-09'][0].a,'answer');
   assert.equal(old.ql['2026-11-09'],1);
   old.pctFrom='2026-11-15'; // percentage origin changing must not move report start
@@ -202,7 +204,7 @@ test('new accounts keep a stable reporting start, legacy history is preserved',(
 });
 
 test('signing up late in the week skips the incomplete week',()=>{
-  context.A={pctFrom:'2026-11-15',reportStart:'2026-11-15',qs:{},ql:{}};
+  context.A={pctFrom:'2026-11-15',reportStart:'2026-11-15',reportCalendarRule:'full-period-v1',qs:{},ql:{}};
   context.current='2026-11-15';
   context.P.rep();
   assert.match(context.rendered,/🔒 Weekly report/);
@@ -214,7 +216,7 @@ test('signing up late in the week skips the incomplete week',()=>{
 });
 
 test('joining on the last day of the month starts with the next full month',()=>{
-  context.A={pctFrom:'2026-11-30',reportStart:'2026-11-30',qs:{},ql:{}};
+  context.A={pctFrom:'2026-11-30',reportStart:'2026-11-30',reportCalendarRule:'full-period-v1',qs:{},ql:{}};
   context.current='2026-11-30';
   context.P.rep();
   assert.match(context.rendered,/🔒 Monthly report/);
@@ -254,4 +256,50 @@ test('both reports retain three defaults, random question addition and two-step 
   assert.equal(context.A.ql['2026-11'],1);
   assert.equal(context.A.qs[nextMonth][0].a,'A durable answer',
     'Locking an old month must not erase next-month draft answers');
+});
+
+
+test('regression: 15 November legacy account restores Weekly immediately and Monthly on 30 Nov',()=>{
+  // This mimics the user screenshot after the mistaken rollout: reportStart was
+  // previously backfilled from pctFrom, but there is no explicit new-rule marker.
+  context.A={
+    pctFrom:'2026-11-08',reportStart:'2026-11-08',qs:{},ql:{},
+  };
+  context.current='2026-11-15';
+  context.P.rep();
+  assert.match(context.rendered,/Weekly report/);
+  assert.doesNotMatch(context.rendered,/🔒 Weekly report/);
+  assert.match(context.rendered,/2026-11-09 – 2026-11-15/);
+  assert.match(context.rendered,/🔒 Monthly report/);
+  assert.match(context.rendered,/opensOn 2026-11-30/);
+  assert.doesNotMatch(context.rendered,/opensOn 2026-12-31/);
+  assert.equal(context.A.qs['2026-11-09'].length,3);
+  context.current='2026-11-16';
+  context.P.rep();
+  assert.doesNotMatch(context.rendered,/🔒 Weekly report/);
+  assert.match(context.rendered,/2026-11-09 – 2026-11-15/);
+  context.current='2026-11-30';
+  context.P.rep();
+  assert.doesNotMatch(context.rendered,/🔒 Monthly report/);
+  assert.match(context.rendered,/2026-11-01 – 2026-11-30/);
+});
+
+test('legacy and new calendar policies diverge only where a signup marker authorizes it',()=>{
+  assert.equal(reportInitialUnlockDate('week','2026-11-08'),'2026-11-15');
+  assert.equal(reportInitialUnlockDate('month','2026-11-08'),'2026-11-30');
+  assert.equal(reportInitialUnlockDate('week','2026-11-10'),'2026-11-15');
+  assert.equal(reportInitialUnlockDate('month','2026-11-10'),'2026-11-30');
+  assert.equal(reportInitialUnlockDate('week','2026-11-10',true),'2026-11-22');
+  assert.equal(reportInitialUnlockDate('month','2026-11-10',true),'2026-12-31');
+});
+
+test('legacy question drafts and answer locks remain intact through the unlock fix',()=>{
+  const existing={pctFrom:'2026-11-08',reportStart:'2026-11-08',
+    qs:{'2026-11-09':[{q:'Written before release',a:'Do not erase'}]},
+    ql:{'2026-11-09':1}};
+  context.A=norm(existing);
+  context.current='2026-11-15';
+  context.P.rep();
+  assert.equal(context.A.qs['2026-11-09'][0].a,'Do not erase');
+  assert.equal(context.A.ql['2026-11-09'],1);
 });
