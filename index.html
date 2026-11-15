@@ -1536,10 +1536,15 @@ const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
 // Usernames: letters, digits, underscore, dot and hyphen. Keep quotes and @ out of inline handlers and email detection.
 const USERNAME_ALLOWED='a-zA-Z0-9çÇğĞıİöÖşŞüÜ_.-';
 const userRe=new RegExp('^['+USERNAME_ALLOWED+']{3,20}$');
-function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme()})}
+function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today()})}
 function norm(a){
   const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},ql:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
+  // Preserve when reporting began independently of the percentage counter.
+  // Older accounts have no reportStart; use their saved pctFrom as a one-time
+  // compatibility fallback, without discarding any existing report answers.
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(a.reportStart||'')))
+    a.reportStart=/^\d{4}-\d{2}-\d{2}$/.test(String(a.pctFrom||''))?a.pctFrom:today();
   return a;
 }
 const findUser=u=>Object.keys(DB.accounts).find(k=>k.toLowerCase()===String(u).toLowerCase());
@@ -2404,8 +2409,53 @@ function addRandQ(k){const R=rqFor();A.qs[k].push({q:R[Math.floor(Math.random()*
 function addQ(k){const e=$('#nq-'+k),v=e.value.trim().slice(0,150);if(v){A.qs[k].push({q:v,a:''});save();P.rep()}}
 function lockQ(k,b){if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent=tr()?'Emin misin? Bu işlem geri alınamaz':'Are you sure? This cannot be undone';return}A.ql[k]=1;save();P.rep()}
 
-/* Pure date gates: a report is available only on the day after the completed period. */
-function reportPeriodEnded(now,end){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}-\d{2}$/.test(String(end))&&now>end}
+/* Weekly/monthly reports unlock on the last calendar day of their period.
+   Keep showing the most recently unlocked period after the week/month changes. */
+function reportPeriodEnded(now,end){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}-\d{2}$/.test(String(end))&&now>=end}
+function latestUnlockedReportPeriod(kind,day){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(day)))return null;
+  if(kind==='week'){
+    let start=mon(day);
+    if(!reportPeriodEnded(day,addD(start,6)))start=addD(start,-7);
+    return {a:start,b:addD(start,6),pa:addD(start,-7),pb:addD(start,-1),
+      key:start,nk:addD(start,7)};
+  }
+  if(kind==='month'){
+    const first=new Date(Number(day.slice(0,4)),Number(day.slice(5,7))-1,1);
+    const currentEnd=D(new Date(first.getFullYear(),first.getMonth()+1,0));
+    if(!reportPeriodEnded(day,currentEnd))first.setMonth(first.getMonth()-1);
+    const y=first.getFullYear(),m=first.getMonth();
+    const a=D(new Date(y,m,1));
+    return {a,b:D(new Date(y,m+1,0)),
+      pa:D(new Date(y,m-1,1)),pb:D(new Date(y,m,0)),
+      key:a.slice(0,7),nk:D(new Date(y,m+1,1)).slice(0,7)};
+  }
+  throw new RangeError('Invalid report period');
+}
+/* An enrollment on Monday/1st includes that calendar period; a partial
+   signup week/month is skipped. First unlock is the last day of the FIRST
+   COMPLETE reporting period, not seven days/a month after signup. */
+function reportInitialUnlockDate(kind,start){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(start)))return null;
+  if(kind==='week'){
+    const firstMonday=mon(start);
+    return addD(firstMonday===start?firstMonday:addD(firstMonday,7),6);
+  }
+  if(kind==='month'){
+    const [y,m,d]=start.split('-').map(Number);
+    return D(new Date(y,m+(d===1?0:1),0));
+  }
+  throw new RangeError('Invalid report kind');
+}
+function pendingReportCard(title,start,available){
+  const td=today();
+  const total=Math.max(1,dd(start,available)+1);
+  const elapsed=Math.min(total,Math.max(0,dd(start,td)+1));
+  const left=Math.max(0,dd(td,available));
+  return `<div class="card"><h2>🔒 ${title}</h2>
+    <p class="mut">${t('opensOn')} ${fmt(available)} — ${left} ${t('daysLeft')}</p>
+    <div class="bar"><i style="width:${Math.min(100,elapsed/total*100)}%"></i></div></div>`;
+}
 function answerArchiveUnlocked(now,periodKey){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}(?:-\d{2})?$/.test(String(periodKey))&&Number(now.slice(0,4))>Number(periodKey.slice(0,4))}
 function repCard(title,per,a,b,pa,pb,key,nk,defs){
   const td=today();
@@ -2417,7 +2467,7 @@ function repCard(title,per,a,b,pa,pb,key,nk,defs){
   if(!A.qs[key])A.qs[key]=defs.map(q=>({q,a:''}));
   const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p,cur=A.qs[key]||[],ro=!!A.ql[key];
   const rows=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
-  return`<div class="card"><h2>${title}</h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}
+  return`<div class="card"><h2>${title} <small class="mut" style="display:block;font-size:.75rem;font-weight:400">${fmt(a)} – ${fmt(b)}</small></h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}
 <h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3>${cur.length?(ro?`<p class="mut">🔒 ${tr()?'Yanıtların kilitlendi. Yıl bitene kadar Yanıt arşivinde gizli kalacak.':'Your answers are locked and will stay hidden in the answer archive until the end of the year.'}</p>`:qb(key,cur,false)+`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
 <h3 style="margin-top:1.2rem">${tr()?'Sonraki':'Next'} ${per}</h3>${qb(nk,A.qs[nk],false)}<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="${t('addOwnQuestion')}"><button class="s" onclick="addQ('${nk}')">${t('addQuestion')}</button><button class="g s" onclick="addRandQ('${nk}')">${t('randomQuestion')}</button></div></div>`;
 }
@@ -2473,10 +2523,16 @@ function reportDetailView(){
 }
 P.rep=()=>{
   if(reportDetail){M(reportDetailView());return}
-  const td=today(),wa=mon(td),wb=addD(wa,6),x=new Date();
-  const ma=D(new Date(x.getFullYear(),x.getMonth(),1)),mb=D(new Date(x.getFullYear(),x.getMonth()+1,0)),pma=D(new Date(x.getFullYear(),x.getMonth()-1,1)),pmb=D(new Date(x.getFullYear(),x.getMonth(),0));
-  const mNext=D(new Date(x.getFullYear(),x.getMonth()+1,1)).slice(0,7);
-  M(repCard(t('weeklyReport'),tr()?'hafta':'week',wa,wb,addD(wa,-7),addD(wa,-1),wa,addD(wa,7),defQ('week'))+repCard(t('monthlyReport'),tr()?'ay':'month',ma,mb,pma,pmb,ma.slice(0,7),mNext,defQ('month'))+historySection());
+  const td=today(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
+  const since=/^\d{4}-\d{2}-\d{2}$/.test(String(A?.reportStart))?A.reportStart:
+    (/^\d{4}-\d{2}-\d{2}$/.test(String(A?.pctFrom))?A.pctFrom:td);
+  const wUnlock=reportInitialUnlockDate('week',since);
+  const mUnlock=reportInitialUnlockDate('month',since);
+  M((td<wUnlock?pendingReportCard(t('weeklyReport'),since,wUnlock):
+       repCard(t('weeklyReport'),tr()?'hafta':'week',w.a,w.b,w.pa,w.pb,w.key,w.nk,defQ('week')))+
+    (td<mUnlock?pendingReportCard(t('monthlyReport'),since,mUnlock):
+       repCard(t('monthlyReport'),tr()?'ay':'month',m.a,m.b,m.pa,m.pb,m.key,m.nk,defQ('month')))+
+    historySection());
 };
 
 let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};
