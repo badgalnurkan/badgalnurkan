@@ -1415,6 +1415,28 @@ body{font-size:1rem!important}
 #notifications-modal>.card,#release-details>.card,#project-reminder-settings>.card{width:100%!important;max-width:32rem;min-width:0}.notification-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.8rem}.notification-heading h2{margin:0;min-width:0}.notification-heading>button{flex:0 0 44px;width:44px;min-width:44px;min-height:44px;padding:.4rem;border-radius:50%;margin:0}
 
 .report-period-block{display:grid;gap:.65rem}.report-previous{width:100%;margin-top:.5rem;font-size:.85rem}.report-previous small{display:block;font-size:.72rem;color:var(--mut)}.welcome-footnote{max-width:28rem}
+.project-add,.project-task{min-inline-size:0;max-inline-size:100%;box-sizing:border-box}
+.project-add .project-date-field{display:grid;gap:.25rem;min-inline-size:0;max-inline-size:100%;width:100%}
+.project-add .project-date-field>label{margin:0;font-size:.76rem;line-height:1.4;color:var(--mut)}
+.project-add #pd{display:block;min-width:0;min-inline-size:0;max-width:100%!important;max-inline-size:100%;width:100%;box-sizing:border-box}
+.project-add #pd::-webkit-datetime-edit,.project-add #pd::-webkit-date-and-time-value{min-width:0;max-width:100%;overflow:hidden}
+.project-task{display:flex;min-width:0;flex-wrap:wrap}
+.project-task>span{flex:1 1 12rem;min-width:0;overflow-wrap:anywhere}
+.project-task>button{flex:0 1 auto;max-width:100%}
+@media(max-width:600px){
+ .project-add{grid-template-columns:minmax(0,1fr)!important;width:100%}
+ .project-add>*{grid-column:1!important;min-width:0;max-width:100%}
+ .project-task>span{flex-basis:100%}
+ .notification-heading{gap:.35rem}
+ .notification-heading h2{margin-right:auto}
+ .welcome-manual-signin{flex:0 0 auto}
+}
+.notification-clear svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.notification-clear .bin-lid{transform-box:fill-box;transform-origin:90% 50%;transition:transform .32s cubic-bezier(.2,.7,.2,1)}
+.notification-clear.is-emptying .bin-lid{transform:translateY(-2px) rotate(-24deg)}
+.notification-clear.is-finishing .bin-lid{transform:none}
+.notification-clear:disabled{opacity:.62}
+@media(prefers-reduced-motion:reduce){.notification-clear .bin-lid{transition:none!important}}
 </style>
 </head>
 <body>
@@ -2050,8 +2072,14 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-15-greeting-theme-tasks-notices';
+const SITE_RELEASE='2026-11-15-manual-entry-mobile-inbox';
 const SITE_CHANGES=[
+ {date:'2026-11-15',trTitle:'Giriş seçenekleri ve mobil kullanım',enTitle:'Entry choices and mobile comfort',items:[
+  ['Hatırlanan Google hesabının yanında manuel Sign in seçeneği var; hesabı kendin girebilirsin.','A manual Sign in option appears beside remembered Google entry, so you can enter your credentials yourself.'],
+  ['Normal Continue artık giriş formunu açar. Selamlama geçişi geçerli Sign in veya Create account tıklamasından sonra oynar.','Normal Continue now opens the sign-in form. The greeting transition plays after a valid Sign in or Create account submission.'],
+  ['Mobil proje hatırlatıcısındaki tarih alanı ve uzun proje adları kart içinde kalır.','The project reminder date field and long names stay within their card on mobile.'],
+  ['Bildirim merkezinde yalnızca tek bir çöp kutusu tüm kayıtları temizler; kapağı açılıp işlem sonunda kapanır.','The notification inbox has one clear-all bin; its lid opens and closes after clearing.']
+ ]},
  {date:'2026-11-15',trTitle:'Selamlama, görevler ve mobil bildirimler',enTitle:'Greetings, tasks and mobile notifications',items:[
  ['Selamlama, uygulamadaki Türkiye saatiyle uyumludur: sabah 05.00–12.00, gün 12.00–18.00, akşam 18.00–22.00, gece 22.00–05.00. Saat 16.00’da artık İyi günler görünür.','Greetings follow the app’s Türkiye clock: morning 05:00–12:00, afternoon 12:00–18:00, evening 18:00–22:00, night 22:00–05:00. At 16:00, the greeting is now Good afternoon.'],
  ['Mobilde proje adı, tarih ve Ekle düğmesi alt alta yerleşir. Tarih alanları ve uzun proje adları kutu dışına taşmaz.','On phones, project name, date and Add stack vertically. Date fields and long project names stay inside their cards.'],
@@ -2179,16 +2207,42 @@ function addNotification(id,type,data={},announce=true){
  owner.noticeDelivered[id]=Date.now();owner.notifications.unshift(item);owner.notifications=owner.notifications.slice(0,200);
  save();updateNotificationBadge();
  if(document.getElementById('notification-list'))document.getElementById('notification-list').innerHTML=notificationList();
+  const clearButton=document.getElementById('notification-clear');if(clearButton&&!clearButton.classList.contains('is-emptying'))clearButton.disabled=!owner.notifications.length;
  if(announce)showTopNotification(item);return true;
 }
 function ensureReleaseNotification(){addNotification('release:'+SITE_RELEASE,'release',{},true)}
 function notificationList(){
- return ensureNoticeState().notifications.map(item=>{const copy=notificationCopy(item);return `<article class="notification-item"><button class="notification-item-main" onclick="openNotification('${item.id}')"><strong>${esc(copy.title)}</strong><span>${esc(copy.body)}</span><time datetime="${esc(item.at)}">${new Date(item.at).toLocaleString(tr()?'tr-TR':'en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time></button><button type="button" class="g s notification-delete" title="${tr()?'Bildirimi sil':'Delete notification'}" aria-label="${tr()?'Bildirimi sil':'Delete notification'}" onclick="deleteNotification('${item.id}')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6"/></svg></button></article>`}).join('')||`<p class="mut">${tr()?'Bildirimin yok. Yeni hatırlatmalar burada görünecek.':'No notifications. New reminders will appear here.'}</p>`;
+ return ensureNoticeState().notifications.map(item=>{const copy=notificationCopy(item);return `<article class="notification-item"><button class="notification-item-main" onclick="openNotification('${item.id}')"><strong>${esc(copy.title)}</strong><span>${esc(copy.body)}</span><time datetime="${esc(item.at)}">${new Date(item.at).toLocaleString(tr()?'tr-TR':'en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time></button></article>`}).join('')||`<p class="mut">${tr()?'Bildirimin yok. Yeni hatırlatmalar burada görünecek.':'No notifications. New reminders will appear here.'}</p>`;
+}
+function notificationClearButton(){
+ const label=tr()?'Tüm bildirimleri sil':'Clear all notifications';
+ return `<button id="notification-clear" type="button" class="g s notification-clear" onclick="clearNotifications()" title="${label}" aria-label="${label}" ${ensureNoticeState().notifications.length?'':'disabled'}><svg viewBox="0 0 24 24" aria-hidden="true"><g class="bin-lid"><path d="M3 6h18M9 6V4h6v2"/></g><path d="M5 8l1 12h12l1-12M10 11v6M14 11v6"/></svg></button>`;
 }
 function openNotifications(){
  const owner=ensureNoticeState();owner.notifications.forEach(item=>item.read=true);save();updateNotificationBadge();
  const prefs=owner.notificationPrefs;
- openModal('notifications-modal',`<div class="notification-heading"><h2>${tr()?'Bildirimler':'Notifications'}</h2><button class="g s" onclick="closeModal('notifications-modal')" aria-label="${tr()?'Bildirimleri kapat':'Close notifications'}">×</button></div><div id="notification-list" class="notification-list">${notificationList()}</div>${A?`<details class="notification-preferences"><summary>${tr()?'Hatırlatma tercihleri':'Reminder preferences'}</summary>${[['projects',tr()?'Proje hatırlatmaları':'Project reminders'],['tasks',tr()?'Günlük görevler':'Daily tasks'],['pomo',tr()?'Pomodoro uyarıları':'Pomodoro alerts']].map(([key,label])=>`<label><input type="checkbox" ${prefs[key]===false?'':'checked'} onchange="setNotificationPreference('${key}',this.checked)">${label}</label>`).join('')}<p class="mut">${tr()?'Görev hatırlatmaları: Türkiye saatiyle 09.00, 14.00 ve 19.00. Site açıkken çalışır; geri döndüğünde yalnızca en son zaman dilimi hatırlatılır.':'Task reminders: 09:00, 14:00 and 19:00 Türkiye time. They run while the site is open; on return, only the latest time slot is shown.'}</p></details>`:''}`);
+ openModal('notifications-modal',`<div class="notification-heading"><h2>${tr()?'Bildirimler':'Notifications'}</h2>${notificationClearButton()}<button class="g s" onclick="closeModal('notifications-modal')" aria-label="${tr()?'Bildirimleri kapat':'Close notifications'}">×</button></div><div id="notification-list" class="notification-list">${notificationList()}</div>${A?`<details class="notification-preferences"><summary>${tr()?'Hatırlatma tercihleri':'Reminder preferences'}</summary>${[['projects',tr()?'Proje hatırlatmaları':'Project reminders'],['tasks',tr()?'Günlük görevler':'Daily tasks'],['pomo',tr()?'Pomodoro uyarıları':'Pomodoro alerts']].map(([key,label])=>`<label><input type="checkbox" ${prefs[key]===false?'':'checked'} onchange="setNotificationPreference('${key}',this.checked)">${label}</label>`).join('')}<p class="mut">${tr()?'Görev hatırlatmaları: Türkiye saatiyle 09.00, 14.00 ve 19.00. Site açıkken çalışır; geri döndüğünde yalnızca en son zaman dilimi hatırlatılır.':'Task reminders: 09:00, 14:00 and 19:00 Türkiye time. They run while the site is open; on return, only the latest time slot is shown.'}</p></details>`:''}`);
+}
+function clearNotifications(){
+ const owner=ensureNoticeState(),button=document.getElementById('notification-clear');
+ if(!button||button.disabled||!owner.notifications.length)return;
+ const ids=new Set(owner.notifications.map(item=>item.id));
+ const purge=()=>{
+  const current=ensureNoticeState();
+  current.notifications=current.notifications.filter(item=>!ids.has(item.id));
+  save();updateNotificationBadge();
+  for(const banner of document.querySelectorAll?.('.notification-banner')||[])if(ids.has(banner.dataset.notificationId))dismissTopNotification(banner);
+  const list=document.getElementById('notification-list');
+  if(list){list.innerHTML=notificationList();motionReveal(list)}
+ };
+ const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ button.disabled=true;
+ if(reduced){purge();button.disabled=!ensureNoticeState().notifications.length;return}
+ button.classList.add('is-emptying');
+ setTimeout(()=>{
+  purge();button.classList.remove('is-emptying');button.classList.add('is-finishing');
+  setTimeout(()=>{button.classList.remove('is-finishing');button.disabled=!ensureNoticeState().notifications.length},280);
+ },360);
 }
 function setNotificationPreference(key,enabled){if(A&&['projects','tasks','pomo'].includes(key)){ensureNoticeState().notificationPrefs[key]=!!enabled;save()}}
 function deleteNotification(id){
@@ -2254,10 +2308,13 @@ async function continueWithRememberedGoogle(username=DB.lastUser){
    sbClear();await signInWithGoogle({selectAccount:true});
  }finally{rememberedSignInBusy=false;welcomeEntryBusy=false;if(button?.isConnected){button.disabled=false;button.removeAttribute('aria-busy')}}
 }
+function manualSignInButton(remembered){
+ return remembered?`<button type="button" class="g welcome-manual-signin" onclick="manualSignInFromWelcome()" ${rememberedSignInBusy?'disabled':''}>${t('login')}</button>`:'';
+}
 function welcomeScreen(){
  const remembered=rememberedGoogleAccount(),email=remembered?.email||remembered?.mail||'';
  return `<div class="welcome-screen welcome-refresh"><div class="welcome-top"><div class="brand-badge">badgalnurkan<span>made with a little intention.</span></div><div class="welcome-preferences"><div class="langbar">${langBtns(true)}</div><div id="theme-anchor">${themePick(true,false)}</div>${notificationButton()}</div></div>
- <div class="welcome-hero"><div class="welcome-copy"><p class="welcome-eyebrow">${welcomeDisplayName()}</p><h1>Improvin’<br><em>your day.</em></h1><p class="welcome-lead">${tr()?'Her gün, kendin için küçük bir adım.':'A little step for yourself, every day.'}</p><p class="welcome-description">${tr()?'Gününü planla. Odaklanmak için alan aç. Küçük ilerlemelerinin birikmesini izle.':'Plan your day. Make room to focus. Watch your small steps add up.'}</p><div class="welcome-cta"><button id="welcome-continue" ${rememberedSignInBusy?'disabled aria-busy="true"':''} aria-describedby="welcome-signin-hint" onclick="${remembered?'continueWithRememberedGoogle()':'continueFromWelcome()'}">${remembered?(tr()?esc(email)+' ile devam et':'Continue with '+esc(email)):(tr()?'Devam':'Continue')} <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path d="M5 19 19 5M6 5h13v13" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><p id="welcome-signin-hint" class="welcome-footnote">${remembered?(tr()?'Hızlı dönüş, son Google girişinden itibaren 30 dakika geçerlidir. Sonrasında Google hesap seçimi yeniden açılır.':'Quick return is available for 30 minutes after Google sign-in. After that, Google account selection opens again.'):(tr()?'Kendi ritminde, her gün biraz daha.':'At your own pace, a little more each day.')}</p></div>
+ <div class="welcome-hero"><div class="welcome-copy"><p class="welcome-eyebrow">${welcomeDisplayName()}</p><h1>Improvin’<br><em>your day.</em></h1><p class="welcome-lead">${tr()?'Her gün, kendin için küçük bir adım.':'A little step for yourself, every day.'}</p><p class="welcome-description">${tr()?'Gününü planla. Odaklanmak için alan aç. Küçük ilerlemelerinin birikmesini izle.':'Plan your day. Make room to focus. Watch your small steps add up.'}</p><div class="welcome-cta"><button id="welcome-continue" ${rememberedSignInBusy?'disabled aria-busy="true"':''} aria-describedby="welcome-signin-hint" onclick="${remembered?'continueWithRememberedGoogle()':'continueFromWelcome()'}">${remembered?(tr()?esc(email)+' ile devam et':'Continue with '+esc(email)):(tr()?'Devam':'Continue')} <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path d="M5 19 19 5M6 5h13v13" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button>${manualSignInButton(remembered)}<button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><p id="welcome-signin-hint" class="welcome-footnote">${remembered?(tr()?'Hızlı dönüş, son Google girişinden itibaren 30 dakika geçerlidir. Sonrasında Google hesap seçimi yeniden açılır.':'Quick return is available for 30 minutes after Google sign-in. After that, Google account selection opens again.'):(tr()?'Kendi ritminde, her gün biraz daha.':'At your own pace, a little more each day.')}</p></div>
  <div class="welcome-art" aria-hidden="true"><span class="orbit-label orbit-top">${tr()?'KÜÇÜK ADIMLAR':'SMALL STEPS'}</span><div class="day-orbit"><span class="orbit-point"></span><div class="day-disc"><span>${tr()?'bugün':'today'}</span><strong>${tr()?'sana<br>ait.':'is<br>yours.'}</strong><span class="day-spark">✳︎</span></div></div><div class="welcome-ritual"><span>01 ${tr()?'Planla':'Plan'}</span><span>02 ${tr()?'Odaklan':'Focus'}</span><span>03 ${tr()?'İlerle':'Grow'}</span></div><span class="orbit-label orbit-bottom">${tr()?'BİR GÜN, BİR ADIM.':'ONE DAY, ONE STEP.'}</span></div></div>
  <div class="welcome-footer-bar"><div>© 2026 nurkancanbulat</div><a class="welcome-contact" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=nurkancanbulat89%40gmail.com" target="_blank" rel="noopener noreferrer">${t('contact')} ↗</a><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">TikTok</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">Instagram</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">X</a></div></div></div>`;
 }
@@ -2308,11 +2365,18 @@ function toast(txt){
   el._t=setTimeout(()=>{el.classList.remove('on','focus-toast')},2600);
 }
 let welcomeEntryBusy=false;
+function manualSignInFromWelcome(){
+ if(welcomeEntryBusy||rememberedSignInBusy)return;
+ const account=rememberedGoogleAccount();
+ skipRem=true;loginDat={u:String(account?.email||account?.mail||''),p:''};
+ goTo('login','home');
+}
 function continueFromWelcome(){
  if(welcomeEntryBusy)return;welcomeEntryBusy=true;
- playWelcomeTransition(()=>{welcomeEntryBusy=false;goTo('login','home')});
+ goTo('login','home');
+ Promise.resolve().then(()=>{welcomeEntryBusy=false});
 }
-/* Branded entry starts only after Continue, for both sign-in paths. */
+/* Normal Continue opens the form; auth submission starts the greeting. */
 function playWelcomeTransition(cb){
   if(document.getElementById('login-portal'))return;
   const reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -2445,6 +2509,7 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   v13ProtectLegacyCollision(a.u,uid,options.allowLegacyReplacement===true);
   DB.accounts[a.u]=a;DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
   restorePomodoroState();applyTheme();save();loginDat={u:'',p:''};
+  if(options.entryTransition)await options.entryTransition;
   goTo('app','home');
   if(!fromCloud)await sbPush();
   return a;
@@ -2459,16 +2524,17 @@ async function login(){
   const matchingMail=Object.values(DB.accounts).find(a=>String(a.email||a.mail||'').toLowerCase()===raw.toLowerCase());
   const localAcc=localKey?DB.accounts[localKey]:matchingMail;
   const email=raw.includes('@')?raw.toLowerCase():localAcc&&String(localAcc.email||localAcc.mail||'').toLowerCase();
+  const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
   loginBusy(true);
   try{
     if(email){
       try{
         const j=await sbSignIn(raw,password,email);
-        await activateCloudUser(j,raw,'password');
+        await activateCloudUser(j,raw,'password',{entryTransition});
         return;
       }catch(e){
         if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
-          sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home');
+          sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();await entryTransition;goTo('app','home');
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
         loginDat.p='';
@@ -2480,7 +2546,7 @@ async function login(){
       }
     }
     if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
-      sbClear();A=norm(localAcc);A.accountOrigin='local';restorePomodoroState();applyTheme();save();goTo('app','home');
+      sbClear();A=norm(localAcc);A.accountOrigin='local';restorePomodoroState();applyTheme();save();await entryTransition;goTo('app','home');
       toast(tr()?'Bu yalnızca yerel eski hesap. Diğer cihazlarda e-posta ile bulut hesabına giriş yapmalısın.':'Legacy local account only.');return;
     }
     msg=tr()?'Başka cihazda kayıtlıysan kullanıcı adı yerine e-posta adresinle giriş yap.':'Sign in with email on a new device.';
@@ -2500,6 +2566,7 @@ async function setup(){
   else msg=pwOk(p,u);
   if(msg){renderAppOrAuth();if(msg===t('usernameTaken'))debounceNameCheck();return}
   if(Object.values(DB.accounts).some(a=>String(a.email||a.mail||'').toLowerCase()===e)){goExistingEmail(e);return}
+  const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
   loginBusy(true);
   try{
     const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:u}});
@@ -2509,7 +2576,7 @@ async function setup(){
       msg=tr()?'Bulut kaydı oluştu ancak oturum açılmadı. Supabase e-posta doğrulaması gerektiriyor olabilir.':'Cloud signup requires email confirmation; no session returned.';
       renderAppOrAuth();return;
     }
-    await activateCloudUser(j,u);
+    await activateCloudUser(j,u,'password',{entryTransition});
     formDat={u:'',n:'',b:'',e:'',t:'',p:''};
     toast(tr()?'Bulut hesabın oluşturuldu. E-posta sahipliği kontrol edilmedi (demo).':'Cloud account created. Email ownership was not checked (demo).');
   }catch(err){
@@ -2774,7 +2841,7 @@ P.home=()=>{
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
   <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="1000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/1000</span></div></div>
-  <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><input id="pn" maxlength="40" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
+  <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><input id="pn" maxlength="40" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
 };
 function updateJournalCounter(el){const e=document.getElementById('journal-counter');if(e)e.textContent=String(el?.value?.length||0)+'/1000'}
 function saveJournal(){
