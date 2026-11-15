@@ -140,7 +140,7 @@ test('actual report UI unlocks Weekly for an established user on Sunday while Mo
   assert.doesNotMatch(context.rendered,/🔒 Weekly report/);
   assert.match(context.rendered,/2026-11-09 – 2026-11-15/);
   assert.match(context.rendered,/🔒 Monthly report/);
-  assert.match(context.rendered,/opensOn 08.12/); // One calendar month from 9 November
+  assert.match(context.rendered,/opensOn 2026-12-08/); // One calendar month from 9 November
 });
 
 test('actual report UI keeps completed week available on Monday after rollover',()=>{
