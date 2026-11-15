@@ -14,7 +14,7 @@ function fixture(reduced=false){
    body:{appendChild:root=>roots.push(root)}},
  };
  vm.createContext(context);
- vm.runInContext(extract('function uiMotionTime(name,fallback){','const feedbackAnimations=')+extract('const greetKey=','const RANDOM_Q=')+extract('function continueFromWelcome(){','function goHome(){')+'\nthis.f={greetKey,greetText,greetThen,continueFromWelcome,uiMotionTime};',context);
+ vm.runInContext(extract('function uiMotionTime(name,fallback){','const feedbackAnimations=')+extract('const greetKey=','const RANDOM_Q=')+extract('let welcomeEntryBusy=false;','function goHome(){')+'\nthis.f={greetKey,greetText,playWelcomeTransition,continueFromWelcome,uiMotionTime};',context);
  return {context,f:context.f,roots,timers,navigations};
 }
 test('Turkish greetings follow the time of day and use İyi günler at midday',()=>{
@@ -22,31 +22,30 @@ test('Turkish greetings follow the time of day and use İyi günler at midday',(
  for(const [hour,expected] of [[5,'Günaydın'],[10,'Günaydın'],[11,'İyi günler'],[15,'İyi günler'],[16,'İyi akşamlar'],[20,'İyi akşamlar'],[21,'İyi geceler'],[0,'İyi geceler']])
   assert.equal(f.greetText(f.greetKey(hour)),expected);
 });
-test('Continue opens sign-in directly without the authenticated greeting',()=>{
- const {f,context,roots,navigations}=fixture();context.A=null;context.view='welcome';f.continueFromWelcome();
- assert.equal(roots.length,0);assert.deepEqual(navigations,[['login','home']]);
+test('welcome stays until Continue, then the full branded transition finishes before sign-in',()=>{
+ const {f,context,roots,navigations}=fixture();context.A=null;context.view='welcome';assert.equal(roots.length,0);
+ f.continueFromWelcome();assert.equal(roots.length,1);assert.equal(navigations.length,0);
+ roots[0].listeners.animationend({target:{},animationName:'entryCirclePass'});assert.equal(navigations.length,0);
+ roots[0].listeners.animationend({target:roots[0],animationName:'entryPortalOut'});assert.deepEqual(navigations,[['login','home']]);
 });
-test('the greeting runs only after successful account activation',()=>{
- const {f,context,roots}=fixture();context.A=null;context.view='login';f.greetThen();assert.equal(roots.length,0);
- context.A={};context.view='app';f.greetThen();const root=roots[0];assert.ok(root.innerHTML.includes('Günaydın'));
- root.listeners.animationend({target:{},animationName:'entryCirclePass'});assert.equal(root.removed,undefined);
- root.listeners.animationend({target:root,animationName:'entryPortalOut'});assert.equal(root.removed,true);
+test('welcome transition includes the time-based greeting before authentication',()=>{
+ const {f,context,roots}=fixture();context.A=null;context.view='welcome';f.continueFromWelcome();assert.ok(roots[0].innerHTML.includes('Günaydın'));
 });
-test('duplicate requests do not restart an animation; a later sign-in can replay it',()=>{
- const {f,roots}=fixture();f.greetThen();f.greetThen();assert.equal(roots.length,1);
- roots[0].listeners.animationend({target:roots[0],animationName:'entryPortalOut'});f.greetThen();assert.equal(roots.length,2);
+test('repeated Continue taps cannot skip or duplicate the entry transition',()=>{
+ const {f,roots,navigations}=fixture();f.continueFromWelcome();f.continueFromWelcome();assert.equal(roots.length,1);
+ roots[0].listeners.animationend({target:roots[0],animationName:'entryPortalOut'});assert.equal(navigations.length,1);
 });
 test('animation end and timeout cannot invoke the completion twice',()=>{
- const {f,roots,timers}=fixture();let calls=0;f.greetThen(()=>calls++);const root=roots[0],timeout=[...timers.values()][0];
+ const {f,roots,timers}=fixture();let calls=0;f.playWelcomeTransition(()=>calls++);const root=roots[0],timeout=[...timers.values()][0];
  root.listeners.animationend({target:root,animationName:'entryPortalOut'});timeout.fn();
  assert.equal(calls,1);assert.equal(timers.size,0);
 });
 test('animation fallback still completes if the browser omits animationend',()=>{
- const {f,roots,timers}=fixture();let calls=0;f.greetThen(()=>calls++);[...timers.values()][0].fn();
+ const {f,roots,timers}=fixture();let calls=0;f.playWelcomeTransition(()=>calls++);[...timers.values()][0].fn();
  assert.equal(calls,1);assert.equal(roots[0].removed,true);
 });
 test('reduced motion bypasses the animated overlay and completes immediately',()=>{
- const {f,roots,timers}=fixture(true);let calls=0;f.greetThen(()=>calls++);
+ const {f,roots,timers}=fixture(true);let calls=0;f.playWelcomeTransition(()=>calls++);
  assert.equal(roots.length,0);assert.equal(timers.size,0);assert.equal(calls,1);
 });
 test('the circular pass eases forward for 420ms and back for 300ms',()=>{
@@ -60,7 +59,7 @@ test('JavaScript completion uses the duration configured in CSS',()=>{
  const {f,context,timers}=fixture();
  context.getComputedStyle=()=>({getPropertyValue:()=> '2600'});
  assert.equal(f.uiMotionTime('--entry-total-ms',2000),2600);
- f.greetThen();assert.equal([...timers.values()][0].delay,2800);
+ f.playWelcomeTransition();assert.equal([...timers.values()][0].delay,2800);
  context.getComputedStyle=()=>({getPropertyValue:()=> 'invalid'});
  assert.equal(f.uiMotionTime('--entry-total-ms',2000),2000);
 });

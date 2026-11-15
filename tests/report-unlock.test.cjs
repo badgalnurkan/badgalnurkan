@@ -23,6 +23,7 @@ function mon(d){const x=new Date(d+'T00:00');x.setDate(x.getDate()-((x.getDay()+
 function addD(d,n){const x=new Date(d+'T00:00');x.setDate(x.getDate()+n);return D(x)}
 const dd=(a,b)=>Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5);
 ${extract('const RQ_EN=','const NAV_KEYS=')}
+${extract('const PROGRESS_CUTOVER=','function stopwatchFormat(ms){')}
 ${extract('function reportQuestionId(text){','const qb=')}
 ${extract('function reportPeriodEnded(now,end)','function answerArchiveUnlocked')}
 ${extract('function answerArchiveUnlocked(now,periodKey)','/* ---- gecmis raporlar')}
@@ -30,14 +31,14 @@ ${extract('function qa(k,i,el,','/* Weekly/monthly reports')}
 ${extract('function newAcc(u,n,b,pw,em,ph)','const findUser=')}
 ${extract('function reportAvailability(kind,td=today()){','let pm=')}
 this.fixture={reportPeriodEnded,latestUnlockedReportPeriod,reportInitialUnlockDate,
-  pendingReportCard,repCard,newAcc,norm,qa,addRandQ,lockQ};
+  pendingReportCard,repCard,newAcc,norm,qa,addRandQ,lockQ,calendarReportPeriod,periodReportDetail};
 `;
 const context={
   A:{qs:{},ql:{},pctFrom:'2026-11-09',reportStart:'2026-11-09'},
   tr:()=>false,t:x=>({weeklyReport:'Weekly report',monthlyReport:'Monthly report'})[x]||x,fmt:x=>x,
   P:{},reportDetail:'',reportDetailView:()=>'',historySection:()=>'',
   defQ:kind=>kind==='week'?['Weekly 1','Weekly 2','Weekly 3']:['Monthly 1','Monthly 2','Monthly 3'],
-  rqFor:()=>['A random follow-up question'],save:()=>{context.saves=(context.saves||0)+1},
+  items:()=>[],recordActivity(){context.saves=(context.saves||0)+1},rqFor:()=>['A random follow-up question'],save:()=>{context.saves=(context.saves||0)+1},
   sysTheme:()=> 'light',M:h=>{context.rendered=h},
   st:()=>({t:2,d:1,p:50,by:{}}),qb:()=>'',esc:x=>x,today:()=>context.current,
 };
@@ -125,7 +126,7 @@ test('month rollover also renders the last unlocked month, not a lock',()=>{
   }
 });
 
-test('report page is wired to the latest unlocked week and month, not current week locks',()=>{
+test('report page prepares completed period data independently of current calendar locks',()=>{
   const renderer=extract('P.rep=()=>{','let pm=');
   assert.match(renderer,/latestUnlockedReportPeriod\('week',td\)/);
   assert.match(renderer,/latestUnlockedReportPeriod\('month',td\)/);
@@ -157,14 +158,11 @@ test('actual report UI unlocks Weekly for an established user on Sunday while Mo
   assert.match(context.rendered,/opensOn 2026-11-30/); // Existing accounts must keep November
 });
 
-test('actual report UI keeps completed week available on Monday after rollover',()=>{
-  context.current='2026-11-16';
-  context.A.pctFrom='2026-11-09';
-  context.A.reportStart='2026-11-09';
-  context.P.rep();
-  assert.doesNotMatch(context.rendered,/🔒 Weekly report/);
-  assert.match(context.rendered,/2026-11-09 – 2026-11-15/);
-  assert.match(context.rendered,/🔒 Monthly report/);
+test('Monday starts a new locked week and keeps the completed period reachable',()=>{
+ context.current='2026-11-16';context.A.pctFrom='2026-11-09';context.A.reportStart='2026-11-09';context.P.rep();
+ assert.match(context.rendered,/🔒 Weekly report/);assert.match(context.rendered,/opensOn 2026-11-22/);
+ assert.match(context.rendered,/Previous week report/);assert.match(context.rendered,/2026-11-09 – 2026-11-15/);
+ assert.match(context.fixture.periodReportDetail('week',true),/2026-11-09 – 2026-11-15/);
 });
 
 test('new accounts do not see empty reports from before they started tracking',()=>{
@@ -176,7 +174,7 @@ test('new accounts do not see empty reports from before they started tracking',(
   assert.match(context.rendered,/🔒 Monthly report/);
 });
 
-test('actual report UI shows an unlocked month after tracking a full calendar month',()=>{
+test('the month-end view opens and the first day starts a locked new monthly cycle',()=>{
   context.current='2026-11-30';
   context.A.pctFrom='2026-11-01';
   context.A.reportStart='2026-11-01';
@@ -185,7 +183,9 @@ test('actual report UI shows an unlocked month after tracking a full calendar mo
   assert.match(context.rendered,/2026-11-01 – 2026-11-30/);
   context.current='2026-12-01';
   context.P.rep();
-  assert.doesNotMatch(context.rendered,/🔒 Monthly report/);
+  assert.match(context.rendered,/🔒 Monthly report/);
+  assert.match(context.rendered,/opensOn 2026-12-31/);
+  assert.match(context.rendered,/Previous month report/);
   assert.match(context.rendered,/2026-11-01 – 2026-11-30/);
 });
 
@@ -278,7 +278,8 @@ test('regression: 15 November legacy account restores Weekly immediately and Mon
   assert.equal(context.A.qs['2026-11-09'].length,3);
   context.current='2026-11-16';
   context.P.rep();
-  assert.doesNotMatch(context.rendered,/🔒 Weekly report/);
+  assert.match(context.rendered,/🔒 Weekly report/);
+  assert.match(context.rendered,/opensOn 2026-11-22/);
   assert.match(context.rendered,/2026-11-09 – 2026-11-15/);
   context.current='2026-11-30';
   context.P.rep();
@@ -306,3 +307,22 @@ test('legacy question drafts and answer locks remain intact through the unlock f
   assert.equal(context.A.ql['2026-11-09'],1);
 });
 
+
+test('calendar months open on their actual final day, including leap years',()=>{
+ const f=context.fixture.calendarReportPeriod;
+ for(const [day,end] of [['2026-02-01','2026-02-28'],['2028-02-01','2028-02-29'],['2026-04-02','2026-04-30'],['2026-11-15','2026-11-30'],['2026-12-01','2026-12-31']])assert.equal(f('month',day).b,end);
+ assert.equal(f('week','2026-11-16').a,'2026-11-16');assert.equal(f('week','2026-11-16').b,'2026-11-22');
+});
+test('month-end opens the review and the first starts a locked new month without removing prior answers',()=>{
+ context.A={pctFrom:'2026-10-01',reportStart:'2026-10-01',qs:{'2026-11':[{q:'Kept question',a:'Kept answer'}]},ql:{'2026-11':1}};
+ context.current='2026-11-30';context.P.rep();assert.doesNotMatch(context.rendered,/🔒 Monthly report/);
+ context.current='2026-12-01';context.P.rep();assert.match(context.rendered,/🔒 Monthly report/);assert.match(context.rendered,/opensOn 2026-12-31/);
+ assert.equal(context.A.qs['2026-11'][0].a,'Kept answer');assert.equal(context.A.ql['2026-11'],1);assert.equal(context.A.ql['2026-12'],undefined);
+});
+
+test('actual monthly cards reopen on every last day and relock on the next first',()=>{
+ for(const [last,next,nextEnd] of [['2026-11-30','2026-12-01','2026-12-31'],['2027-02-28','2027-03-01','2027-03-31'],['2028-02-29','2028-03-01','2028-03-31'],['2027-04-30','2027-05-01','2027-05-31']]){
+  context.A={pctFrom:'2026-01-01',reportStart:'2026-01-01',qs:{},ql:{}};context.current=last;context.P.rep();assert.doesNotMatch(context.rendered,/🔒 Monthly report/);
+  context.current=next;context.P.rep();assert.match(context.rendered,/🔒 Monthly report/);assert.ok(context.rendered.includes('opensOn '+nextEnd));assert.match(context.rendered,/Previous month report/);
+ }
+});

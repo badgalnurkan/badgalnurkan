@@ -1391,6 +1391,8 @@ body{font-size:1rem!important}
 
 
 #notifications-modal>.card,#release-details>.card,#project-reminder-settings>.card{width:100%!important;max-width:32rem;min-width:0}.notification-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.8rem}.notification-heading h2{margin:0;min-width:0}.notification-heading>button{flex:0 0 44px;width:44px;min-width:44px;min-height:44px;padding:.4rem;border-radius:50%;margin:0}
+
+.report-period-block{display:grid;gap:.65rem}.report-previous{width:100%;margin-top:.5rem;font-size:.85rem}.report-previous small{display:block;font-size:.72rem;color:var(--mut)}.welcome-footnote{max-width:28rem}
 </style>
 </head>
 <body>
@@ -1624,7 +1626,7 @@ takeNote:'Note',newAccountTitle:'Create account',back:'Back',signInTitle:'Sign i
 remembered:'Remembered on this device',notYou:'Not you?',savedUsers:'Accounts on this device',useAccount:'Sign in',
 wrongLogin:'Wrong username or password. Attempts left:',wrongLoginKnown:'Password is wrong for {u}. Attempts left:',
 totalDays:'Total days',everyDayCounts:'Your progress grows on days you work on tasks, write notes, or focus.',
-daysRecorded:'days logged',pctTitle:'Daily percentage',pctHint:'Your past progress stays put. Going forward, only active days count.',backWelcome:'Back to the welcome screen',beigeOn:'Light beige look is on',beigeOff:'Light beige look is off',welcomeUser:'Welcome back,',
+daysRecorded:'days logged',pctTitle:'Daily percentage',pctHint:'Without activity, progress stays at 1%. Each active day adds one point, once per day.',backWelcome:'Back to the welcome screen',beigeOn:'Light beige look is on',beigeOff:'Light beige look is off',welcomeUser:'Welcome back,',
 noAccountYet:'No saved accounts on this device yet.',currentAccount:'Current account',
 },
 tr:{welcome:'HOŞ GELDİN',continue:'Devam →',howItWorks:'Nasıl çalışır',contact:'Bana ulaş',login:'Giriş yap',create:'Hesap oluştur',forgot:'Şifremi unuttum',
@@ -1656,7 +1658,7 @@ takeNote:'Not',newAccountTitle:'Hesap oluştur',back:'Geri',signInTitle:'Giriş 
 remembered:'Bu cihazda hatırlanıyor',notYou:'Sen değil misin?',savedUsers:'Bu cihazdaki hesaplar',useAccount:'Giriş yap',
 wrongLogin:'Kullanıcı adı veya şifre yanlış. Kalan deneme:',wrongLoginKnown:'{u} için şifre yanlış. Kalan deneme:',
 totalDays:'Toplam gün',everyDayCounts:'Görev, not veya odak etkinliği yaptığın günlerde ilerleme artar.',
-daysRecorded:'kayıtlı gün',pctTitle:'Günlük yüzde',pctHint:'Eski ilerlemen korunur; bundan sonra yalnızca etkinlik günlerinde artar.',backWelcome:'Karşılama ekranına dön',beigeOn:'Açık bej görünüm açık',beigeOff:'Açık bej görünüm kapalı',welcomeUser:'Tekrar hoş geldin,',
+daysRecorded:'kayıtlı gün',pctTitle:'Günlük yüzde',pctHint:'Hiç kullanım verin yoksa %1’de kalır. Her etkin gün için yalnızca bir kez artar.',backWelcome:'Karşılama ekranına dön',beigeOn:'Açık bej görünüm açık',beigeOff:'Açık bej görünüm kapalı',welcomeUser:'Tekrar hoş geldin,',
 noAccountYet:'Bu cihazda henüz hesap yok',currentAccount:'Aktif hesap',
 }
 };
@@ -1714,6 +1716,7 @@ function norm(a){
   // compatibility fallback, without discarding any existing report answers.
   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(a.reportStart||'')))
     a.reportStart=/^\d{4}-\d{2}-\d{2}$/.test(String(a.pctFrom||''))?a.pctFrom:today();
+  ensureProgressState(a,today());
   return a;
 }
 const findUser=u=>Object.keys(DB.accounts).find(k=>k.toLowerCase()===String(u).toLowerCase());
@@ -1774,6 +1777,36 @@ function progressPercent(activeDays,pctFrom,asOf){
   ).length;
   return Math.max(1,baseline+recent);
 }
+function hasProgressActivity(account,asOf){
+ if(!account||typeof account!=='object')return false;
+ const text=value=>typeof value==='string'&&!!value.trim();
+ const values=value=>value&&typeof value==='object'&&!Array.isArray(value)?Object.values(value):[];
+ const tasks=value=>Array.isArray(value)&&value.some(item=>text(item)||text(item?.t)||text(item?.n));
+ if(Object.entries(account.activeDays||{}).some(([day,active])=>active===true&&validProgressDate(day)&&day<=asOf))return true;
+ if(tasks(account.tasks)||tasks(account.backlog)||tasks(account.projects))return true;
+ if(['hist','completedBatches','plans'].some(key=>values(account[key]).some(tasks)))return true;
+ if(values(account.journal).some(entry=>text(entry)||text(entry?.text))||values(account.future).some(text))return true;
+ if(['qs','planningQs'].some(key=>values(account[key]).some(group=>Array.isArray(group)&&group.some(q=>text(q?.a)))))return true;
+ if(account.pomo&&(account.pomo.run||Number(account.pomo.n)>0||(account.pomo.ph==='w'&&Number(account.pomo.left)>=0&&Number(account.pomo.left)<Number(account.pomo.w)*60)))return true;
+ if(account.stopwatch&&(account.stopwatch.running||Number(account.stopwatch.elapsed)>0))return true;
+ return Array.isArray(account.laps)&&account.laps.some(value=>Number(value)>0);
+}
+function ensureProgressState(account,asOf){
+ const state=account.progressState;
+ if(state?.version===2&&Number.isFinite(state.base)&&state.base>=1&&validProgressDate(state.through))return state;
+ const day=validProgressDate(asOf)?asOf:new Date().toISOString().slice(0,10);
+ const earned=hasProgressActivity(account,day);
+ account.progressState={version:2,base:earned?progressPercent(account.activeDays,account.pctFrom,day):1,
+   through:earned?day:new Date(Date.parse(day+'T00:00:00Z')-86400000).toISOString().slice(0,10)};
+ return account.progressState;
+}
+function accountProgressPercent(account,asOf){
+ if(!account||typeof account!=='object')return 1;
+ const state=ensureProgressState(account,asOf);
+ const active=account.activeDays&&typeof account.activeDays==='object'?account.activeDays:{};
+ const additional=Object.keys(active).filter(day=>active[day]===true&&validProgressDate(day)&&day>state.through&&day<=asOf).length;
+ return Math.max(1,state.base+additional);
+}
 function stopwatchFormat(ms){
   const v=Number.isFinite(ms)?Math.max(0,ms):0;
   const total=Math.floor(v/10);
@@ -1814,10 +1847,11 @@ function usernameSuggestions(name,used=[]){
 function recordActivity(){
   if(!A)return;
   if(!A.activeDays||typeof A.activeDays!=='object')A.activeDays={};
+  ensureProgressState(A,today());
   A.activeDays[today()]=true;
   save();
 }
-const pct=()=>progressPercent(A&&A.activeDays,A&&A.pctFrom,today());
+const pct=()=>accountProgressPercent(A,today());
 const dayCount=pct;
 const pctStart=()=>A&&A.pctFrom||today();
 const startDay=pctStart;
@@ -1974,8 +2008,14 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-15-welcome-notifications';
+const SITE_RELEASE='2026-11-15-continue-calendar-30m';
 const SITE_CHANGES=[
+ {date:'2026-11-15',trTitle:'Kontrol sende: giriş ve takvim dönemleri',enTitle:'Your entry, on your schedule',items:[
+ ['Karşılama Continue seçilene kadar açık kalır. Marka geçişi hem normal hem Google yolunda bu düğmeden sonra başlar.','Welcome stays until Continue is selected. Both regular and Google entry start the brand transition after this button.'],
+ ['Hatırlanan Google hesabına hızlı dönüş, son Google doğrulamasından itibaren sunucuda denetlenen 30 dakika ile sınırlıdır. Süre dolunca hesap seçimi yeniden açılır.','Quick return to a remembered Google account has a server-checked 30-minute window from Google authentication. Account selection opens again after it expires.'],
+ ['Hiç kullanım verisi olmayan hesap %1’de kalır. Etkinlik yapılan her gün bir kez artış kazanır; gerçek eski ilerleme korunur.','Accounts without activity stay at 1%. Each active day earns one increase, while genuine existing progress is preserved.'],
+ ['Haftalık rapor pazar, aylık rapor ayın gerçek son günü açılır. Pazartesi ve ayın 1’i yeni kilitli dönemi başlatır. Önceki kayıtlar ve yıl sonu cevap kilitleri korunur.','Weekly reports open on Sunday and monthly reports on the actual last day. Monday and the first start new locked periods. Earlier records and year-end answer locks are preserved.']
+ ]},
  {date:'2026-11-15',trTitle:'Gününe daha sakin bir başlangıç',enTitle:'A calmer start to your day',items:[
  ['Karşılama ekranı yenilendi. Daire, döngeç ve saate uygun selamlama artık başarılı girişten sonra oynar.','The welcome screen is refreshed. The circle, spinner and time-based greeting now appear after successful sign-in.'],
  ['Hatırlanan Google hesabı e-posta adresiyle gösterilir. Geçerli oturumla tek tıklamayla hesaba dönülür.','Remembered Google accounts show their email. A valid session lets you return in one click.'],
@@ -2102,16 +2142,21 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkAppR
 function rememberedGoogleAccount(username=DB.lastUser){const account=DB.accounts?.[username];return account?.authUid&&account.loginMethod==='google'&&(account.email||account.mail)?account:null}
 let rememberedSignInBusy=false;
 async function continueWithRememberedGoogle(username=DB.lastUser){
- if(rememberedSignInBusy)return;
- const account=rememberedGoogleAccount(username);if(!account){goTo('login','home');return}
- rememberedSignInBusy=true;const button=document.getElementById('welcome-continue');if(button){button.disabled=true;button.setAttribute('aria-busy','true')}
- try{if(await restoreCloudOnLoad(account.authUid))return;await signInWithGoogle()}
- finally{rememberedSignInBusy=false;if(button?.isConnected){button.disabled=false;button.removeAttribute('aria-busy')}}
+ if(rememberedSignInBusy||welcomeEntryBusy)return;
+ const account=rememberedGoogleAccount(username);if(!account){continueFromWelcome();return}
+ rememberedSignInBusy=true;welcomeEntryBusy=true;
+ const button=document.getElementById('welcome-continue');if(button){button.disabled=true;button.setAttribute('aria-busy','true')}
+ try{
+   await new Promise(resolve=>playWelcomeTransition(resolve));
+   if(await restoreCloudOnLoad(account.authUid,true))return;
+   // The server has denied or could not verify the quick-return window.
+   sbClear();await signInWithGoogle({selectAccount:true});
+ }finally{rememberedSignInBusy=false;welcomeEntryBusy=false;if(button?.isConnected){button.disabled=false;button.removeAttribute('aria-busy')}}
 }
 function welcomeScreen(){
  const remembered=rememberedGoogleAccount(),email=remembered?.email||remembered?.mail||'';
  return `<div class="welcome-screen welcome-refresh"><div class="welcome-top"><div class="brand-badge">badgalnurkan<span>made with a little intention.</span></div><div class="welcome-preferences"><div class="langbar">${langBtns(true)}</div><div id="theme-anchor">${themePick(true,false)}</div>${notificationButton()}</div></div>
- <div class="welcome-hero"><div class="welcome-copy"><p class="welcome-eyebrow">${welcomeDisplayName()}</p><h1>Improvin’<br><em>your day.</em></h1><p class="welcome-lead">${tr()?'Her gün, kendin için küçük bir adım.':'A little step for yourself, every day.'}</p><p class="welcome-description">${tr()?'Gününü planla. Odaklanmak için alan aç. Küçük ilerlemelerinin birikmesini izle.':'Plan your day. Make room to focus. Watch your small steps add up.'}</p><div class="welcome-cta"><button id="welcome-continue" onclick="${remembered?'continueWithRememberedGoogle()':'continueFromWelcome()'}">${remembered?(tr()?esc(email)+' ile devam et':'Continue with '+esc(email)):(tr()?'Devam':'Continue')} <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path d="M5 19 19 5M6 5h13v13" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><p class="welcome-footnote">${tr()?'Kendi ritminde, her gün biraz daha.':'At your own pace, a little more each day.'}</p></div>
+ <div class="welcome-hero"><div class="welcome-copy"><p class="welcome-eyebrow">${welcomeDisplayName()}</p><h1>Improvin’<br><em>your day.</em></h1><p class="welcome-lead">${tr()?'Her gün, kendin için küçük bir adım.':'A little step for yourself, every day.'}</p><p class="welcome-description">${tr()?'Gününü planla. Odaklanmak için alan aç. Küçük ilerlemelerinin birikmesini izle.':'Plan your day. Make room to focus. Watch your small steps add up.'}</p><div class="welcome-cta"><button id="welcome-continue" ${rememberedSignInBusy?'disabled aria-busy="true"':''} aria-describedby="welcome-signin-hint" onclick="${remembered?'continueWithRememberedGoogle()':'continueFromWelcome()'}">${remembered?(tr()?esc(email)+' ile devam et':'Continue with '+esc(email)):(tr()?'Devam':'Continue')} <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path d="M5 19 19 5M6 5h13v13" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button><button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><p id="welcome-signin-hint" class="welcome-footnote">${remembered?(tr()?'Hızlı dönüş, son Google girişinden itibaren 30 dakika geçerlidir. Sonrasında Google hesap seçimi yeniden açılır.':'Quick return is available for 30 minutes after Google sign-in. After that, Google account selection opens again.'):(tr()?'Kendi ritminde, her gün biraz daha.':'At your own pace, a little more each day.')}</p></div>
  <div class="welcome-art" aria-hidden="true"><span class="orbit-label orbit-top">${tr()?'KÜÇÜK ADIMLAR':'SMALL STEPS'}</span><div class="day-orbit"><span class="orbit-point"></span><div class="day-disc"><span>${tr()?'bugün':'today'}</span><strong>${tr()?'sana<br>ait.':'is<br>yours.'}</strong><span class="day-spark">✳︎</span></div></div><div class="welcome-ritual"><span>01 ${tr()?'Planla':'Plan'}</span><span>02 ${tr()?'Odaklan':'Focus'}</span><span>03 ${tr()?'İlerle':'Grow'}</span></div><span class="orbit-label orbit-bottom">${tr()?'BİR GÜN, BİR ADIM.':'ONE DAY, ONE STEP.'}</span></div></div>
  <div class="welcome-footer-bar"><div>© 2026 nurkancanbulat</div><a class="welcome-contact" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=nurkancanbulat89%40gmail.com" target="_blank" rel="noopener noreferrer">${t('contact')} ↗</a><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">TikTok</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">Instagram</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">X</a></div></div></div>`;
 }
@@ -2161,10 +2206,13 @@ function toast(txt){
   el.classList.add('on');clearTimeout(el._t);
   el._t=setTimeout(()=>{el.classList.remove('on','focus-toast')},2600);
 }
-function continueFromWelcome(){goTo('login','home')}
-/* Only verified activation may show the greeting. */
-function greetThen(cb){
-  if(!A||view!=='app'){if(cb)cb();return}
+let welcomeEntryBusy=false;
+function continueFromWelcome(){
+ if(welcomeEntryBusy)return;welcomeEntryBusy=true;
+ playWelcomeTransition(()=>{welcomeEntryBusy=false;goTo('login','home')});
+}
+/* Branded entry starts only after Continue, for both sign-in paths. */
+function playWelcomeTransition(cb){
   if(document.getElementById('login-portal'))return;
   const reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
   if(reduced){if(cb)cb();return}
@@ -2316,10 +2364,10 @@ async function login(){
       try{
         const j=await sbSignIn(raw,password,email);
         await activateCloudUser(j,raw,'password');
-        greetThen();return;
+        return;
       }catch(e){
         if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
-          sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home');greetThen();
+          sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home');
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
         loginDat.p='';
@@ -2331,7 +2379,7 @@ async function login(){
       }
     }
     if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
-      sbClear();A=norm(localAcc);A.accountOrigin='local';restorePomodoroState();applyTheme();save();goTo('app','home');greetThen();
+      sbClear();A=norm(localAcc);A.accountOrigin='local';restorePomodoroState();applyTheme();save();goTo('app','home');
       toast(tr()?'Bu yalnızca yerel eski hesap. Diğer cihazlarda e-posta ile bulut hesabına giriş yapmalısın.':'Legacy local account only.');return;
     }
     msg=tr()?'Başka cihazda kayıtlıysan kullanıcı adı yerine e-posta adresinle giriş yap.':'Sign in with email on a new device.';
@@ -2361,7 +2409,7 @@ async function setup(){
       renderAppOrAuth();return;
     }
     await activateCloudUser(j,u);
-    formDat={u:'',n:'',b:'',e:'',t:'',p:''};greetThen();
+    formDat={u:'',n:'',b:'',e:'',t:'',p:''};
     toast(tr()?'Bulut hesabın oluşturuldu. E-posta sahipliği kontrol edilmedi (demo).':'Cloud account created. Email ownership was not checked (demo).');
   }catch(err){
     const cause=authErrorMessage(err);
@@ -2623,7 +2671,7 @@ P.home=()=>{
     return`<div class="task project-task"><span>${esc(p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
   }).join('');
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
-  <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${tr()?'Önceki yüzdeliğin korunur; yeni artışlar yalnızca etkinlik yaptığın günlerde olur.':'Existing progress is kept; additional points require activity with tasks, notes or focus.'}</p></div>
+  <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="1000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/1000</span></div></div>
   <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<div class="project-add"><input id="pn" maxlength="40" aria-label="${t('projectName')}" placeholder="${t('projectName')}"><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}"><button onclick="addProj()">${t('add')}</button></div><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
 };
@@ -2792,7 +2840,7 @@ P.pc=()=>{
   }
   const monthKey=`${y}-${pad(mo+1)}`;
   const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}</b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}</p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><input id="fn-text" type="text" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><input id="fn-text" type="text" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
 };
 function newNote(){
   const d=String($('#fnd')?.value||'');
@@ -2824,6 +2872,17 @@ function reportQuestionStore(scope='review'){
   if(!A.planningQs||typeof A.planningQs!=='object'||Array.isArray(A.planningQs))A.planningQs={};
   return A.planningQs;
 }
+function reportQuestionForPeriod(question,key,scope='review'){
+ const text=reportQuestionText(question);
+ const id=question.qid==='custom'?'custom':(question.qid||reportQuestionId(question.q));
+ if(scope!=='plan'||!id?.startsWith('plan.'))return text;
+ const now=today(),current=key.length===7?key===now.slice(0,7):(key<=now&&now<=addD(key,6));
+ if(!current)return text;
+ return text.replace(/next week/gi,value=>value[0]==='N'?'This week':'this week')
+   .replace(/next month/gi,value=>value[0]==='N'?'This month':'this month')
+   .replace(/Gelecek hafta/g,'Bu hafta').replace(/gelecek hafta/g,'bu hafta')
+   .replace(/Gelecek ay/g,'Bu ay').replace(/gelecek ay/g,'bu ay');
+}
 function reportQuestionLocks(scope='review'){
  const field=scope==='plan'?'planningLocks':'ql';
  if(!A[field]||typeof A[field]!=='object'||Array.isArray(A[field]))A[field]={};return A[field];
@@ -2837,8 +2896,8 @@ function commitReportGroup(k,scope='review'){
  // Only this section changes, preserving a pending navigation click.
  const group=typeof document==='undefined'?null:document.getElementById('report-group-'+scope+'-'+k);if(group)group.innerHTML=reportLockedNotice(k);return true;
 }
-const qb=(k,arr,ro,scope='review')=>arr.map((x,i)=>`<label for="report-${scope}-${k}-${i}">${esc(reportQuestionText(x))}</label><div class="qa"><textarea id="report-${scope}-${k}-${i}" rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this,'${scope}')" onblur="finishReportAnswer('${k}',${i},this,'${scope}')">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i},'${scope}')">${t('delete')}</button>`}</div><div class="qcap mut">${String(x.a||'').length}/400</div>`).join('');
-function qa(k,i,el,scope='review'){if(reportQuestionLocks(scope)[k])return;const question=reportQuestionStore(scope)[k]?.[i];if(!question)return;question.a=el.value.slice(0,400);save();const counter=el.parentElement?.nextElementSibling;if(counter)counter.textContent=question.a.length+'/400'}
+const qb=(k,arr,ro,scope='review')=>arr.map((x,i)=>`<label for="report-${scope}-${k}-${i}">${esc(reportQuestionForPeriod(x,k,scope))}</label><div class="qa"><textarea id="report-${scope}-${k}-${i}" rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this,'${scope}')" onblur="finishReportAnswer('${k}',${i},this,'${scope}')">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i},'${scope}')">${t('delete')}</button>`}</div><div class="qcap mut">${String(x.a||'').length}/400</div>`).join('');
+function qa(k,i,el,scope='review'){if(reportQuestionLocks(scope)[k])return;const question=reportQuestionStore(scope)[k]?.[i];if(!question)return;const previous=question.a;question.a=el.value.slice(0,400);if(question.a.trim()&&question.a!==previous)recordActivity();else save();const counter=el.parentElement?.nextElementSibling;if(counter)counter.textContent=question.a.length+'/400'}
 function finishReportAnswer(k,i,el,scope='review'){qa(k,i,el,scope);commitReportGroup(k,scope)}
 function delQ(k,i,scope='review'){if(reportQuestionLocks(scope)[k])return;const questions=reportQuestionStore(scope)[k];if(!Array.isArray(questions)||!questions[i])return;questions.splice(i,1);commitReportGroup(k,scope);save();P.rep()}
 function addRandQ(k,scope='review'){if(reportQuestionLocks(scope)[k])return;const kind=k.length===7?'month':'week',R=scope==='plan'?(tr()?PLAN_RQ_TR[kind]:PLAN_RQ_EN[kind]):rqFor();(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(R[Math.floor(Math.random()*R.length)]));save();P.rep()}
@@ -2908,11 +2967,12 @@ function repCard(title,per,a,b,pa,pb,key,nk,defs){
   const kind=key.length===7?'month':'week',planning=reportQuestionStore('plan');
   if(!Array.isArray(planning[nk]))planning[nk]=(tr()?PLANQ_TR:PLANQ_EN)[kind].map(q=>makeReportQuestion(q));
   const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p,cur=A.qs[key]||[],ro=!!reportQuestionLocks()[key],planRo=!!reportQuestionLocks('plan')[nk];
+  const planIsCurrent=kind==='month'?nk===td.slice(0,7):(nk<=td&&td<=addD(nk,6));
   const rows=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
   return`<div class="card"><h2>${title} <small class="mut" style="display:block;font-size:.75rem;font-weight:400">${fmt(a)} – ${fmt(b)}</small></h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}
 <h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3><section id="report-group-review-${key}">${cur.length?(ro?(answerArchiveUnlocked(td,key)?qb(key,cur,true):reportLockedNotice(key)):reportAutoLockHint()+qb(key,cur,false)+`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
 ${!ro&&planning[key]?.length?`<details class="report-plan-review" style="margin-top:1rem"><summary>${tr()?'Bu dönem için yaptığın planlar':'Your earlier plans for this period'}</summary>${reportQuestionLocks('plan')[key]&&!answerArchiveUnlocked(td,key)?reportLockedNotice(key):qb(key,planning[key],true,'plan')}</details>`:''}</section>
-<h3 style="margin-top:1.2rem">${tr()?(kind==='week'?'Gelecek hafta için plan':'Gelecek ay için plan'):(kind==='week'?'Plan for next week':'Plan for next month')}</h3><section id="report-group-plan-${nk}">${planRo?(answerArchiveUnlocked(td,nk)?qb(nk,planning[nk],true,'plan'):reportLockedNotice(nk)):reportAutoLockHint()+qb(nk,planning[nk],false,'plan')+`<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="${t('addOwnQuestion')}"><button class="s" onclick="addQ('${nk}','plan')">${t('addQuestion')}</button><button class="g s" onclick="addRandQ('${nk}','plan')">${t('randomQuestion')}</button></div>`}</section></div>`;
+<h3 style="margin-top:1.2rem">${tr()?(kind==='week'?(planIsCurrent?'Bu hafta için plan':'Gelecek hafta için plan'):(planIsCurrent?'Bu ay için plan':'Gelecek ay için plan')):(kind==='week'?(planIsCurrent?'Plan for this week':'Plan for next week'):(planIsCurrent?'Plan for this month':'Plan for next month'))}</h3><section id="report-group-plan-${nk}">${planRo?(answerArchiveUnlocked(td,nk)?qb(nk,planning[nk],true,'plan'):reportLockedNotice(nk)):reportAutoLockHint()+qb(nk,planning[nk],false,'plan')+`<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="${t('addOwnQuestion')}"><button class="s" onclick="addQ('${nk}','plan')">${t('addQuestion')}</button><button class="g s" onclick="addRandQ('${nk}','plan')">${t('randomQuestion')}</button></div>`}</section></div>`;
 }
 /* ---- gecmis raporlar: kisa ozet (haftalik / aylik) ---- */
 function briefRow(label,val,sub){
@@ -2940,10 +3000,10 @@ ${briefRow(tr()?'Tamamlanan':'Completed',mNow.d+'/'+mNow.t+' · %'+mNow.p,(tr()?
 ${briefRow(tr()?'Kayıtlı gün':'Days recorded',monthDone+'/'+(dd(ma,mb)+1))}</div><div style="margin-top:1.2rem"><div class="row report-heading"><h3>${tr()?'Günlükler':'Daily journals'}</h3><button class="g s report-more" onclick="showReportDetail('journals')">${tr()?'Daha fazlası':'More details'} →</button></div><div class="journal-grid">${Object.entries(A.journal||{}).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,90).map(([k,v])=>`<div class="note-tile"><b>${journalEntryStamp(v)}</b><p>${esc(v.text||'')}</p><button class="g s" onclick="openJournalEntry('${k}')">${tr()?'Aç':'Open'}</button></div>`).join('')||'<p class="mut">'+(tr()?'Henüz günlük yok.':'No journals yet.')+'</p>'}</div></div></div>`;
 }
 let reportDetail='';
-function showReportDetail(key){if(!['summary','journals','answers','week','month'].includes(key))return;reportDetail=key;P.rep();window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'})}
+function showReportDetail(key){if(!['summary','journals','answers','week','month','week-previous','month-previous'].includes(key))return;reportDetail=key;P.rep();window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'})}
 function reportBack(){reportDetail='';P.rep()}
 function reportDetailView(){
-  if(reportDetail==='week'||reportDetail==='month')return periodReportDetail(reportDetail);
+  if(['week','month','week-previous','month-previous'].includes(reportDetail))return periodReportDetail(reportDetail.split('-')[0],reportDetail.endsWith('-previous'));
   const header=`<div class="card"><div class="row report-heading"><h2>${reportDetail==='summary'?(tr()?'Geçmiş özetler':'Past summaries'):reportDetail==='journals'?(tr()?'Günlük arşivi':'Journal archive'):(tr()?'Yanıt arşivi':'Answer archive')}</h2><button class="g s" onclick="reportBack()">← ${t('back')}</button></div></div>`;
   if(reportDetail==='journals'){
     const entries=Object.entries(A.journal||{}).filter(([k,v])=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&v&&typeof v==='object').sort((a,b)=>b[0].localeCompare(a[0]));
@@ -2972,12 +3032,19 @@ function reportAvailability(kind,td=today()){
  const since=full&&/^\d{4}-\d{2}-\d{2}$/.test(String(A?.reportStart))?A.reportStart:(/^\d{4}-\d{2}-\d{2}$/.test(String(A?.pctFrom))?A.pctFrom:td);
  return {since,unlock:reportInitialUnlockDate(kind,since,full)};
 }
-function reportSummaryCard(kind,period){
- const {since,unlock}=reportAvailability(kind),title=t(kind==='week'?'weeklyReport':'monthlyReport');if(today()<unlock)return pendingReportCard(title,since,unlock);
- // Keep original question initialization and dates, without displaying answers here.
- repCard(title,kind,period.a,period.b,period.pa,period.pb,period.key,period.nk,defQ(kind));
- const summary=st(period.a,period.b),previous=st(period.pa,period.pb),change=summary.p-previous.p;
- return `<section class="card report-summary"><div class="row report-heading"><div><p class="report-kicker">${tr()?'DÖNEM ÖZETİ':'PERIOD SUMMARY'}</p><h2>${title}</h2><p class="mut">${fmt(period.a)} – ${fmt(period.b)}</p></div><span class="report-percent">${summary.p}<small>%</small></span></div><div class="report-stats"><div><strong>${summary.d}</strong><span>${tr()?'Tamamlanan':'Completed'}</span></div><div><strong>${summary.t-summary.d}</strong><span>${tr()?'Tamamlanmayan':'Unfinished'}</span></div><div><strong>${change>0?'+':''}${change}</strong><span>${tr()?'Önceki döneme göre puan':'Points vs previous period'}</span></div></div><div class="bar"><i style="width:${summary.p}%"></i></div><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Daha fazlası':'More details'} <span aria-hidden="true">↗</span></button></section>`;
+function calendarReportPeriod(kind,day){
+ if(kind==='week'){const a=mon(day);return{a,b:addD(a,6),pa:addD(a,-7),pb:addD(a,-1),key:a,nk:addD(a,7)}}
+ if(kind==='month'){const [y,m]=day.split('-').map(Number),a=D(new Date(y,m-1,1));return{a,b:D(new Date(y,m,0)),pa:D(new Date(y,m-2,1)),pb:D(new Date(y,m-1,0)),key:a.slice(0,7),nk:D(new Date(y,m,1)).slice(0,7)}}
+ throw new RangeError('Invalid report period');
+}
+function reportSummaryCard(kind,lastCompleted){
+ const td=today(),current=calendarReportPeriod(kind,td),{since,unlock}=reportAvailability(kind,td),title=t(kind==='week'?'weeklyReport':'monthlyReport');
+ if(td>=unlock)repCard(title,kind,lastCompleted.a,lastCompleted.b,lastCompleted.pa,lastCompleted.pb,lastCompleted.key,lastCompleted.nk,defQ(kind));
+ const prior=current.pb>=unlock?`<button class="g report-previous" onclick="showReportDetail('${kind}-previous')">${tr()?(kind==='week'?'Önceki hafta raporu':'Önceki ay raporu'):(kind==='week'?'Previous week report':'Previous month report')} <small>${fmt(current.pa)} – ${fmt(current.pb)}</small> →</button>`:'';
+ const opens=unlock>current.b?unlock:current.b;
+ if(td<opens)return `<section class="report-period-block">${pendingReportCard(title,opens>current.b?since:current.a,opens)}${prior}</section>`;
+ const summary=st(current.a,current.b),previous=st(current.pa,current.pb),change=summary.p-previous.p;
+ return `<section class="card report-summary"><div class="row report-heading"><div><p class="report-kicker">${tr()?'DÖNEM ÖZETİ':'PERIOD SUMMARY'}</p><h2>${title}</h2><p class="mut">${fmt(current.a)} – ${fmt(current.b)}</p></div><span class="report-percent">${summary.p}<small>%</small></span></div><div class="report-stats"><div><strong>${summary.d}</strong><span>${tr()?'Tamamlanan':'Completed'}</span></div><div><strong>${summary.t-summary.d}</strong><span>${tr()?'Tamamlanmayan':'Unfinished'}</span></div><div><strong>${change>0?'+':''}${change}</strong><span>${tr()?'Önceki döneme göre puan':'Points vs previous period'}</span></div></div><div class="bar"><i style="width:${summary.p}%"></i></div><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Daha fazlası':'More details'} <span aria-hidden="true">↗</span></button>${prior}</section>`;
 }
 function periodTaskBreakdown(a,b){
  const days=[];for(let day=a;day<=b;day=addD(day,1)){
@@ -2988,11 +3055,11 @@ function periodTaskBreakdown(a,b){
  }
  return `<section class="card"><h2>${tr()?'Gün gün görevlerin':'Your tasks, day by day'}</h2><p class="mut">${tr()?'Tamamlanmayanlar, yapılmadı olarak işaretlenen ve tamamlanmadan kalan görevleri içerir. Kayıt olmayan günler listelenmez.':'Unfinished includes tasks marked not done and tasks left incomplete. Days without records are omitted.'}</p>${days.reverse().join('')||`<p class="mut">${tr()?'Bu dönemde kayıtlı görev yok.':'No tasks recorded for this period.'}</p>`}</section>`;
 }
-function periodReportDetail(kind){
- const td=today(),period=latestUnlockedReportPeriod(kind,td),{since,unlock}=reportAvailability(kind),title=t(kind==='week'?'weeklyReport':'monthlyReport');
+function periodReportDetail(kind,previous=false){
+ const td=today(),active=calendarReportPeriod(kind,td),period=previous?calendarReportPeriod(kind,addD(active.a,-1)):active,{since,unlock}=reportAvailability(kind),title=t(kind==='week'?'weeklyReport':'monthlyReport');
  const header=`<div class="card"><div class="row report-heading"><h2>${title} · ${tr()?'Ayrıntılar':'Details'}</h2><button class="g s" onclick="reportBack()">← ${t('back')}</button></div></div>`;
- if(td<unlock)return header+pendingReportCard(title,since,unlock);
- return header+periodTaskBreakdown(period.a,period.b)+repCard(title,tr()?(kind==='week'?'hafta':'ay'):kind,period.a,period.b,period.pa,period.pb,period.key,period.nk,defQ(kind));
+ if(td<unlock||period.b<unlock)return header+pendingReportCard(title,since,unlock);
+ return header+periodTaskBreakdown(period.a,td<period.b?td:period.b)+repCard(title,tr()?(kind==='week'?'hafta':'ay'):kind,period.a,period.b,period.pa,period.pb,period.key,period.nk,defQ(kind));
 }
 P.rep=()=>{
  if(reportDetail){M(reportDetailView());return}
@@ -3725,7 +3792,7 @@ function v13PristineCloudProfile(a, uid){
     'u','nick','email','mail','phone','authUid','accountOrigin','loginMethod',
     'googleConnected','updatedAt','legacyMigrationId','legacyMigratedAt']);
   if(Object.keys(a).some(k=>!keys.has(k)))return false;
-  if(a.legacyMigrationId||a.legacyMigratedAt)return false;
+  if(a.legacyMigrationId||a.legacyMigratedAt||Number(a.progressState?.base)>1)return false;
   for(const key of ['tasks','backlog','projects','nc','uc','laps']){
     if(a[key]!=null&&(!Array.isArray(a[key])||a[key].length))return false;
   }
@@ -3795,13 +3862,14 @@ const SUPABASE_KEY='sb_publishable_4QTEEc6tSYV2QtNhmeP6Iw_B3sM6dtm';
 const SESS_KEY='b1sb', CLOUD_KEY='b1cloud';
 const cloud=()=>true;
 
-function signInWithGoogle(){
+function signInWithGoogle(options={}){
   const redirect=location.origin+location.pathname;
   if(!redirect.startsWith('https://')&&!redirect.startsWith('http://localhost')){
     toast(tr()?'Google girişi güvenli HTTPS adresinde kullanılabilir.':'Google sign-in requires HTTPS.');return;
   }
   const url=new URL(SUPABASE_URL+'/auth/v1/authorize');
   url.searchParams.set('provider','google');url.searchParams.set('redirect_to',redirect);
+  if(options.selectAccount)url.searchParams.set('prompt','select_account');
   location.assign(url.toString());
 }
 async function bootstrapCloudAuth(){
@@ -3817,6 +3885,7 @@ async function bootstrapCloudAuth(){
       sbClear();msg=tr()?'Google aktarımının süresi doldu. Yerel verilerin korundu. Yeniden denemeden önce bulut hesabını kontrol et.':'The Google migration expired. Local data is preserved. Check the cloud account before retrying.';
       view='login';renderAppOrAuth();return;
     }
+    view='login';renderAppOrAuth();loginBusy(true);
     try{
       const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
       let response;
@@ -3825,11 +3894,12 @@ async function bootstrapCloudAuth(){
       if(!response.ok)throw new Error('OAuth verification failed');
       const user=await response.json();if(!user?.id)throw new Error('Invalid OAuth user');
       const identity={user,access_token:at,refresh_token:rt};
-       if(await v13FinishMigration(identity)){if(A)greetThen();return}
+       if(await v13FinishMigration(identity))return;
        await activateCloudUser(identity,'',recovery?'password':'google');
        if(recovery){openPasswordRecoveryModal();return}
-       greetThen();return;
+       return;
     }catch(err){sbClear();msg=tr()?'Google oturumu doğrulanamadı. Lütfen tekrar dene.':'Google session could not be verified.';view='login';renderAppOrAuth();return}
+    finally{loginBusy(false)}
   }
   // A reload in the middle of migration is not evidence of a completed cloud transfer.
   // Clear a half-finished cloud session and retain the legacy profile unchanged.
@@ -3838,7 +3908,8 @@ async function bootstrapCloudAuth(){
     msg=tr()?'Google aktarımı yarıda kesildi. Eski profilin korunuyor. Yeniden denemeden önce bulut hesabının durumunu kontrol et.':'Google migration was interrupted. Your legacy profile remains intact. Check your cloud account before trying again.';
     view='login';renderAppOrAuth();return;
   }
-  await restoreCloudOnLoad();
+  // An existing session is a candidate for Continue, never an automatic entry.
+  return;
 }
 
 const sbSession=()=>{try{return JSON.parse(getItem(SESS_KEY)||'null')}catch(e){return null}};
@@ -3898,14 +3969,20 @@ async function sbPull(){
   if(row?.data&&(!row.data||typeof row.data!=='object'||Array.isArray(row.data)))throw new Error('Invalid cloud data');
   return row?.data||null;
 }
-async function restoreCloudOnLoad(expectedUid=''){
+async function sbGoogleQuickResumeAllowed(){
+ try{const result=await sb('/rest/v1/rpc/iydu_quick_resume_status',{method:'POST',body:{}});return result?.allowed===true}catch(_){return false}
+}
+async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false){
   if(!sbSession()?.access_token){if(sbSession()?.refresh_token&&!await sbRefresh())return;else if(!sbSession()?.access_token)return}
   try{
     const user=await sbCurrentUser();
     if(!user?.id||(expectedUid&&user.id!==expectedUid))return false;
     const session=sbSession();if(!session)return false;
     sbSave({...session,user});
+    if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     const remote=await sbPull();
+    // A slow profile request must not carry a login across the 30-minute boundary.
+    if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
     const meta=user.user_metadata||{};
     const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
@@ -3913,7 +3990,7 @@ async function restoreCloudOnLoad(expectedUid=''){
     if(user.app_metadata?.providers?.includes('google')){a.googleConnected=true;if(!a.loginMethod)a.loginMethod='google'}
     v13ProtectLegacyCollision(a.u,user.id);
     DB.accounts[a.u]=a;DB.lastUser=a.u;DB.last=a.nick;A=a;
-    view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();greetThen();
+    view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();
     if(!remote)await sbPush();return true;
   }catch(e){
     // Do not auto-login from unverified localStorage contents.
@@ -3928,11 +4005,11 @@ async function restoreCloudOnLoad(expectedUid=''){
 function th(t){setTheme(t)}
 function toggleBeige(){DB.beige=!DB.beige;applyTheme();save();if(pg==='pc')P.pc()}
 
-// Always land on Home after a verified cloud session is restored.
+// Start on welcome. Only Continue or an explicit authentication callback enters the app.
 view='welcome';pg='home';A=null;
 applyTheme();renderAppOrAuth();
 bootstrapCloudAuth();
-window.addEventListener('pageshow',e=>{if(e.persisted&&A){pg='home';renderAppOrAuth()}else if(e.persisted&&!A)restoreCloudOnLoad()});
+window.addEventListener('pageshow',e=>{if(e.persisted&&A){pg='home';renderAppOrAuth()}else if(e.persisted&&!A){view='welcome';pg='home';renderAppOrAuth()}});
 
 </script>
 </body>
