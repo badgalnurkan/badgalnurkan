@@ -69,6 +69,30 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await page.close();
    console.log('PASS '+engine+': mocked remembered entry, real-email UI and email-code deactivation');
 
+
+   const removal=await browser.newPage({viewport:{width:390,height:844}});
+   await removal.addInitScript(()=>localStorage.setItem('iydu.storage-notice.v1','test'));
+   const deletionCalls=[];
+   await removal.route('https://flcfqwndqfmbritaywfb.supabase.co/functions/v1/account-security',async route=>{
+    const body=route.request().postDataJSON();deletionCalls.push(body);
+    await route.fulfill({status:200,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({ok:true,user_id:'fixture-user',state:'pending_delete',delete_after:'2026-12-17T00:00:00Z'})});
+   });
+   await removal.goto('http://127.0.0.1:4173/#account-action=delete&id=b04146d1-f2a4-4a04-bd46-70159554b90f&token='+'a'.repeat(64));
+   await removal.locator('#delete-reason').selectOption('other');
+   await removal.locator('#delete-other').fill('I want to take a break');
+   await removal.locator('#account-delete-reasons').getByRole('button',{name:'Continue',exact:true}).click();
+   assert.equal(deletionCalls.length,0,'reason selection must not close an account');
+   await removal.locator('#account-delete-final').getByRole('button',{name:'No',exact:true}).click();
+   assert.equal(deletionCalls.length,0,'No must not mutate the account');
+   await removal.locator('#account-delete-reasons').getByRole('button',{name:'Continue',exact:true}).click();
+   await removal.locator('#account-delete-final').getByRole('button',{name:'Yes, close my account',exact:true}).click();
+   await removal.locator('#account-delete-scheduled').waitFor();
+   assert.equal(deletionCalls.length,1);assert.equal(deletionCalls[0].confirmation,'YES_DELETE_IN_30_DAYS');
+   assert.equal(deletionCalls[0].reason,'other');assert.equal(deletionCalls[0].other,'I want to take a break');
+   assert.ok((await removal.locator('#account-delete-scheduled').innerText()).includes('Dec'));
+   await removal.close();
+   console.log('PASS '+engine+': deletion email link, Other, No and explicit Yes confirmation');
+
    await browser.close();console.log('PASS '+engine+': date form at six widths and manual welcome entry');
   }
  }finally{server.kill()}

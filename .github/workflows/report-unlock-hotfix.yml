@@ -71,3 +71,24 @@ jobs:
           npx playwright install --with-deps chromium webkit
       - name: Check project date widths in Chromium and WebKit
         run: node tests/account-security.browser.cjs
+      - name: Verify the published custom domain
+        if: github.event_name == 'push'
+        run: |
+          node - <<'NODE'
+          (async()=>{
+            const expected="2026-11-17-account-security-domain";
+            for(let attempt=0;attempt<6;attempt++){
+              const r=await fetch('https://badgalnurkan.com/?release-check='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(15000)});
+              const html=await r.text();
+              if(r.ok&&html.includes(expected)){
+                for(const path of ['account-security.js','account-security.css','cookies.html']){
+                  const asset=await fetch('https://badgalnurkan.com/'+path,{signal:AbortSignal.timeout(15000)});
+                  if(!asset.ok)throw Error('Missing production asset '+path);
+                }
+                console.log('PASS: badgalnurkan.com serves the released application and all security/cookie assets');return;
+              }
+              await new Promise(resolve=>setTimeout(resolve,10000));
+            }
+            throw Error('Custom domain did not serve the expected release');
+          })().catch(e=>{console.error(e);process.exitCode=1});
+          NODE

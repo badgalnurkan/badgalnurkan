@@ -148,3 +148,5 @@ Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sın
 
 - Chromium/WebKit mocked account journey passed: remembered Google entry reveals home while greeting runs; Settings renders the server email; a code-confirmed deactivation removes this browser’s identity and session. All cloud responses in this browser journey were intercepted, with no production writes.
 - Public Auth settings verified emailAutoconfirm=false, emailEnabled=true, googleEnabled=true. SMTP delivery and secure-email-change configuration remain owner-verification items.
+
+- Final checks also cover the permanent deletion email-link UI (Other reason, No without a request, and explicit Yes). Production domain verification runs only after publication. Real inbox delivery remains untested until the Edge mail secrets are configured.
