@@ -128,3 +128,25 @@ Kaynaklar: [Supabase JWT alanları](https://supabase.com/docs/guides/auth/jwt-fi
 ## Sınırlar
 
 Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sınanmadı. OAuth ve veri yükleme sırası otomatik testlerde taklit yanıtlarla doğrulandı; süre kararı ayrıca gerçek veritabanında sentetik JWT bağlamında sınandı. Tarayıcı örneği Supabase'e ve kalıcı depolamaya erişmez. Bildirimler site içinde çalışır; önceki bildirim tercihleri ve kapalı sitede push kapsamı değişmedi. Cevap kilitleri mevcut kullanıcı JSON modeliyle uygulamada uygulanır.
+
+
+## 17 November 2026 · account security and domain
+
+- Added server-only controls/challenges, restrictive RLS, password timestamps, 30-day deletion and private 15-minute cron.
+- Synthetic SQL transaction verified active/expired password access, password trigger, OTP attempts, deactivation, revoked sessions, replay, reactivation, explicit deletion consent, exact 30-day deadline, expiry, permanent purge and grants. Rolled back all generated fixtures; no real emails or user-data tests.
+- Six existing accounts stayed active; application progress, tasks and reports were not rewritten.
+- New account/profile email is read from server status. Remembered Google restores before animating home and retains both 30-minute server checks.
+- Custom lifecycle emails require Edge Resend secrets separately from Auth SMTP. Readiness and CI results recorded below after execution. Auth dashboard settings cannot be read by the current connector.
+- Browser checks run in CI with Chromium and WebKit; physical iOS, real OAuth and inbox delivery are not claimed.
+
+- CI request/regression run: 189 tests passed. Live backend health responded ok with mailReady=false: at least one of RESEND_API_KEY or ACCOUNT_MAIL_FROM is missing/invalid. No delivery test was sent. First browser installation encountered runner OS mismatch; runner pinned to Ubuntu 24.04 for Playwright 1.56.1.
+- Actual authenticated-role SQL test passed: own active read/write succeeds, cross-account reads and deactivated reads/writes are denied, privileged service RPC is denied. All generated fixture writes rolled back.
+
+- Cloud loader now explicitly refuses restricted accounts rather than treating RLS-filtered data as a new empty account.
+
+- Chromium and WebKit checks passed at 320, 375, 390, 430, 768 and 1440px: project date control stayed in its parent and accepted input; no document overflow. Manual welcome Continue opened sign-in without a greeting.
+
+- Chromium/WebKit mocked account journey passed: remembered Google entry reveals home while greeting runs; Settings renders the server email; a code-confirmed deactivation removes this browser’s identity and session. All cloud responses in this browser journey were intercepted, with no production writes.
+- Public Auth settings verified emailAutoconfirm=false, emailEnabled=true, googleEnabled=true. SMTP delivery and secure-email-change configuration remain owner-verification items.
+
+- Final checks also cover the permanent deletion email-link UI (Other reason, No without a request, and explicit Yes). Production domain verification runs only after publication. Real inbox delivery remains untested until the Edge mail secrets are configured.
