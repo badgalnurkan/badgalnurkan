@@ -20,6 +20,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    }
    const welcome=await browser.newPage({viewport:{width:390,height:844}});
    await welcome.goto('http://127.0.0.1:4173/');await welcome.waitForSelector('#welcome-continue');
+   await welcome.getByRole('button',{name:'Got it',exact:true}).click();
    await welcome.locator('#welcome-continue').click();await welcome.waitForSelector('#u');
    assert.equal(await welcome.locator('#login-portal').count(),0,'Continue opens manual sign-in directly');
    await welcome.close();await browser.close();console.log('PASS '+engine+': date form at six widths and manual welcome entry');

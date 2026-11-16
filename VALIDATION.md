@@ -138,3 +138,6 @@ Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sın
 - New account/profile email is read from server status. Remembered Google restores before animating home and retains both 30-minute server checks.
 - Custom lifecycle emails require Edge Resend secrets separately from Auth SMTP. Readiness and CI results recorded below after execution. Auth dashboard settings cannot be read by the current connector.
 - Browser checks run in CI with Chromium and WebKit; physical iOS, real OAuth and inbox delivery are not claimed.
+
+- CI request/regression run: 189 tests passed. Live backend health responded ok with mailReady=false: at least one of RESEND_API_KEY or ACCOUNT_MAIL_FROM is missing/invalid. No delivery test was sent. First browser installation encountered runner OS mismatch; runner pinned to Ubuntu 24.04 for Playwright 1.56.1.
+- Actual authenticated-role SQL test passed: own active read/write succeeds, cross-account reads and deactivated reads/writes are denied, privileged service RPC is denied. All generated fixture writes rolled back.
