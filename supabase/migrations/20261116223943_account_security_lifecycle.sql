@@ -159,7 +159,7 @@ begin
  update iydu_private.account_challenges set used_at=now() where user_id=p_uid and used_at is null;
  -- Revoke refresh tokens and block still-issued JWTs using session existence in RLS.
  if k<>'reactivate' then delete from auth.sessions where user_id=p_uid; end if;
- return (select jsonb_build_object('ok',true,'user_id',user_id,'state',state,'delete_after',delete_after) from iydu_private.account_controls where user_id=p_uid);
+ return (select jsonb_build_object('ok',true,'state',state,'delete_after',delete_after) from iydu_private.account_controls where user_id=p_uid);
 end $$;
 revoke all on function public.iydu_account_service(text,uuid,jsonb) from public,anon,authenticated;
 grant execute on function public.iydu_account_service(text,uuid,jsonb) to service_role;
