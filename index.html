@@ -4100,7 +4100,7 @@ async function bootstrapCloudAuth(){
   const at=frag.get('access_token'),rt=frag.get('refresh_token');
   const error=frag.get('error_description')||frag.get('error');
   if(at||error){try{history.replaceState(history.state||{},'',location.pathname+location.search)}catch(_){}}
-  if(error){v13ClearMigration();msg=tr()?'Google ile giriş tamamlanamadı. Yerel hesabın korundu.':'Google sign-in failed. Your local profile is preserved.';view='login';renderAppOrAuth();return}
+  if(error){v13ClearMigration();msg=tr()?'Giriş bağlantısı tamamlanamadı. Yerel hesabın korundu.':'The sign-in link failed. Your local profile is preserved.';view='login';renderAppOrAuth();return}
   if(at&&rt){
     const hadMigration=v13HasMigrationMarker();
     if(hadMigration&&!v13ReadMigration()){
@@ -4118,10 +4118,11 @@ async function bootstrapCloudAuth(){
       const identity={user,access_token:at,refresh_token:rt};
        if(recovery&&window.IYAccount){sbSave({...identity,at:Date.now()});await IYAccount.recovery(user);return}
        if(await v13FinishMigration(identity))return;
-       await activateCloudUser(identity,'',recovery?'password':'google');
+       const callbackMethod=!frag.get('type')&&user.app_metadata?.providers?.includes('google')?'google':'password';
+       await activateCloudUser(identity,'',callbackMethod);
        if(recovery){openPasswordRecoveryModal();return}
        return;
-    }catch(err){sbClear();msg=tr()?'Google oturumu doğrulanamadı. Lütfen tekrar dene.':'Google session could not be verified.';view='login';renderAppOrAuth();return}
+    }catch(err){sbClear();msg=tr()?'Giriş bağlantısı doğrulanamadı. Lütfen tekrar dene.':'The sign-in link could not be verified. Try again.';view='login';renderAppOrAuth();return}
     finally{loginBusy(false)}
   }
   // A reload in the middle of migration is not evidence of a completed cloud transfer.

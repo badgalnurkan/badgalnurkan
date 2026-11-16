@@ -145,3 +145,6 @@ Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sın
 - Cloud loader now explicitly refuses restricted accounts rather than treating RLS-filtered data as a new empty account.
 
 - Chromium and WebKit checks passed at 320, 375, 390, 430, 768 and 1440px: project date control stayed in its parent and accepted input; no document overflow. Manual welcome Continue opened sign-in without a greeting.
+
+- Chromium/WebKit mocked account journey passed: remembered Google entry reveals home while greeting runs; Settings renders the server email; a code-confirmed deactivation removes this browser’s identity and session. All cloud responses in this browser journey were intercepted, with no production writes.
+- Public Auth settings verified emailAutoconfirm=false, emailEnabled=true, googleEnabled=true. SMTP delivery and secure-email-change configuration remain owner-verification items.

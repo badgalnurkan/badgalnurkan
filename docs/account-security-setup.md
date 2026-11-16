@@ -24,3 +24,5 @@ Codes: 6 digits, 10 minutes, 5 attempts, 60-second resend delay, 5 requests/hour
 
 ## Verification limits
 SQL transaction tests use generated example.invalid fixtures and roll back. No real email was sent. Physical iPhone Safari and real Google/SMTP delivery require owner testing. CI runs request handler tests, existing regressions, the static build and Chromium/WebKit mobile layout checks. These are not a substitute for testing the owner's real inbox.
+
+Verified public Auth settings during CI: emailAutoconfirm=false, email provider enabled, Google provider enabled. Email ownership confirmation is required. Secure-email-change and SMTP credentials are not exposed by the public settings endpoint. Live lifecycle health: mailReady=false; add/check both Edge secrets before relying on deactivation/deletion delivery.

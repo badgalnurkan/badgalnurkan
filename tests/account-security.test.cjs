@@ -88,3 +88,16 @@ test('deletion links show reasons without contacting the server or mutating acco
  assert.equal(ui.consumeLink(),true);const modal=events.find(e=>e.id==='account-delete-reasons');assert.ok(modal);assert.match(modal.html,/value="other"/);assert.equal((modal.html.match(/<option/g)||[]).length,9);
 });
 test('malicious or switched identity cannot be rendered as a verified profile',async()=>{const {ctx,ui}=uiFixture();ctx.sb=async()=>({user_id:'victim',email:'victim@example.invalid'});await assert.rejects(ui.status({id:'u'}),/UNAUTHORIZED/)});
+
+test('email confirmation callbacks stay distinct from Google OAuth callbacks',async()=>{
+ const html=fs.readFileSync('index.html','utf8'),source=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+ const code=source.slice(source.indexOf('async function bootstrapCloudAuth(){'),source.indexOf('const sbSession='));
+ for(const [type,providers,expected] of [['signup',['email'],'password'],['email_change',['email','google'],'password'],['',['google'],'google']]){
+  const bridge={consumeLink:()=>false};
+  const ctx={URLSearchParams,AbortController,window:{IYAccount:bridge},IYAccount:bridge,location:{hash:'#access_token=fixture&refresh_token=fixture'+(type?'&type='+type:''),pathname:'/',search:''},
+   history:{replaceState(){}},v13HasMigrationMarker:()=>false,v13FinishMigration:async()=>false,renderAppOrAuth(){},loginBusy(){},SUPABASE_URL:'https://example.invalid',SUPABASE_KEY:'fixture',
+   fetch:async()=>Response.json({id:'u',email:'owner@example.invalid',app_metadata:{providers}}),setTimeout,clearTimeout,
+   activateCloudUser:async(_identity,_name,method)=>{ctx.method=method},sbClear(){},tr:()=>true};
+  vm.createContext(ctx);vm.runInContext(code+'this.start=bootstrapCloudAuth;',ctx);await ctx.start();assert.equal(ctx.method,expected,type||'oauth');
+ }
+});
