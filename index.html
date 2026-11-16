@@ -3634,7 +3634,7 @@ async function requestMyEmailVerification(){
     if(user.email_confirmed_at){toast(tr()?'E-posta zaten doğrulanmış.':'Email is already verified.');return}
     await sb('/auth/v1/resend?redirect_to='+encodeURIComponent('https://badgalnurkan.com/'),{method:'POST',body:{type:'signup',email:user.email}});
     toast(tr()?'Doğrulama isteği gönderildi. E-postanı kontrol et.':'Verification requested. Check your inbox.');
-  }catch(_){toast(tr()?'Doğrulama iletisi gönderilemedi. SMTP ve Auth loglarını kontrol et.':'Could not send verification message. Check SMTP and Auth logs.')}
+  }catch(_){toast(tr()?'Doğrulama e-postası gönderilemedi. Biraz sonra tekrar dene.':'Could not send the verification email. Try again shortly.')}
 }
 async function requestMyPasswordReset(){
   if(!EMAIL_TRANSACTIONS_ENABLED)return emailFeatureStatus();
@@ -3654,7 +3654,7 @@ async function requestMyEmailChange(){
     if(changed?.id!==user.id)throw Error('invalid');
     await IYAccount.refresh();
     toast(tr()?'E-posta değişikliği talep edildi. Doğrulama bağlantılarını kontrol et.':'Email change requested. Check confirmation links.');
-  }catch(_){toast(tr()?'E-posta değiştirilemedi; sunucu yapılandırmasını kontrol et.':'Email change failed; check server configuration.')}
+  }catch(_){toast(tr()?'E-posta değiştirilemedi. Yeniden giriş yapıp tekrar dene.':'Email change failed. Sign in again and retry.')}
 }
 function openPasswordRecoveryModal(){
   if(!A?.authUid)return;

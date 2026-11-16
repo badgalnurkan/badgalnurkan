@@ -143,3 +143,5 @@ Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sın
 - Actual authenticated-role SQL test passed: own active read/write succeeds, cross-account reads and deactivated reads/writes are denied, privileged service RPC is denied. All generated fixture writes rolled back.
 
 - Cloud loader now explicitly refuses restricted accounts rather than treating RLS-filtered data as a new empty account.
+
+- Chromium and WebKit checks passed at 320, 375, 390, 430, 768 and 1440px: project date control stayed in its parent and accepted input; no document overflow. Manual welcome Continue opened sign-in without a greeting.

@@ -79,7 +79,7 @@ window.IYAccount=(()=>{
  }
  function gate(s,recovery=false){
   const uid=stateUid;
-  if(A?.authUid===uid){const verifiedSession=sbSession();stopTimers();removeDeletedAccountFromBrowser(uid,A.u);if(verifiedSession?.user?.id===uid)sbSave(verifiedSession);}
+  if(A?.authUid===uid||Object.values(DB.accounts||{}).some(a=>a?.authUid===uid)){const verifiedSession=sbSession();stopTimers();removeDeletedAccountFromBrowser(uid,A?.u||'');if(verifiedSession?.user?.id===uid)sbSave(verifiedSession);}
   // Preserve only the verified Auth session for code-based reactivation or password renewal.
   A=null;view='login';pg='home';renderAppOrAuth();
   document.querySelectorAll('.modal').forEach(x=>x.remove());

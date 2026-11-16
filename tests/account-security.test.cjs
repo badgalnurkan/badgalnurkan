@@ -62,7 +62,7 @@ test('six-digit codes still require a verified signed-in user',async()=>{const f
 function uiFixture(){
  const nodes=new Map(),events=[],session={user:{id:'u'},access_token:'fixture'};
  const ctx={window:{},document:{addEventListener(){},querySelectorAll:()=>[],getElementById:id=>nodes.get(id)||null},
-  A:{u:'local',authUid:'u'},view:'app',pg:'home',tr:()=>true,esc:x=>String(x),sbSession:()=>ctx.session,sbSave:s=>ctx.session=s,session,
+  DB:{accounts:{local:{authUid:'u'}}},A:{u:'local',authUid:'u'},view:'app',pg:'home',tr:()=>true,esc:x=>String(x),sbSession:()=>ctx.session,sbSave:s=>ctx.session=s,session,
   sb:async()=>({user_id:'u',email:'real@example.invalid',state:'deactivated',has_password:true,server_time:'2026-11-17T00:00:00Z'}),
   stopTimers(){events.push('stop')},removeDeletedAccountFromBrowser(){ctx.A=null;ctx.session=null;events.push('clear-local')},
   renderAppOrAuth(){events.push('render-login')},openModal:(id,html)=>events.push({id,html}),Date,URLSearchParams,

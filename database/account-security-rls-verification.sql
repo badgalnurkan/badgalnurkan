@@ -23,6 +23,11 @@ begin
  if exists(select 1 from public.user_data) then raise exception 'deactivated data visible'; end if;
  if exists(select 1 from public.profiles) then raise exception 'deactivated profile visible'; end if;
  begin
+ perform public.iydu_load('');
+ raise exception 'restricted loader returned data';
+ exception when insufficient_privilege then null;
+ end;
+ begin
   perform public.iydu_save('ignored','ignored','{"should_never_save":true}');
   raise exception 'deactivated write succeeded';
  exception when insufficient_privilege then null;
