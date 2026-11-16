@@ -128,3 +128,13 @@ Kaynaklar: [Supabase JWT alanları](https://supabase.com/docs/guides/auth/jwt-fi
 ## Sınırlar
 
 Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sınanmadı. OAuth ve veri yükleme sırası otomatik testlerde taklit yanıtlarla doğrulandı; süre kararı ayrıca gerçek veritabanında sentetik JWT bağlamında sınandı. Tarayıcı örneği Supabase'e ve kalıcı depolamaya erişmez. Bildirimler site içinde çalışır; önceki bildirim tercihleri ve kapalı sitede push kapsamı değişmedi. Cevap kilitleri mevcut kullanıcı JSON modeliyle uygulamada uygulanır.
+
+
+## 17 November 2026 · account security and domain
+
+- Added server-only controls/challenges, restrictive RLS, password timestamps, 30-day deletion and private 15-minute cron.
+- Synthetic SQL transaction verified active/expired password access, password trigger, OTP attempts, deactivation, revoked sessions, replay, reactivation, explicit deletion consent, exact 30-day deadline, expiry, permanent purge and grants. Rolled back all generated fixtures; no real emails or user-data tests.
+- Six existing accounts stayed active; application progress, tasks and reports were not rewritten.
+- New account/profile email is read from server status. Remembered Google restores before animating home and retains both 30-minute server checks.
+- Custom lifecycle emails require Edge Resend secrets separately from Auth SMTP. Readiness and CI results recorded below after execution. Auth dashboard settings cannot be read by the current connector.
+- Browser checks run in CI with Chromium and WebKit; physical iOS, real OAuth and inbox delivery are not claimed.

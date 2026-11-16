@@ -4,6 +4,10 @@ on:
     paths:
       - 'index.html'
       - 'package.json'
+      - 'account-security.*'
+      - 'cookies.html'
+      - 'supabase/**'
+      - 'tests/account-security*'
       - 'tests/report-unlock.test.cjs'
       - '.github/workflows/report-unlock-hotfix.yml'
   push:
@@ -11,6 +15,10 @@ on:
     paths:
       - 'index.html'
       - 'package.json'
+      - 'account-security.*'
+      - 'cookies.html'
+      - 'supabase/**'
+      - 'tests/account-security*'
       - 'tests/report-unlock.test.cjs'
       - '.github/workflows/report-unlock-hotfix.yml'
 
@@ -41,3 +49,19 @@ jobs:
         run: npm test
       - name: Build isolated static preview
         run: python scripts/build-preview.py
+      - name: Inspect deployed account mail readiness without sending messages
+        run: |
+          node - <<'NODE'
+          (async()=>{
+            const url='https://flcfqwndqfmbritaywfb.supabase.co/functions/v1/account-security';
+            const r=await fetch(url); const d=await r.json();
+            console.log('Account security health:',JSON.stringify(d));
+            if(!r.ok||!d.ok)throw Error('Account backend not reachable');
+          })().catch(e=>{console.error(e);process.exitCode=1});
+          NODE
+      - name: Install browsers for mobile date regression
+        run: |
+          npm install --no-save --ignore-scripts --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium webkit
+      - name: Check project date widths in Chromium and WebKit
+        run: node tests/account-security.browser.cjs

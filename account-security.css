@@ -1,0 +1,15 @@
+
+.account-security,.security-form,.security-details{min-width:0}
+.security-summary{display:grid;gap:.8rem;margin:1rem 0}.security-summary div{min-width:0}.security-summary dt{font-size:.8rem;color:var(--mut)}.security-summary dd{margin:.2rem 0;overflow-wrap:anywhere}
+.security-details{border-top:1px solid var(--line,#444);padding:1rem 0}.security-details summary{cursor:pointer;font-weight:600;min-height:2.75rem;display:flex;align-items:center}
+.security-details input,.security-form input,.security-details button{max-width:100%;box-sizing:border-box}
+.security-form{display:grid;gap:.5rem;margin:.8rem 0}.security-form label{margin:0}.security-form input{width:100%;min-width:0}.security-form button{justify-self:start}
+[data-account-email],.profile-email,#security-gate p{overflow-wrap:anywhere}
+.storage-notice{position:fixed;inset:auto 1rem 1rem;z-index:1200;max-width:45rem;margin:auto;background:var(--bg,#151518);color:var(--text,#eee);padding:1rem;border:1px solid var(--line,#555);border-radius:1rem;box-shadow:0 8px 35px #0005;display:flex;align-items:center;gap:1rem}
+.storage-notice p{margin:0;font-size:.8rem;line-height:1.5}.storage-notice a{color:inherit;text-decoration:underline}.storage-notice button{flex:0 0 auto}
+.project-add .project-date-field{width:100%;min-width:0;overflow:hidden;box-sizing:border-box}
+.project-add #pd{appearance:none;-webkit-appearance:none;display:block;width:100%;inline-size:100%;min-width:0!important;min-inline-size:0!important;max-width:100%!important;max-inline-size:100%!important;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;padding-inline:.7rem;font:inherit;line-height:1.5}
+.project-add #pd::-webkit-date-and-time-value{display:block;text-align:start;width:100%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.project-add #pd::-webkit-datetime-edit{display:inline-flex;min-width:0;padding:0;max-width:100%}
+@media(max-width:600px){.project-add{display:grid;grid-template-columns:minmax(0,1fr)!important;min-width:0;width:100%}.project-add .project-date-field{contain:inline-size;min-width:0}.storage-notice{inset:auto .6rem .6rem;flex-wrap:wrap}.storage-notice button{margin-left:auto}.security-summary{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){.security-details{scroll-behavior:auto}}
