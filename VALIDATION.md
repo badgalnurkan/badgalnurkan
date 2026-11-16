@@ -141,3 +141,5 @@ Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sın
 
 - CI request/regression run: 189 tests passed. Live backend health responded ok with mailReady=false: at least one of RESEND_API_KEY or ACCOUNT_MAIL_FROM is missing/invalid. No delivery test was sent. First browser installation encountered runner OS mismatch; runner pinned to Ubuntu 24.04 for Playwright 1.56.1.
 - Actual authenticated-role SQL test passed: own active read/write succeeds, cross-account reads and deactivated reads/writes are denied, privileged service RPC is denied. All generated fixture writes rolled back.
+
+- Cloud loader now explicitly refuses restricted accounts rather than treating RLS-filtered data as a new empty account.

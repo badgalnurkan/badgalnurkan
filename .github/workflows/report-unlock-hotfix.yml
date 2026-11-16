@@ -56,6 +56,12 @@ jobs:
             const url='https://flcfqwndqfmbritaywfb.supabase.co/functions/v1/account-security';
             const r=await fetch(url); const d=await r.json();
             console.log('Account security health:',JSON.stringify(d));
+            const fs=require('node:fs'),html=fs.readFileSync('index.html','utf8');
+            const key=html.match(/const SUPABASE_KEY='([^']+)'/)[1];
+            const settings=await fetch('https://flcfqwndqfmbritaywfb.supabase.co/auth/v1/settings',{headers:{apikey:key}});
+            if(!settings.ok)throw Error('Auth settings unreachable');
+            const a=await settings.json();
+            console.log('Public Auth settings:',JSON.stringify({emailAutoconfirm:a.mailer_autoconfirm,emailEnabled:a.external?.email,googleEnabled:a.external?.google}));
             if(!r.ok||!d.ok)throw Error('Account backend not reachable');
           })().catch(e=>{console.error(e);process.exitCode=1});
           NODE
