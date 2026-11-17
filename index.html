@@ -1437,6 +1437,12 @@ body{font-size:1rem!important}
 .notification-clear.is-finishing .bin-lid{transform:none}
 .notification-clear:disabled{opacity:.62}
 @media(prefers-reduced-motion:reduce){.notification-clear .bin-lid{transition:none!important}}
+.note-countdown{display:block;margin-top:.16rem;font:500 .68rem/1.4 'Nunito',system-ui,sans-serif;color:var(--mut)}
+@media(max-width:600px){
+ #mn .report-heading{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:.45rem!important;align-items:start}
+ #mn .report-heading h2,#mn .report-heading h3{min-width:0;overflow-wrap:normal;word-break:normal;hyphens:none}
+ #mn .report-heading .report-more{width:auto!important;min-width:0!important;max-width:7.5rem!important;white-space:normal!important;overflow-wrap:normal;line-height:1.25}
+}
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -2759,14 +2765,24 @@ async function profileUsernameHint(name,targetId){
     el.querySelector('[data-refresh-suggestions]')?.addEventListener('click',()=>profileUsernameHint(proposed,targetId));
   },300);
 }
+function openEmailSecuritySettings(){
+  closeModal('profile-modal');
+  goTo('app','set');
+  setTimeout(()=>{
+    const heading=document.getElementById('security-title');
+    if(!heading)return;
+    heading.tabIndex=-1;heading.focus({preventScroll:true});
+    heading.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+  },320);
+}
 function profilePasswordMarkup(){
-  if(A?.authUid)return `<section class="profile-security"><h3>${tr()?'Hesap güvenliği':'Account security'}</h3><p>${IYAccount.emailMarkup()}</p><button class="g" onclick="closeModal('profile-modal');goTo('app','set')">${tr()?'E-posta ve şifre ayarları':'Email and password settings'}</button></section>`;
+  if(A?.authUid)return `<section class="profile-security"><h3>${tr()?'Hesap güvenliği':'Account security'}</h3><p>${IYAccount.emailMarkup()}</p><button class="g" onclick="openEmailSecuritySettings()">${tr()?'E-posta ve şifre ayarları':'Email and password settings'}</button></section>`;
   if(A.authUid&&A.loginMethod==='google')return `<section class="profile-security"><h3>${tr()?'E-posta ve uygulama şifresi':'Email & app password'}</h3><p class="mut">${tr()?'Google şifreni değil, bu site için ayrı bir şifre belirle.':'Create a separate password for this site, not your Google password.'}</p><label for="prof-google-app-pass">${t('newPassword')}</label><input id="prof-google-app-pass" type="password" autocomplete="new-password" minlength="8"><label for="prof-google-app-pass-confirm">${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="prof-google-app-pass-confirm" type="password" autocomplete="new-password" minlength="8"><button id="prof-google-app-pass-submit" onclick="setGoogleAccountPassword('profile')">${tr()?'Uygulama şifresini belirle':'Set app password'}</button></section>`;
   return `<section class="profile-security"><h3>${tr()?'Şifre güvenliği':'Password security'}</h3><label for="prof-op">${t('currentPassword')}</label><input id="prof-op" type="password" autocomplete="current-password"><label for="prof-np">${t('newPassword')}</label><input id="prof-np" type="password" autocomplete="new-password" minlength="8"><button onclick="chPw('profile')">${t('changePassword')}</button></section>`;
 }
 function openProfile(){
   if(!A)return;
-  openModal('profile-modal',`<h2>${tr()?'Profilim':'My profile'}</h2><p class="profile-email"><strong>${t('email')}:</strong> ${A.authUid?IYAccount.emailMarkup():esc(A.email||(tr()?'E-posta belirtilmemiş':'Email not available'))}</p><div class="profile-fields"><label for="prof-u">${t('username')}</label><input id="prof-u" maxlength="20" autocapitalize="none" autocomplete="off" value="${esc(A.u)}" oninput="profileUsernameHint(this.value,'profile-name-hint')"><div id="profile-name-hint" aria-live="polite"></div><label for="prof-n">${t('displayName')}</label><input id="prof-n" maxlength="30" value="${esc(A.nick||'')}"><label for="prof-b">${t('bio')}</label><textarea id="prof-b" rows="3" maxlength="160">${esc(A.bio||'')}</textarea></div><div class="row"><button onclick="saveProfile()">${t('save')}</button><button class="g" onclick="closeModal('profile-modal')">${t('cancel')}</button></div>${profilePasswordMarkup()}<div class="profile-logout"><button class="danger-logout" onclick="closeModal('profile-modal');setTimeout(confirmLogout,240)">${t('logout')}</button></div>`);
+  openModal('profile-modal',`<h2>${tr()?'Profilim':'My profile'}</h2><p class="profile-email"><strong>${t('email')}:</strong> ${A.authUid?'<button class="g s profile-email-link" type="button" onclick="openEmailSecuritySettings()">'+IYAccount.emailMarkup()+'</button>':esc(A.email||(tr()?'E-posta belirtilmemiş':'Email not available'))}</p><div class="profile-fields"><label for="prof-u">${t('username')}</label><input id="prof-u" maxlength="20" autocapitalize="none" autocomplete="off" value="${esc(A.u)}" oninput="profileUsernameHint(this.value,'profile-name-hint')"><div id="profile-name-hint" aria-live="polite"></div><label for="prof-n">${t('displayName')}</label><input id="prof-n" maxlength="30" value="${esc(A.nick||'')}"><label for="prof-b">${t('bio')}</label><textarea id="prof-b" rows="3" maxlength="160">${esc(A.bio||'')}</textarea></div><div class="row"><button onclick="saveProfile()">${t('save')}</button><button class="g" onclick="closeModal('profile-modal')">${t('cancel')}</button></div>${profilePasswordMarkup()}<div class="profile-logout"><button class="danger-logout" onclick="closeModal('profile-modal');setTimeout(confirmLogout,240)">${t('logout')}</button></div>`);
 }
 async function saveProfile(){
   if(!A)return;
@@ -3046,6 +3062,10 @@ function saveNote(k){
   }else{delete A.future[k];delete A.futureMeta[k];save()}
   closeModal('day-modal');toast(t('noteSaved'));if(pg==='pc')P.pc();else renderPage();
 }
+function futureNoteCountdown(key){
+  const remaining=dd(today(),key);
+  return remaining>0?(tr()?`${remaining} gün kaldı`:`${remaining} days left`):remaining===0?(tr()?'Bugün':'Today'):(tr()?`${-remaining} gün önce`:`${-remaining} days ago`);
+}
 P.pc=()=>{
   const n=new Date(),mn=(2026-n.getFullYear())*12+10-n.getMonth();
   if(calOff<mn)calOff=mn;
@@ -3062,7 +3082,7 @@ P.pc=()=>{
     c+=`<button class="dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}${dp!==null?' — %'+dp:''}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" ${k<today()&&!A.fog?'disabled aria-disabled="true"':''} onclick="openDay('${k}')"><span>${d}</span><em class="dpct">${dp!==null?'%'+dp:'&nbsp;'}</em></button>`;
   }
   const monthKey=`${y}-${pad(mo+1)}`;
-  const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}</b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
+  const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}<small class="note-countdown">${futureNoteCountdown(k)}</small></b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
   M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><input id="fn-text" type="text" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
 };
 function newNote(){
