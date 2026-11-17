@@ -2570,9 +2570,12 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   const meta=j.user.user_metadata||{};
   if(window.IYAccount&&!await IYAccount.checkAccess(j.user))return;
   const fromCloud=await sbPull(); // may throw, never replace cloud data with empty after a failure
+  const progressPolicy=await sbProgressPolicy(uid);
+  if(sbSession()?.user?.id!==uid)throw new Error('Authenticated identity changed during activation');
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
   const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
-  const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email,progressPolicy:'activity-7d-v1'});
+  const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
+  applyServerProgressPolicy(a,progressPolicy);
   a.u=username;a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
   a.pw='';delete a.salt; // Cloud passwords are checked by Supabase, never stored in user_data.
   a.loginMethod=method==='google'?'google':'password';
@@ -4366,6 +4369,21 @@ async function sbPull(){
   if(row?.data&&(!row.data||typeof row.data!=='object'||Array.isArray(row.data)))throw new Error('Invalid cloud data');
   return row?.data||null;
 }
+// The database owns the old/new-user cutoff; do not infer it from a missing
+// browser cache or an absent profile row.
+async function sbProgressPolicy(expectedUid){
+  if(!expectedUid||sbSession()?.user?.id!==expectedUid)return null;
+  try{
+    const mode=await sb('/rest/v1/rpc/iydu_progress_policy',{method:'POST',body:{}});
+    if(sbSession()?.user?.id!==expectedUid)return null;
+    return mode==='active-days'?'activity-7d-v1':mode==='daily'?'daily':null;
+  }catch(_){return null}
+}
+function applyServerProgressPolicy(account,mode){
+  if(!account||typeof account!=='object')return;
+  if(mode==='activity-7d-v1')account.progressPolicy='activity-7d-v1';
+  else if(mode==='daily')delete account.progressPolicy;
+}
 async function sbGoogleQuickResumeAllowed(){
  try{const result=await sb('/rest/v1/rpc/iydu_quick_resume_status',{method:'POST',body:{}});return result?.allowed===true}catch(_){return false}
 }
@@ -4379,11 +4397,14 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     if(window.IYAccount&&!await IYAccount.checkAccess(user))return true;
     const remote=await sbPull();
+    const progressPolicy=await sbProgressPolicy(user.id);
+    if(sbSession()?.user?.id!==user.id)return false;
     // A slow profile request must not carry a login across the 30-minute boundary.
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
     const meta=user.user_metadata||{};
-    const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User',progressPolicy:'activity-7d-v1'});
+    const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
+    applyServerProgressPolicy(a,progressPolicy);
     a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
     if(user.app_metadata?.providers?.includes('google')){a.googleConnected=true;if(!a.loginMethod)a.loginMethod='google'}
     v13ProtectLegacyCollision(a.u,user.id);
