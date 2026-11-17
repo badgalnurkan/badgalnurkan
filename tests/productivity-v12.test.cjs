@@ -120,3 +120,31 @@ test('a stale task edit cannot modify a different signed-in account',()=>{
  assert.equal(original.t,'First');
  assert.equal(state.A.tasks[0].t,'Other account task');
 });
+
+test('cloud policy keeps existing accounts on legacy progress and enables new accounts',async()=>{
+ const context={sbSession:()=>({user:{id:'user-one'}}),sb:async()=> 'daily'};
+ vm.createContext(context);
+ vm.runInContext(extract('async function sbProgressPolicy(', 'async function sbGoogleQuickResumeAllowed(')+'\nthis.readPolicy=sbProgressPolicy;this.applyPolicy=applyServerProgressPolicy;',context);
+ const existing={pctFrom:'2026-11-01',activeDays:{'2026-11-04':true},progressPolicy:'activity-7d-v1'};
+ context.applyPolicy(existing,await context.readPolicy('user-one'));
+ assert.equal(existing.progressPolicy,undefined);
+ context.sb=async()=> 'active-days';
+ const newcomer={activeDays:{}};
+ context.applyPolicy(newcomer,await context.readPolicy('user-one'));
+ assert.equal(newcomer.progressPolicy,'activity-7d-v1');
+});
+test('stale RPC responses and offline connections cannot overwrite account progress policy',async()=>{
+ let uid='user-one';
+ const context={sbSession:()=>({user:{id:uid}}),sb:async()=>{uid='user-two';return 'active-days'}};
+ vm.createContext(context);
+ vm.runInContext(extract('async function sbProgressPolicy(', 'async function sbGoogleQuickResumeAllowed(')+'\nthis.readPolicy=sbProgressPolicy;this.applyPolicy=applyServerProgressPolicy;',context);
+ const existing={progressPolicy:'activity-7d-v1'};
+ const stale=await context.readPolicy('user-one');
+ assert.equal(stale,null);
+ context.applyPolicy(existing,stale);
+ assert.equal(existing.progressPolicy,'activity-7d-v1');
+ context.sb=async()=>{throw new Error('offline')};
+ assert.equal(await context.readPolicy('user-two'),null);
+ context.applyPolicy(existing,null);
+ assert.equal(existing.progressPolicy,'activity-7d-v1');
+});
