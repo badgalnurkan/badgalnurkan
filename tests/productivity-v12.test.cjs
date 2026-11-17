@@ -79,6 +79,38 @@ test('future notes show correct remaining days in Turkish and English',()=>{
  assert.equal(features.futureNoteCountdown('2026-11-18'),'Bugün');
 });
 
+test('focus summary separates elapsed focus time from completed sessions',()=>{
+ const context={D:d=>d.toISOString().slice(0,10)};
+ vm.createContext(context);
+ vm.runInContext(extract('function focusSummary(', 'function focusHistoryCard(')+'\nthis.focusSummary=focusSummary',context);
+ const stamp=Date.parse('2026-11-18T12:00:00Z');
+ const history=[
+  {at:stamp,seconds:1500,completed:true},
+  {at:stamp+1000,seconds:300,completed:false},
+  {at:stamp,seconds:-3,completed:true},
+  {at:Date.parse('2026-10-18T12:00:00Z'),seconds:3000,completed:true}
+ ];
+ const data=context.focusSummary(history,'2026-11-01','2026-11-30');
+ assert.equal(data.seconds,1800);
+ assert.equal(data.sessions,1);
+ assert.equal(data.perDay['2026-11-18'].seconds,1800);
+});
+test('new account percentage requires activity and resets after a seven-day gap',()=>{
+ const context={
+  validProgressDate:day=>/^\d{4}-\d{2}-\d{2}$/.test(day),
+  progressDayDistance:(a,b)=>Math.round((Date.parse(b+'T00:00:00Z')-Date.parse(a+'T00:00:00Z'))/86400000)
+ };
+ vm.createContext(context);
+ vm.runInContext(extract('function activityBasedProgressPercent(', 'function accountProgressPercent(')+'\nthis.activityProgress=activityBasedProgressPercent',context);
+ const pct=context.activityProgress;
+ assert.equal(pct({activeDays:{}},'2026-11-18'),1);
+ assert.equal(pct({activeDays:{'2026-11-15':true}},'2026-11-18'),1);
+ assert.equal(pct({activeDays:{'2026-11-15':true,'2026-11-18':true}},'2026-11-18'),2);
+ assert.equal(pct({activeDays:{'2026-11-01':true,'2026-11-18':true}},'2026-11-18'),1);
+ const many={};
+ for(let i=0;i<101;i++)many[new Date(Date.parse('2026-05-01T00:00:00Z')+i*86400000).toISOString().slice(0,10)]=true;
+ assert.equal(pct({activeDays:many},'2026-08-09'),1);
+});
 test('a stale task edit cannot modify a different signed-in account',()=>{
  const {state,features,context}=fixture(),original=state.A.tasks[0];
  features.editTask(0);
@@ -87,4 +119,32 @@ test('a stale task edit cannot modify a different signed-in account',()=>{
  features.saveTaskEdit();
  assert.equal(original.t,'First');
  assert.equal(state.A.tasks[0].t,'Other account task');
+});
+
+test('cloud policy keeps existing accounts on legacy progress and enables new accounts',async()=>{
+ const context={sbSession:()=>({user:{id:'user-one'}}),sb:async()=> 'daily'};
+ vm.createContext(context);
+ vm.runInContext(extract('async function sbProgressPolicy(', 'async function sbGoogleQuickResumeAllowed(')+'\nthis.readPolicy=sbProgressPolicy;this.applyPolicy=applyServerProgressPolicy;',context);
+ const existing={pctFrom:'2026-11-01',activeDays:{'2026-11-04':true},progressPolicy:'activity-7d-v1'};
+ context.applyPolicy(existing,await context.readPolicy('user-one'));
+ assert.equal(existing.progressPolicy,undefined);
+ context.sb=async()=> 'active-days';
+ const newcomer={activeDays:{}};
+ context.applyPolicy(newcomer,await context.readPolicy('user-one'));
+ assert.equal(newcomer.progressPolicy,'activity-7d-v1');
+});
+test('stale RPC responses and offline connections cannot overwrite account progress policy',async()=>{
+ let uid='user-one';
+ const context={sbSession:()=>({user:{id:uid}}),sb:async()=>{uid='user-two';return 'active-days'}};
+ vm.createContext(context);
+ vm.runInContext(extract('async function sbProgressPolicy(', 'async function sbGoogleQuickResumeAllowed(')+'\nthis.readPolicy=sbProgressPolicy;this.applyPolicy=applyServerProgressPolicy;',context);
+ const existing={progressPolicy:'activity-7d-v1'};
+ const stale=await context.readPolicy('user-one');
+ assert.equal(stale,null);
+ context.applyPolicy(existing,stale);
+ assert.equal(existing.progressPolicy,'activity-7d-v1');
+ context.sb=async()=>{throw new Error('offline')};
+ assert.equal(await context.readPolicy('user-two'),null);
+ context.applyPolicy(existing,null);
+ assert.equal(existing.progressPolicy,'activity-7d-v1');
 });
