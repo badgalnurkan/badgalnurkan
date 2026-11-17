@@ -3438,13 +3438,31 @@ function focusSummary(history,start,end){
   const perDay={};let seconds=0,sessions=0;
   for(const record of Array.isArray(history)?history:[]){
     if(!Number.isFinite(record?.at)||!Number.isFinite(record?.seconds)||record.seconds<=0||record.seconds>36000)continue;
-    const day=D(new Date(record.at));
-    if(day<start||day>end)continue;
-    perDay[day]||={seconds:0,sessions:0};
-    perDay[day].seconds+=record.seconds;
-    perDay[day].sessions+=record.completed===true?1:0;
-    seconds+=record.seconds;
-    sessions+=record.completed===true?1:0;
+    // Charge actual elapsed time to each local calendar day, even when
+    // a focus segment crosses midnight or a month/year boundary.
+    const finish=record.at,begin=finish-record.seconds*1000;
+    let cursor=begin;
+    while(cursor<finish){
+      const date=new Date(cursor);
+      if(!Number.isFinite(date.getTime()))break;
+      const day=D(date),midnight=new Date(date.getFullYear(),date.getMonth(),date.getDate()+1).getTime();
+      const next=Math.min(finish,midnight);
+      if(!Number.isFinite(next)||next<=cursor)break;
+      if(day>=start&&day<=end){
+        perDay[day]||={seconds:0,sessions:0};
+        const portion=(next-cursor)/1000;
+        perDay[day].seconds+=portion;
+        seconds+=portion;
+      }
+      cursor=next;
+    }
+    // A completed session belongs to the day it finished.
+    const finishedDay=D(new Date(finish));
+    if(record.completed===true&&finishedDay>=start&&finishedDay<=end){
+      perDay[finishedDay]||={seconds:0,sessions:0};
+      perDay[finishedDay].sessions++;
+      sessions++;
+    }
   }
   return {seconds,sessions,perDay};
 }
