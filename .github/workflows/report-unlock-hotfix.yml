@@ -70,7 +70,7 @@ jobs:
       - name: Install browsers for mobile date regression
         run: |
           npm install --no-save --ignore-scripts --package-lock=false playwright@1.56.1
-          npx playwright install chromium webkit
+          npx playwright install --with-deps chromium webkit
       - name: Check project date widths in Chromium and WebKit
         run: node tests/account-security.browser.cjs
       - name: Verify the published custom domain
