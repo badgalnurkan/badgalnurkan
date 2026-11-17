@@ -36,7 +36,7 @@ function fixture(){
   extract('function futureNoteCountdown(', 'P.pc=()=>')+
   '\nthis.features={moveTask,editTask,saveTaskEdit,futureNoteCountdown};',context
  );
- return {state,features:context.features};
+ return {state,features:context.features,context};
 }
 test('task reorder preserves identity, status and moves only valid indices',()=>{
  const {state,features}=fixture();
@@ -112,9 +112,9 @@ test('new account percentage requires activity and resets after a seven-day gap'
  assert.equal(pct({activeDays:many},'2026-08-09'),1);
 });
 test('a stale task edit cannot modify a different signed-in account',()=>{
- const {state,features}=fixture(),original=state.A.tasks[0];
+ const {state,features,context}=fixture(),original=state.A.tasks[0];
  features.editTask(0);
- state.A={tasks:[{t:'Other account task',s:''}]};
+ state.A={tasks:[{t:'Other account task',s:''}]};context.A=state.A;
  state.value='Unsafe edit';
  features.saveTaskEdit();
  assert.equal(original.t,'First');
