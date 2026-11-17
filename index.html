@@ -3124,7 +3124,7 @@ function saveNote(k){
 }
 function futureNoteCountdown(key){
   const remaining=dd(today(),key);
-  return remaining>0?(tr()?`${remaining} gün kaldı`:`${remaining} days left`):remaining===0?(tr()?'Bugün':'Today'):(tr()?`${-remaining} gün önce`:`${-remaining} days ago`);
+  return remaining>0?(tr()?`${remaining} gün kaldı`:`${remaining} ${remaining===1?'day':'days'} left`):remaining===0?(tr()?'Bugün':'Today'):(tr()?`${-remaining} gün önce`:`${-remaining} ${remaining===-1?'day':'days'} ago`);
 }
 P.pc=()=>{
   const n=new Date(),mn=(2026-n.getFullYear())*12+10-n.getMonth();
