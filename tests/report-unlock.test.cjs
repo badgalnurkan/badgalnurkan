@@ -24,7 +24,7 @@ function addD(d,n){const x=new Date(d+'T00:00');x.setDate(x.getDate()+n);return 
 const dd=(a,b)=>Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5);
 ${extract('const RQ_EN=','const NAV_KEYS=')}
 ${extract('const PROGRESS_CUTOVER=','function stopwatchFormat(ms){')}
-${extract('function reportQuestionId(text){','const qb=')}
+${extract("function periodDefaultQuestions(kind,key,scope='review'){",'const qb=')}
 ${extract('function reportPeriodEnded(now,end)','function answerArchiveUnlocked')}
 ${extract('function answerArchiveUnlocked(now,periodKey)','/* ---- gecmis raporlar')}
 ${extract('function qa(k,i,el,','/* Weekly/monthly reports')} 
