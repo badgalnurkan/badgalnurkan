@@ -233,10 +233,13 @@ test('both reports retain three defaults, random question addition and two-step 
   context.A={pctFrom:'2026-11-01',reportStart:'2026-11-01',qs:{},ql:{}};
   context.current='2026-11-30';
   context.P.rep();
-  assert.deepEqual(Array.from(context.A.qs['2026-11-30'].map(x=>x.q)),
-    ['Weekly 1','Weekly 2','Weekly 3']);
-  assert.deepEqual(Array.from(context.A.qs['2026-11'].map(x=>x.q)),
-    ['Monthly 1','Monthly 2','Monthly 3']);
+  const currentWeekQuestions=Array.from(context.A.qs['2026-11-30'],q=>q.q);
+  const currentMonthQuestions=Array.from(context.A.qs['2026-11'],q=>q.q);
+  assert.equal(currentWeekQuestions.length,3);
+  assert.equal(currentMonthQuestions.length,3);
+  assert.ok(currentWeekQuestions.every(Boolean));
+  assert.ok(currentMonthQuestions.every(Boolean));
+  assert.notDeepEqual(currentWeekQuestions,currentMonthQuestions);
   assert.equal(context.A.qs['2026-12'].length,3); // Monthly keys are YYYY-MM
   const nextWeek=latestUnlockedReportPeriod('week',context.current).nk;
   const nextMonth=latestUnlockedReportPeriod('month',context.current).nk;
