@@ -1437,6 +1437,17 @@ body{font-size:1rem!important}
 .notification-clear.is-finishing .bin-lid{transform:none}
 .notification-clear:disabled{opacity:.62}
 @media(prefers-reduced-motion:reduce){.notification-clear .bin-lid{transition:none!important}}
+.note-countdown{display:block;margin-top:.16rem;font:500 .68rem/1.4 'Nunito',system-ui,sans-serif;color:var(--mut)}
+@media(max-width:600px){
+ #mn .report-heading{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:.45rem!important;align-items:start}
+ #mn .report-heading h2,#mn .report-heading h3{min-width:0;overflow-wrap:normal;word-break:normal;hyphens:none}
+ #mn .report-heading .report-more{width:auto!important;min-width:0!important;max-width:7.5rem!important;white-space:normal!important;overflow-wrap:normal;line-height:1.25}
+}
+.task-grip{cursor:grab;touch-action:none;flex:0 0 2.6rem;user-select:none;font-size:1.05rem;line-height:1}
+.task-grip.dragging{cursor:grabbing;opacity:.6}
+.task.task-drop-target{outline:2px dashed var(--acc);outline-offset:2px}
+.task-label{min-width:0;flex:1;overflow-wrap:anywhere}
+@media(max-width:600px){#mn .task .task-label{flex-basis:8rem}}
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -2759,14 +2770,24 @@ async function profileUsernameHint(name,targetId){
     el.querySelector('[data-refresh-suggestions]')?.addEventListener('click',()=>profileUsernameHint(proposed,targetId));
   },300);
 }
+function openEmailSecuritySettings(){
+  closeModal('profile-modal');
+  goTo('app','set');
+  setTimeout(()=>{
+    const heading=document.getElementById('security-title');
+    if(!heading)return;
+    heading.tabIndex=-1;heading.focus({preventScroll:true});
+    heading.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+  },320);
+}
 function profilePasswordMarkup(){
-  if(A?.authUid)return `<section class="profile-security"><h3>${tr()?'Hesap güvenliği':'Account security'}</h3><p>${IYAccount.emailMarkup()}</p><button class="g" onclick="closeModal('profile-modal');goTo('app','set')">${tr()?'E-posta ve şifre ayarları':'Email and password settings'}</button></section>`;
+  if(A?.authUid)return `<section class="profile-security"><h3>${tr()?'Hesap güvenliği':'Account security'}</h3><p>${IYAccount.emailMarkup()}</p><button class="g" onclick="openEmailSecuritySettings()">${tr()?'E-posta ve şifre ayarları':'Email and password settings'}</button></section>`;
   if(A.authUid&&A.loginMethod==='google')return `<section class="profile-security"><h3>${tr()?'E-posta ve uygulama şifresi':'Email & app password'}</h3><p class="mut">${tr()?'Google şifreni değil, bu site için ayrı bir şifre belirle.':'Create a separate password for this site, not your Google password.'}</p><label for="prof-google-app-pass">${t('newPassword')}</label><input id="prof-google-app-pass" type="password" autocomplete="new-password" minlength="8"><label for="prof-google-app-pass-confirm">${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="prof-google-app-pass-confirm" type="password" autocomplete="new-password" minlength="8"><button id="prof-google-app-pass-submit" onclick="setGoogleAccountPassword('profile')">${tr()?'Uygulama şifresini belirle':'Set app password'}</button></section>`;
   return `<section class="profile-security"><h3>${tr()?'Şifre güvenliği':'Password security'}</h3><label for="prof-op">${t('currentPassword')}</label><input id="prof-op" type="password" autocomplete="current-password"><label for="prof-np">${t('newPassword')}</label><input id="prof-np" type="password" autocomplete="new-password" minlength="8"><button onclick="chPw('profile')">${t('changePassword')}</button></section>`;
 }
 function openProfile(){
   if(!A)return;
-  openModal('profile-modal',`<h2>${tr()?'Profilim':'My profile'}</h2><p class="profile-email"><strong>${t('email')}:</strong> ${A.authUid?IYAccount.emailMarkup():esc(A.email||(tr()?'E-posta belirtilmemiş':'Email not available'))}</p><div class="profile-fields"><label for="prof-u">${t('username')}</label><input id="prof-u" maxlength="20" autocapitalize="none" autocomplete="off" value="${esc(A.u)}" oninput="profileUsernameHint(this.value,'profile-name-hint')"><div id="profile-name-hint" aria-live="polite"></div><label for="prof-n">${t('displayName')}</label><input id="prof-n" maxlength="30" value="${esc(A.nick||'')}"><label for="prof-b">${t('bio')}</label><textarea id="prof-b" rows="3" maxlength="160">${esc(A.bio||'')}</textarea></div><div class="row"><button onclick="saveProfile()">${t('save')}</button><button class="g" onclick="closeModal('profile-modal')">${t('cancel')}</button></div>${profilePasswordMarkup()}<div class="profile-logout"><button class="danger-logout" onclick="closeModal('profile-modal');setTimeout(confirmLogout,240)">${t('logout')}</button></div>`);
+  openModal('profile-modal',`<h2>${tr()?'Profilim':'My profile'}</h2><p class="profile-email"><strong>${t('email')}:</strong> ${A.authUid?'<button class="g s profile-email-link" type="button" onclick="openEmailSecuritySettings()">'+IYAccount.emailMarkup()+'</button>':esc(A.email||(tr()?'E-posta belirtilmemiş':'Email not available'))}</p><div class="profile-fields"><label for="prof-u">${t('username')}</label><input id="prof-u" maxlength="20" autocapitalize="none" autocomplete="off" value="${esc(A.u)}" oninput="profileUsernameHint(this.value,'profile-name-hint')"><div id="profile-name-hint" aria-live="polite"></div><label for="prof-n">${t('displayName')}</label><input id="prof-n" maxlength="30" value="${esc(A.nick||'')}"><label for="prof-b">${t('bio')}</label><textarea id="prof-b" rows="3" maxlength="160">${esc(A.bio||'')}</textarea></div><div class="row"><button onclick="saveProfile()">${t('save')}</button><button class="g" onclick="closeModal('profile-modal')">${t('cancel')}</button></div>${profilePasswordMarkup()}<div class="profile-logout"><button class="danger-logout" onclick="closeModal('profile-modal');setTimeout(confirmLogout,240)">${t('logout')}</button></div>`);
 }
 async function saveProfile(){
   if(!A)return;
@@ -2961,7 +2982,57 @@ P.todo=()=>{
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
 function vibrateTask(){try{if(navigator.vibrate)navigator.vibrate(12)}catch(_){}}
-const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}"><span>${esc(x.t)}</span><button class="ck ${x.s==='done'?'on':''}" aria-label="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s==='miss'?'on':''}" aria-label="${t('notDone')}" onclick="mk(${i},'miss')">✕</button>${x.s?`<button class="g s" onclick="planFromTask(${i})">${tr()?'Yarına planla':'Plan tomorrow'}</button>`:''}<button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
+const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}" data-task-index="${i}"><button type="button" class="g s task-grip" aria-label="${tr()?'Görevi taşı':'Reorder task'}" title="${tr()?'Sürükle veya ok tuşlarını kullan':'Drag or use arrow keys'}" onpointerdown="startTaskReorder(event,${i})" onpointermove="previewTaskReorder(event)" onpointerup="finishTaskReorder(event)" onpointercancel="cancelTaskReorder()" onkeydown="taskReorderKey(event,${i})">☰</button><span class="task-label">${esc(x.t)}</span><button class="ck ${x.s==='done'?'on':''}" aria-label="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s==='miss'?'on':''}" aria-label="${t('notDone')}" onclick="mk(${i},'miss')">✕</button>${x.s?`<button class="g s" onclick="planFromTask(${i})">${tr()?'Yarına planla':'Plan tomorrow'}</button>`:''}<button class="g s" onclick="editTask(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
+let taskReorder=null,taskEditContext=null;
+function moveTask(from,to){
+  if(!A||!Number.isInteger(from)||!Number.isInteger(to)||from<0||to<0||from>=A.tasks.length||to>=A.tasks.length||from===to)return false;
+  const [task]=A.tasks.splice(from,1);
+  A.tasks.splice(to,0,task);
+  save();P.todo();return true;
+}
+function taskReorderKey(event,index){
+  if(event.key!=='ArrowUp'&&event.key!=='ArrowDown')return;
+  event.preventDefault();
+  const destination=index+(event.key==='ArrowUp'?-1:1);
+  if(moveTask(index,destination))document.querySelector('[data-task-index="'+destination+'"] .task-grip')?.focus();
+}
+function startTaskReorder(event,index){
+  if(event.button!==0||!A?.tasks?.[index])return;
+  taskReorder={owner:A,task:A.tasks[index],pointerId:event.pointerId,x:event.clientX,y:event.clientY};
+  try{event.currentTarget.setPointerCapture(event.pointerId)}catch(_){}
+  event.currentTarget.classList.add('dragging');
+}
+function previewTaskReorder(event){
+  if(!taskReorder||taskReorder.pointerId!==event.pointerId)return;
+  document.querySelectorAll('.task-drop-target').forEach(el=>el.classList.remove('task-drop-target'));
+  document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-task-index]')?.classList.add('task-drop-target');
+}
+function cancelTaskReorder(){
+  taskReorder=null;
+  document.querySelectorAll('.task-grip.dragging,.task-drop-target').forEach(el=>el.classList.remove('dragging','task-drop-target'));
+}
+function finishTaskReorder(event){
+  const drag=taskReorder;
+  if(!drag||drag.pointerId!==event.pointerId)return;
+  const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-task-index]');
+  cancelTaskReorder();
+  if(A!==drag.owner||Math.hypot(event.clientX-drag.x,event.clientY-drag.y)<8)return;
+  const source=A.tasks.indexOf(drag.task),destination=Number(target?.dataset?.taskIndex);
+  if(target&&source>=0)moveTask(source,destination);
+}
+function editTask(index){
+  const task=A?.tasks?.[index];if(!task)return;
+  taskEditContext={owner:A,task};
+  openModal('task-edit-modal',`<h2>${tr()?'Görevi düzenle':'Edit task'}</h2><label for="task-edit-text">${tr()?'Görev':'Task'}</label><input id="task-edit-text" maxlength="120" value="${esc(task.t)}" onkeydown="if(event.key==='Enter'){event.preventDefault();saveTaskEdit()}"><div class="row"><button onclick="saveTaskEdit()">${t('save')}</button><button class="g" onclick="closeModal('task-edit-modal')">${t('cancel')}</button></div>`);
+  document.getElementById('task-edit-text')?.focus();
+}
+function saveTaskEdit(){
+  const context=taskEditContext,value=String(document.getElementById('task-edit-text')?.value||'').trim().slice(0,120);
+  if(!context||A!==context.owner||!A.tasks.includes(context.task)){closeModal('task-edit-modal');return}
+  if(!value){toast(tr()?'Görev boş olamaz.':'Task cannot be empty.');return}
+  if(value!==context.task.t){context.task.t=value;recordActivity()}
+  taskEditContext=null;closeModal('task-edit-modal');P.todo();
+}
 function allTodayTasksArchived(){
   return A && A.day===today() && A.tasks.length===0 &&
     Array.isArray(A.completedBatches?.[today()]) && A.completedBatches[today()].length>0;
@@ -3046,6 +3117,10 @@ function saveNote(k){
   }else{delete A.future[k];delete A.futureMeta[k];save()}
   closeModal('day-modal');toast(t('noteSaved'));if(pg==='pc')P.pc();else renderPage();
 }
+function futureNoteCountdown(key){
+  const remaining=dd(today(),key);
+  return remaining>0?(tr()?`${remaining} gün kaldı`:`${remaining} ${remaining===1?'day':'days'} left`):remaining===0?(tr()?'Bugün':'Today'):(tr()?`${-remaining} gün önce`:`${-remaining} ${remaining===-1?'day':'days'} ago`);
+}
 P.pc=()=>{
   const n=new Date(),mn=(2026-n.getFullYear())*12+10-n.getMonth();
   if(calOff<mn)calOff=mn;
@@ -3062,7 +3137,7 @@ P.pc=()=>{
     c+=`<button class="dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}${dp!==null?' — %'+dp:''}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" ${k<today()&&!A.fog?'disabled aria-disabled="true"':''} onclick="openDay('${k}')"><span>${d}</span><em class="dpct">${dp!==null?'%'+dp:'&nbsp;'}</em></button>`;
   }
   const monthKey=`${y}-${pad(mo+1)}`;
-  const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}</b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
+  const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}<small class="note-countdown">${futureNoteCountdown(k)}</small></b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
   M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><input id="fn-text" type="text" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
 };
 function newNote(){
