@@ -1770,7 +1770,7 @@ const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
 // Usernames: letters, digits, underscore, dot and hyphen. Keep quotes and @ out of inline handlers and email detection.
 const USERNAME_ALLOWED='a-zA-Z0-9çÇğĞıİöÖşŞüÜ_.-';
 const userRe=new RegExp('^['+USERNAME_ALLOWED+']{3,20}$');
-function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today(),reportCalendarRule:'full-period-v1'})}
+function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today(),reportCalendarRule:'full-period-v1',progressPolicy:'activity-7d-v1'})}
 function norm(a){
   const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},planningQs:{},planningLocks:{},ql:{},notifications:[],noticeDelivered:{},notificationPrefs:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
@@ -1896,11 +1896,24 @@ function ensureProgressState(account,asOf){
  }
  account.progressState=next;return next;
 }
+function activityBasedProgressPercent(account,asOf){
+  const dates=Object.entries(account?.activeDays||{}).filter(([day,active])=>active===true&&validProgressDate(day)&&day<=asOf)
+    .map(([day])=>day).sort();
+  if(!dates.length||progressDayDistance(dates[dates.length-1],asOf)>=7)return 1;
+  let previous='',count=0;
+  for(const date of dates){
+    if(previous&&progressDayDistance(previous,date)>=7)count=0;
+    count++;previous=date;
+  }
+  return ((Math.max(1,count)-1)%100)+1;
+}
 function accountProgressPercent(account,asOf){
- if(!account||typeof account!=='object')return 1;
- const day=validProgressDate(asOf)?asOf:new Date().toISOString().slice(0,10),state=ensureProgressState(account,day);
- if(!state.startedOn||state.startedOn>day)return 1;
- return Math.max(1,state.base+Math.max(0,progressDayDistance(state.through,day)));
+  if(!account||typeof account!=='object')return 1;
+  const day=validProgressDate(asOf)?asOf:new Date().toISOString().slice(0,10),state=ensureProgressState(account,day);
+  if(account.progressPolicy==='activity-7d-v1')return activityBasedProgressPercent(account,day);
+  if(!state.startedOn||state.startedOn>day)return 1;
+  const earned=Math.max(1,state.base+Math.max(0,progressDayDistance(state.through,day)));
+  return ((earned-1)%100)+1;
 }
 function stopwatchFormat(ms){
   const v=Number.isFinite(ms)?Math.max(0,ms):0;
@@ -2554,7 +2567,7 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   const fromCloud=await sbPull(); // may throw, never replace cloud data with empty after a failure
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
   const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
-  const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
+  const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email,progressPolicy:'activity-7d-v1'});
   a.u=username;a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
   a.pw='';delete a.salt; // Cloud passwords are checked by Supabase, never stored in user_data.
   a.loginMethod=method==='google'?'google':'password';
@@ -3869,6 +3882,7 @@ function confirmReset(){
   const safe={u:A.u,nick:A.nick,bio:A.bio,pw:A.pw||'',email:A.email,phone:A.phone,authUid:A.authUid,accountOrigin:A.accountOrigin,loginMethod:A.loginMethod,googleConnected:A.googleConnected,theme:A.theme};
   clearInterval(pm.iv);clearInterval(pm.swI);
   const fresh=newAcc(safe.u,safe.nick,safe.bio,safe.pw,safe.email,safe.phone);
+  if(!A.progressPolicy)delete fresh.progressPolicy;else fresh.progressPolicy=A.progressPolicy;
   fresh.authUid=safe.authUid;fresh.accountOrigin=safe.accountOrigin;fresh.loginMethod=safe.loginMethod;fresh.googleConnected=safe.googleConnected;fresh.mail=safe.email;fresh.theme=safe.theme;fresh.pctFrom=today();
   DB.accounts[safe.u]=fresh;A=fresh;
   pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,lg:0,iv:0,sw:0,swT:0,swI:0};
@@ -4332,7 +4346,7 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
     const meta=user.user_metadata||{};
-    const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
+    const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User',progressPolicy:'activity-7d-v1'});
     a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
     if(user.app_metadata?.providers?.includes('google')){a.googleConnected=true;if(!a.loginMethod)a.loginMethod='google'}
     v13ProtectLegacyCollision(a.u,user.id);
