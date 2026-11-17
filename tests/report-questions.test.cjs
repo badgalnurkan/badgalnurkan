@@ -58,17 +58,18 @@ test('week and month planning each have three questions different from period re
   }
  }
 });
-test('both report UIs change language while preserving current and future answers',()=>{
+test('both report UIs translate the selected period questions without rewriting answers',()=>{
  for(const kind of ['week','month']){
   const {context,f,render}=fixture(),key=kind==='week'?'2026-11-23':'2026-11',next=kind==='week'?'2026-11-30':'2026-12';
   const english=render(kind,key,next);
-  assert.ok(english.includes(f.defaults[kind][0]));assert.ok(english.includes(f.plans[kind][0]));
-  context.A.qs[key][0].a='Review answer';context.A.planningQs[next][0].a='Future answer';
+  const reviewQuestion=context.A.qs[key][0],planQuestion=context.A.planningQs[next][0];
+  assert.ok(english.includes(f.reportQuestionText(reviewQuestion,'en')));
+  assert.ok(english.includes(f.reportQuestionText(planQuestion,'en')));
+  reviewQuestion.a='Review answer';planQuestion.a='Future answer';
   const before=JSON.stringify(context.A);context.DB.lang='tr';
   const turkish=render(kind,key,next);
-  assert.ok(turkish.includes(f.banks['review.'+kind].tr[0]));
-  assert.ok(turkish.includes(f.banks['plan.'+kind].tr[0]));
-  assert.equal(turkish.includes(f.defaults[kind][0]),false);
+  assert.ok(turkish.includes(f.reportQuestionText(reviewQuestion,'tr')));
+  assert.ok(turkish.includes(f.reportQuestionText(planQuestion,'tr')));
   assert.equal(JSON.stringify(context.A),before);
   context.DB.lang='en';assert.ok(render(kind,key,next).includes('Future answer'));
  }
@@ -113,7 +114,7 @@ test('year-end answer archive translates both groups and respects existing locks
  context.A.ql['2026-11']=1;
  assert.equal(f.reportDetailView().includes('Private plan'),false);
  context.current='2027-01-01';context.DB.lang='tr';const archive=f.reportDetailView();
- assert.ok(archive.includes(f.banks['review.month'].tr[0]));
+ assert.ok(archive.includes(f.reportQuestionText(context.A.qs['2026-11'][0],'tr')));
  assert.ok(archive.includes(f.banks['plan.month'].tr[0]));
  assert.ok(archive.includes('Private review'));assert.ok(archive.includes('Private plan'));
 });
