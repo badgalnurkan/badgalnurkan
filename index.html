@@ -1453,6 +1453,11 @@ body{font-size:1rem!important}
 .focus-history-totals b{font-size:1.2rem}.focus-history-totals span,.focus-history-totals small{color:var(--mut);font-size:.78rem}
 .focus-history .task{justify-content:space-between;flex-wrap:wrap;gap:.6rem}
 @media(max-width:400px){.focus-history-totals{grid-template-columns:1fr}}
+.report-planning-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.9rem}
+.report-plan-period{min-width:0;border:1px solid var(--ln);border-radius:14px;padding:1rem;overflow-wrap:anywhere}
+.report-plan-period h3{margin-top:0}.report-plan-period h3 small{display:block;font-size:.75rem;font-weight:400}
+.report-plan-period textarea{max-width:100%;min-width:0;box-sizing:border-box}
+@media(max-width:720px){.report-planning-grid{grid-template-columns:minmax(0,1fr)}}
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -3170,6 +3175,20 @@ function newNote(){
 }
 function delNote(k){delete A.future[k];if(A.futureMeta)delete A.futureMeta[k];save();P.pc()}
 function st(a,b){let t=0,d=0,by={};for(let x=a;x<=b;x=addD(x,1)){items(x).forEach(i=>{t++;by[i.t]=by[i.t]||[0,0];by[i.t][1]++;if(i.done){d++;by[i.t][0]++}})}return{t,d,p:t?Math.round(d/t*100):0,by}}
+function periodDefaultQuestions(kind,key,scope='review'){
+  // Stable variation by period: no regenerating or overwriting an answered question.
+  const base=scope==='plan'?(tr()?PLANQ_TR:PLANQ_EN)[kind]:(tr()?DEFQ_TR:DEFQ_EN)[kind];
+  const extra=scope==='plan'?(tr()?PLAN_RQ_TR:PLAN_RQ_EN)[kind]:rqFor().filter((_,i)=>kind==='week'?i%2===0:i%2===1);
+  const pool=[...base,...extra];
+  let seed=2166136261;
+  for(const ch of key+'|'+kind+'|'+scope)seed=Math.imul(seed^ch.charCodeAt(0),16777619)>>>0;
+  const mixed=pool.slice();
+  for(let i=mixed.length-1;i>0;i--){
+    seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+    const j=seed%(i+1);[mixed[i],mixed[j]]=[mixed[j],mixed[i]];
+  }
+  return mixed.slice(0,3).map(q=>makeReportQuestion(q));
+}
 function reportQuestionId(text){
   for(const [key,bank] of Object.entries(REPORT_QUESTION_BANKS)){
     for(const lang of ['en','tr']){const index=bank[lang].indexOf(text);if(index>=0)return key+':'+index}
@@ -3278,17 +3297,17 @@ function repCard(title,per,a,b,pa,pb,key,nk,defs){
     const tot=dd(a,b)+1,pass=dd(a,td)+1;
     return`<div class="card"><h2>🔒 ${title}</h2><p class="mut">${t('opensOn')} ${fmt(b)} — ${dd(td,b)} ${t('daysLeft')}</p><div class="bar"><i style="width:${Math.min(100,pass/tot*100)}%"></i></div></div>`;
   }
-  if(!A.qs[nk])A.qs[nk]=defs.map(q=>makeReportQuestion(q));
-  if(!A.qs[key])A.qs[key]=defs.map(q=>makeReportQuestion(q));
+  if(!A.qs[nk])A.qs[nk]=periodDefaultQuestions(key.length===7?'month':'week',nk,'review');
+  if(!A.qs[key])A.qs[key]=periodDefaultQuestions(key.length===7?'month':'week',key,'review');
   const kind=key.length===7?'month':'week',planning=reportQuestionStore('plan');
-  if(!Array.isArray(planning[nk]))planning[nk]=(tr()?PLANQ_TR:PLANQ_EN)[kind].map(q=>makeReportQuestion(q));
+  if(!Array.isArray(planning[nk]))planning[nk]=periodDefaultQuestions(kind,nk,'plan');
   const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p,cur=A.qs[key]||[],ro=!!reportQuestionLocks()[key],planRo=!!reportQuestionLocks('plan')[nk];
   const planIsCurrent=kind==='month'?nk===td.slice(0,7):(nk<=td&&td<=addD(nk,6));
   const rows=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
   return`<div class="card"><h2>${title} <small class="mut" style="display:block;font-size:.75rem;font-weight:400">${fmt(a)} – ${fmt(b)}</small></h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}
 <h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3><section id="report-group-review-${key}">${cur.length?(ro?(answerArchiveUnlocked(td,key)?qb(key,cur,true):reportLockedNotice(key)):reportAutoLockHint()+qb(key,cur,false)+`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
 ${!ro&&planning[key]?.length?`<details class="report-plan-review" style="margin-top:1rem"><summary>${tr()?'Bu dönem için yaptığın planlar':'Your earlier plans for this period'}</summary>${reportQuestionLocks('plan')[key]&&!answerArchiveUnlocked(td,key)?reportLockedNotice(key):qb(key,planning[key],true,'plan')}</details>`:''}</section>
-<h3 style="margin-top:1.2rem">${tr()?(kind==='week'?(planIsCurrent?'Bu hafta için plan':'Gelecek hafta için plan'):(planIsCurrent?'Bu ay için plan':'Gelecek ay için plan')):(kind==='week'?(planIsCurrent?'Plan for this week':'Plan for next week'):(planIsCurrent?'Plan for this month':'Plan for next month'))}</h3><section id="report-group-plan-${nk}">${planRo?(answerArchiveUnlocked(td,nk)?qb(nk,planning[nk],true,'plan'):reportLockedNotice(nk)):reportAutoLockHint()+qb(nk,planning[nk],false,'plan')+`<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="${t('addOwnQuestion')}"><button class="s" onclick="addQ('${nk}','plan')">${t('addQuestion')}</button><button class="g s" onclick="addRandQ('${nk}','plan')">${t('randomQuestion')}</button></div>`}</section></div>`;
+<h3 style="margin-top:1.2rem">${tr()?(kind==='week'?(planIsCurrent?'Bu hafta için plan':'Gelecek hafta için plan'):(planIsCurrent?'Bu ay için plan':'Gelecek ay için plan')):(kind==='week'?(planIsCurrent?'Plan for this week':'Plan for next week'):(planIsCurrent?'Plan for this month':'Plan for next month'))}</h3><section id="report-group-plan-${nk}">${planRo?(answerArchiveUnlocked(td,nk)?qb(nk,planning[nk],true,'plan'):reportLockedNotice(nk)):reportAutoLockHint()+qb(nk,planning[nk],false,'plan')+`<div class="row"><button class="g s" onclick="addRandQ('${nk}','plan')">${t('randomQuestion')}</button></div>`}</section></div>`;
 }
 /* ---- gecmis raporlar: kisa ozet (haftalik / aylik) ---- */
 function briefRow(label,val,sub){
@@ -3377,10 +3396,28 @@ function periodReportDetail(kind,previous=false){
  if(td<unlock||period.b<unlock)return header+pendingReportCard(title,since,unlock);
  return header+periodTaskBreakdown(period.a,td<period.b?td:period.b)+repCard(title,tr()?(kind==='week'?'hafta':'ay'):kind,period.a,period.b,period.pa,period.pb,period.key,period.nk,defQ(kind));
 }
+function reportPlanningOverview(){
+  const td=today(),wk=mon(td),month=td.slice(0,7),[y,m]=month.split('-').map(Number);
+  const upcomingMonth=D(new Date(y,m,1)).slice(0,7);
+  const periods=[
+    {kind:'week',key:wk,title:tr()?'Bu hafta':'This week'},
+    {kind:'week',key:addD(wk,7),title:tr()?'Gelecek hafta':'Next week'},
+    {kind:'month',key:month,title:tr()?'Bu ay':'This month'},
+    {kind:'month',key:upcomingMonth,title:tr()?'Gelecek ay':'Next month'}
+  ];
+  const records=reportQuestionStore('plan'),locks=reportQuestionLocks('plan');
+  const views=periods.map(({kind,key,title})=>{
+    if(!Array.isArray(records[key]))records[key]=periodDefaultQuestions(kind,key,'plan');
+    const locked=!!locks[key],qs=records[key],group=locked?(answerArchiveUnlocked(td,key)?qb(key,qs,true,'plan'):reportLockedNotice(key))
+      :reportAutoLockHint()+qb(key,qs,false,'plan')+`<button class="g s" onclick="addRandQ('${key}','plan')">${t('randomQuestion')}</button>`;
+    return `<div class="report-plan-period"><h3>${title} <small class="mut">${esc(key)}</small></h3><section id="report-group-plan-${key}">${group}</section></div>`;
+  }).join('');
+  return `<section class="card report-planning-overview"><h2>${tr()?'Haftalık ve aylık plan soruları':'Weekly and monthly planning questions'}</h2><div class="report-planning-grid">${views}</div></section>`;
+}
 P.rep=()=>{
  if(reportDetail){M(reportDetailView());return}
  const td=today(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
- M(reportSummaryCard('week',w)+reportSummaryCard('month',m)+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'} 🔒</button></div></section>`);
+ M(reportSummaryCard('week',w)+reportSummaryCard('month',m)+reportPlanningOverview()+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'} 🔒</button></div></section>`);
 };
 
 let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};
