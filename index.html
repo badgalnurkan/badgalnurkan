@@ -1448,6 +1448,16 @@ body{font-size:1rem!important}
 .task.task-drop-target{outline:2px dashed var(--acc);outline-offset:2px}
 .task-label{min-width:0;flex:1;overflow-wrap:anywhere}
 @media(max-width:600px){#mn .task .task-label{flex-basis:8rem}}
+.focus-history-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;margin:1rem 0}
+.focus-history-totals>div{display:flex;flex-direction:column;gap:.15rem;padding:1rem;border:1px solid var(--ln);border-radius:14px;min-width:0}
+.focus-history-totals b{font-size:1.2rem}.focus-history-totals span,.focus-history-totals small{color:var(--mut);font-size:.78rem}
+.focus-history .task{justify-content:space-between;flex-wrap:wrap;gap:.6rem}
+@media(max-width:400px){.focus-history-totals{grid-template-columns:1fr}}
+.report-planning-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.9rem}
+.report-plan-period{min-width:0;border:1px solid var(--ln);border-radius:14px;padding:1rem;overflow-wrap:anywhere}
+.report-plan-period h3{margin-top:0}.report-plan-period h3 small{display:block;font-size:.75rem;font-weight:400}
+.report-plan-period textarea{max-width:100%;min-width:0;box-sizing:border-box}
+@media(max-width:720px){.report-planning-grid{grid-template-columns:minmax(0,1fr)}}
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -1765,7 +1775,7 @@ const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
 // Usernames: letters, digits, underscore, dot and hyphen. Keep quotes and @ out of inline handlers and email detection.
 const USERNAME_ALLOWED='a-zA-Z0-9çÇğĞıİöÖşŞüÜ_.-';
 const userRe=new RegExp('^['+USERNAME_ALLOWED+']{3,20}$');
-function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today(),reportCalendarRule:'full-period-v1'})}
+function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today(),reportCalendarRule:'full-period-v1',progressPolicy:'activity-7d-v1'})}
 function norm(a){
   const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},planningQs:{},planningLocks:{},ql:{},notifications:[],noticeDelivered:{},notificationPrefs:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
@@ -1891,11 +1901,24 @@ function ensureProgressState(account,asOf){
  }
  account.progressState=next;return next;
 }
+function activityBasedProgressPercent(account,asOf){
+  const dates=Object.entries(account?.activeDays||{}).filter(([day,active])=>active===true&&validProgressDate(day)&&day<=asOf)
+    .map(([day])=>day).sort();
+  if(!dates.length||progressDayDistance(dates[dates.length-1],asOf)>=7)return 1;
+  let previous='',count=0;
+  for(const date of dates){
+    if(previous&&progressDayDistance(previous,date)>=7)count=0;
+    count++;previous=date;
+  }
+  return ((Math.max(1,count)-1)%100)+1;
+}
 function accountProgressPercent(account,asOf){
- if(!account||typeof account!=='object')return 1;
- const day=validProgressDate(asOf)?asOf:new Date().toISOString().slice(0,10),state=ensureProgressState(account,day);
- if(!state.startedOn||state.startedOn>day)return 1;
- return Math.max(1,state.base+Math.max(0,progressDayDistance(state.through,day)));
+  if(!account||typeof account!=='object')return 1;
+  const day=validProgressDate(asOf)?asOf:new Date().toISOString().slice(0,10),state=ensureProgressState(account,day);
+  if(account.progressPolicy==='activity-7d-v1')return activityBasedProgressPercent(account,day);
+  if(!state.startedOn||state.startedOn>day)return 1;
+  const earned=Math.max(1,state.base+Math.max(0,progressDayDistance(state.through,day)));
+  return ((earned-1)%100)+1;
 }
 function stopwatchFormat(ms){
   const v=Number.isFinite(ms)?Math.max(0,ms):0;
@@ -2547,9 +2570,12 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   const meta=j.user.user_metadata||{};
   if(window.IYAccount&&!await IYAccount.checkAccess(j.user))return;
   const fromCloud=await sbPull(); // may throw, never replace cloud data with empty after a failure
+  const progressPolicy=await sbProgressPolicy(uid);
+  if(sbSession()?.user?.id!==uid)throw new Error('Authenticated identity changed during activation');
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
   const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
   const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
+  applyServerProgressPolicy(a,progressPolicy);
   a.u=username;a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
   a.pw='';delete a.salt; // Cloud passwords are checked by Supabase, never stored in user_data.
   a.loginMethod=method==='google'?'google':'password';
@@ -3152,6 +3178,20 @@ function newNote(){
 }
 function delNote(k){delete A.future[k];if(A.futureMeta)delete A.futureMeta[k];save();P.pc()}
 function st(a,b){let t=0,d=0,by={};for(let x=a;x<=b;x=addD(x,1)){items(x).forEach(i=>{t++;by[i.t]=by[i.t]||[0,0];by[i.t][1]++;if(i.done){d++;by[i.t][0]++}})}return{t,d,p:t?Math.round(d/t*100):0,by}}
+function periodDefaultQuestions(kind,key,scope='review'){
+  // Stable variation by period: no regenerating or overwriting an answered question.
+  const base=scope==='plan'?(tr()?PLANQ_TR:PLANQ_EN)[kind]:(tr()?DEFQ_TR:DEFQ_EN)[kind];
+  const extra=scope==='plan'?(tr()?PLAN_RQ_TR:PLAN_RQ_EN)[kind]:rqFor().filter((_,i)=>kind==='week'?i%2===0:i%2===1);
+  const pool=[...base,...extra];
+  let seed=2166136261;
+  for(const ch of key+'|'+kind+'|'+scope)seed=Math.imul(seed^ch.charCodeAt(0),16777619)>>>0;
+  const mixed=pool.slice();
+  for(let i=mixed.length-1;i>0;i--){
+    seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+    const j=seed%(i+1);[mixed[i],mixed[j]]=[mixed[j],mixed[i]];
+  }
+  return mixed.slice(0,3).map(q=>makeReportQuestion(q));
+}
 function reportQuestionId(text){
   for(const [key,bank] of Object.entries(REPORT_QUESTION_BANKS)){
     for(const lang of ['en','tr']){const index=bank[lang].indexOf(text);if(index>=0)return key+':'+index}
@@ -3260,17 +3300,17 @@ function repCard(title,per,a,b,pa,pb,key,nk,defs){
     const tot=dd(a,b)+1,pass=dd(a,td)+1;
     return`<div class="card"><h2>🔒 ${title}</h2><p class="mut">${t('opensOn')} ${fmt(b)} — ${dd(td,b)} ${t('daysLeft')}</p><div class="bar"><i style="width:${Math.min(100,pass/tot*100)}%"></i></div></div>`;
   }
-  if(!A.qs[nk])A.qs[nk]=defs.map(q=>makeReportQuestion(q));
-  if(!A.qs[key])A.qs[key]=defs.map(q=>makeReportQuestion(q));
+  if(!A.qs[nk])A.qs[nk]=periodDefaultQuestions(key.length===7?'month':'week',nk,'review');
+  if(!A.qs[key])A.qs[key]=periodDefaultQuestions(key.length===7?'month':'week',key,'review');
   const kind=key.length===7?'month':'week',planning=reportQuestionStore('plan');
-  if(!Array.isArray(planning[nk]))planning[nk]=(tr()?PLANQ_TR:PLANQ_EN)[kind].map(q=>makeReportQuestion(q));
+  if(!Array.isArray(planning[nk]))planning[nk]=periodDefaultQuestions(kind,nk,'plan');
   const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p,cur=A.qs[key]||[],ro=!!reportQuestionLocks()[key],planRo=!!reportQuestionLocks('plan')[nk];
   const planIsCurrent=kind==='month'?nk===td.slice(0,7):(nk<=td&&td<=addD(nk,6));
   const rows=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
   return`<div class="card"><h2>${title} <small class="mut" style="display:block;font-size:.75rem;font-weight:400">${fmt(a)} – ${fmt(b)}</small></h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}
 <h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3><section id="report-group-review-${key}">${cur.length?(ro?(answerArchiveUnlocked(td,key)?qb(key,cur,true):reportLockedNotice(key)):reportAutoLockHint()+qb(key,cur,false)+`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
 ${!ro&&planning[key]?.length?`<details class="report-plan-review" style="margin-top:1rem"><summary>${tr()?'Bu dönem için yaptığın planlar':'Your earlier plans for this period'}</summary>${reportQuestionLocks('plan')[key]&&!answerArchiveUnlocked(td,key)?reportLockedNotice(key):qb(key,planning[key],true,'plan')}</details>`:''}</section>
-<h3 style="margin-top:1.2rem">${tr()?(kind==='week'?(planIsCurrent?'Bu hafta için plan':'Gelecek hafta için plan'):(planIsCurrent?'Bu ay için plan':'Gelecek ay için plan')):(kind==='week'?(planIsCurrent?'Plan for this week':'Plan for next week'):(planIsCurrent?'Plan for this month':'Plan for next month'))}</h3><section id="report-group-plan-${nk}">${planRo?(answerArchiveUnlocked(td,nk)?qb(nk,planning[nk],true,'plan'):reportLockedNotice(nk)):reportAutoLockHint()+qb(nk,planning[nk],false,'plan')+`<div class="row"><input id="nq-${nk}" maxlength="150" placeholder="${t('addOwnQuestion')}"><button class="s" onclick="addQ('${nk}','plan')">${t('addQuestion')}</button><button class="g s" onclick="addRandQ('${nk}','plan')">${t('randomQuestion')}</button></div>`}</section></div>`;
+<h3 style="margin-top:1.2rem">${tr()?(kind==='week'?(planIsCurrent?'Bu hafta için plan':'Gelecek hafta için plan'):(planIsCurrent?'Bu ay için plan':'Gelecek ay için plan')):(kind==='week'?(planIsCurrent?'Plan for this week':'Plan for next week'):(planIsCurrent?'Plan for this month':'Plan for next month'))}</h3><section id="report-group-plan-${nk}">${planRo?(answerArchiveUnlocked(td,nk)?qb(nk,planning[nk],true,'plan'):reportLockedNotice(nk)):reportAutoLockHint()+qb(nk,planning[nk],false,'plan')+`<div class="row"><button class="g s" onclick="addRandQ('${nk}','plan')">${t('randomQuestion')}</button></div>`}</section></div>`;
 }
 /* ---- gecmis raporlar: kisa ozet (haftalik / aylik) ---- */
 function briefRow(label,val,sub){
@@ -3359,19 +3399,75 @@ function periodReportDetail(kind,previous=false){
  if(td<unlock||period.b<unlock)return header+pendingReportCard(title,since,unlock);
  return header+periodTaskBreakdown(period.a,td<period.b?td:period.b)+repCard(title,tr()?(kind==='week'?'hafta':'ay'):kind,period.a,period.b,period.pa,period.pb,period.key,period.nk,defQ(kind));
 }
+function reportPlanningOverview(){
+  const td=today(),wk=mon(td),month=td.slice(0,7),[y,m]=month.split('-').map(Number);
+  const upcomingMonth=D(new Date(y,m,1)).slice(0,7);
+  const periods=[
+    {kind:'week',key:wk,title:tr()?'Bu hafta':'This week'},
+    {kind:'week',key:addD(wk,7),title:tr()?'Gelecek hafta':'Next week'},
+    {kind:'month',key:month,title:tr()?'Bu ay':'This month'},
+    {kind:'month',key:upcomingMonth,title:tr()?'Gelecek ay':'Next month'}
+  ];
+  const records=reportQuestionStore('plan'),locks=reportQuestionLocks('plan');
+  const views=periods.map(({kind,key,title})=>{
+    if(!Array.isArray(records[key]))records[key]=periodDefaultQuestions(kind,key,'plan');
+    const locked=!!locks[key],qs=records[key],group=locked?(answerArchiveUnlocked(td,key)?qb(key,qs,true,'plan'):reportLockedNotice(key))
+      :reportAutoLockHint()+qb(key,qs,false,'plan')+`<button class="g s" onclick="addRandQ('${key}','plan')">${t('randomQuestion')}</button>`;
+    return `<div class="report-plan-period"><h3>${title} <small class="mut">${esc(key)}</small></h3><section id="report-group-plan-${key}">${group}</section></div>`;
+  }).join('');
+  return `<section class="card report-planning-overview"><h2>${tr()?'Haftalık ve aylık plan soruları':'Weekly and monthly planning questions'}</h2><div class="report-planning-grid">${views}</div></section>`;
+}
 P.rep=()=>{
  if(reportDetail){M(reportDetailView());return}
  const td=today(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
- M(reportSummaryCard('week',w)+reportSummaryCard('month',m)+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'} 🔒</button></div></section>`);
+ M(reportSummaryCard('week',w)+reportSummaryCard('month',m)+reportPlanningOverview()+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'} 🔒</button></div></section>`);
 };
 
 let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};
+function logFocusSegment(endedAt,startedAt,completed=false){
+  if(!A||!Number.isFinite(startedAt)||!Number.isFinite(endedAt)||endedAt<=startedAt)return;
+  const seconds=Math.max(0,Math.floor((endedAt-startedAt)/1000));
+  if(!seconds)return;
+  if(!Array.isArray(A.focusHistory))A.focusHistory=[];
+  // Completed focus sessions and paused segments share one bounded, account-owned log.
+  if(A.focusHistory.some(r=>r.at===endedAt&&r.completed===completed))return;
+  A.focusHistory.push({at:endedAt,seconds:Math.min(seconds,36000),completed:!!completed});
+  if(A.focusHistory.length>2000)A.focusHistory.splice(0,A.focusHistory.length-2000);
+}
+function focusSummary(history,start,end){
+  const perDay={};let seconds=0,sessions=0;
+  for(const record of Array.isArray(history)?history:[]){
+    if(!Number.isFinite(record?.at)||!Number.isFinite(record?.seconds)||record.seconds<=0||record.seconds>36000)continue;
+    const day=D(new Date(record.at));
+    if(day<start||day>end)continue;
+    perDay[day]||={seconds:0,sessions:0};
+    perDay[day].seconds+=record.seconds;
+    perDay[day].sessions+=record.completed===true?1:0;
+    seconds+=record.seconds;
+    sessions+=record.completed===true?1:0;
+  }
+  return {seconds,sessions,perDay};
+}
+function focusHistoryCard(){
+  const now=today(),month=now.slice(0,7)+'-01',week=mon(now);
+  const w=focusSummary(A?.focusHistory,week,now),m=focusSummary(A?.focusHistory,month,now);
+  const time=seconds=>tr()?`${Math.floor(seconds/3600)} sa ${Math.round(seconds%3600/60)} dk`:`${Math.floor(seconds/3600)}h ${Math.round(seconds%3600/60)}m`;
+  const days=Object.entries(m.perDay).sort((a,b)=>b[0].localeCompare(a[0]))
+    .map(([date,entry])=>`<div class="task"><span>${fmt(date)}</span><b>${time(entry.seconds)} · ${entry.sessions} ${tr()?'seans':'sessions'}</b></div>`).join('');
+  return `<section class="card focus-history"><h2>${tr()?'Pomodoro çalışma analizi':'Pomodoro focus analysis'}</h2>
+    <p class="mut">${tr()?'Kaydedilen gerçek odak süresi; tamamlanan seanslar ayrıca sayılır.':'Recorded focus time; completed sessions are counted separately.'}</p>
+    <div class="focus-history-totals"><div><small>${tr()?'Bu hafta':'This week'}</small><b>${time(w.seconds)}</b><span>${w.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div>
+    <div><small>${tr()?'Bu ay':'This month'}</small><b>${time(m.seconds)}</b><span>${m.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div></div>
+    <h3>${tr()?'Gün gün (bu ay)':'Day by day (this month)'}</h3>
+    ${days||`<p class="mut">${tr()?'Henüz kayıtlı odak süresi yok.':'No focus time logged yet.'}</p>`}
+  </section>`;
+}
 function persistPomodoroState(){
   if(!A)return;
   A.pomo={
     w:pm.w,b:pm.b,ph:pm.ph,
     left:pm.run?Math.max(0,Math.ceil((pm.end-Date.now())/1000)):pm.left,
-    run:!!pm.run,end:pm.run?pm.end:0,n:pm.n,lg:pm.lg,noticeFive:!!pm.noticeFive,updatedAt:Date.now()
+    run:!!pm.run,end:pm.run?pm.end:0,n:pm.n,lg:pm.lg,noticeFive:!!pm.noticeFive,segmentStart:pm.segmentStart||0,updatedAt:Date.now()
   };
   save();
 }
@@ -3396,7 +3492,7 @@ function restorePomodoroState(){
     run:saved.run?1:0,
     end:Number.isFinite(end)&&end>0?end:0,
     n:Number.isFinite(Number(saved.n))?Math.max(0,Math.floor(Number(saved.n))):0,
-    lg:saved.lg?1:0,noticeFive:!!saved.noticeFive,iv:0
+    lg:saved.lg?1:0,noticeFive:!!saved.noticeFive,segmentStart:Number(saved.segmentStart)||0,iv:0
   };
   if(A?.stopwatch?.running){clearInterval(pm.swI);pm.swI=setInterval(swRender,40)}
   if(pm.run&&pm.end){
@@ -3556,6 +3652,7 @@ P.pomo=()=>{
   ${stopwatchView==='timer'?`<div id="sw" class="sw-display">${stopwatchFormat(swElapsed())}</div>`:`<div class="chrono-dial" role="img" aria-label="${tr()?'Analog kronometre':'Analog stopwatch'}">${CHRONO_TICKS}<div class="chrono-mini">${[0,10,20].map(v=>{const a=v*Math.PI/15;return `<span class="chrono-number" style="left:${50+37*Math.sin(a)}%;top:${50-37*Math.cos(a)}%">${v}</span>`}).join('')}<div id="chrono-sub-hand" class="chrono-hand" style="top:12%;height:40%"></div></div><div id="chrono-hand" class="chrono-hand"></div><div class="chrono-pivot"></div><div id="chrono-digital" class="chrono-digital">${stopwatchFormat(swElapsed())}</div></div>`}
   <div class="row stopwatch-actions"><button onclick="swStart()" ${A.stopwatch.running?'disabled':''}>${tr()?'Başlat':'Start'}</button><button class="g" onclick="swStop()" ${A.stopwatch.running?'':'disabled'}>${tr()?'Durdur':'Stop'}</button><button class="g" onclick="lap()" ${A.stopwatch.running?'':'disabled'}>Lap</button><button class="g" onclick="swR()">${t('reset')}</button></div><div class="laps">${laps}</div>
   <p class="mut" style="text-align:center">${tr()?'Sağa/sola kaydırarak kronometre ile saat arasında geçebilirsin.':'Swipe horizontally to switch between stopwatch and clock.'}</p></div>`);
+  document.getElementById('mn')?.insertAdjacentHTML('beforeend',focusHistoryCard());
   pi();swRender();
 };
 
@@ -3564,7 +3661,7 @@ function pi(){
   l.textContent=pm.ph==='w'?`${t('session')} ${pm.n%5+1}/5 · ${fmtDuration(pm.w)}`:(pm.lg?t('longBreak'):t('break'));
   e.textContent=pm.run?`${t('pomoEnds')}: ${clk(pm.left*1000)}`:(pm.w>60&&pm.ph==='w'?`${pm.w} ${t('minutes')} · ${t('alreadyEnds')} ${clk(pm.left*1000)}`:'');updatePomoOverlay();
 }
-function setP(w,b){clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,end:0,n:0,lg:0,noticeFive:false,iv:0};persistPomodoroState();document.title=TITLE;closePomoOverlay();P.pomo()}
+function setP(w,b){if(pm.run&&pm.ph==='w')logFocusSegment(Date.now(),pm.segmentStart||Date.now());clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,end:0,n:0,lg:0,noticeFive:false,iv:0};persistPomodoroState();document.title=TITLE;closePomoOverlay();P.pomo()}
 let editIdx=-1;
 function editP(i){const p=A.presets[i];$('#cw').value=p.w;$('#cb').value=p.b;editIdx=i}
 function delP(i){A.presets.splice(i,1);save();P.pomo()}
@@ -3579,12 +3676,14 @@ function pTick(silent=false){
     if(!silent&&transitions===0&&document.visibilityState==='visible')beep();
     let nextMinutes;
     if(pm.ph==='w'){
+      logFocusSegment(pm.end,pm.segmentStart||pm.end-pm.w*60000,true);
       pm.n++;pm.ph='b';pm.lg=pm.n%5===0?1:0;
       const breaks=Array.isArray(A&&A.presets)?A.presets.map(p=>Number(p.b)).filter(v=>Number.isFinite(v)&&v>0):[];
       nextMinutes=pm.lg?Math.max(pm.b,...breaks):pm.b;
     }else{
       pm.ph='w';pm.lg=0;nextMinutes=pm.w;
     }
+    pm.segmentStart=pm.end;
     pm.end+=Math.max(1,nextMinutes)*60000;
     transitions++;changed=true;
   }
@@ -3600,9 +3699,9 @@ function pTick(silent=false){
 function pS(){
   prepareAudio();
   if(pm.run){
-    pTick(true);clearInterval(pm.iv);pm.iv=0;pm.run=0;pm.end=0;
+    pTick(true);if(pm.ph==='w')logFocusSegment(Date.now(),pm.segmentStart||Date.now());clearInterval(pm.iv);pm.iv=0;pm.run=0;pm.end=0;pm.segmentStart=0;
   }else{
-    pm.run=1;pm.end=Date.now()+Math.max(1,pm.left)*1000;
+    pm.run=1;pm.segmentStart=Date.now();pm.end=Date.now()+Math.max(1,pm.left)*1000;
     if(document.visibilityState==='visible')requestAnimationFrame(()=>beep());
     clearInterval(pm.iv);pm.iv=setInterval(()=>pTick(),500);
     recordActivity();if(!pomoPipWindow||pomoPipWindow.closed)openPomoOverlay();
@@ -3610,8 +3709,9 @@ function pS(){
   persistPomodoroState();pi();updatePomoOverlay();
 }
 function pR(){
+  if(pm.run&&pm.ph==='w')logFocusSegment(Date.now(),pm.segmentStart||Date.now());
   clearInterval(pm.iv);
-  pm={...pm,run:0,ph:'w',left:pm.w*60,end:0,n:0,lg:0,noticeFive:false,iv:0};
+  pm={...pm,run:0,ph:'w',left:pm.w*60,end:0,n:0,lg:0,noticeFive:false,segmentStart:0,iv:0};
   persistPomodoroState();document.title=TITLE;closePomoOverlay();if(pg==='pomo')P.pomo();
 }
 function swS(){
@@ -3822,6 +3922,7 @@ function confirmReset(){
   const safe={u:A.u,nick:A.nick,bio:A.bio,pw:A.pw||'',email:A.email,phone:A.phone,authUid:A.authUid,accountOrigin:A.accountOrigin,loginMethod:A.loginMethod,googleConnected:A.googleConnected,theme:A.theme};
   clearInterval(pm.iv);clearInterval(pm.swI);
   const fresh=newAcc(safe.u,safe.nick,safe.bio,safe.pw,safe.email,safe.phone);
+  if(!A.progressPolicy)delete fresh.progressPolicy;else fresh.progressPolicy=A.progressPolicy;
   fresh.authUid=safe.authUid;fresh.accountOrigin=safe.accountOrigin;fresh.loginMethod=safe.loginMethod;fresh.googleConnected=safe.googleConnected;fresh.mail=safe.email;fresh.theme=safe.theme;fresh.pctFrom=today();
   DB.accounts[safe.u]=fresh;A=fresh;
   pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,lg:0,iv:0,sw:0,swT:0,swI:0};
@@ -4268,6 +4369,21 @@ async function sbPull(){
   if(row?.data&&(!row.data||typeof row.data!=='object'||Array.isArray(row.data)))throw new Error('Invalid cloud data');
   return row?.data||null;
 }
+// The database owns the old/new-user cutoff; do not infer it from a missing
+// browser cache or an absent profile row.
+async function sbProgressPolicy(expectedUid){
+  if(!expectedUid||sbSession()?.user?.id!==expectedUid)return null;
+  try{
+    const mode=await sb('/rest/v1/rpc/iydu_progress_policy',{method:'POST',body:{}});
+    if(sbSession()?.user?.id!==expectedUid)return null;
+    return mode==='active-days'?'activity-7d-v1':mode==='daily'?'daily':null;
+  }catch(_){return null}
+}
+function applyServerProgressPolicy(account,mode){
+  if(!account||typeof account!=='object')return;
+  if(mode==='activity-7d-v1')account.progressPolicy='activity-7d-v1';
+  else if(mode==='daily')delete account.progressPolicy;
+}
 async function sbGoogleQuickResumeAllowed(){
  try{const result=await sb('/rest/v1/rpc/iydu_quick_resume_status',{method:'POST',body:{}});return result?.allowed===true}catch(_){return false}
 }
@@ -4281,11 +4397,14 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     if(window.IYAccount&&!await IYAccount.checkAccess(user))return true;
     const remote=await sbPull();
+    const progressPolicy=await sbProgressPolicy(user.id);
+    if(sbSession()?.user?.id!==user.id)return false;
     // A slow profile request must not carry a login across the 30-minute boundary.
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
     const meta=user.user_metadata||{};
     const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
+    applyServerProgressPolicy(a,progressPolicy);
     a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
     if(user.app_metadata?.providers?.includes('google')){a.googleConnected=true;if(!a.loginMethod)a.loginMethod='google'}
     v13ProtectLegacyCollision(a.u,user.id);
