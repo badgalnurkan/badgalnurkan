@@ -148,3 +148,35 @@ test('stale RPC responses and offline connections cannot overwrite account progr
  context.applyPolicy(existing,null);
  assert.equal(existing.progressPolicy,'activity-7d-v1');
 });
+
+test('focus segments split correctly at midnight and month boundary',()=>{
+ const context={D:d=>d.toISOString().slice(0,10)};
+ vm.createContext(context);
+ vm.runInContext(extract('function focusSummary(', 'function focusHistoryCard(')+'\nthis.focusSummary=focusSummary;',context);
+ const end=Date.parse('2026-12-01T00:10:00Z');
+ const entry={at:end,seconds:1200,completed:true};
+ const november=context.focusSummary([entry],'2026-11-01','2026-11-30');
+ const december=context.focusSummary([entry],'2026-12-01','2026-12-31');
+ assert.equal(november.seconds,600);
+ assert.equal(november.perDay['2026-11-30'].seconds,600);
+ assert.equal(november.sessions,0);
+ assert.equal(december.seconds,600);
+ assert.equal(december.perDay['2026-12-01'].seconds,600);
+ assert.equal(december.sessions,1);
+});
+test('Pomodoro history entries stay on their original account during switches',()=>{
+ const accountOne={focusHistory:[]},accountTwo={focusHistory:[]};
+ const context={A:accountOne};
+ vm.createContext(context);
+ vm.runInContext(extract('function logFocusSegment(', 'function focusSummary(')+'\nthis.logFocusSegment=logFocusSegment;',context);
+ const first=Date.parse('2026-11-18T12:00:00Z');
+ context.logFocusSegment(first,first-300000,true);
+ context.A=accountTwo;
+ context.logFocusSegment(first+360000,first+180000,false);
+ assert.equal(accountOne.focusHistory.length,1);
+ assert.equal(accountTwo.focusHistory.length,1);
+ assert.equal(accountOne.focusHistory[0].seconds,300);
+ assert.equal(accountOne.focusHistory[0].completed,true);
+ assert.equal(accountTwo.focusHistory[0].seconds,180);
+ assert.equal(accountTwo.focusHistory[0].completed,false);
+});
