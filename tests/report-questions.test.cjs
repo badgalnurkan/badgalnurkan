@@ -14,7 +14,7 @@ function fixture(){
  vm.runInContext(`
  ${extract('const RQ_EN=','const NAV_KEYS=')}
  function rqFor(){return DB.lang==='tr'?RQ_TR:RQ_EN}
- ${extract('function reportQuestionId(text){','/* Weekly/monthly reports')}
+ ${extract("function periodDefaultQuestions(kind,key,scope='review'){",'/* Weekly/monthly reports')}
  ${extract('function repCard(title,per,a,b,pa,pb,key,nk,defs)','/* ---- gecmis raporlar')}
  ${extract('function reportDetailView(){','P.rep=()=>{')}
  this.f={reportQuestionText,reportQuestionForPeriod,makeReportQuestion,qa,finishReportAnswer,commitReportGroup,addQ,addRandQ,delQ,repCard,reportDetailView,
