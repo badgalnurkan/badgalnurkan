@@ -67,12 +67,13 @@ jobs:
             if(!r.ok||!d.ok)throw Error('Account backend not reachable');
           })().catch(e=>{console.error(e);process.exitCode=1});
           NODE
-      - name: Install browsers for mobile date regression
-        run: |
-          npm install --no-save --ignore-scripts --package-lock=false playwright@1.56.1
-          npx playwright install chromium webkit
+      - name: Install browser test harness
+        run: npm install --no-save --ignore-scripts --package-lock=false playwright@1.56.1
       - name: Check project date widths in Chromium and WebKit
-        run: node tests/account-security.browser.cjs
+        run: |
+          docker run --rm --ipc=host -v "$PWD:/work" -w /work \
+            mcr.microsoft.com/playwright:v1.56.1-noble \
+            node tests/account-security.browser.cjs
       - name: Verify the published custom domain
         if: github.event_name == 'push'
         run: |
