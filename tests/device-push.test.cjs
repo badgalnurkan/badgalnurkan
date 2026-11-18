@@ -153,3 +153,19 @@ test('device push worker suppresses events after logout and for another account'
  await push({owner:UID,kind:'study',id:'after-logout'});
  assert.equal(notifications.length,1,'old notifications must be suppressed after logout');
 });
+
+test('signed-out users cannot silently subscribe or request notification permission',async()=>{
+ const {context,calls,values}=fixture({permission:'default'});
+ context.A=null;
+ await context.window.IYPush.enable();
+ assert.equal(calls.permission,0);
+ assert.equal(calls.register,0);
+ assert.equal(calls.save.length,0);
+ assert.match(values.status,/Sign in/);
+});
+test('an installed iOS Home Screen web app may explicitly opt into push',async()=>{
+ const {context,calls}=fixture({userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)',standalone:true});
+ assert.equal(context.window.IYPush.needsHomeScreen(),false);
+ await context.window.IYPush.enable();
+ assert.equal(calls.save.length,1);
+});
