@@ -3,10 +3,11 @@ const { chromium, webkit }=require('playwright');
 const {spawn}=require('node:child_process'),assert=require('node:assert/strict');
 (async()=>{
  const server=spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
+ let browser;
  try{
   for(let n=0;n<50;n++){try{if((await fetch('http://127.0.0.1:4173')).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
   for(const [engine,type] of [['chromium',chromium],['webkit',webkit]]){
-   const browser=await type.launch();
+   browser=await type.launch();
    for(const width of [320,375,390,430,768,1440]){
     const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:2});
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -59,6 +60,21 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await productivity.mouse.up();
    await productivity.waitForFunction(()=>!taskReorder&&A.tasks[2].t==='Güncellenmiş görev');
    assert.deepEqual(await productivity.evaluate(()=>A.tasks.map(({t})=>t)),['İkinci görev','Üçüncü görev','Güncellenmiş görev'],engine+' pointer reorder');
+   if(engine==='chromium'){
+    const touch=await productivity.context().newCDPSession(productivity);
+    await touch.send('Emulation.setTouchEmulationEnabled',{enabled:true});
+    const first=productivity.locator('#tl .task-grip').first(),neighbour=productivity.locator('#tl .task-grip').nth(1);
+    await first.scrollIntoViewIfNeeded();
+    const a=await first.boundingBox(),b=await neighbour.boundingBox();
+    const point=(box)=>({x:Math.round(box.x+box.width/2),y:Math.round(box.y+box.height/2)});
+    const gesture=(type,points)=>touch.send('Input.dispatchTouchEvent',{type,touchPoints:points});
+    await gesture('touchStart',[point(a)]);await gesture('touchMove',[point(b)]);
+    await productivity.waitForFunction(()=>taskReorder?.active&&taskReorder.destination===1);
+    await gesture('touchCancel',[]);
+    await productivity.waitForFunction(()=>!taskReorder);
+    assert.deepEqual(await productivity.evaluate(()=>A.tasks.map(task=>task.t)),['İkinci görev','Üçüncü görev','Güncellenmiş görev'],'cancelled touch keeps saved order');
+    await touch.detach();
+   }
    await productivity.evaluate(()=>{
      const note=addD(today(),3);
      A.future={[note]:'Üç gün sonra hatırla'};
@@ -168,5 +184,5 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
 
    await browser.close();console.log('PASS '+engine+': date form at six widths and manual welcome entry');
   }
- }finally{server.kill()}
+ }finally{try{await browser?.close()}finally{server.kill()}}
 })().catch(e=>{console.error(e);process.exitCode=1});
