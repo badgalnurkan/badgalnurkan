@@ -7,7 +7,10 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
  let browser;
  try{
   for(let n=0;n<50;n++){try{if((await fetch('http://127.0.0.1:4173')).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
-  for(const [engine,type] of [['chromium',chromium],['webkit',webkit],['firefox',firefox]]){
+  const suite=process.env.IYD_BROWSER_SUITE;
+  const uiEngines=[['chromium',chromium],['webkit',webkit]];
+  const engines=suite==='firefox'?[['firefox',firefox]]:suite==='ui'?uiEngines:[...uiEngines,['firefox',firefox]];
+  for(const [engine,type] of engines){
    browser=await type.launch();
    await verifyRecovery(browser,engine);
    if(engine==='firefox'){await browser.close();continue}

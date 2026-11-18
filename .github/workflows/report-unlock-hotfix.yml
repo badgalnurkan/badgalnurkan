@@ -115,7 +115,7 @@ jobs:
           NODE
 
   browser-e2e:
-    name: Chromium, WebKit and Firefox UI
+    name: Chromium and WebKit UI
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -131,4 +131,27 @@ jobs:
       - name: Build isolated test site
         run: python3 scripts/build-preview.py
       - name: Check mobile UI and cross-browser account recovery
+        env:
+          IYD_BROWSER_SUITE: ui
         run: node tests/account-security.browser.cjs
+
+  firefox-recovery:
+    name: Firefox password recovery
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Firefox and the pinned test driver
+        run: |
+          npm install --no-save --ignore-scripts --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps firefox
+      - name: Verify same-browser and cross-browser password reset
+        env:
+          IYD_BROWSER_SUITE: firefox
+        run: |
+          python3 scripts/build-preview.py
+          node tests/account-security.browser.cjs
