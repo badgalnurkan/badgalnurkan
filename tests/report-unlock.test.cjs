@@ -31,7 +31,7 @@ ${extract('function qa(k,i,el,','/* Weekly/monthly reports')}
 ${extract('function newAcc(u,n,b,pw,em,ph)','const findUser=')}
 ${extract('function reportAvailability(kind,td=today()){','let pm=')}
 this.fixture={reportPeriodEnded,latestUnlockedReportPeriod,reportInitialUnlockDate,
-  pendingReportCard,repCard,newAcc,norm,qa,addRandQ,lockQ,calendarReportPeriod,periodReportDetail};
+  pendingReportCard,repCard,newAcc,norm,qa,addRandQ,lockQ,calendarReportPeriod,periodReportDetail,canAnswerReport,reportPlanningOverview};
 `;
 const context={
   A:{qs:{},ql:{},pctFrom:'2026-11-09',reportStart:'2026-11-09'},
@@ -40,7 +40,7 @@ const context={
   defQ:kind=>kind==='week'?['Weekly 1','Weekly 2','Weekly 3']:['Monthly 1','Monthly 2','Monthly 3'],
   items:()=>[],recordActivity(){context.saves=(context.saves||0)+1},rqFor:()=>['A random follow-up question'],save:()=>{context.saves=(context.saves||0)+1},
   sysTheme:()=> 'light',M:h=>{context.rendered=h},
-  st:()=>({t:2,d:1,p:50,by:{}}),qb:()=>'',esc:x=>x,today:()=>context.current,
+  st:()=>({t:2,d:1,p:50,by:{}}),qb:()=>'',esc:x=>x,today:()=>context.current,istanbulDayKey:()=>context.current,
 };
 vm.createContext(context);
 vm.runInContext(code,context);
@@ -229,38 +229,20 @@ test('joining on the last day of the month starts with the next full month',()=>
   assert.match(context.rendered,/2026-12-01 – 2026-12-31/);
 });
 
-test('both reports retain three defaults, random question addition and two-step answer locking',()=>{
-  context.A={pctFrom:'2026-11-01',reportStart:'2026-11-01',qs:{},ql:{}};
-  context.current='2026-11-30';
-  context.P.rep();
-  const currentWeekQuestions=Array.from(context.A.qs['2026-11-30'],q=>q.q);
-  const currentMonthQuestions=Array.from(context.A.qs['2026-11'],q=>q.q);
-  assert.equal(currentWeekQuestions.length,3);
-  assert.equal(currentMonthQuestions.length,3);
-  assert.ok(currentWeekQuestions.every(Boolean));
-  assert.ok(currentMonthQuestions.every(Boolean));
-  assert.notDeepEqual(currentWeekQuestions,currentMonthQuestions);
-  assert.equal(context.A.qs['2026-12'].length,3); // Monthly keys are YYYY-MM
-  const nextWeek=latestUnlockedReportPeriod('week',context.current).nk;
-  const nextMonth=latestUnlockedReportPeriod('month',context.current).nk;
-  assert.equal(context.A.qs[nextWeek].length,3);
-  assert.equal(context.A.qs[nextMonth].length,3);
-  addRandQ(nextWeek);
-  addRandQ(nextMonth);
-  assert.equal(context.A.qs[nextWeek].length,4);
-  assert.equal(context.A.qs[nextMonth].length,4);
-  assert.equal(context.A.qs[nextWeek][3].q,'A random follow-up question');
-  assert.equal(context.A.qs[nextMonth][3].q,'A random follow-up question');
-  const input={value:'A durable answer',parentElement:{nextElementSibling:{textContent:''}}};
-  qa(nextMonth,0,input);
-  assert.equal(context.A.qs[nextMonth][0].a,'A durable answer');
-  const button={dataset:{},textContent:''};
-  lockQ('2026-11',button);
-  assert.equal(context.A.ql['2026-11'],undefined,'First tap must ask for confirmation');
-  lockQ('2026-11',button);
-  assert.equal(context.A.ql['2026-11'],1);
-  assert.equal(context.A.qs[nextMonth][0].a,'A durable answer',
-    'Locking an old month must not erase next-month draft answers');
+test('weekly and monthly groups keep three defaults, random additions and answer locking on their closing dates',()=>{
+ context.A={pctFrom:'2026-11-01',qs:{},ql:{}};
+ const picks=[];
+ for(const [kind,day] of [['week','2026-11-29'],['month','2026-11-30']]){
+  context.current=day;context.P.rep();
+  const {key,nk}=latestUnlockedReportPeriod(kind,day),group=context.A.qs[key];
+  assert.equal(group.length,3);picks.push(Array.from(group,q=>q.q));
+  addRandQ(key);assert.equal(group.length,4);assert.equal(group[3].q,'A random follow-up question');
+  const next=context.A.planningQs[nk],input={value:'A durable plan',parentElement:{nextElementSibling:{textContent:''}}};
+  qa(nk,0,input,'plan');assert.equal(next[0].a,'A durable plan');
+  const button={dataset:{},textContent:''};lockQ(key,button);assert.equal(context.A.ql[key],undefined);
+  lockQ(key,button);assert.equal(context.A.ql[key],1);assert.equal(next[0].a,'A durable plan');
+ }
+ assert.notDeepEqual(...picks);
 });
 
 
@@ -328,4 +310,26 @@ test('actual monthly cards reopen on every last day and relock on the next first
   context.A={pctFrom:'2026-01-01',reportStart:'2026-01-01',qs:{},ql:{}};context.current=last;context.P.rep();assert.doesNotMatch(context.rendered,/🔒 Monthly report/);
   context.current=next;context.P.rep();assert.match(context.rendered,/🔒 Monthly report/);assert.ok(context.rendered.includes('opensOn '+nextEnd));assert.match(context.rendered,/Previous month report/);
  }
+});
+
+test('question windows agree on overview and detail, including leap days and a simultaneous Sunday/month end',()=>{
+ const {reportPlanningOverview,canAnswerReport,periodReportDetail}=context.fixture;
+ context.A={pctFrom:'2026-01-01',qs:{},ql:{}};
+ for(const [day,week,month] of [['2026-11-18',false,false],['2026-11-29',true,false],['2026-11-30',false,true],['2026-12-01',false,false],['2027-01-31',true,true],['2028-02-28',false,false],['2028-02-29',false,true]]){
+  context.current=day;
+  const overview=reportPlanningOverview();
+  for(const [kind,open] of [['week',week],['month',month]]){
+   const period=context.fixture.calendarReportPeriod(kind,day);
+   assert.equal(canAnswerReport(period.key,'review'),open,day+' '+kind);
+   assert.equal(overview.includes('report-group-plan-'+period.nk+'"'),open);
+   assert.equal(periodReportDetail(kind).includes('report-group-review-'+period.key+'"'),open);
+   assert.doesNotMatch(periodReportDetail(kind,true),/report-group-(?:review|plan)-/);
+  }
+ }
+});
+test('a page left open past midnight cannot overwrite answers or add questions',()=>{
+ context.A={pctFrom:'2026-01-01',qs:{},ql:{}};context.current='2026-11-29';context.P.rep();
+ const key='2026-11-23',input={value:'Sunday draft'};qa(key,0,input);const snapshot=JSON.stringify(context.A);
+ context.current='2026-11-30';input.value='Late edit';qa(key,0,input);addRandQ(key);lockQ(key,{dataset:{c:'1'}});
+ assert.equal(JSON.stringify(context.A),snapshot);
 });

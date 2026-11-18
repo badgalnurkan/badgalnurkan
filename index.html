@@ -1444,14 +1444,23 @@ body{font-size:1rem!important}
  #mn .report-heading .report-more{width:auto!important;min-width:0!important;max-width:7.5rem!important;white-space:normal!important;overflow-wrap:normal;line-height:1.25}
 }
 .task-grip{cursor:grab;touch-action:none;flex:0 0 2.6rem;user-select:none;font-size:1.05rem;line-height:1}
-.task-grip.dragging{cursor:grabbing;opacity:.6}
-.task.task-drop-target{outline:2px dashed var(--acc);outline-offset:2px}
+.task-grip.dragging{cursor:grabbing}
+#tl.task-ordering{isolation:isolate;overflow:visible}
+#tl.task-ordering .task{position:relative;transition:transform 170ms cubic-bezier(.2,.75,.25,1);will-change:transform}
+#tl.task-ordering .task.is-lifted{z-index:2;transition:box-shadow 140ms ease;border-color:var(--acc);box-shadow:0 6px 18px rgba(0,0,0,.18)}
+#tl.task-ordering .task.is-settling{transition:transform 150ms cubic-bezier(.2,.75,.25,1),box-shadow 150ms ease;box-shadow:none}
+@media(prefers-reduced-motion:reduce){#tl.task-ordering .task,#tl.task-ordering .task.is-lifted,#tl.task-ordering .task.is-settling{transition:none;box-shadow:none}}
+
 .task-label{min-width:0;flex:1;overflow-wrap:anywhere}
 @media(max-width:600px){#mn .task .task-label{flex-basis:8rem}}
 .focus-history-totals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;margin:1rem 0}
 .focus-history-totals>div{display:flex;flex-direction:column;gap:.15rem;padding:1rem;border:1px solid var(--ln);border-radius:14px;min-width:0}
 .focus-history-totals b{font-size:1.2rem}.focus-history-totals span,.focus-history-totals small{color:var(--mut);font-size:.78rem}
 .focus-history .task{justify-content:space-between;flex-wrap:wrap;gap:.6rem}
+.focus-history-details{margin-top:.65rem}.focus-history-details summary{cursor:pointer;width:fit-content;padding:.55rem .3rem;color:var(--acc);font-weight:700}.focus-history-details summary small{font-weight:400}
+.focus-history-details .collapse,.focus-history-details[open] .expand{display:none}.focus-history-details[open] .collapse{display:inline}
+.focus-history-older{max-height:18rem;max-height:min(50svh,18rem);overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+
 @media(max-width:400px){.focus-history-totals{grid-template-columns:1fr}}
 .report-planning-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.9rem}
 .report-plan-period{min-width:0;border:1px solid var(--ln);border-radius:14px;padding:1rem;overflow-wrap:anywhere}
@@ -1599,6 +1608,7 @@ function softPaint(){
 }
 let pageSwapTimer=0;
 function goTo(v,p,push=true){
+  if(typeof taskReorder!=='undefined'&&taskReorder)cancelTaskReorder();
   clearTimeout(pageSwapTimer);pageSwapTimer=0;
   const same=A&&v==='app'&&view==='app'&&document.getElementById('mn')&&document.querySelector('#nav-aside,aside');
   view=v;pg=p;msg='';selDay=null;
@@ -2132,8 +2142,13 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-17-account-security-domain';
+const SITE_RELEASE='2026-11-18-report-window-task-motion';
 const SITE_CHANGES=[
+ {date:'2026-11-18',trTitle:'Rapor soruları, görev sırası ve odak özeti',enTitle:'Report questions, task order and focus summary',items:[
+ ['Haftalık sorular pazar günü, aylık sorular ayın son günü açılır.','Weekly questions open on Sundays and monthly questions on the last day of the month.'],
+ ['Görevi üç çizgiden sürüklerken diğer görevler yer açar.','Drag a task by its handle and the other tasks slide into place.'],
+ ['Pomodoro analizinde üç gün görünür. Diğer günleri Daha fazlası ile açabilirsin.','The Pomodoro analysis shows three days. Open More details to see the remaining days.']
+ ]},
  {date:'2026-11-17',trTitle:'Hesap güvenliği ve yeni alan adı',enTitle:'Account security and new domain',items:[
  ['Hesap ve profil e-postası sunucudan doğrulanır; e-posta ve şifre işlemleri gerçek Auth hizmetini kullanır.','Account and profile email is server verified; email and password actions use the real Auth service.'],
  ['Uygulama şifreleri 90 günde bir yenilenir. Geçici kapatma e-posta koduyla, silme 30 günlük geri alma süresiyle korunur.','App passwords renew every 90 days. Email codes protect deactivation; deletion includes a 30-day recovery period.'],
@@ -2740,6 +2755,16 @@ function updateIstanbulClock(){
   if(!A||view!=='app'||!trigger)return;
   const day=istanbulDayKey();
   if(trigger.dataset.day===day)return;
+  if(pg==='rep'){
+    const previous=trigger.dataset.day;
+    if(previous&&previous<day){
+      for(const group of document.querySelectorAll('[id^="report-group-"]')){
+        const id=/^report-group-(review|plan)-(\d{4}-\d{2}(?:-\d{2})?)$/.exec(group.id);
+        if(id)commitReportGroup(id[2],id[1],previous);
+      }
+    }
+    P.rep();
+  }
   trigger.dataset.day=day;
   trigger.textContent=fmt(day);
   const mini=$('#mini-cal');
@@ -3008,7 +3033,7 @@ P.todo=()=>{
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
 function vibrateTask(){try{if(navigator.vibrate)navigator.vibrate(12)}catch(_){}}
-const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}" data-task-index="${i}"><button type="button" class="g s task-grip" aria-label="${tr()?'Görevi taşı':'Reorder task'}" title="${tr()?'Sürükle veya ok tuşlarını kullan':'Drag or use arrow keys'}" onpointerdown="startTaskReorder(event,${i})" onpointermove="previewTaskReorder(event)" onpointerup="finishTaskReorder(event)" onpointercancel="cancelTaskReorder()" onkeydown="taskReorderKey(event,${i})">☰</button><span class="task-label">${esc(x.t)}</span><button class="ck ${x.s==='done'?'on':''}" aria-label="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s==='miss'?'on':''}" aria-label="${t('notDone')}" onclick="mk(${i},'miss')">✕</button>${x.s?`<button class="g s" onclick="planFromTask(${i})">${tr()?'Yarına planla':'Plan tomorrow'}</button>`:''}<button class="g s" onclick="editTask(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
+const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}" data-task-index="${i}"><button type="button" class="g s task-grip" aria-label="${tr()?'Görevi taşı':'Reorder task'}" title="${tr()?'Sürükle veya ok tuşlarını kullan':'Drag or use arrow keys'}" onpointerdown="startTaskReorder(event,${i})" onpointermove="previewTaskReorder(event)" onpointerup="finishTaskReorder(event)" onpointercancel="cancelTaskReorder(event)" onlostpointercapture="cancelTaskReorder(event)" onkeydown="taskReorderKey(event,${i})">☰</button><span class="task-label">${esc(x.t)}</span><button class="ck ${x.s==='done'?'on':''}" aria-label="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s==='miss'?'on':''}" aria-label="${t('notDone')}" onclick="mk(${i},'miss')">✕</button>${x.s?`<button class="g s" onclick="planFromTask(${i})">${tr()?'Yarına planla':'Plan tomorrow'}</button>`:''}<button class="g s" onclick="editTask(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
 let taskReorder=null,taskEditContext=null;
 function moveTask(from,to){
   if(!A||!Number.isInteger(from)||!Number.isInteger(to)||from<0||to<0||from>=A.tasks.length||to>=A.tasks.length||from===to)return false;
@@ -3017,34 +3042,89 @@ function moveTask(from,to){
   save();P.todo();return true;
 }
 function taskReorderKey(event,index){
-  if(event.key!=='ArrowUp'&&event.key!=='ArrowDown')return;
+  if(event.key==='Escape'){cancelTaskReorder();return}
+  if(taskReorder||!['ArrowUp','ArrowDown'].includes(event.key))return;
   event.preventDefault();
   const destination=index+(event.key==='ArrowUp'?-1:1);
-  if(moveTask(index,destination))document.querySelector('[data-task-index="'+destination+'"] .task-grip')?.focus();
+  if(moveTask(index,destination))document.querySelector('[data-task-index="'+destination+'"] .task-grip')?.focus({preventScroll:true});
 }
+window.addEventListener('blur',()=>cancelTaskReorder());
 function startTaskReorder(event,index){
-  if(event.button!==0||!A?.tasks?.[index])return;
-  taskReorder={owner:A,task:A.tasks[index],pointerId:event.pointerId,x:event.clientX,y:event.clientY};
-  try{event.currentTarget.setPointerCapture(event.pointerId)}catch(_){}
-  event.currentTarget.classList.add('dragging');
+  if(taskReorder||event.isPrimary===false||event.button!==0||!A?.tasks?.[index])return;
+  const grip=event.currentTarget,list=grip.closest('#tl');if(!list)return;
+  const nodes=[...list.querySelectorAll(':scope > [data-task-index]')];
+  if(nodes.length!==A.tasks.length||!nodes[index])return;
+  const listTop=list.getBoundingClientRect().top,rects=nodes.map(el=>el.getBoundingClientRect());
+  const tops=rects.map(r=>r.top-listTop),heights=rects.map(r=>r.height);
+  const slots=tops.map((top,i)=>top-tops[index]+(i>index?heights[i]-heights[index]:0));
+  let scroller=list.parentElement;
+  while(scroller&&!(scroller.scrollHeight>scroller.clientHeight+1&&/auto|scroll/.test(getComputedStyle(scroller).overflowY)))scroller=scroller.parentElement;
+  const drag={owner:A,task:A.tasks[index],index,destination:index,list,nodes,grip,tops,heights,slots,listTop,scroller:scroller||document.scrollingElement,
+    id:event.pointerId,startY:event.clientY,y:event.clientY,active:false,settling:false,frame:0,settleTimer:0};
+  taskReorder=drag;
+  try{grip.setPointerCapture(event.pointerId)}catch{}
+}
+function drawTaskReorder(drag){
+  const offset=drag.y-drag.startY+drag.listTop-drag.list.getBoundingClientRect().top;
+  const dy=Math.max(drag.slots[0],Math.min(drag.slots.at(-1),offset));
+  let target=0;
+  while(target+1<drag.slots.length&&dy>(drag.slots[target]+drag.slots[target+1])/2)target++;
+  if(target!==drag.destination){
+    drag.destination=target;
+    const order=drag.nodes.map((_,i)=>i);order.splice(drag.index,1);order.splice(target,0,drag.index);
+    let top=drag.tops[0];
+    order.forEach((original,slot)=>{
+      if(original!==drag.index)drag.nodes[original].style.transform='translateY('+(top-drag.tops[original])+'px)';
+      const gap=slot+1<order.length?drag.tops[slot+1]-drag.tops[slot]-drag.heights[slot]:0;
+      top+=drag.heights[original]+gap;
+    });
+  }
+  drag.nodes[drag.index].style.transform='translateY('+dy+'px)';
+}
+function taskDragFrame(drag){
+  drag.frame=0;
+  if(taskReorder!==drag||drag.settling)return;
+  if(A!==drag.owner||!drag.list.isConnected||A.tasks[drag.index]!==drag.task){cancelTaskReorder();return}
+  const scroller=drag.scroller,viewport=scroller===document.scrollingElement?{top:0,bottom:innerHeight}:scroller.getBoundingClientRect();
+  const edge=Math.min(64,(viewport.bottom-viewport.top)/5);
+  const speed=drag.y<viewport.top+edge?-Math.min(16,Math.ceil((viewport.top+edge-drag.y)/4)):drag.y>viewport.bottom-edge?Math.min(16,Math.ceil((drag.y-viewport.bottom+edge)/4)):0;
+  const previous=scroller.scrollTop;
+  if(speed)scroller.scrollTop+=speed;
+  drawTaskReorder(drag);
+  if(scroller.scrollTop!==previous)drag.frame=requestAnimationFrame(()=>taskDragFrame(drag));
 }
 function previewTaskReorder(event){
-  if(!taskReorder||taskReorder.pointerId!==event.pointerId)return;
-  document.querySelectorAll('.task-drop-target').forEach(el=>el.classList.remove('task-drop-target'));
-  document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-task-index]')?.classList.add('task-drop-target');
+  const drag=taskReorder;
+  if(!drag||drag.id!==event.pointerId||drag.settling)return;
+  drag.y=event.clientY;
+  if(!drag.active){
+    if(Math.abs(drag.y-drag.startY)<4)return;
+    drag.active=true;drag.list.classList.add('task-ordering');drag.grip.classList.add('dragging');drag.nodes[drag.index].classList.add('is-lifted');
+  }
+  if(!drag.frame)drag.frame=requestAnimationFrame(()=>taskDragFrame(drag));
 }
-function cancelTaskReorder(){
-  taskReorder=null;
-  document.querySelectorAll('.task-grip.dragging,.task-drop-target').forEach(el=>el.classList.remove('dragging','task-drop-target'));
+function cancelTaskReorder(event){
+  const drag=taskReorder;if(!drag||(event&&event.pointerId!==drag.id)||(event?.type==='lostpointercapture'&&drag.settling))return;
+  taskReorder=null;cancelAnimationFrame(drag.frame);clearTimeout(drag.settleTimer);
+  drag.list.classList.remove('task-ordering');drag.grip.classList.remove('dragging');
+  for(const row of drag.nodes){row.classList.remove('is-lifted','is-settling');row.style.removeProperty('transform')}
+  try{if(drag.grip.hasPointerCapture(drag.id))drag.grip.releasePointerCapture(drag.id)}catch{}
 }
 function finishTaskReorder(event){
-  const drag=taskReorder;
-  if(!drag||drag.pointerId!==event.pointerId)return;
-  const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-task-index]');
-  cancelTaskReorder();
-  if(A!==drag.owner||Math.hypot(event.clientX-drag.x,event.clientY-drag.y)<8)return;
-  const source=A.tasks.indexOf(drag.task),destination=Number(target?.dataset?.taskIndex);
-  if(target&&source>=0)moveTask(source,destination);
+  const drag=taskReorder;if(!drag||drag.id!==event.pointerId||drag.settling)return;
+  previewTaskReorder(event);
+  if(!drag.active){cancelTaskReorder();return}
+  cancelAnimationFrame(drag.frame);drawTaskReorder(drag);drag.settling=true;
+  const row=drag.nodes[drag.index];row.classList.add('is-settling');
+  row.style.transform='translateY('+drag.slots[drag.destination]+'px)';
+  const commit=()=>{
+    if(taskReorder!==drag)return;
+    const valid=A===drag.owner&&drag.list.isConnected&&A.tasks[drag.index]===drag.task;
+    cancelTaskReorder();
+    if(valid&&moveTask(drag.index,drag.destination))document.querySelector('[data-task-index="'+drag.destination+'"] .task-grip')?.focus({preventScroll:true});
+  };
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)commit();
+  else drag.settleTimer=setTimeout(commit,155);
 }
 function editTask(index){
   const task=A?.tasks?.[index];if(!task)return;
@@ -3210,11 +3290,21 @@ function reportQuestionStore(scope='review'){
   if(!A.planningQs||typeof A.planningQs!=='object'||Array.isArray(A.planningQs))A.planningQs={};
   return A.planningQs;
 }
+function reportQuestionsOpen(kind,day=istanbulDayKey()){
+ const period=calendarReportPeriod(kind,day);
+ return day===period.b&&day>=reportAvailability(kind,day).unlock;
+}
+function canAnswerReport(key,scope='review',day=istanbulDayKey()){
+ const kind=/^\d{4}-\d{2}$/.test(key)?'month':/^\d{4}-\d{2}-\d{2}$/.test(key)?'week':null;
+ if(!kind||!reportQuestionsOpen(kind,day))return false;
+ const period=calendarReportPeriod(kind,day);
+ return key===period.key||(scope==='plan'&&key===period.nk);
+}
 function reportQuestionForPeriod(question,key,scope='review'){
  const text=reportQuestionText(question);
  const id=question.qid==='custom'?'custom':(question.qid||reportQuestionId(question.q));
  if(scope!=='plan'||!id?.startsWith('plan.'))return text;
- const now=today(),current=key.length===7?key===now.slice(0,7):(key<=now&&now<=addD(key,6));
+ const now=istanbulDayKey(),current=key.length===7?key===now.slice(0,7):(key<=now&&now<=addD(key,6));
  if(!current)return text;
  return text.replace(/next week/gi,value=>value[0]==='N'?'This week':'this week')
    .replace(/next month/gi,value=>value[0]==='N'?'This month':'this month')
@@ -3227,7 +3317,8 @@ function reportQuestionLocks(scope='review'){
 }
 function reportLockedNotice(k){const year=Number(k.slice(0,4));return `<p class="report-lock-note" role="status">🔒 ${tr()?`Cevapların kilitlendi. ${year+1} yılının başında Yanıt arşivinden okuyabilirsin.`:`Your answers are locked. Read them in the Answer archive at the beginning of ${year+1}.`}</p>`}
 function reportAutoLockHint(){return `<p class="mut report-lock-hint">${tr()?'Tüm soruları cevaplayıp son alandan çıktığında bu grup otomatik kilitlenir. Cevaplar ilgili yılın sonuna kadar gizli kalır.':'This group locks automatically when every question is answered and you leave the last field. Answers stay hidden until that year ends.'}</p>`}
-function commitReportGroup(k,scope='review'){
+function commitReportGroup(k,scope='review',day=istanbulDayKey()){
+ if(!canAnswerReport(k,scope,day))return false;
  const questions=reportQuestionStore(scope)[k];
  if(reportQuestionLocks(scope)[k]||!Array.isArray(questions)||!questions.length||!questions.every(q=>String(q.a||'').trim()))return false;
  reportQuestionLocks(scope)[k]=1;save();
@@ -3235,12 +3326,12 @@ function commitReportGroup(k,scope='review'){
  const group=typeof document==='undefined'?null:document.getElementById('report-group-'+scope+'-'+k);if(group)group.innerHTML=reportLockedNotice(k);return true;
 }
 const qb=(k,arr,ro,scope='review')=>arr.map((x,i)=>`<label for="report-${scope}-${k}-${i}">${esc(reportQuestionForPeriod(x,k,scope))}</label><div class="qa"><textarea id="report-${scope}-${k}-${i}" rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this,'${scope}')" onblur="finishReportAnswer('${k}',${i},this,'${scope}')">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i},'${scope}')">${t('delete')}</button>`}</div><div class="qcap mut">${String(x.a||'').length}/400</div>`).join('');
-function qa(k,i,el,scope='review'){if(reportQuestionLocks(scope)[k])return;const question=reportQuestionStore(scope)[k]?.[i];if(!question)return;const previous=question.a;question.a=el.value.slice(0,400);if(question.a.trim()&&question.a!==previous)recordActivity();else save();const counter=el.parentElement?.nextElementSibling;if(counter)counter.textContent=question.a.length+'/400'}
+function qa(k,i,el,scope='review'){if(!canAnswerReport(k,scope)||reportQuestionLocks(scope)[k])return;const question=reportQuestionStore(scope)[k]?.[i];if(!question)return;const previous=question.a;question.a=el.value.slice(0,400);if(question.a.trim()&&question.a!==previous)recordActivity();else save();const counter=el.parentElement?.nextElementSibling;if(counter)counter.textContent=question.a.length+'/400'}
 function finishReportAnswer(k,i,el,scope='review'){qa(k,i,el,scope);commitReportGroup(k,scope)}
-function delQ(k,i,scope='review'){if(reportQuestionLocks(scope)[k])return;const questions=reportQuestionStore(scope)[k];if(!Array.isArray(questions)||!questions[i])return;questions.splice(i,1);commitReportGroup(k,scope);save();P.rep()}
-function addRandQ(k,scope='review'){if(reportQuestionLocks(scope)[k])return;const kind=k.length===7?'month':'week',R=scope==='plan'?(tr()?PLAN_RQ_TR[kind]:PLAN_RQ_EN[kind]):rqFor();(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(R[Math.floor(Math.random()*R.length)]));save();P.rep()}
-function addQ(k,scope='review'){if(reportQuestionLocks(scope)[k])return;const e=$('#nq-'+k),v=String(e?.value||'').trim().slice(0,150);if(v){(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(v,true));save();P.rep()}}
-function lockQ(k,b){if(reportQuestionLocks()[k])return;if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent=tr()?'Emin misin? Bu işlem geri alınamaz':'Are you sure? This cannot be undone';return}reportQuestionLocks()[k]=1;save();P.rep()}
+function delQ(k,i,scope='review'){if(!canAnswerReport(k,scope)||reportQuestionLocks(scope)[k])return;const questions=reportQuestionStore(scope)[k];if(!Array.isArray(questions)||!questions[i])return;questions.splice(i,1);commitReportGroup(k,scope);save();P.rep()}
+function addRandQ(k,scope='review'){if(!canAnswerReport(k,scope)||reportQuestionLocks(scope)[k])return;const kind=k.length===7?'month':'week',R=scope==='plan'?(tr()?PLAN_RQ_TR[kind]:PLAN_RQ_EN[kind]):rqFor();(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(R[Math.floor(Math.random()*R.length)]));save();P.rep()}
+function addQ(k,scope='review'){if(!canAnswerReport(k,scope)||reportQuestionLocks(scope)[k])return;const e=$('#nq-'+k),v=String(e?.value||'').trim().slice(0,150);if(v){(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(v,true));save();P.rep()}}
+function lockQ(k,b){if(!canAnswerReport(k)||reportQuestionLocks()[k])return;if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent=tr()?'Emin misin? Bu işlem geri alınamaz':'Are you sure? This cannot be undone';return}reportQuestionLocks()[k]=1;save();P.rep()}
 /* Weekly/monthly reports unlock on the last calendar day of their period.
    Keep showing the most recently unlocked period after the week/month changes. */
 function reportPeriodEnded(now,end){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}-\d{2}$/.test(String(end))&&now>=end}
@@ -3285,7 +3376,7 @@ function reportInitialUnlockDate(kind,start,fullPeriod=false){
   throw new RangeError('Invalid report kind');
 }
 function pendingReportCard(title,start,available){
-  const td=today();
+  const td=istanbulDayKey();
   const total=Math.max(1,dd(start,available)+1);
   const elapsed=Math.min(total,Math.max(0,dd(start,td)+1));
   const left=Math.max(0,dd(td,available));
@@ -3295,20 +3386,22 @@ function pendingReportCard(title,start,available){
 }
 function answerArchiveUnlocked(now,periodKey){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}(?:-\d{2})?$/.test(String(periodKey))&&Number(now.slice(0,4))>Number(periodKey.slice(0,4))}
 function repCard(title,per,a,b,pa,pb,key,nk,defs){
-  const td=today();
+  const td=istanbulDayKey();
   if(!reportPeriodEnded(td,b)){
     const tot=dd(a,b)+1,pass=dd(a,td)+1;
     return`<div class="card"><h2>🔒 ${title}</h2><p class="mut">${t('opensOn')} ${fmt(b)} — ${dd(td,b)} ${t('daysLeft')}</p><div class="bar"><i style="width:${Math.min(100,pass/tot*100)}%"></i></div></div>`;
   }
+  const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p;
+  const rows=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
+  const summary=`<div class="card"><h2>${title} <small class="mut" style="display:block;font-size:.75rem;font-weight:400">${fmt(a)} – ${fmt(b)}</small></h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}`;
+  if(td!==b||!canAnswerReport(key,'review',td))return summary+'</div>';
   if(!A.qs[nk])A.qs[nk]=periodDefaultQuestions(key.length===7?'month':'week',nk,'review');
   if(!A.qs[key])A.qs[key]=periodDefaultQuestions(key.length===7?'month':'week',key,'review');
   const kind=key.length===7?'month':'week',planning=reportQuestionStore('plan');
   if(!Array.isArray(planning[nk]))planning[nk]=periodDefaultQuestions(kind,nk,'plan');
-  const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p,cur=A.qs[key]||[],ro=!!reportQuestionLocks()[key],planRo=!!reportQuestionLocks('plan')[nk];
+  const cur=A.qs[key]||[],ro=!!reportQuestionLocks()[key],planRo=!!reportQuestionLocks('plan')[nk];
   const planIsCurrent=kind==='month'?nk===td.slice(0,7):(nk<=td&&td<=addD(nk,6));
-  const rows=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
-  return`<div class="card"><h2>${title} <small class="mut" style="display:block;font-size:.75rem;font-weight:400">${fmt(a)} – ${fmt(b)}</small></h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}
-<h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3><section id="report-group-review-${key}">${cur.length?(ro?(answerArchiveUnlocked(td,key)?qb(key,cur,true):reportLockedNotice(key)):reportAutoLockHint()+qb(key,cur,false)+`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
+  return summary+`<h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3><section id="report-group-review-${key}">${cur.length?(ro?(answerArchiveUnlocked(td,key)?qb(key,cur,true):reportLockedNotice(key)):reportAutoLockHint()+qb(key,cur,false)+`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
 ${!ro&&planning[key]?.length?`<details class="report-plan-review" style="margin-top:1rem"><summary>${tr()?'Bu dönem için yaptığın planlar':'Your earlier plans for this period'}</summary>${reportQuestionLocks('plan')[key]&&!answerArchiveUnlocked(td,key)?reportLockedNotice(key):qb(key,planning[key],true,'plan')}</details>`:''}</section>
 <h3 style="margin-top:1.2rem">${tr()?(kind==='week'?(planIsCurrent?'Bu hafta için plan':'Gelecek hafta için plan'):(planIsCurrent?'Bu ay için plan':'Gelecek ay için plan')):(kind==='week'?(planIsCurrent?'Plan for this week':'Plan for next week'):(planIsCurrent?'Plan for this month':'Plan for next month'))}</h3><section id="report-group-plan-${nk}">${planRo?(answerArchiveUnlocked(td,nk)?qb(nk,planning[nk],true,'plan'):reportLockedNotice(nk)):reportAutoLockHint()+qb(nk,planning[nk],false,'plan')+`<div class="row"><button class="g s" onclick="addRandQ('${nk}','plan')">${t('randomQuestion')}</button></div>`}</section></div>`;
 }
@@ -3350,7 +3443,7 @@ function reportDetailView(){
   if(reportDetail==='answers'){
     const keys=[...new Set([...Object.keys(A.ql||{}),...Object.keys(A.planningLocks||{})])].filter(k=>/^\d{4}-(\d{2}(-\d{2})?)$/.test(k)).sort().reverse();
     const rows=keys.filter(k=>A.ql?.[k]||A.planningLocks?.[k]).map(k=>{
-      const year=Number(k.slice(0,4)),locked=!answerArchiveUnlocked(today(),k),qs=A.ql?.[k]&&Array.isArray(A.qs[k])?A.qs[k]:[];
+      const year=Number(k.slice(0,4)),locked=!answerArchiveUnlocked(istanbulDayKey(),k),qs=A.ql?.[k]&&Array.isArray(A.qs[k])?A.qs[k]:[];
       const plans=(A.planningLocks?.[k]||A.ql?.[k])&&Array.isArray(A.planningQs?.[k])?A.planningQs[k]:[];
       const renderQuestion=q=>`<div><b>${esc(reportQuestionText(q))}</b><p>${esc(q.a||'')}</p></div>`;
       return `<article class="note-tile"><b>${esc(k)} ${locked?'🔒':''}</b>${locked?`<p class="mut">${tr()?`Yanıtlar ${year+1} yılının başında açılır.`:`Answers unlock at the beginning of ${year+1}.`}</p>`:`${plans.length?`<h3>${tr()?'Dönem başındaki planların':'Plans made before this period'}</h3>${plans.map(renderQuestion).join('')}<h3>${tr()?'Dönem değerlendirmen':'Your period review'}</h3>`:''}${qs.map(renderQuestion).join('')}`}</article>`;
@@ -3376,8 +3469,8 @@ function calendarReportPeriod(kind,day){
  throw new RangeError('Invalid report period');
 }
 function reportSummaryCard(kind,lastCompleted){
- const td=today(),current=calendarReportPeriod(kind,td),{since,unlock}=reportAvailability(kind,td),title=t(kind==='week'?'weeklyReport':'monthlyReport');
- if(td>=unlock)repCard(title,kind,lastCompleted.a,lastCompleted.b,lastCompleted.pa,lastCompleted.pb,lastCompleted.key,lastCompleted.nk,defQ(kind));
+ const td=istanbulDayKey(),current=calendarReportPeriod(kind,td),{since,unlock}=reportAvailability(kind,td),title=t(kind==='week'?'weeklyReport':'monthlyReport');
+ if(td===current.b&&td>=unlock)repCard(title,kind,lastCompleted.a,lastCompleted.b,lastCompleted.pa,lastCompleted.pb,lastCompleted.key,lastCompleted.nk,defQ(kind));
  const prior=current.pb>=unlock?`<button class="g report-previous" onclick="showReportDetail('${kind}-previous')">${tr()?(kind==='week'?'Önceki hafta raporu':'Önceki ay raporu'):(kind==='week'?'Previous week report':'Previous month report')} <small>${fmt(current.pa)} – ${fmt(current.pb)}</small> →</button>`:'';
  const opens=unlock>current.b?unlock:current.b;
  if(td<opens)return `<section class="report-period-block">${pendingReportCard(title,opens>current.b?since:current.a,opens)}${prior}</section>`;
@@ -3394,20 +3487,21 @@ function periodTaskBreakdown(a,b){
  return `<section class="card"><h2>${tr()?'Gün gün görevlerin':'Your tasks, day by day'}</h2><p class="mut">${tr()?'Tamamlanmayanlar, yapılmadı olarak işaretlenen ve tamamlanmadan kalan görevleri içerir. Kayıt olmayan günler listelenmez.':'Unfinished includes tasks marked not done and tasks left incomplete. Days without records are omitted.'}</p>${days.reverse().join('')||`<p class="mut">${tr()?'Bu dönemde kayıtlı görev yok.':'No tasks recorded for this period.'}</p>`}</section>`;
 }
 function periodReportDetail(kind,previous=false){
- const td=today(),active=calendarReportPeriod(kind,td),period=previous?calendarReportPeriod(kind,addD(active.a,-1)):active,{since,unlock}=reportAvailability(kind),title=t(kind==='week'?'weeklyReport':'monthlyReport');
+ const td=istanbulDayKey(),active=calendarReportPeriod(kind,td),period=previous?calendarReportPeriod(kind,addD(active.a,-1)):active,{since,unlock}=reportAvailability(kind),title=t(kind==='week'?'weeklyReport':'monthlyReport');
  const header=`<div class="card"><div class="row report-heading"><h2>${title} · ${tr()?'Ayrıntılar':'Details'}</h2><button class="g s" onclick="reportBack()">← ${t('back')}</button></div></div>`;
  if(td<unlock||period.b<unlock)return header+pendingReportCard(title,since,unlock);
  return header+periodTaskBreakdown(period.a,td<period.b?td:period.b)+repCard(title,tr()?(kind==='week'?'hafta':'ay'):kind,period.a,period.b,period.pa,period.pb,period.key,period.nk,defQ(kind));
 }
 function reportPlanningOverview(){
-  const td=today(),wk=mon(td),month=td.slice(0,7),[y,m]=month.split('-').map(Number);
+  const td=istanbulDayKey(),wk=mon(td),month=td.slice(0,7),[y,m]=month.split('-').map(Number);
   const upcomingMonth=D(new Date(y,m,1)).slice(0,7);
   const periods=[
     {kind:'week',key:wk,title:tr()?'Bu hafta':'This week'},
     {kind:'week',key:addD(wk,7),title:tr()?'Gelecek hafta':'Next week'},
     {kind:'month',key:month,title:tr()?'Bu ay':'This month'},
     {kind:'month',key:upcomingMonth,title:tr()?'Gelecek ay':'Next month'}
-  ];
+  ].filter(period=>reportQuestionsOpen(period.kind,td));
+  if(!periods.length)return '';
   const records=reportQuestionStore('plan'),locks=reportQuestionLocks('plan');
   const views=periods.map(({kind,key,title})=>{
     if(!Array.isArray(records[key]))records[key]=periodDefaultQuestions(kind,key,'plan');
@@ -3419,7 +3513,7 @@ function reportPlanningOverview(){
 }
 P.rep=()=>{
  if(reportDetail){M(reportDetailView());return}
- const td=today(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
+ const td=istanbulDayKey(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
  M(reportSummaryCard('week',w)+reportSummaryCard('month',m)+reportPlanningOverview()+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'} 🔒</button></div></section>`);
 };
 
@@ -3470,14 +3564,21 @@ function focusHistoryCard(){
   const now=today(),month=now.slice(0,7)+'-01',week=mon(now);
   const w=focusSummary(A?.focusHistory,week,now),m=focusSummary(A?.focusHistory,month,now);
   const time=seconds=>tr()?`${Math.floor(seconds/3600)} sa ${Math.round(seconds%3600/60)} dk`:`${Math.floor(seconds/3600)}h ${Math.round(seconds%3600/60)}m`;
-  const days=Object.entries(m.perDay).sort((a,b)=>b[0].localeCompare(a[0]))
-    .map(([date,entry])=>`<div class="task"><span>${fmt(date)}</span><b>${time(entry.seconds)} · ${entry.sessions} ${tr()?'seans':'sessions'}</b></div>`).join('');
+  const entries=new Map(Object.entries(m.perDay));
+  // Show three actual calendar dates even when the account has fewer than three recorded days.
+  for(let day=now;entries.size<3;day=addD(day,-1)){
+    if(!entries.has(day))entries.set(day,day<month?focusSummary(A?.focusHistory,day,day).perDay[day]||null:null);
+  }
+  const rows=[...entries].sort(([a],[b])=>b.localeCompare(a)).map(([date,entry])=>
+    `<div class="task focus-day" data-focus-day="${date}"><time datetime="${date}">${fmt(date)}</time>${entry?`<b>${time(entry.seconds)} · ${entry.sessions} ${tr()?'seans':'sessions'}</b>`:`<small class="mut">${tr()?'Kayıt yok':'No focus logged'}</small>`}</div>`);
+  const older=rows.slice(3);
   return `<section class="card focus-history"><h2>${tr()?'Pomodoro çalışma analizi':'Pomodoro focus analysis'}</h2>
     <p class="mut">${tr()?'Kaydedilen gerçek odak süresi; tamamlanan seanslar ayrıca sayılır.':'Recorded focus time; completed sessions are counted separately.'}</p>
     <div class="focus-history-totals"><div><small>${tr()?'Bu hafta':'This week'}</small><b>${time(w.seconds)}</b><span>${w.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div>
     <div><small>${tr()?'Bu ay':'This month'}</small><b>${time(m.seconds)}</b><span>${m.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div></div>
-    <h3>${tr()?'Gün gün (bu ay)':'Day by day (this month)'}</h3>
-    ${days||`<p class="mut">${tr()?'Henüz kayıtlı odak süresi yok.':'No focus time logged yet.'}</p>`}
+    <h3>${tr()?'Gün gün':'Day by day'}</h3>
+    ${rows.slice(0,3).join('')}
+    ${older.length?`<details class="focus-history-details"><summary><span class="expand">${tr()?'Daha fazlası':'More details'}</span><span class="collapse">${tr()?'Daha az göster':'Show less'}</span> <small>(${older.length})</small></summary><div class="focus-history-older" tabindex="0" role="region" aria-label="${tr()?'Önceki odak günleri':'Earlier focus days'}">${older.join('')}</div></details>`:''}
   </section>`;
 }
 function persistPomodoroState(){

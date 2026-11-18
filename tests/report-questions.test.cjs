@@ -4,8 +4,10 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const source=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 function extract(from,to){const start=source.indexOf(from),end=source.indexOf(to,start+from.length);assert.ok(start>=0&&end>start,from);return source.slice(start,end)}
 function fixture(){
- const context={DB:{lang:'en'},A:{qs:{},planningQs:{},ql:{}},current:'2026-11-29',P:{rep(){}},
-  addD:(value,days)=>new Date(Date.parse(value+'T00:00:00Z')+days*86400000).toISOString().slice(0,10),recordActivity(){},esc:s=>String(s),tr:()=>context.DB.lang==='tr',t:key=>key,save(){},fmt:s=>s,today:()=>context.current,
+ const context={DB:{lang:'en'},A:{pctFrom:'2026-01-01',qs:{},planningQs:{},ql:{}},current:'2026-11-29',P:{rep(){}},
+  addD:(value,days)=>new Date(Date.parse(value+'T00:00:00Z')+days*86400000).toISOString().slice(0,10),recordActivity(){},esc:s=>String(s),tr:()=>context.DB.lang==='tr',t:key=>key,save(){},fmt:s=>s,today:()=>context.current,istanbulDayKey:()=>context.current,
+  D:d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'),
+  mon:d=>context.addD(d,-((new Date(d+'T12:00:00Z').getUTCDay()+6)%7)),
   st:()=>({t:2,d:1,p:50,by:{}}),reportPeriodEnded:(now,end)=>now>=end,reportDetail:'answers',
   answerArchiveUnlocked:(now,key)=>Number(now.slice(0,4))>Number(key.slice(0,4)),
   Math:Object.assign(Object.create(Math),{random:()=>0}),$:()=>({value:'A custom question'}),
@@ -15,13 +17,17 @@ function fixture(){
  ${extract('const RQ_EN=','const NAV_KEYS=')}
  function rqFor(){return DB.lang==='tr'?RQ_TR:RQ_EN}
  ${extract("function periodDefaultQuestions(kind,key,scope='review'){",'/* Weekly/monthly reports')}
+ ${extract('function reportInitialUnlockDate(kind,start','function pendingReportCard(')}
  ${extract('function repCard(title,per,a,b,pa,pb,key,nk,defs)','/* ---- gecmis raporlar')}
  ${extract('function reportDetailView(){','P.rep=()=>{')}
  this.f={reportQuestionText,reportQuestionForPeriod,makeReportQuestion,qa,finishReportAnswer,commitReportGroup,addQ,addRandQ,delQ,repCard,reportDetailView,
   banks:REPORT_QUESTION_BANKS,defaults:DEFQ_EN,plans:PLANQ_EN};`,context);
  const f=context.f;
- const render=(kind='week',key=kind==='week'?'2026-11-23':'2026-11',next=kind==='week'?'2026-11-30':'2026-12')=>
-  f.repCard(kind,kind,'2026-11-01','2026-11-29','2026-10-01','2026-10-31',key,next,f.defaults[kind]);
+ const render=(kind='week',key=kind==='week'?'2026-11-23':'2026-11',next=kind==='week'?'2026-11-30':'2026-12')=>{
+  const period=context.calendarReportPeriod(kind,key.length===7?key+'-01':key);
+  context.current=period.b;
+  return f.repCard(kind,kind,period.a,period.b,period.pa,period.pb,key,next,f.defaults[kind]);
+ };
  return {context,f,render};
 }
 test('every built-in question has aligned English and Turkish translations',()=>{

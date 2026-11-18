@@ -47,13 +47,17 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await productivity.locator('#task-edit-text').fill('Güncellenmiş görev');
    await productivity.locator('#task-edit-modal').getByRole('button',{name:'Kaydet'}).click();
    assert.equal(await productivity.evaluate(()=>A.tasks[1].t),'Güncellenmiş görev',engine+' task editing');
+   await productivity.locator('#task-edit-modal').waitFor({state:'detached'});
    const grip=await productivity.locator('#tl .task-grip').nth(1).boundingBox();
    const dest=await productivity.locator('#tl .task').nth(2).boundingBox();
    assert.ok(grip&&dest,engine+' grip positions');
    await productivity.mouse.move(grip.x+grip.width/2,grip.y+grip.height/2);
    await productivity.mouse.down();
    await productivity.mouse.move(dest.x+dest.width/2,dest.y+dest.height/2,{steps:6});
+   await productivity.waitForFunction(()=>!!document.querySelector('#tl .is-lifted')&&taskReorder?.destination===2);
+   assert.equal(await productivity.evaluate(()=>A.tasks[1].t),'Güncellenmiş görev',engine+' drag previews without persisting a move');
    await productivity.mouse.up();
+   await productivity.waitForFunction(()=>!taskReorder&&A.tasks[2].t==='Güncellenmiş görev');
    assert.deepEqual(await productivity.evaluate(()=>A.tasks.map(({t})=>t)),['İkinci görev','Üçüncü görev','Güncellenmiş görev'],engine+' pointer reorder');
    await productivity.evaluate(()=>{
      const note=addD(today(),3);
@@ -71,6 +75,29 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
      assert.ok(await productivity.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),engine+' report overflow '+width);
    }
    assert.deepEqual(productivityErrors,[],engine+' productivity page errors');
+   // A real report screen must close at Istanbul midnight even if its tab stays open.
+   await productivity.goto('http://127.0.0.1:4173/review-app.html?page=rep&lang=tr&date=2026-11-29');
+   assert.equal(await productivity.locator('.report-plan-period').count(),2,engine+' only weekly plan groups on Sunday');
+   assert.equal(await productivity.locator('#report-group-plan-2026-12').count(),0);
+   const draft=productivity.locator('.report-plan-period textarea').first();await draft.fill('Pazar taslağı');
+   const changeDay=async value=>{
+    await productivity.evaluate(date=>{const url=new URL(location.href);url.searchParams.set('date',date);history.replaceState(history.state,'',url);updateIstanbulClock()},value);
+   };
+   await changeDay('2026-11-30');
+   await productivity.locator('#report-group-plan-2026-12').waitFor();
+   assert.equal(await productivity.locator('#report-group-plan-2026-11-23').count(),0,engine+' weekly form closed');
+   await changeDay('2026-12-01');assert.equal(await productivity.locator('.report-planning-overview').count(),0);
+   await productivity.evaluate(()=>showReportDetail('month-previous'));
+   assert.equal(await productivity.locator('textarea[id^="report-"]').count(),0,engine+' previous month is read-only statistics');
+   await productivity.goto('http://127.0.0.1:4173/review-app.html?page=pomo&lang=en&date=2026-11-18');
+   await productivity.evaluate(()=>{A.focusHistory=Array.from({length:6},(_,i)=>({at:new Date(2026,10,18-i,12).getTime(),seconds:(i+1)*60,completed:true}));P.pomo()});
+   const analysis=productivity.locator('.focus-history'),more=analysis.locator('summary'),dateRows=analysis.locator('.focus-day:visible');
+   const totals=await analysis.locator('.focus-history-totals').innerText();assert.equal(await dateRows.count(),3);
+   assert.deepEqual(await dateRows.evaluateAll(rows=>rows.map(el=>el.dataset.focusDay)),['2026-11-18','2026-11-17','2026-11-16']);
+   await more.click();assert.equal(await dateRows.count(),6);assert.equal(await analysis.locator('.focus-history-totals').innerText(),totals);
+   await more.click();assert.equal(await dateRows.count(),3);assert.ok(await productivity.evaluate(()=>A.focusHistory.length===6));
+   await productivity.evaluate(()=>{A.focusHistory=[];P.pomo()});assert.equal(await dateRows.count(),3);assert.equal(await more.count(),0);
+   assert.deepEqual(productivityErrors,[]);
    await productivity.close();
    console.log('PASS '+engine+': task edit, keyboard and pointer reorder, future countdown and mobile report widths');
    const page=await browser.newPage({viewport:{width:390,height:844}});
