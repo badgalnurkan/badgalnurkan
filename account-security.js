@@ -49,7 +49,7 @@ window.IYAccount=(()=>{
   return '<span data-account-email>'+esc(verified?(state.email||'—'):txt('E-posta doğrulanıyor…','Verifying email…'))+'</span>';
  }
  function settingsMarkup(){
-  return '<section class="card account-security" aria-labelledby="security-title"><h2 id="security-title">'+txt('Hesap güvenliği ve e-posta','Account security and email')+'</h2><div id="security-content" aria-live="polite"><p class="mut">'+txt('Sunucudan hesap bilgileri alınıyor…','Loading account details…')+'</p></div><p id="security-message" role="status"></p></section>';
+  return '<section class="card account-security" aria-labelledby="security-title"><h2 id="security-title">'+txt('Hesap güvenliği ve e-posta','Account security and email')+'</h2><div id="security-content" aria-live="polite"><p class="mut">'+txt('Sunucudan hesap bilgileri alınıyor…','Loading account details…')+'</p></div><details id="password-renewal" class="security-details"><summary>'+txt('Şifreyi değiştir','Change password')+'</summary><div id="account-password-form"></div><p>'+txt('Doğrulanmış hesap adresine şifre yenileme bağlantısı gönder.','Send a password reset link to your verified account email.')+'</p><button type="button" data-security-action onclick="requestMyPasswordReset()">'+txt('Şifre yenileme bağlantısı gönder','Send password reset link')+'</button></details><p id="security-message" role="status"></p></section>';
  }
  function passwordForm(prefix='security-',hasPassword=true){
   return '<div class="security-form">'+(hasPassword?'<label for="'+prefix+'old">'+txt('Mevcut şifre','Current password')+'</label><input id="'+prefix+'old" type="password" autocomplete="current-password">':'')+
@@ -58,6 +58,14 @@ window.IYAccount=(()=>{
  function renderDetails(){
   document.querySelectorAll('[data-account-email]').forEach(el=>el.textContent=state?.email||'—');
   const target=document.getElementById('security-content');if(!target||stateUid!==A?.authUid)return;
+  const form=document.getElementById('account-password-form');
+  if(form){
+   const owner=state.has_password===true?stateUid:'';
+   if((form.dataset.owner||'')!==owner){
+    form.innerHTML=owner?passwordForm():'';
+    form.dataset.owner=owner;
+   }
+  }
   const pending=state.pending_email?'<p class="note">'+txt('Onay bekleyen adres: ','Awaiting confirmation: ')+esc(state.pending_email)+'</p>':'';
   target.innerHTML='<dl class="security-summary"><div><dt>'+txt('Hesap e-postası','Account email')+'</dt><dd>'+esc(state.email||'—')+'</dd></div><div><dt>'+txt('E-posta durumu','Email status')+'</dt><dd>'+txt(state.email_verified?'Doğrulanmış':'Doğrulama bekliyor',state.email_verified?'Verified':'Awaiting verification')+'</dd></div></dl>'+pending+
    (!state.email_verified?'<button class="g" data-security-action onclick="requestMyEmailVerification()">'+txt('Doğrulama e-postası gönder','Send verification email')+'</button>':'')+

@@ -31,7 +31,7 @@ ${extract('function qa(k,i,el,','/* Weekly/monthly reports')}
 ${extract('function newAcc(u,n,b,pw,em,ph)','const findUser=')}
 ${extract('function reportAvailability(kind,td=today()){','let pm=')}
 this.fixture={reportPeriodEnded,latestUnlockedReportPeriod,reportInitialUnlockDate,
-  pendingReportCard,repCard,newAcc,norm,qa,addRandQ,lockQ,calendarReportPeriod,periodReportDetail,canAnswerReport,reportPlanningOverview};
+  pendingReportCard,repCard,newAcc,norm,qa,addRandQ,submitPeriodReport,calendarReportPeriod,periodReportDetail,canAnswerReport,reportPlanningOverview};
 `;
 const context={
   A:{qs:{},ql:{},pctFrom:'2026-11-09',reportStart:'2026-11-09'},
@@ -45,7 +45,7 @@ const context={
 vm.createContext(context);
 vm.runInContext(code,context);
 const {reportPeriodEnded,latestUnlockedReportPeriod,reportInitialUnlockDate,
-  repCard,newAcc,norm,qa,addRandQ,lockQ}=context.fixture;
+  repCard,newAcc,norm,qa,addRandQ,submitPeriodReport}=context.fixture;
 
 const same=(period,expected)=>{
   for(const [k,v] of Object.entries(expected))assert.equal(period[k],v,k+' differs');
@@ -239,8 +239,9 @@ test('weekly and monthly groups keep three defaults, random additions and answer
   addRandQ(key);assert.equal(group.length,4);assert.equal(group[3].q,'A random follow-up question');
   const next=context.A.planningQs[nk],input={value:'A durable plan',parentElement:{nextElementSibling:{textContent:''}}};
   qa(nk,0,input,'plan');assert.equal(next[0].a,'A durable plan');
-  const button={dataset:{},textContent:''};lockQ(key,button);assert.equal(context.A.ql[key],undefined);
-  lockQ(key,button);assert.equal(context.A.ql[key],1);assert.equal(next[0].a,'A durable plan');
+  assert.equal(submitPeriodReport(kind,key),false);
+  for(const rows of [group,context.A.planningQs[key],next])rows.forEach(q=>{if(!q.a)q.a='Completed'});
+  assert.equal(submitPeriodReport(kind,key),true);assert.equal(context.A.ql[key],1);assert.equal(next[0].a,'A durable plan');
  }
  assert.notDeepEqual(...picks);
 });
@@ -330,6 +331,6 @@ test('question windows agree on overview and detail, including leap days and a s
 test('a page left open past midnight cannot overwrite answers or add questions',()=>{
  context.A={pctFrom:'2026-01-01',qs:{},ql:{}};context.current='2026-11-29';context.P.rep();
  const key='2026-11-23',input={value:'Sunday draft'};qa(key,0,input);const snapshot=JSON.stringify(context.A);
- context.current='2026-11-30';input.value='Late edit';qa(key,0,input);addRandQ(key);lockQ(key,{dataset:{c:'1'}});
+ context.current='2026-11-30';input.value='Late edit';qa(key,0,input);addRandQ(key);submitPeriodReport('week',key);
  assert.equal(JSON.stringify(context.A),snapshot);
 });

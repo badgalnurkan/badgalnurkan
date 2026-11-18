@@ -1,3 +1,7 @@
+# 18 Kasım 2026 · Dönem raporunu gönderme ve profil kısayolu
+
+Haftalık ve aylık formlarda taslaklar yazarken saklanır. Gönder, o dönemin açık soru gruplarını birlikte kontrol edip tek kayıtta kilitler. Profilde e-posta altındaki kısayol şifre yenileme bölümünü açar. Uygulama şifresi olan hesaplar mevcut şifreyi doğrulayarak yenisini kaydedebilir. E-posta bağlantısı ilgili hesap için istenir. Arşiv etiketleri dar ekranda tam kelimelerle ortalanır.
+
 # 18 Kasım 2026 · Rapor zamanı, görev taşıma ve odak özeti
 
 - Haftalık sorular İstanbul takviminde pazar günleri, aylık sorular ayın son gününde açılır. Özet, dönem ayrıntıları ve cevap yazma işlemi aynı kuralı kullanır. Önceki dönemlerin istatistikleri okunabilir.

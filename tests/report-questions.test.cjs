@@ -20,7 +20,7 @@ function fixture(){
  ${extract('function reportInitialUnlockDate(kind,start','function pendingReportCard(')}
  ${extract('function repCard(title,per,a,b,pa,pb,key,nk,defs)','/* ---- gecmis raporlar')}
  ${extract('function reportDetailView(){','P.rep=()=>{')}
- this.f={reportQuestionText,reportQuestionForPeriod,makeReportQuestion,qa,finishReportAnswer,commitReportGroup,addQ,addRandQ,delQ,repCard,reportDetailView,
+ this.f={reportQuestionText,reportQuestionForPeriod,makeReportQuestion,qa,submitPeriodReport,addQ,addRandQ,delQ,repCard,reportDetailView,
   banks:REPORT_QUESTION_BANKS,defaults:DEFQ_EN,plans:PLANQ_EN};`,context);
  const f=context.f;
  const render=(kind='week',key=kind==='week'?'2026-11-23':'2026-11',next=kind==='week'?'2026-11-30':'2026-12')=>{
@@ -125,19 +125,27 @@ test('year-end answer archive translates both groups and respects existing locks
  assert.ok(archive.includes('Private review'));assert.ok(archive.includes('Private plan'));
 });
 
-test('last answer stays editable while typing; field exit locks only that group',()=>{
- const {context,f,render}=fixture();render();const key='2026-11-23',plan='2026-11-30';context.A.qs[key].forEach((q,i)=>q.a=i<2?'Answered':'');
- const input={value:'Still composing',parentElement:{nextElementSibling:{textContent:''}}};f.qa(key,2,input);assert.equal(context.A.ql[key],undefined);
- f.finishReportAnswer(key,2,input);assert.equal(context.A.ql[key],1);assert.equal(context.A.planningLocks[plan],undefined);
- input.value='Overwrite';f.qa(key,2,input);f.delQ(key,0);f.addRandQ(key);f.addQ(key);assert.equal(context.A.qs[key].length,3);assert.equal(context.A.qs[key][2].a,'Still composing');
+test('submit locks all answers at once, persists across renders and opens a fresh week',()=>{
+ const {context,f,render}=fixture(),key='2026-11-23',next='2026-11-30';render();
+ for(const rows of [context.A.qs[key],context.A.planningQs[key],context.A.planningQs[next]])rows.forEach(q=>q.a='Draft');
+ const input={value:'Last edit'};f.qa(key,2,input);
+ assert.equal(context.A.ql[key],undefined);
+ assert.equal(f.submitPeriodReport('week',key),true);
+ assert.equal(f.submitPeriodReport('week',key),false);
+ assert.doesNotMatch(render(),/<textarea|report-send/);
+ f.qa(key,2,{value:'Overwrite'});assert.equal(context.A.qs[key][2].a,'Last edit');
+ assert.match(render('week',next,'2026-12-07'),/report-send/);
 });
-test('empty, partial and whitespace answers never lock; custom questions participate',()=>{
- const {context,f,render}=fixture();render();const key='2026-11-30';context.A.planningQs[key].forEach(q=>q.a='Done');f.addQ(key,'plan');assert.equal(f.commitReportGroup(key,'plan'),false);
- context.A.planningQs[key][3].a='  ';assert.equal(f.commitReportGroup(key,'plan'),false);context.A.planningQs[key][3].a='Custom';assert.equal(f.commitReportGroup(key,'plan'),true);assert.equal(context.A.planningLocks[key],1);
- context.A.planningQs.empty=[];assert.equal(f.commitReportGroup('empty','plan'),false);
+test('incomplete and whitespace-only answers never lock other groups',()=>{
+ const {context,f,render}=fixture();render('month');const key='2026-11',next='2026-12';
+ for(const rows of [context.A.qs[key],context.A.planningQs[key],context.A.planningQs[next]])rows.forEach(q=>q.a='Done');
+ f.addQ(next,'plan');context.A.planningQs[next][3].a='  ';
+ assert.equal(f.submitPeriodReport('month',key),false);assert.equal(context.A.ql[key],undefined);
+ context.A.planningQs[next][3].a='Answer';assert.equal(f.submitPeriodReport('month',key),true);
+ assert.doesNotMatch(render('month'),/<textarea|report-send/);
 });
 test('future plans unlock after their own year; partial reviews do not leak into their archive entry',()=>{
- const {context,f,render}=fixture();render('month','2026-12','2027-01');context.A.planningQs['2027-01'].forEach(q=>q.a='Private future plan');f.commitReportGroup('2027-01','plan');context.A.qs['2027-01']=[{q:'Partial review',a:'Keep draft private'}];
+ const {context,f,render}=fixture();render('month','2026-12','2027-01');context.A.planningQs['2027-01'].forEach(q=>q.a='Private future plan');for(const rows of [context.A.qs['2026-12'],context.A.planningQs['2026-12']])rows.forEach(q=>q.a='Done');assert.equal(f.submitPeriodReport('month','2026-12'),true);context.A.qs['2027-01']=[{q:'Partial review',a:'Keep draft private'}];
  context.current='2027-12-31';assert.equal(f.reportDetailView().includes('Private future plan'),false);context.current='2028-01-01';const result=f.reportDetailView();assert.ok(result.includes('Private future plan'));assert.equal(result.includes('Keep draft private'),false);
 });
 
