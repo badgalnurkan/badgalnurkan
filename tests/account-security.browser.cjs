@@ -110,6 +110,7 @@ function startPreviewServer(){
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:false,password_required:false,server_time:'2026-11-17T00:00:00Z'};
     else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
+    else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
     else if(url.endsWith('/rpc/iydu_save'))data=null;
     else if(url.endsWith('/functions/v1/account-security')){
      const b=route.request().postDataJSON();actions.push(b.action);
