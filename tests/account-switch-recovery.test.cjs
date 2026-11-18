@@ -85,3 +85,9 @@ test('unknown account or currently active account cannot silently switch',()=>{
  assert.equal(context.A,first);
  assert.equal(calls.clears,0);
 });
+
+test('verify endpoint must not inherit a session bearer from a different account',()=>{
+ const matcher=extract('async function sb(path,opt={}){','async function sbSignUp(');
+ assert.match(matcher,/const isLogin=\/\^\\\/auth\\\/v1\\\/\(signup\|token\|recover\|resend\|verify\)/);
+ assert.match(matcher,/if\(!isLogin&&session\?\.access_token\)headers\['Authorization'\]/);
+});
