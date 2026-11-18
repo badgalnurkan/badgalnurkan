@@ -1804,7 +1804,7 @@ function bindReportCalendar(account,user,newProfile=false){
   // The full-period rule first shipped in PR 8. Earlier profiles keep their legacy schedule.
   const release=Date.parse('2026-11-15T01:16:11Z');
   if(created<release&&account.reportCalendarRule==='full-period-v1')delete account.reportCalendarRule;
-  else if(created>=release&&(newProfile||account.reportStart===date))account.reportCalendarRule='full-period-v1';
+  else if(newProfile&&created>=release)account.reportCalendarRule='full-period-v1';
 }
 function norm(a){
   const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},planningQs:{},planningLocks:{},ql:{},notifications:[],noticeDelivered:{},notificationPrefs:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
@@ -3056,6 +3056,7 @@ function fixTodoData(){
 }
 P.todo=()=>{
   try{fixTodoData()}catch(e){A.tasks=[];A.backlog=[]}
+  if(archiveFinishedTasks())save();
   const next=addD(today(),1);
   if(A.taskOrder==='alpha')sortTaskLists(next);
   const planned=(A.plans?.[next]||[]).map((name,i)=>`<div class="task"><span>${esc(name)}</span><button class="g s" onclick="removePlan(${i})">${t('delete')}</button></div>`).join('');
@@ -3208,7 +3209,7 @@ function fromBack(i){
   }
   A.tasks.push({t:A.backlog[i],s:''});A.backlog.splice(i,1);recordActivity();P.todo();
 }
-function delT(i){if(A.day!==today()){shell();return}if(!A.tasks[i])return;A.tasks.splice(i,1);vibrateTask();recordActivity();P.todo()}
+function delT(i){if(A.day!==today()){shell();return}if(!A.tasks[i])return;A.tasks.splice(i,1);archiveFinishedTasks();vibrateTask();recordActivity();P.todo()}
 function addT(){
   if(A.day!==today())roll();
   const v=String($('#nt')?.value||'').trim().slice(0,120);
@@ -3224,17 +3225,17 @@ function mk(i,status){
   if(A.day!==today()){shell();return}
   const x=A.tasks[i];if(!x)return;
   x.s=x.s===status?'':status;
-  // Archive all-complete batches before showing a clean new list. Historical task data remains in Reports.
-  const allDone=A.tasks.length>0&&A.tasks.every(task=>task.s==='done');
-  if(allDone){
-    if(!A.completedBatches||typeof A.completedBatches!=='object')A.completedBatches={};
-    const key=today();
-    if(!Array.isArray(A.completedBatches[key]))A.completedBatches[key]=[];
-    A.completedBatches[key].push(...A.tasks.map(taskSnapshot));
-    A.tasks=[];
-  }
+  const allDone=archiveFinishedTasks();
   vibrateTask();recordActivity();P.todo();
   if(allDone)toast(tr()?'Bugünkü görevler Raporlar’a kaydedildi. Yeni görevler yarına planlanacak.':'Today’s tasks were saved to Reports. New tasks will go to tomorrow.');
+}
+function archiveFinishedTasks(){
+  if(A.day!==today()||!A.tasks.length||!A.tasks.every(task=>taskStatus(task)==='done'))return false;
+  const key=A.day;
+  if(!A.completedBatches||typeof A.completedBatches!=='object')A.completedBatches={};
+  if(!Array.isArray(A.completedBatches[key]))A.completedBatches[key]=[];
+  A.completedBatches[key].push(...A.tasks.map(taskSnapshot));
+  A.tasks=[];return true;
 }
 function ensurePlans(){if(!A.plans||typeof A.plans!=='object')A.plans={}}
 function pushTomorrowPlan(value){
@@ -4134,7 +4135,7 @@ function confirmReset(){
   if(!A.progressPolicy)delete fresh.progressPolicy;else fresh.progressPolicy=A.progressPolicy;
   fresh.authUid=safe.authUid;fresh.accountOrigin=safe.accountOrigin;fresh.loginMethod=safe.loginMethod;fresh.googleConnected=safe.googleConnected;fresh.mail=safe.email;fresh.theme=safe.theme;fresh.pctFrom=today();
   DB.accounts[safe.u]=fresh;A=fresh;
-  pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,lg:0,focusParts:[],segmentStart:0,iv:0,sw:0,swT:0,swI:0};
+  pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,lg:0,noticeFive:false,focusParts:[],segmentStart:0,iv:0,sw:0,swT:0,swI:0,swMs:0};
   closeModal('reset-modal');save();msg=t('systemReset');shell();
 }
 // V10: export only the current signed-in app snapshot, never credentials or other accounts.
@@ -4577,7 +4578,7 @@ async function sbPull(){
   catch(e){if(e.status===401&&await sbRefresh())rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}});else throw e}
   const row=Array.isArray(rows)?rows[0]:rows;
   if(row?.data&&(!row.data||typeof row.data!=='object'||Array.isArray(row.data)))throw new Error('Invalid cloud data');
-  return row?.data||null;
+  return row?.data&&Object.keys(row.data).length?row.data:null;
 }
 // The database owns the old/new-user cutoff; do not infer it from a missing
 // browser cache or an absent profile row.

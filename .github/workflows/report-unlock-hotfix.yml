@@ -115,7 +115,7 @@ jobs:
           NODE
 
   browser-e2e:
-    name: Chromium and WebKit UI
+    name: Chromium, WebKit and Firefox UI
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -130,5 +130,5 @@ jobs:
         run: npm install --no-save --ignore-scripts --package-lock=false playwright@1.56.1
       - name: Build isolated test site
         run: python3 scripts/build-preview.py
-      - name: Check mobile and account UI in Chromium and WebKit
+      - name: Check mobile UI and cross-browser account recovery
         run: node tests/account-security.browser.cjs

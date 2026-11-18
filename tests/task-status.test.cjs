@@ -80,3 +80,10 @@ test('returning late preserves unvisited plans on their actual date',()=>{
  assert.equal(context.A.tasks.length,0);assert.deepEqual(Array.from(context.A.hist['2026-11-16'],x=>[x.t,x.s]),[['Scheduled Monday','pending']]);
  assert.deepEqual(Array.from(context.A.plans['2026-11-19']),['Future']);
 });
+
+test('removing the last pending item unlocks planning only if other tasks are actually completed',()=>{
+ const {f,context}=fixture();vm.runInContext(extract('function allTodayTasksArchived()', '/* sis:'),context);
+ context.A.tasks=[{t:'Unused',s:''}];context.delT(0);assert.equal(context.allTodayTasksArchived(),false);
+ context.A.tasks=[{t:'Finished',s:'done'},{t:'Unneeded',s:''}];context.delT(1);
+ assert.equal(context.allTodayTasksArchived(),true);assert.equal(f.items(context.current)[0].s,'done');
+});

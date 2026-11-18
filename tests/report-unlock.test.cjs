@@ -356,6 +356,8 @@ test('a previously reset legacy account recovers its date from verified signup w
   assert.equal(old.reportStart,'2026-11-09');assert.equal(old.reportCalendarRule,undefined);
   const fresh={reportStart:'2026-11-18'};context.bindReportCalendar(fresh,{created_at:'2026-11-16T21:10:00Z'},true);
   assert.equal(fresh.reportStart,'2026-11-17');assert.equal(fresh.reportCalendarRule,'full-period-v1');
+  const previouslyActive={reportStart:'2026-11-18'};context.bindReportCalendar(previouslyActive,{created_at:'2026-11-17T22:30:00Z'});
+  assert.equal(previouslyActive.reportCalendarRule,undefined);
   const imported={reportStart:'2026-10-15'};context.bindReportCalendar(imported,{created_at:'2026-11-17T00:00:00Z'});
   assert.equal(imported.reportStart,'2026-10-15');assert.equal(imported.reportCalendarRule,undefined);
  }finally{context.istanbulDayKey=original}
