@@ -49,7 +49,7 @@ window.IYAccount=(()=>{
   return '<span data-account-email>'+esc(verified?(state.email||'—'):txt('E-posta doğrulanıyor…','Verifying email…'))+'</span>';
  }
  function settingsMarkup(){
-  return '<section class="card account-security" aria-labelledby="security-title"><h2 id="security-title">'+txt('Hesap güvenliği ve e-posta','Account security and email')+'</h2><div id="security-content" aria-live="polite"><p class="mut">'+txt('Sunucudan hesap bilgileri alınıyor…','Loading account details…')+'</p></div><details id="password-renewal" class="security-details"><summary>'+txt('Şifreyi değiştir','Change password')+'</summary><div id="account-password-form"></div><p>'+txt('Doğrulanmış hesap adresine şifre yenileme bağlantısı gönder.','Send a password reset link to your verified account email.')+'</p><button type="button" data-security-action onclick="requestMyPasswordReset()">'+txt('Şifre yenileme bağlantısı gönder','Send password reset link')+'</button></details><p id="security-message" role="status"></p></section>';
+  return '<section class="card account-security" aria-labelledby="security-title"><h2 id="security-title">'+txt('Hesap güvenliği ve e-posta','Account security and email')+'</h2><div id="security-content" aria-live="polite"><p class="mut">'+txt('Sunucudan hesap bilgileri alınıyor…','Loading account details…')+'</p></div><details id="password-renewal" class="security-details"><summary>'+txt('Şifreyi değiştir','Change password')+'</summary><div id="account-password-form"></div><p>'+txt('Doğrulanmış hesap adresine şifre yenileme bağlantısı gönder.','Send a password reset link to your verified account email.')+'</p><button type="button" data-security-action onclick="requestMyPasswordReset()">'+txt('Şifre yenileme bağlantısı gönder','Send password reset link')+'</button><button type="button" class="g s" onclick="IYRecovery.resume(A.email)">'+txt('Mevcut onay kodunu gir','Enter existing confirmation code')+'</button></details><p id="security-message" role="status"></p></section>';
  }
  function passwordForm(prefix='security-',hasPassword=true){
   return '<div class="security-form">'+(hasPassword?'<label for="'+prefix+'old">'+txt('Mevcut şifre','Current password')+'</label><input id="'+prefix+'old" type="password" autocomplete="current-password">':'')+
@@ -106,9 +106,9 @@ window.IYAccount=(()=>{
  async function recovery(user){const s=await status(user);gate(s,s.state==='active')}
  async function request(kind){return run(async()=>{
   const data=await api('request_'+kind);
-  if(kind==='delete'){toast(txt('Onay bağlantısı gönderildi. E-postanı kontrol et.','Confirmation link sent. Check your email.'));return}
+  if(kind==='delete'){toast(data.delivery==='auth'?txt('Hesap silme talebin için e-postadaki bağlantıyı aç.','Open the link in the email for your account deletion request.'):txt('Onay bağlantısı gönderildi. E-postanı kontrol et.','Confirmation link sent. Check your email.'));return}
   challenge={kind,id:data.id,uid:sbSession()?.user?.id};
-  openModal('account-code','<h2>'+txt('E-posta kodunu gir','Enter your email code')+'</h2><p>'+txt('Kod 10 dakika geçerli; en fazla 5 kez deneyebilirsin. Yeni kod için 60 saniye bekle.','The code is valid for 10 minutes with up to 5 attempts. Wait 60 seconds before requesting another.')+'</p><label for="account-code-input">'+txt('6 haneli onay kodu','6-digit confirmation code')+'</label><input id="account-code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6"><div class="row"><button data-security-action onclick="IYAccount.confirmCode()">'+txt('Onayla','Confirm')+'</button><button class="g" onclick="closeModal(\'account-code\')">'+txt('Vazgeç','Cancel')+'</button></div>');
+  openModal('account-code','<h2>'+(kind==='deactivate'?txt('Geçici kapatma onay kodu','Temporary closure confirmation code'):txt('Yeniden açma onay kodu','Reactivation confirmation code'))+'</h2><p>'+(data.delivery==='auth'?txt('Onay kodunu görmek için e-postadaki bağlantıyı aç. ','Open the link in the email to view the confirmation code. '):'')+txt('Kod 10 dakika geçerli; en fazla 5 kez deneyebilirsin. Yeni kod için 60 saniye bekle.','The code is valid for 10 minutes with up to 5 attempts. Wait 60 seconds before requesting another.')+'</p><label for="account-code-input">'+txt('6 haneli onay kodu','6-digit confirmation code')+'</label><input id="account-code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6"><div class="row"><button data-security-action onclick="IYAccount.confirmCode()">'+txt('Onayla','Confirm')+'</button><button class="g" onclick="closeModal(\'account-code\')">'+txt('Vazgeç','Cancel')+'</button></div>');
  })}
  async function confirmCode(){return run(async()=>{
   if(!challenge||challenge.uid!==sbSession()?.user?.id)throw Error('UNAUTHORIZED');
@@ -146,9 +146,18 @@ window.IYAccount=(()=>{
  })}
  function consumeLink(){
   const p=new URLSearchParams(location.hash.slice(1));
+  const kind=p.get('account-action');
+  if(kind==='deactivate'||kind==='reactivate'){
+   const code=p.get('token')||'';
+   history.replaceState(history.state||{},'',location.pathname);
+   if(!/^\d{6}$/.test(code)){toast(txt('Bağlantı geçersiz.','Invalid link.'));return true}
+   const title=kind==='deactivate'?txt('Geçici kapatma onayı','Temporary closure confirmation'):txt('Hesabı yeniden açma onayı','Account reactivation confirmation');
+   openModal('account-mail-code','<h2>'+title+'</h2><p>'+txt('İşlemi başlattığın ekranda bu kodu gir.','Enter this code on the screen where you started the request.')+'</p><strong>'+esc(code)+'</strong>');
+   return true;
+  }
   if(p.get('account-action')!=='delete')return false;
   deleteLink={id:p.get('id')||'',token:p.get('token')||''};
-  history.replaceState(history.state||{},'',location.pathname+location.search);
+  history.replaceState(history.state||{},'',location.pathname);
   if(!/^[a-f0-9-]{36}$/i.test(deleteLink.id)||!/^[a-f0-9]{64}$/.test(deleteLink.token)){toast(txt('Bağlantı geçersiz.','Invalid link.'));deleteLink=null;return true}
   showReasons();return true;
  }

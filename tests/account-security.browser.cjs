@@ -1,13 +1,16 @@
 // Read-only local review: no real credentials, emails, or production writes.
-const { chromium, webkit }=require('playwright');
+const { chromium, webkit, firefox }=require('playwright');
+const verifyRecovery=require('./recovery-browser.browser.cjs');
 const {spawn}=require('node:child_process'),assert=require('node:assert/strict');
 (async()=>{
  const server=spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
  let browser;
  try{
   for(let n=0;n<50;n++){try{if((await fetch('http://127.0.0.1:4173')).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
-  for(const [engine,type] of [['chromium',chromium],['webkit',webkit]]){
+  for(const [engine,type] of [['chromium',chromium],['webkit',webkit],['firefox',firefox]]){
    browser=await type.launch();
+   await verifyRecovery(browser,engine);
+   if(engine==='firefox'){await browser.close();continue}
    for(const width of [320,375,390,430,768,1440]){
     const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:2});
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -138,7 +141,9 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    assert.deepEqual(await dateRows.evaluateAll(rows=>rows.map(el=>el.dataset.focusDay)),['2026-11-18','2026-11-17','2026-11-16']);
    await more.click();assert.equal(await dateRows.count(),6);assert.equal(await dateRows.last().getAttribute('data-focus-day'),'2026-10-31',engine+' older month retained');assert.equal(await analysis.locator('.focus-history-totals').innerText(),totals);
    await more.click();assert.equal(await dateRows.count(),3);assert.ok(await productivity.evaluate(()=>A.focusHistory.length===6));
-   await productivity.evaluate(()=>{A.focusHistory=[];P.pomo()});assert.equal(await dateRows.count(),3);assert.equal(await more.count(),0);
+   await productivity.evaluate(()=>{A.focusHistory=A.focusHistory.slice(0,3);P.pomo()});assert.equal(await dateRows.count(),3);assert.equal(await more.count(),0);
+   await productivity.evaluate(()=>{A.focusHistory.push({at:new Date(2026,10,12,12).getTime(),seconds:300,completed:true});P.pomo()});assert.equal(await dateRows.count(),3);assert.equal(await more.count(),1);await more.click();assert.equal(await dateRows.count(),4);
+   await productivity.evaluate(()=>{A.focusHistory=[{at:Date.now(),seconds:60,completed:false}];P.pomo()});assert.equal(await dateRows.count(),0);assert.equal(await more.count(),0);
    assert.deepEqual(productivityErrors,[]);
    await productivity.close();
    console.log('PASS '+engine+': task edit, keyboard and pointer reorder, future countdown and mobile report widths');
@@ -157,7 +162,9 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     else if(url.endsWith('/auth/v1/user'))data={id:'fixture-user',email:record.email,email_confirmed_at:'2026-11-01T00:00:00Z',user_metadata:{},app_metadata:{providers:['google']}};
     else if(new URL(url).pathname==='/auth/v1/recover'){
      assert.equal(route.request().postDataJSON().email,record.email);
-     assert.equal(new URL(url).searchParams.get('redirect_to'),'https://badgalnurkan.com/');
+     const redirect=new URL(new URL(url).searchParams.get('redirect_to'));
+     assert.equal(redirect.origin,'http://127.0.0.1:4173');assert.match(redirect.searchParams.get('iyd_recovery'),/^[a-f0-9]{32}$/);
+     assert.equal(route.request().postDataJSON().code_challenge_method,'s256');assert.match(route.request().postDataJSON().code_challenge,/^[a-zA-Z0-9_-]{43}$/);
      data={};
     }
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
@@ -184,6 +191,8 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await page.locator('#password-renewal[open]').waitFor();
    const sent=page.waitForResponse(r=>new URL(r.url()).pathname==='/auth/v1/recover');
    await page.getByRole('button',{name:'Şifre yenileme bağlantısı gönder'}).click();assert.equal((await sent).status(),200);
+   await page.locator('#recovery-browser-wait').getByRole('button',{name:'Kapat',exact:true}).click();
+   await page.locator('#recovery-browser-wait').waitFor({state:'detached'});
    assert.equal(await page.locator('#security-old').count(),0);
    hasPassword=true;await page.evaluate(()=>IYAccount.refresh());
    await page.locator('#security-old').fill('Example2-Only');

@@ -1472,6 +1472,10 @@ body{font-size:1rem!important}
 #mn .report-archives .row>button{display:block;width:100%!important;max-width:none!important;min-width:0;padding:.65rem .8rem;font-size:1rem!important;line-height:1.4;text-align:center;white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:none}
 .profile-change-password{margin-block:0 1rem}
 .report-send{margin-block-start:1rem}
+main#mn.swap{opacity:.66;transition:opacity 65ms ease-out}
+main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
+@keyframes menuFadeIn{from{opacity:.66}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){main#mn.swap,main#mn.an{opacity:1;animation:none;transition:none}}
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -1480,6 +1484,7 @@ body{font-size:1rem!important}
 <div id="app"></div>
 
 <script src="/account-security.js"></script>
+<script src="/recovery-browser.js"></script>
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
@@ -1614,16 +1619,14 @@ function softPaint(){
 let pageSwapTimer=0;
 function goTo(v,p,push=true){
   if(typeof taskReorder!=='undefined'&&taskReorder)cancelTaskReorder();
-  clearTimeout(pageSwapTimer);pageSwapTimer=0;
   const same=A&&v==='app'&&view==='app'&&document.getElementById('mn')&&document.querySelector('#nav-aside,aside');
   view=v;pg=p;msg='';selDay=null;
   if(push){try{history.pushState({v,p},'','')}catch(e){}}
   if(same){swapPage();return}
-  softPaint();window.scrollTo(0,0);
+  clearTimeout(pageSwapTimer);pageSwapTimer=0;softPaint();window.scrollTo(0,0);
 }
 /* menu gecisi: header ve menu yerinde kalir, yalnizca sayfa icerigi yumusakca degisir */
 function swapPage(){
-  clearTimeout(pageSwapTimer);
   const aside=document.querySelector('aside');
   if(aside){aside.querySelectorAll('a[data-k]').forEach(a=>{const on=a.dataset.k===pg;a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')})}
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
@@ -1638,8 +1641,10 @@ function swapPage(){
     if(pg!=='pomo'&&y>0){try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){window.scrollTo(0,0)}}
     centerNav();
   };
-  if(main&&!reduced){main.classList.remove('an');main.classList.add('swap');pageSwapTimer=setTimeout(finish,uiMotionTime('--motion-page-out-ms',160))}
-  else finish();
+  if(main&&!reduced){
+    if(pageSwapTimer)return;
+    main.classList.remove('an');main.classList.add('swap');pageSwapTimer=setTimeout(finish,65);
+  }else{clearTimeout(pageSwapTimer);finish()}
 }
 /* mobil/tablet: secilen sekme yatay menude ortalanir, sayfa ziplamaz */
 function centerNav(immediate=false){
@@ -1791,6 +1796,16 @@ const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
 const USERNAME_ALLOWED='a-zA-Z0-9çÇğĞıİöÖşŞüÜ_.-';
 const userRe=new RegExp('^['+USERNAME_ALLOWED+']{3,20}$');
 function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today(),reportCalendarRule:'full-period-v1',progressPolicy:'activity-7d-v1'})}
+function bindReportCalendar(account,user,newProfile=false){
+  const created=Date.parse(user?.created_at||'');
+  if(!Number.isFinite(created))return;
+  const date=istanbulDayKey(new Date(created));
+  if(newProfile||!account.reportStart||date<account.reportStart)account.reportStart=date;
+  // The full-period rule first shipped in PR 8. Earlier profiles keep their legacy schedule.
+  const release=Date.parse('2026-11-15T01:16:11Z');
+  if(created<release&&account.reportCalendarRule==='full-period-v1')delete account.reportCalendarRule;
+  else if(created>=release&&(newProfile||account.reportStart===date))account.reportCalendarRule='full-period-v1';
+}
 function norm(a){
   const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},planningQs:{},planningLocks:{},ql:{},notifications:[],noticeDelivered:{},notificationPrefs:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
@@ -1832,9 +1847,15 @@ function taskSnapshot(task){const s=taskStatus(task);return {t:String(task?.t||'
 function roll(){
   const t=today();
   try{fixTodoData()}catch(e){}
-  if(A.day!==t){
+  if(A.day<t){
     A.hist[A.day]=[...(Array.isArray(A.completedBatches?.[A.day])?A.completedBatches[A.day]:[]),...A.tasks].map(taskSnapshot);
     A.tasks.filter(x=>x.s!=='done').forEach(x=>A.backlog.push(x.t));
+    for(const date of Object.keys(A.plans||{}).sort()){
+      if(date<=A.day||date>=t||!Array.isArray(A.plans[date]))continue;
+      const pending=A.plans[date].map(name=>taskSnapshot({t:name,s:''}));
+      A.hist[date]=[...(A.hist[date]||[]),...pending];
+      A.backlog.push(...pending.map(task=>task.t));delete A.plans[date];
+    }
     while(A.backlog.length>10)A.backlog.shift();
     A.tasks=Array.isArray(A.plans&&A.plans[t])?A.plans[t].map(t=>({t,s:''})):[];if(A.plans)delete A.plans[t];A.day=t;if(A.completedBatches&&typeof A.completedBatches==='object')A.completedBatches={};save();
   }
@@ -2147,8 +2168,13 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-18-submit-reports-password';
+const SITE_RELEASE='2026-11-18-recovery-plans-completed-focus';
 const SITE_CHANGES=[
+ {date:'2026-11-18',trTitle:'Şifre yenileme, günlük planlar ve odak geçmişi',enTitle:'Password recovery, daily plans and focus history',items:[
+ ['Şifre yenilemeyi isteği başlattığın tarayıcıda tamamlayabilirsin.','Finish a password reset in the browser where you requested it.'],
+ ['Sıfırlama rapor takvimini korur. Bugünkü görevlerin tamamı bitince yeni görevler yarına yazılır. Görevler A–Z sıralanabilir.','Reset keeps your report calendar. After all tasks are done, new tasks are planned for tomorrow. Tasks can be sorted A–Z.'],
+ ['Menü geçişleri hızlandı. Odak analizinde yalnızca tamamlanmış seanslar görünür.','Menus respond faster and focus history shows completed sessions only.']]},
+
  {date:'2026-11-18',trTitle:'Rapor gönderimi ve şifre yenileme',enTitle:'Report submission and password reset',items:[
  ['Dönem sonu raporunu Gönder ile kilitleyebilirsin.','Submit your period-end report to lock your answers.'],
  ['Profildeki şifre kısayolu yenileme bölümünü açar. Arşiv düğmeleri küçük ekranlara uyum sağlar.','The profile password shortcut opens password reset. Archive buttons fit narrow screens.']]},
@@ -2430,7 +2456,7 @@ function renderAppOrAuth(){
     h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" data-user="${esc(rem||'')}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':'signInWithGoogle()'}">${googleRemembered?(tr()?esc(DB.accounts[rem].email||DB.accounts[rem].mail)+' ile devam et':'Continue with '+esc(DB.accounts[rem].email||DB.accounts[rem].mail)):(tr()?'Google ile devam et':'Continue with Google')}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
   else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+box(`<h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
-  else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button><button class="g" type="button" onclick="IYRecovery.resume(document.getElementById('u').value)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;ensureReleaseNotification();
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
 }
@@ -2599,6 +2625,7 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
   const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
   const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
+  bindReportCalendar(a,j.user,!fromCloud&&!fromLocal);
   applyServerProgressPolicy(a,progressPolicy);
   a.u=username;a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
   a.pw='';delete a.salt; // Cloud passwords are checked by Supabase, never stored in user_data.
@@ -2689,14 +2716,14 @@ async function setup(){
 
 /* gercek sifre sifirlama: Supabase kayitli e-posta adresine sifirlama baglantisi gonderir */
 async function sbRecover(email){
-  return sb('/auth/v1/recover?redirect_to='+encodeURIComponent('https://badgalnurkan.com/'),{method:'POST',body:{email:String(email).toLowerCase()}});
+  return IYRecovery.request(email);
 }
 async function fSend(k){
   const email=String($('#u')?.value||'').trim().toLowerCase();
   if(!emailPattern.test(email)){msg=t('emailInvalid');return renderAppOrAuth()}
   try{
     await sbRecover(email);
-    $('#fz').innerHTML=`<div class="note">${tr()?'Bu adres kayıtlıysa şifre yenileme bağlantısı gönderilir. Gelen kutunu ve istenmeyenleri kontrol et.':'If this email is registered, a password reset link will be sent. Check your inbox and spam folder.'}</div>`;
+    const box=$('#fz');if(box){box.innerHTML=`<div class="note">${tr()?'E-posta isteği alındı.':'Email requested.'}</div><button class="g" type="button" onclick="IYRecovery.resume(this.dataset.email)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button>`;box.querySelector('button').dataset.email=email}
   }catch(_){
     msg=tr()?'E-posta şu an gönderilemedi. Biraz sonra tekrar dene.':'Could not send the email. Try again shortly.';
     renderAppOrAuth();
@@ -2762,6 +2789,7 @@ function updateIstanbulClock(){
   const clock=$('#istanbul-clock');if(clock)clock.textContent=istanbulTime();
   const trigger=$('#top-date-trigger');
   if(!A||view!=='app'||!trigger)return;
+  if(A.day&&A.day<today()){shell();return}
   const day=istanbulDayKey();
   if(trigger.dataset.day===day)return;
   if(pg==='rep')P.rep();
@@ -2899,7 +2927,7 @@ function scheduleIstanbulClock(){
   istanbulClockTimer=setTimeout(scheduleIstanbulClock,Math.max(40,1010-Date.now()%1000));
 }
 scheduleIstanbulClock();
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleIstanbulClock()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(A&&view==='app'&&A.day!==today())shell();scheduleIstanbulClock()}});
 let swipeStart=null;
 function pageSwipeDirection(start,end,at){
   if(!start||!end||at-start.at>900||at<start.at)return 0;
@@ -2945,7 +2973,7 @@ function renderPage(){
 
 setInterval(()=>{if(A&&A.day!==today())shell()},60000);
 
-const P={};const M=h=>{const main=$('#mn');if(main){main.innerHTML=h;motionReveal(main)}};
+const P={};const M=h=>{const main=$('#mn');if(main){main.innerHTML=h;if(!main.classList.contains('an'))motionReveal(main)}};
 P.home=()=>{
   const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length;
   const j=A.journal?.[today()]?.text||'';
@@ -3029,19 +3057,31 @@ function fixTodoData(){
 P.todo=()=>{
   try{fixTodoData()}catch(e){A.tasks=[];A.backlog=[]}
   const next=addD(today(),1);
+  if(A.taskOrder==='alpha')sortTaskLists(next);
   const planned=(A.plans?.[next]||[]).map((name,i)=>`<div class="task"><span>${esc(name)}</span><button class="g s" onclick="removePlan(${i})">${t('delete')}</button></div>`).join('');
   const bl=A.backlog.map((bt,i)=>`<div class="task"><span>${esc(bt)}</span><button class="g s" onclick="fromBack(${i})">${t('addToToday')}</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">${t('delete')}</button></div>`).join('');
-  const acted=A.tasks.some(x=>x.s==='done'||x.s==='miss')||Boolean(A.completedBatches?.[today()]?.length);
+
   const dayFinished=allTodayTasksArchived();
-  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">'+(dayFinished?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.'):t('addTask'))+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'){event.preventDefault();addT()}"><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
-  <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünün görevlerini değerlendirdikten sonra yarının görevlerini buraya ekleyebilirsin.':'Plan tomorrow after reviewing today\'s tasks.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><input id="plan-input" maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'){event.preventDefault();addTomorrowPlan()}"><button onclick="addTomorrowPlan()" ${acted?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${acted?'':`<small class="mut">${tr()?'Önce bugünden bir görevi ✓ veya ✕ ile değerlendir.':'Mark one task ✓ or ✕ first.'}</small>`}</div>
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><button type="button" class="g s task-sort" aria-pressed="${A.taskOrder==='alpha'}" onclick="toggleTaskAlphabetical()">${tr()?'Alfabetik sırala (A–Z)':'Sort alphabetically (A–Z)'}</button><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">'+(dayFinished?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.'):t('addTask'))+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'){event.preventDefault();addT()}"><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
+  <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><input id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'){event.preventDefault();addTomorrowPlan()}"><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
 function vibrateTask(){try{if(navigator.vibrate)navigator.vibrate(12)}catch(_){}}
-const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}" data-task-index="${i}"><button type="button" class="g s task-grip" aria-label="${tr()?'Görevi taşı':'Reorder task'}" title="${tr()?'Sürükle veya ok tuşlarını kullan':'Drag or use arrow keys'}" onpointerdown="startTaskReorder(event,${i})" onpointermove="previewTaskReorder(event)" onpointerup="finishTaskReorder(event)" onpointercancel="cancelTaskReorder(event)" onlostpointercapture="cancelTaskReorder(event)" onkeydown="taskReorderKey(event,${i})">☰</button><span class="task-label">${esc(x.t)}</span><button class="ck ${x.s==='done'?'on':''}" aria-label="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s==='miss'?'on':''}" aria-label="${t('notDone')}" onclick="mk(${i},'miss')">✕</button>${x.s?`<button class="g s" onclick="planFromTask(${i})">${tr()?'Yarına planla':'Plan tomorrow'}</button>`:''}<button class="g s" onclick="editTask(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
+const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}" data-task-index="${i}"><button type="button" class="g s task-grip" aria-label="${tr()?'Görevi taşı':'Reorder task'}" title="${tr()?'Sürükle veya ok tuşlarını kullan':'Drag or use arrow keys'}" onpointerdown="startTaskReorder(event,${i})" onpointermove="previewTaskReorder(event)" onpointerup="finishTaskReorder(event)" onpointercancel="cancelTaskReorder(event)" onlostpointercapture="cancelTaskReorder(event)" onkeydown="taskReorderKey(event,${i})">☰</button><span class="task-label">${esc(x.t)}</span><button class="ck ${x.s==='done'?'on':''}" aria-label="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s==='miss'?'on':''}" aria-label="${t('notDone')}" onclick="mk(${i},'miss')">✕</button><button class="g s" onclick="editTask(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
 let taskReorder=null,taskEditContext=null;
+function sortTaskLists(next){
+  const collator=new Intl.Collator(tr()?'tr':'en',{numeric:true,sensitivity:'base'});
+  A.tasks.sort((a,b)=>collator.compare(a.t,b.t));
+  if(Array.isArray(A.plans?.[next]))A.plans[next].sort(collator.compare);
+}
+function toggleTaskAlphabetical(){
+  A.taskOrder=A.taskOrder==='alpha'?'manual':'alpha';
+  if(A.taskOrder==='alpha')sortTaskLists(addD(today(),1));
+  save();P.todo();
+}
 function moveTask(from,to){
   if(!A||!Number.isInteger(from)||!Number.isInteger(to)||from<0||to<0||from>=A.tasks.length||to>=A.tasks.length||from===to)return false;
+  if(A.taskOrder==='alpha')A.taskOrder='manual';
   const [task]=A.tasks.splice(from,1);
   A.tasks.splice(to,0,task);
   save();P.todo();return true;
@@ -3168,8 +3208,9 @@ function fromBack(i){
   }
   A.tasks.push({t:A.backlog[i],s:''});A.backlog.splice(i,1);recordActivity();P.todo();
 }
-function delT(i){if(!A.tasks[i])return;A.tasks.splice(i,1);vibrateTask();recordActivity();P.todo()}
+function delT(i){if(A.day!==today()){shell();return}if(!A.tasks[i])return;A.tasks.splice(i,1);vibrateTask();recordActivity();P.todo()}
 function addT(){
+  if(A.day!==today())roll();
   const v=String($('#nt')?.value||'').trim().slice(0,120);
   if(!v)return;
   if(allTodayTasksArchived()){
@@ -3180,6 +3221,7 @@ function addT(){
   $('#nt')?.focus({preventScroll:true});
 }
 function mk(i,status){
+  if(A.day!==today()){shell();return}
   const x=A.tasks[i];if(!x)return;
   x.s=x.s===status?'':status;
   // Archive all-complete batches before showing a clean new list. Historical task data remains in Reports.
@@ -3196,6 +3238,7 @@ function mk(i,status){
 }
 function ensurePlans(){if(!A.plans||typeof A.plans!=='object')A.plans={}}
 function pushTomorrowPlan(value){
+  if(!allTodayTasksArchived())return false;
   const v=String(value||'').trim().slice(0,120);if(!v)return false;
   ensurePlans();const next=addD(today(),1);
   if(!Array.isArray(A.plans[next]))A.plans[next]=[];
@@ -3203,13 +3246,14 @@ function pushTomorrowPlan(value){
   A.plans[next].push(v);return true;
 }
 function addTomorrowPlan(text){
+  if(A.day!==today()){shell();return false}
+  if(!allTodayTasksArchived())return false;
   const v=String(text||$('#plan-input')?.value||'').trim().slice(0,120);
   if(!pushTomorrowPlan(v))return false;
   recordActivity();P.todo();
   return true;
 }
-function planFromTask(i){const x=A.tasks[i];if(x&&x.s)addTomorrowPlan(x.t)}
-function removePlan(i){ensurePlans();const next=addD(today(),1);if(A.plans[next])A.plans[next].splice(i,1);save();P.todo()}
+function removePlan(i){if(A.day!==today()){shell();return}ensurePlans();const next=addD(today(),1);if(A.plans[next])A.plans[next].splice(i,1);save();P.todo()}
 
 /* sis: tamamlanmamis gecmis gunler */
 function dayFog(k){if(!A||!A.fog)return false;if(k>=today())return false;const its=items(k);return !(its.length>0&&its.every(x=>x.done))}
@@ -3505,7 +3549,8 @@ function reportDetailView(){
 }
 function reportAvailability(kind,td=today()){
  const full=A?.reportCalendarRule==='full-period-v1';
- const since=full&&/^\d{4}-\d{2}-\d{2}$/.test(String(A?.reportStart))?A.reportStart:(/^\d{4}-\d{2}-\d{2}$/.test(String(A?.pctFrom))?A.pctFrom:td);
+ const dates=[A?.reportStart,A?.pctFrom].filter(v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v)));
+ const since=full?(dates[0]||td):(dates.sort()[0]||td);
  return {since,unlock:reportInitialUnlockDate(kind,since,full)};
 }
 function calendarReportPeriod(kind,day){
@@ -3551,44 +3596,41 @@ P.rep=()=>{
 };
 
 let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};
-function logFocusSegment(endedAt,startedAt,completed=false){
-  if(!A||!Number.isFinite(startedAt)||!Number.isFinite(endedAt)||endedAt<=startedAt)return;
-  const seconds=Math.max(0,Math.floor((endedAt-startedAt)/1000));
-  if(!seconds)return;
+function logFocusSegment(endedAt,startedAt,completed=false,paused=[],expected=0){
+  if(!completed||!A||!Number.isFinite(endedAt)||!Number.isFinite(startedAt)||endedAt<startedAt)return;
+  const parts=(Array.isArray(paused)?paused:[]).filter(p=>p&&Number.isFinite(p.at)&&Number.isFinite(p.seconds)&&p.seconds>0&&p.at<=endedAt);
+  const last=Math.floor((endedAt-startedAt)/1000);
+  if(last>0)parts.push({at:endedAt,seconds:last});
+  const seconds=parts.reduce((total,p)=>total+p.seconds,0);
+  if(seconds<=0||seconds>36000||seconds<expected)return;
   if(!Array.isArray(A.focusHistory))A.focusHistory=[];
-  // Completed focus sessions and paused segments share one bounded, account-owned log.
-  if(A.focusHistory.some(r=>r.at===endedAt&&r.completed===completed))return;
-  A.focusHistory.push({at:endedAt,seconds:Math.min(seconds,36000),completed:!!completed});
-  if(A.focusHistory.length>2000)A.focusHistory.splice(0,A.focusHistory.length-2000);
+  const history=A.focusHistory;
+  if(history.some(r=>r?.at===endedAt&&r.completed===true))return;
+  history.push({at:endedAt,seconds,completed:true,...(parts.length>1?{parts}:{})});
+  if(history.length>2000)history.splice(0,history.length-2000);
 }
 function focusSummary(history,start,end){
   const perDay={};let seconds=0,sessions=0;
   for(const record of Array.isArray(history)?history:[]){
-    if(!Number.isFinite(record?.at)||!Number.isFinite(record?.seconds)||record.seconds<=0||record.seconds>36000)continue;
-    // Charge actual elapsed time to each local calendar day, even when
-    // a focus segment crosses midnight or a month/year boundary.
-    const finish=record.at,begin=finish-record.seconds*1000;
-    let cursor=begin;
-    while(cursor<finish){
-      const date=new Date(cursor);
-      if(!Number.isFinite(date.getTime()))break;
-      const day=D(date),midnight=new Date(date.getFullYear(),date.getMonth(),date.getDate()+1).getTime();
-      const next=Math.min(finish,midnight);
-      if(!Number.isFinite(next)||next<=cursor)break;
-      if(day>=start&&day<=end){
-        perDay[day]||={seconds:0,sessions:0};
-        const portion=(next-cursor)/1000;
-        perDay[day].seconds+=portion;
-        seconds+=portion;
+    if(record?.completed!==true||!Number.isFinite(record.at)||!Number.isFinite(record.seconds)||record.seconds<=0||record.seconds>36000)continue;
+    const parts=Array.isArray(record.parts)?record.parts:[record];
+    for(const part of parts){
+      if(!Number.isFinite(part?.at)||!Number.isFinite(part.seconds)||part.seconds<=0||part.seconds>36000)continue;
+      let cursor=part.at-part.seconds*1000;
+      while(cursor<part.at){
+        const date=new Date(cursor),day=D(date);
+        const next=Math.min(part.at,new Date(date.getFullYear(),date.getMonth(),date.getDate()+1).getTime());
+        if(!Number.isFinite(next)||next<=cursor)break;
+        if(day>=start&&day<=end){
+          perDay[day]||={seconds:0,sessions:0};
+          const duration=(next-cursor)/1000;perDay[day].seconds+=duration;seconds+=duration;
+        }
+        cursor=next;
       }
-      cursor=next;
     }
-    // A completed session belongs to the day it finished.
-    const finishedDay=D(new Date(finish));
-    if(record.completed===true&&finishedDay>=start&&finishedDay<=end){
-      perDay[finishedDay]||={seconds:0,sessions:0};
-      perDay[finishedDay].sessions++;
-      sessions++;
+    const finishedDay=D(new Date(record.at));
+    if(finishedDay>=start&&finishedDay<=end){
+      perDay[finishedDay]||={seconds:0,sessions:0};perDay[finishedDay].sessions++;sessions++;
     }
   }
   return {seconds,sessions,perDay};
@@ -3603,17 +3645,15 @@ function focusHistoryCard(){
   };
   const w=totalSince(week),m=totalSince(month);
   const time=seconds=>tr()?`${Math.floor(seconds/3600)} sa ${Math.round(seconds%3600/60)} dk`:`${Math.floor(seconds/3600)}h ${Math.round(seconds%3600/60)}m`;
-  // When fewer than three dates have a recording, show real dates with an explicit empty state.
-  for(let day=now;entries.size<3;day=addD(day,-1))if(!entries.has(day))entries.set(day,null);
   const rows=[...entries].sort(([a],[b])=>b.localeCompare(a)).map(([date,entry])=>
-    `<div class="task focus-day" data-focus-day="${date}"><time datetime="${date}">${fmt(date)}${date.slice(0,4)===now.slice(0,4)?'':'.'+date.slice(0,4)}</time>${entry?`<b>${time(entry.seconds)} · ${entry.sessions} ${tr()?'seans':'sessions'}</b>`:`<small class="mut">${tr()?'Kayıt yok':'No focus logged'}</small>`}</div>`);
+    `<div class="task focus-day" data-focus-day="${date}"><time datetime="${date}">${fmt(date)}${date.slice(0,4)===now.slice(0,4)?'':'.'+date.slice(0,4)}</time><b>${time(entry.seconds)} · ${entry.sessions} ${tr()?'seans':'sessions'}</b></div>`);
   const older=rows.slice(3);
   return `<section class="card focus-history"><h2>${tr()?'Pomodoro çalışma analizi':'Pomodoro focus analysis'}</h2>
-    <p class="mut">${tr()?'Kaydedilen gerçek odak süresi; tamamlanan seanslar ayrıca sayılır.':'Recorded focus time; completed sessions are counted separately.'}</p>
+    <p class="mut">${tr()?'Tamamladığın odak seansları ve çalışma süren.':'Your completed focus sessions and time spent focusing.'}</p>
     <div class="focus-history-totals"><div><small>${tr()?'Bu hafta':'This week'}</small><b>${time(w.seconds)}</b><span>${w.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div>
     <div><small>${tr()?'Bu ay':'This month'}</small><b>${time(m.seconds)}</b><span>${m.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div></div>
     <h3>${tr()?'Gün gün':'Day by day'}</h3>
-    ${rows.slice(0,3).join('')}
+    ${rows.length?rows.slice(0,3).join(''):`<p class="mut">${tr()?'Henüz tamamlanmış odak seansı yok.':'No completed focus sessions yet.'}</p>`}
     ${older.length?`<details class="focus-history-details"><summary><span class="expand">${tr()?'Daha fazlası':'More details'}</span><span class="collapse">${tr()?'Daha az göster':'Show less'}</span> <small>(${older.length})</small></summary><div class="focus-history-older" tabindex="0" role="region" aria-label="${tr()?'Önceki odak günleri':'Earlier focus days'}">${older.join('')}</div></details>`:''}
   </section>`;
 }
@@ -3622,7 +3662,7 @@ function persistPomodoroState(){
   A.pomo={
     w:pm.w,b:pm.b,ph:pm.ph,
     left:pm.run?Math.max(0,Math.ceil((pm.end-Date.now())/1000)):pm.left,
-    run:!!pm.run,end:pm.run?pm.end:0,n:pm.n,lg:pm.lg,noticeFive:!!pm.noticeFive,segmentStart:pm.segmentStart||0,updatedAt:Date.now()
+    run:!!pm.run,end:pm.run?pm.end:0,n:pm.n,lg:pm.lg,noticeFive:!!pm.noticeFive,segmentStart:pm.segmentStart||0,focusParts:pm.focusParts||[],updatedAt:Date.now()
   };
   save();
 }
@@ -3635,7 +3675,7 @@ function restorePomodoroState(){
   const defaultB=Number(first.b)>0&&Number(first.b)<=600?Number(first.b):5;
   if(!saved||typeof saved!=='object'){
     if(A?.stopwatch?.running){clearInterval(pm.swI);pm.swI=setInterval(swRender,40)}
-    pm={...pm,w:defaultW,b:defaultB,ph:'w',left:defaultW*60,run:0,end:0,n:0,lg:0,noticeFive:false,iv:0};
+    pm={...pm,w:defaultW,b:defaultB,ph:'w',left:defaultW*60,run:0,end:0,n:0,lg:0,focusParts:[],noticeFive:false,iv:0};
     return;
   }
   const w=Number(saved.w),b=Number(saved.b),left=Number(saved.left),end=Number(saved.end);
@@ -3647,7 +3687,7 @@ function restorePomodoroState(){
     run:saved.run?1:0,
     end:Number.isFinite(end)&&end>0?end:0,
     n:Number.isFinite(Number(saved.n))?Math.max(0,Math.floor(Number(saved.n))):0,
-    lg:saved.lg?1:0,noticeFive:!!saved.noticeFive,segmentStart:Number(saved.segmentStart)||0,iv:0
+    lg:saved.lg?1:0,noticeFive:!!saved.noticeFive,segmentStart:Number(saved.segmentStart)||0,focusParts:Array.isArray(saved.focusParts)?saved.focusParts:[],iv:0
   };
   if(A?.stopwatch?.running){clearInterval(pm.swI);pm.swI=setInterval(swRender,40)}
   if(pm.run&&pm.end){
@@ -3816,7 +3856,7 @@ function pi(){
   l.textContent=pm.ph==='w'?`${t('session')} ${pm.n%5+1}/5 · ${fmtDuration(pm.w)}`:(pm.lg?t('longBreak'):t('break'));
   e.textContent=pm.run?`${t('pomoEnds')}: ${clk(pm.left*1000)}`:(pm.w>60&&pm.ph==='w'?`${pm.w} ${t('minutes')} · ${t('alreadyEnds')} ${clk(pm.left*1000)}`:'');updatePomoOverlay();
 }
-function setP(w,b){if(pm.run&&pm.ph==='w')logFocusSegment(Date.now(),pm.segmentStart||Date.now());clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,end:0,n:0,lg:0,noticeFive:false,iv:0};persistPomodoroState();document.title=TITLE;closePomoOverlay();P.pomo()}
+function setP(w,b){if(pm.run)pTick(true);clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,end:0,n:0,lg:0,focusParts:[],noticeFive:false,iv:0};persistPomodoroState();document.title=TITLE;closePomoOverlay();P.pomo()}
 let editIdx=-1;
 function editP(i){const p=A.presets[i];$('#cw').value=p.w;$('#cb').value=p.b;editIdx=i}
 function delP(i){A.presets.splice(i,1);save();P.pomo()}
@@ -3831,7 +3871,7 @@ function pTick(silent=false){
     if(!silent&&transitions===0&&document.visibilityState==='visible')beep();
     let nextMinutes;
     if(pm.ph==='w'){
-      logFocusSegment(pm.end,pm.segmentStart||pm.end-pm.w*60000,true);
+      logFocusSegment(pm.end,pm.segmentStart||pm.end-pm.w*60000,true,pm.focusParts||[],pm.w*60);pm.focusParts=[];
       pm.n++;pm.ph='b';pm.lg=pm.n%5===0?1:0;
       const breaks=Array.isArray(A&&A.presets)?A.presets.map(p=>Number(p.b)).filter(v=>Number.isFinite(v)&&v>0):[];
       nextMinutes=pm.lg?Math.max(pm.b,...breaks):pm.b;
@@ -3848,13 +3888,22 @@ function pTick(silent=false){
   if(A&&pm.ph==='w'&&pm.w>5&&pm.left>0&&pm.left<=300&&!pm.noticeFive){pm.noticeFive=true;changed=true;if(ensureNoticeState().notificationPrefs.pomo!==false)addNotification('pomo-five:'+pm.end,'pomo-five')}
   const t2=$('#pt');if(t2)t2.textContent=ft(pm.left);
   if(A)document.title=ft(pm.left)+' · '+TITLE;
-  if(changed)persistPomodoroState();
+  if(changed){
+    persistPomodoroState();
+    const card=pg==='pomo'?document.querySelector('.focus-history'):null;
+    if(card){const open=card.querySelector('details')?.open;card.outerHTML=focusHistoryCard();if(open){const details=document.querySelector('.focus-history details');if(details)details.open=true}}
+  }
   pi();swRender();
 }
 function pS(){
   prepareAudio();
   if(pm.run){
-    pTick(true);if(pm.ph==='w')logFocusSegment(Date.now(),pm.segmentStart||Date.now());clearInterval(pm.iv);pm.iv=0;pm.run=0;pm.end=0;pm.segmentStart=0;
+    pTick(true);
+    if(pm.ph==='w'&&pm.segmentStart){
+      const at=Date.now(),seconds=Math.max(0,Math.floor((at-pm.segmentStart)/1000));
+      if(seconds)(pm.focusParts||=[]).push({at,seconds});
+    }
+    clearInterval(pm.iv);pm.iv=0;pm.run=0;pm.end=0;pm.segmentStart=0;
   }else{
     pm.run=1;pm.segmentStart=Date.now();pm.end=Date.now()+Math.max(1,pm.left)*1000;
     if(document.visibilityState==='visible')requestAnimationFrame(()=>beep());
@@ -3864,9 +3913,9 @@ function pS(){
   persistPomodoroState();pi();updatePomoOverlay();
 }
 function pR(){
-  if(pm.run&&pm.ph==='w')logFocusSegment(Date.now(),pm.segmentStart||Date.now());
+  if(pm.run)pTick(true);
   clearInterval(pm.iv);
-  pm={...pm,run:0,ph:'w',left:pm.w*60,end:0,n:0,lg:0,noticeFive:false,segmentStart:0,iv:0};
+  pm={...pm,run:0,ph:'w',left:pm.w*60,end:0,n:0,lg:0,noticeFive:false,segmentStart:0,focusParts:[],iv:0};
   persistPomodoroState();document.title=TITLE;closePomoOverlay();if(pg==='pomo')P.pomo();
 }
 function swS(){
@@ -4076,11 +4125,16 @@ function confirmReset(){
   if(!A)return;
   const safe={u:A.u,nick:A.nick,bio:A.bio,pw:A.pw||'',email:A.email,phone:A.phone,authUid:A.authUid,accountOrigin:A.accountOrigin,loginMethod:A.loginMethod,googleConnected:A.googleConnected,theme:A.theme};
   clearInterval(pm.iv);clearInterval(pm.swI);
+  const anchor=reportAvailability('week',istanbulDayKey()).since;
   const fresh=newAcc(safe.u,safe.nick,safe.bio,safe.pw,safe.email,safe.phone);
+  fresh.reportStart=anchor;
+  for(const key of ['qs','ql','planningQs','planningLocks'])if(A[key])fresh[key]=A[key];
+  if(A.reportCalendarRule)fresh.reportCalendarRule=A.reportCalendarRule;else delete fresh.reportCalendarRule;
+  for(const key of ['salt','pwAt','notificationPrefs','taskOrder'])if(A[key]!==undefined)fresh[key]=A[key];
   if(!A.progressPolicy)delete fresh.progressPolicy;else fresh.progressPolicy=A.progressPolicy;
   fresh.authUid=safe.authUid;fresh.accountOrigin=safe.accountOrigin;fresh.loginMethod=safe.loginMethod;fresh.googleConnected=safe.googleConnected;fresh.mail=safe.email;fresh.theme=safe.theme;fresh.pctFrom=today();
   DB.accounts[safe.u]=fresh;A=fresh;
-  pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,lg:0,iv:0,sw:0,swT:0,swI:0};
+  pm={...pm,w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,lg:0,focusParts:[],segmentStart:0,iv:0,sw:0,swT:0,swI:0};
   closeModal('reset-modal');save();msg=t('systemReset');shell();
 }
 // V10: export only the current signed-in app snapshot, never credentials or other accounts.
@@ -4426,6 +4480,7 @@ function signInWithGoogle(options={}){
 }
 async function bootstrapCloudAuth(){
   if(window.IYAccount&&IYAccount.consumeLink())return;
+  if(typeof IYRecovery!=='undefined'&&await IYRecovery.callback())return;
   const frag=new URLSearchParams(location.hash.replace(/^#/,''));
   const recovery=frag.get('type')==='recovery';
   const at=frag.get('access_token'),rt=frag.get('refresh_token');
@@ -4559,6 +4614,7 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
     const meta=user.user_metadata||{};
     const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
+    bindReportCalendar(a,user,!remote&&!local);
     applyServerProgressPolicy(a,progressPolicy);
     a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
     if(user.app_metadata?.providers?.includes('google')){a.googleConnected=true;if(!a.loginMethod)a.loginMethod='google'}

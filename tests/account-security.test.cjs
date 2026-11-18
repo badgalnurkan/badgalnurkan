@@ -16,6 +16,7 @@ async function fixture({mail=true,send=true,amr,dbError}={}){
    const body=JSON.parse(opt.body);rpc.push(body);
    return Response.json(dbError?{error:dbError}:body.p_action.startsWith('request_')?{ok:true,id:body.p_fields.id,email:'owner@example.invalid'}:{ok:true,user_id:'server-user',state:'pending_delete',delete_after:'2027-01-01T00:00:00Z'});
   }
+  if(url.includes('/auth/v1/otp?redirect_to=')){return Response.json({})}
   if(url==='https://api.resend.com/emails'){mailBodies.push(JSON.parse(opt.body));return Response.json(send?{id:'mail-fixture'}:{error:'provider error'},{status:send?200:500})}
   throw Error('unexpected network '+url);
  };
@@ -29,13 +30,28 @@ test('interactive authentication expires exactly at ten minutes and rejects futu
  assert.equal(recentAuthentication(claims,'u',1599999),true);assert.equal(recentAuthentication(claims,'u',1600000),false);
  assert.equal(recentAuthentication(claims,'u',999999),false);assert.equal(recentAuthentication({...claims,amr:[{method:'token_refresh',timestamp:1000}]},'u',1000000),false);assert.equal(recentAuthentication(claims,'other',1000000),false);
 });
-test('GET health exposes only readiness and never creates a mail or database request',async()=>{const f=await fixture();const r=await f.handler(new Request('https://x.invalid'));assert.deepEqual(await r.json(),{ok:true,version:1,mailReady:true});assert.equal(f.calls.length,0)});
+test('GET health exposes only readiness and never creates a mail or database request',async()=>{const f=await fixture();const r=await f.handler(new Request('https://x.invalid'));assert.deepEqual(await r.json(),{ok:true,version:3,transactionalMailReady:true,mailReady:true,delivery:'resend'});assert.equal(f.calls.length,0)});
 test('unapproved origins cannot perform actions',async()=>{const f=await fixture();const r=await f.handler(f.req({action:'request_delete'},true,'https://evil.invalid'));assert.equal(r.status,403);assert.equal(f.calls.length,0)});
 test('missing authorization and oversized bodies fail before database access',async()=>{
  const f=await fixture();assert.equal((await f.handler(f.req({action:'request_delete'},false))).status,401);
  assert.equal((await f.handler(f.req('x'.repeat(9000)))).status,413);assert.equal(f.calls.length,0);
 });
-test('missing Resend configuration fails closed without creating a challenge',async()=>{const f=await fixture({mail:false});const r=await f.handler(f.req({action:'request_deactivate'}));assert.equal(r.status,503);assert.equal((await r.json()).code,'MAIL_NOT_CONFIGURED');assert.equal(f.rpc.length,0)});
+test('delivery status distinguishes dedicated mail from the existing compatibility channel',async()=>{
+ const f=await fixture({mail:false});
+ const health=await(await f.handler(new Request('https://x.invalid'))).json();
+ assert.equal(health.transactionalMailReady,false);assert.equal(health.delivery,'supabase-auth');
+ const result=await(await f.handler(f.req({action:'request_deactivate'}))).json();assert.equal(result.delivery,'auth');
+ const url=new URL(f.calls.find(url=>url.includes('/auth/v1/otp?')));assert.match(url.searchParams.get('redirect_to'),/#account-action=deactivate&/);
+});
+test('each account action has a distinct transactional subject in both languages',async()=>{
+ for(const [action,en,tr] of [['deactivate',/temporary account closure code/i,/Geçici hesap kapatma/],['delete',/account deletion request/i,/Kalıcı hesap silme/],['reactivate',/reactivation code/i,/yeniden açma/]]){
+  for(const [lang,label] of [['en',en],['tr',tr]]){
+   const f=await fixture();const data=await(await f.handler(f.req({action:'request_'+action,lang}))).json();
+   assert.equal(data.delivery,'resend');assert.match(f.mailBodies[0].subject,label);assert.ok(!f.calls.some(path=>path.includes('/otp')));
+   assert.match(f.mailBodies[0].text,action==='delete'?/#account-action=delete/:/\b\d{6}\b/);
+  }
+ }
+});
 test('temporary closure sends a six-digit code only to the verified server identity',async()=>{
  const f=await fixture(),r=await f.handler(f.req({action:'request_deactivate',user_id:'victim',email:'victim@example.invalid'})),data=await r.json();
  assert.equal(r.status,200);assert.equal(f.rpc[0].p_uid,'server-user');assert.deepEqual(f.mailBodies[0].to,['owner@example.invalid']);

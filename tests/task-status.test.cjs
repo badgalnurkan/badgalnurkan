@@ -56,3 +56,27 @@ test('English date dialogs keep pending, missed and completed labels distinct',(
 test('date-dialog task names stay escaped for every status',()=>{
  const {f}=fixture();const row=f.dayTaskRow({t:'<img src=x onerror=alert(1)>',s:''});assert.ok(row.includes('&lt;img'));assert.ok(!row.includes('<img'));
 });
+
+test('tomorrow plans require every task to be done, survive today, and promote only once',()=>{
+ const {f,context}=fixture();
+ context.addD=(value,n)=>new Date(Date.parse(value+'T12:00Z')+n*864e5).toISOString().slice(0,10);
+ context.$=()=>({value:'',focus(){}});
+ vm.runInContext(extract('function allTodayTasksArchived()', '/* sis:')+extract('function sortTaskLists(', 'function moveTask('),context);
+ context.A.tasks=[{t:'A',s:''},{t:'B',s:''}];
+ assert.equal(context.addTomorrowPlan('Too early'),false);
+ f.mk(0,'done');f.mk(1,'miss');assert.equal(context.addTomorrowPlan('Still early'),false);
+ f.mk(1,'done');assert.equal(context.addTomorrowPlan('Çalış'),true);
+ context.$=()=>({value:'Ara',focus(){}});context.addT();
+ context.toggleTaskAlphabetical();assert.deepEqual(Array.from(context.A.plans['2026-11-16']),['Ara','Çalış']);
+ f.roll();assert.equal(context.A.tasks.length,0);
+ context.current='2026-11-16';f.roll();f.roll();
+ assert.deepEqual(Array.from(context.A.tasks,x=>x.t),['Ara','Çalış']);
+ assert.deepEqual(Array.from(context.A.tasks,x=>x.s),['','']);assert.equal(context.A.plans['2026-11-16'],undefined);
+ assert.equal(context.addTomorrowPlan('Premature again'),false);
+});
+test('returning late preserves unvisited plans on their actual date',()=>{
+ const {f,context}=fixture();context.A.plans={'2026-11-16':['Scheduled Monday'],'2026-11-19':['Future']};
+ context.current='2026-11-18';f.roll();f.roll();
+ assert.equal(context.A.tasks.length,0);assert.deepEqual(Array.from(context.A.hist['2026-11-16'],x=>[x.t,x.s]),[['Scheduled Monday','pending']]);
+ assert.deepEqual(Array.from(context.A.plans['2026-11-19']),['Future']);
+});

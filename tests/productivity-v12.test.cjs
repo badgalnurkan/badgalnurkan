@@ -79,7 +79,7 @@ test('future notes show correct remaining days in Turkish and English',()=>{
  assert.equal(features.futureNoteCountdown('2026-11-18'),'Bugün');
 });
 
-test('focus summary separates elapsed focus time from completed sessions',()=>{
+test('focus summary counts only completed sessions, including when older data contains pauses',()=>{
  const context={D:d=>d.toISOString().slice(0,10)};
  vm.createContext(context);
  vm.runInContext(extract('function focusSummary(', 'function focusHistoryCard(')+'\nthis.focusSummary=focusSummary',context);
@@ -91,9 +91,9 @@ test('focus summary separates elapsed focus time from completed sessions',()=>{
   {at:Date.parse('2026-10-18T12:00:00Z'),seconds:3000,completed:true}
  ];
  const data=context.focusSummary(history,'2026-11-01','2026-11-30');
- assert.equal(data.seconds,1800);
+ assert.equal(data.seconds,1500);
  assert.equal(data.sessions,1);
- assert.equal(data.perDay['2026-11-18'].seconds,1800);
+ assert.equal(data.perDay['2026-11-18'].seconds,1500);
 });
 test('new account percentage requires activity and resets after a seven-day gap',()=>{
  const context={
@@ -174,9 +174,20 @@ test('Pomodoro history entries stay on their original account during switches',(
  context.A=accountTwo;
  context.logFocusSegment(first+360000,first+180000,false);
  assert.equal(accountOne.focusHistory.length,1);
- assert.equal(accountTwo.focusHistory.length,1);
+ assert.equal(accountTwo.focusHistory.length,0);
  assert.equal(accountOne.focusHistory[0].seconds,300);
  assert.equal(accountOne.focusHistory[0].completed,true);
- assert.equal(accountTwo.focusHistory[0].seconds,180);
- assert.equal(accountTwo.focusHistory[0].completed,false);
+});
+
+test('a resumed custom session records only focused parts once its full duration has elapsed',()=>{
+ const context={A:{focusHistory:[]},D:d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};vm.createContext(context);
+ vm.runInContext(extract('function logFocusSegment(', 'function focusHistoryCard('),context);
+ const early=new Date(2026,10,17,21).getTime(),later=new Date(2026,10,18,12).getTime();
+ const paused=[{at:early,seconds:180}];
+ context.logFocusSegment(later,later-119000,true,paused,300);assert.equal(context.A.focusHistory.length,0);
+ context.logFocusSegment(later,later-120000,true,paused,300);context.logFocusSegment(later,later-120000,true,paused,300);
+ assert.equal(context.A.focusHistory.length,1);
+ const data=context.focusSummary(context.A.focusHistory,'2026-11-17','2026-11-18');
+ assert.equal(data.seconds,300);assert.equal(data.sessions,1);
+ assert.equal(data.perDay['2026-11-17'].seconds,180);assert.equal(data.perDay['2026-11-18'].sessions,1);
 });
