@@ -94,6 +94,20 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    }
    assert.deepEqual(productivityErrors,[],engine+' productivity page errors');
    // A real report screen must close at Istanbul midnight even if its tab stays open.
+   for(const lang of ['en','tr']){
+    await productivity.goto('http://127.0.0.1:4173/review-app.html?page=rep&lang='+lang);
+    for(const width of [320,375,390,430]){
+     await productivity.setViewportSize({width,height:844});
+     const wholeWords=await productivity.locator('.report-archives button').evaluateAll(buttons=>buttons.every(button=>{
+      const text=button.firstChild;
+      return getComputedStyle(button).textAlign==='center'&&Array.from(text.textContent.matchAll(/\S+/g)).every(match=>{
+       const r=document.createRange();r.setStart(text,match.index);r.setEnd(text,match.index+match[0].length);
+       return r.getClientRects().length===1;
+      });
+     }));
+     assert.equal(wholeWords,true,engine+' archive label wraps inside a word at '+width+' '+lang);
+    }
+   }
    await productivity.goto('http://127.0.0.1:4173/review-app.html?page=rep&lang=tr&date=2026-11-29');
    assert.equal(await productivity.locator('.report-plan-period').count(),2,engine+' only weekly plan groups on Sunday');
    assert.equal(await productivity.locator('#report-group-plan-2026-12').count(),0);
@@ -104,6 +118,16 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await changeDay('2026-11-30');
    await productivity.locator('#report-group-plan-2026-12').waitFor();
    assert.equal(await productivity.locator('#report-group-plan-2026-11-23').count(),0,engine+' weekly form closed');
+   const monthly=productivity.locator('.period-questionnaire');
+   await monthly.locator('.report-send').click();
+   assert.ok(await monthly.locator('textarea').count()>0,engine+' incomplete report remains editable');
+   for(const field of await monthly.locator('textarea').all())await field.fill('Kasım yanıtım');
+   await monthly.locator('.report-send').click();
+   await productivity.locator('.report-submitted').waitFor();
+   assert.equal(await productivity.locator('.report-planning-overview textarea').count(),0);
+   await productivity.evaluate(()=>showReportDetail('month'));
+   assert.equal(await productivity.locator('textarea[id^="report-"]').count(),0);
+   await productivity.evaluate(()=>reportBack());
    await changeDay('2026-12-01');assert.equal(await productivity.locator('.report-planning-overview').count(),0);
    await productivity.evaluate(()=>showReportDetail('month-previous'));
    assert.equal(await productivity.locator('textarea[id^="report-"]').count(),0,engine+' previous month is read-only statistics');
@@ -127,6 +151,11 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     const url=route.request().url();requests.push(url);
     let data=null;
     if(url.endsWith('/auth/v1/user'))data={id:'fixture-user',email:record.email,email_confirmed_at:'2026-11-01T00:00:00Z',user_metadata:{},app_metadata:{providers:['google']}};
+    else if(new URL(url).pathname==='/auth/v1/recover'){
+     assert.equal(route.request().postDataJSON().email,record.email);
+     assert.equal(new URL(url).searchParams.get('redirect_to'),'https://badgalnurkan.com/');
+     data={};
+    }
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:false,password_required:false,server_time:'2026-11-17T00:00:00Z'};
     else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
@@ -146,7 +175,13 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    assert.equal(await page.evaluate(()=>view),'app','home opens while greeting is active');
    assert.equal(await page.locator('#login-portal').count(),1,'greeting accompanies home reveal');
    await page.locator('#login-portal').waitFor({state:'detached'});
-   await page.evaluate(()=>goTo('app','set'));
+   await page.evaluate(()=>openProfile());
+   await page.locator('#profile-modal .profile-change-password').click();
+   await page.locator('#password-renewal[open]').waitFor();
+   const sent=page.waitForResponse(r=>new URL(r.url()).pathname==='/auth/v1/recover');
+   await page.locator('#password-renewal button').click();assert.equal((await sent).status(),200);
+   assert.equal(await page.locator('#mn .profile-change-password').count(),1);
+
    await page.locator('.security-summary').waitFor();
    assert.ok((await page.locator('#security-content').innerText()).includes(record.email),'settings shows the verified server email');
    await page.getByText('Hesabı geçici olarak kapat',{exact:true}).click();

@@ -49,7 +49,7 @@ window.IYAccount=(()=>{
   return '<span data-account-email>'+esc(verified?(state.email||'—'):txt('E-posta doğrulanıyor…','Verifying email…'))+'</span>';
  }
  function settingsMarkup(){
-  return '<section class="card account-security" aria-labelledby="security-title"><h2 id="security-title">'+txt('Hesap güvenliği ve e-posta','Account security and email')+'</h2><div id="security-content" aria-live="polite"><p class="mut">'+txt('Sunucudan hesap bilgileri alınıyor…','Loading account details…')+'</p></div><p id="security-message" role="status"></p></section>';
+  return '<section class="card account-security" aria-labelledby="security-title"><h2 id="security-title">'+txt('Hesap güvenliği ve e-posta','Account security and email')+'</h2><div id="security-content" aria-live="polite"><p class="mut">'+txt('Sunucudan hesap bilgileri alınıyor…','Loading account details…')+'</p></div><details id="password-renewal" class="security-details"><summary>'+txt('Şifreyi değiştir','Change password')+'</summary><p>'+txt('Doğrulanmış hesap adresine şifre yenileme bağlantısı gönder.','Send a password reset link to your verified account email.')+'</p><button type="button" data-security-action onclick="requestMyPasswordReset()">'+txt('Şifre yenileme bağlantısı gönder','Send password reset link')+'</button></details><p id="security-message" role="status"></p></section>';
  }
  function passwordForm(prefix='security-',hasPassword=true){
   return '<div class="security-form">'+(hasPassword?'<label for="'+prefix+'old">'+txt('Mevcut şifre','Current password')+'</label><input id="'+prefix+'old" type="password" autocomplete="current-password">':'')+

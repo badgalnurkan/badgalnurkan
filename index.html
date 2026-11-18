@@ -1467,6 +1467,11 @@ body{font-size:1rem!important}
 .report-plan-period h3{margin-top:0}.report-plan-period h3 small{display:block;font-size:.75rem;font-weight:400}
 .report-plan-period textarea{max-width:100%;min-width:0;box-sizing:border-box}
 @media(max-width:720px){.report-planning-grid{grid-template-columns:minmax(0,1fr)}}
+#mn .report-archives>h2{text-align:center}
+#mn .report-archives .row{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:.65rem}
+#mn .report-archives .row>button{display:block;width:100%!important;max-width:none!important;min-width:0;padding:.65rem .8rem;font-size:1rem!important;line-height:1.4;text-align:center;white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:none}
+.profile-change-password{margin-block:0 1rem}
+.report-send{margin-block-start:1rem}
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -2142,8 +2147,12 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-18-report-window-task-motion';
+const SITE_RELEASE='2026-11-18-submit-reports-password';
 const SITE_CHANGES=[
+ {date:'2026-11-18',trTitle:'Rapor gönderimi ve şifre yenileme',enTitle:'Report submission and password reset',items:[
+ ['Dönem sonu raporunu Gönder ile kilitleyebilirsin.','Submit your period-end report to lock your answers.'],
+ ['Profildeki şifre kısayolu yenileme bölümünü açar. Arşiv düğmeleri küçük ekranlara uyum sağlar.','The profile password shortcut opens password reset. Archive buttons fit narrow screens.']]},
+
  {date:'2026-11-18',trTitle:'Rapor soruları, görev sırası ve odak özeti',enTitle:'Report questions, task order and focus summary',items:[
  ['Haftalık sorular pazar günü, aylık sorular ayın son günü açılır.','Weekly questions open on Sundays and monthly questions on the last day of the month.'],
  ['Görevi üç çizgiden sürüklerken diğer görevler yer açar.','Drag a task by its handle and the other tasks slide into place.'],
@@ -2755,16 +2764,7 @@ function updateIstanbulClock(){
   if(!A||view!=='app'||!trigger)return;
   const day=istanbulDayKey();
   if(trigger.dataset.day===day)return;
-  if(pg==='rep'){
-    const previous=trigger.dataset.day;
-    if(previous&&previous<day){
-      for(const group of document.querySelectorAll('[id^="report-group-"]')){
-        const id=/^report-group-(review|plan)-(\d{4}-\d{2}(?:-\d{2})?)$/.exec(group.id);
-        if(id)commitReportGroup(id[2],id[1],previous);
-      }
-    }
-    P.rep();
-  }
+  if(pg==='rep')P.rep();
   trigger.dataset.day=day;
   trigger.textContent=fmt(day);
   const mini=$('#mini-cal');
@@ -2821,12 +2821,17 @@ async function profileUsernameHint(name,targetId){
     el.querySelector('[data-refresh-suggestions]')?.addEventListener('click',()=>profileUsernameHint(proposed,targetId));
   },300);
 }
-function openEmailSecuritySettings(){
+function profilePasswordLink(){return A.authUid?`<button type="button" class="g s profile-change-password" onclick="openEmailSecuritySettings('password')">${tr()?'Şifreyi değiştir':'Change password'}</button>`:''}
+function openEmailSecuritySettings(section){
   closeModal('profile-modal');
-  goTo('app','set');
+  if(pg!=='set'||view!=='app')goTo('app','set');
   setTimeout(()=>{
     const heading=document.getElementById('security-title');
     if(!heading)return;
+    if(section==='password'){
+      const panel=document.getElementById('password-renewal');
+      if(panel){panel.open=true;panel.querySelector('summary').focus({preventScroll:true});panel.scrollIntoView({block:'center',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});return}
+    }
     heading.tabIndex=-1;heading.focus({preventScroll:true});
     heading.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   },320);
@@ -2838,7 +2843,7 @@ function profilePasswordMarkup(){
 }
 function openProfile(){
   if(!A)return;
-  openModal('profile-modal',`<h2>${tr()?'Profilim':'My profile'}</h2><p class="profile-email"><strong>${t('email')}:</strong> ${A.authUid?'<button class="g s profile-email-link" type="button" onclick="openEmailSecuritySettings()">'+IYAccount.emailMarkup()+'</button>':esc(A.email||(tr()?'E-posta belirtilmemiş':'Email not available'))}</p><div class="profile-fields"><label for="prof-u">${t('username')}</label><input id="prof-u" maxlength="20" autocapitalize="none" autocomplete="off" value="${esc(A.u)}" oninput="profileUsernameHint(this.value,'profile-name-hint')"><div id="profile-name-hint" aria-live="polite"></div><label for="prof-n">${t('displayName')}</label><input id="prof-n" maxlength="30" value="${esc(A.nick||'')}"><label for="prof-b">${t('bio')}</label><textarea id="prof-b" rows="3" maxlength="160">${esc(A.bio||'')}</textarea></div><div class="row"><button onclick="saveProfile()">${t('save')}</button><button class="g" onclick="closeModal('profile-modal')">${t('cancel')}</button></div>${profilePasswordMarkup()}<div class="profile-logout"><button class="danger-logout" onclick="closeModal('profile-modal');setTimeout(confirmLogout,240)">${t('logout')}</button></div>`);
+  openModal('profile-modal',`<h2>${tr()?'Profilim':'My profile'}</h2><p class="profile-email"><strong>${t('email')}:</strong> ${A.authUid?'<button class="g s profile-email-link" type="button" onclick="openEmailSecuritySettings()">'+IYAccount.emailMarkup()+'</button>':esc(A.email||(tr()?'E-posta belirtilmemiş':'Email not available'))}</p>${profilePasswordLink()}<div class="profile-fields"><label for="prof-u">${t('username')}</label><input id="prof-u" maxlength="20" autocapitalize="none" autocomplete="off" value="${esc(A.u)}" oninput="profileUsernameHint(this.value,'profile-name-hint')"><div id="profile-name-hint" aria-live="polite"></div><label for="prof-n">${t('displayName')}</label><input id="prof-n" maxlength="30" value="${esc(A.nick||'')}"><label for="prof-b">${t('bio')}</label><textarea id="prof-b" rows="3" maxlength="160">${esc(A.bio||'')}</textarea></div><div class="row"><button onclick="saveProfile()">${t('save')}</button><button class="g" onclick="closeModal('profile-modal')">${t('cancel')}</button></div>${profilePasswordMarkup()}<div class="profile-logout"><button class="danger-logout" onclick="closeModal('profile-modal');setTimeout(confirmLogout,240)">${t('logout')}</button></div>`);
 }
 async function saveProfile(){
   if(!A)return;
@@ -3326,22 +3331,38 @@ function reportQuestionLocks(scope='review'){
  if(!A[field]||typeof A[field]!=='object'||Array.isArray(A[field]))A[field]={};return A[field];
 }
 function reportLockedNotice(k){const year=Number(k.slice(0,4));return `<p class="report-lock-note" role="status">🔒 ${tr()?`Cevapların kilitlendi. ${year+1} yılının başında Yanıt arşivinden okuyabilirsin.`:`Your answers are locked. Read them in the Answer archive at the beginning of ${year+1}.`}</p>`}
-function reportAutoLockHint(){return `<p class="mut report-lock-hint">${tr()?'Tüm soruları cevaplayıp son alandan çıktığında bu grup otomatik kilitlenir. Cevaplar ilgili yılın sonuna kadar gizli kalır.':'This group locks automatically when every question is answered and you leave the last field. Answers stay hidden until that year ends.'}</p>`}
-function commitReportGroup(k,scope='review',day=istanbulDayKey()){
- if(!canAnswerReport(k,scope,day))return false;
- const questions=reportQuestionStore(scope)[k];
- if(reportQuestionLocks(scope)[k]||!Array.isArray(questions)||!questions.length||!questions.every(q=>String(q.a||'').trim()))return false;
- reportQuestionLocks(scope)[k]=1;save();
- // Only this section changes, preserving a pending navigation click.
- const group=typeof document==='undefined'?null:document.getElementById('report-group-'+scope+'-'+k);if(group)group.innerHTML=reportLockedNotice(k);return true;
+function reportGroupLocked(scope,k){
+  return !!(reportQuestionLocks(scope)[k]||(scope==='plan'&&reportQuestionLocks('review')[k]));
 }
-const qb=(k,arr,ro,scope='review')=>arr.map((x,i)=>`<label for="report-${scope}-${k}-${i}">${esc(reportQuestionForPeriod(x,k,scope))}</label><div class="qa"><textarea id="report-${scope}-${k}-${i}" rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this,'${scope}')" onblur="finishReportAnswer('${k}',${i},this,'${scope}')">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i},'${scope}')">${t('delete')}</button>`}</div><div class="qcap mut">${String(x.a||'').length}/400</div>`).join('');
-function qa(k,i,el,scope='review'){if(!canAnswerReport(k,scope)||reportQuestionLocks(scope)[k])return;const question=reportQuestionStore(scope)[k]?.[i];if(!question)return;const previous=question.a;question.a=el.value.slice(0,400);if(question.a.trim()&&question.a!==previous)recordActivity();else save();const counter=el.parentElement?.nextElementSibling;if(counter)counter.textContent=question.a.length+'/400'}
-function finishReportAnswer(k,i,el,scope='review'){qa(k,i,el,scope);commitReportGroup(k,scope)}
-function delQ(k,i,scope='review'){if(!canAnswerReport(k,scope)||reportQuestionLocks(scope)[k])return;const questions=reportQuestionStore(scope)[k];if(!Array.isArray(questions)||!questions[i])return;questions.splice(i,1);commitReportGroup(k,scope);save();P.rep()}
-function addRandQ(k,scope='review'){if(!canAnswerReport(k,scope)||reportQuestionLocks(scope)[k])return;const kind=k.length===7?'month':'week',R=scope==='plan'?(tr()?PLAN_RQ_TR[kind]:PLAN_RQ_EN[kind]):rqFor();(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(R[Math.floor(Math.random()*R.length)]));save();P.rep()}
-function addQ(k,scope='review'){if(!canAnswerReport(k,scope)||reportQuestionLocks(scope)[k])return;const e=$('#nq-'+k),v=String(e?.value||'').trim().slice(0,150);if(v){(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(v,true));save();P.rep()}}
-function lockQ(k,b){if(!canAnswerReport(k)||reportQuestionLocks()[k])return;if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent=tr()?'Emin misin? Bu işlem geri alınamaz':'Are you sure? This cannot be undone';return}reportQuestionLocks()[k]=1;save();P.rep()}
+function submitPeriodReport(kind,key){
+  const day=istanbulDayKey();
+  if(!['week','month'].includes(kind)||!reportQuestionsOpen(kind,day))return false;
+  const period=calendarReportPeriod(kind,day);
+  if(period.key!==key)return false;
+  const groups=[['review',key],['plan',key],['plan',period.nk]];
+  const pending=groups.filter(([scope,k])=>!reportGroupLocked(scope,k));
+  if(!pending.length)return false;
+  for(const [scope,k] of pending){
+    const questions=reportQuestionStore(scope)[k];
+    if(!Array.isArray(questions))return false;
+    const missing=questions.findIndex(q=>!String(q.a||'').trim());
+    if(missing>=0){
+      if(typeof document!=='undefined'){
+        toast(tr()?'Göndermeden önce kalan soruları cevapla.':'Answer the remaining questions before submitting.');
+        document.getElementById('report-'+scope+'-'+k+'-'+missing)?.focus();
+      }
+      return false;
+    }
+  }
+  if(!groups.some(([scope,k])=>reportQuestionStore(scope)[k]?.length))return false;
+  for(const [scope,k] of pending)reportQuestionLocks(scope)[k]=1;
+  save();P.rep();return true;
+}
+const qb=(k,arr,ro,scope='review')=>arr.map((x,i)=>`<label for="report-${scope}-${k}-${i}">${esc(reportQuestionForPeriod(x,k,scope))}</label><div class="qa"><textarea id="report-${scope}-${k}-${i}" rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this,'${scope}')">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i},'${scope}')">${t('delete')}</button>`}</div><div class="qcap mut">${String(x.a||'').length}/400</div>`).join('');
+function qa(k,i,el,scope='review'){if(!canAnswerReport(k,scope)||reportGroupLocked(scope,k))return;const question=reportQuestionStore(scope)[k]?.[i];if(!question)return;const previous=question.a;question.a=el.value.slice(0,400);if(question.a.trim()&&question.a!==previous)recordActivity();else save();const counter=el.parentElement?.nextElementSibling;if(counter)counter.textContent=question.a.length+'/400'}
+function delQ(k,i,scope='review'){if(!canAnswerReport(k,scope)||reportGroupLocked(scope,k))return;const questions=reportQuestionStore(scope)[k];if(!Array.isArray(questions)||!questions[i])return;questions.splice(i,1);save();P.rep()}
+function addRandQ(k,scope='review'){if(!canAnswerReport(k,scope)||reportGroupLocked(scope,k))return;const kind=k.length===7?'month':'week',R=scope==='plan'?(tr()?PLAN_RQ_TR[kind]:PLAN_RQ_EN[kind]):rqFor();(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(R[Math.floor(Math.random()*R.length)]));save();P.rep()}
+function addQ(k,scope='review'){if(!canAnswerReport(k,scope)||reportGroupLocked(scope,k))return;const e=$('#nq-'+k),v=String(e?.value||'').trim().slice(0,150);if(v){(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(v,true));save();P.rep()}}
 /* Weekly/monthly reports unlock on the last calendar day of their period.
    Keep showing the most recently unlocked period after the week/month changes. */
 function reportPeriodEnded(now,end){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}-\d{2}$/.test(String(end))&&now>=end}
@@ -3405,15 +3426,29 @@ function repCard(title,per,a,b,pa,pb,key,nk,defs){
   const rows=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
   const summary=`<div class="card"><h2>${title} <small class="mut" style="display:block;font-size:.75rem;font-weight:400">${fmt(a)} – ${fmt(b)}</small></h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}`;
   if(td!==b||!canAnswerReport(key,'review',td))return summary+'</div>';
-  if(!A.qs[nk])A.qs[nk]=periodDefaultQuestions(key.length===7?'month':'week',nk,'review');
-  if(!A.qs[key])A.qs[key]=periodDefaultQuestions(key.length===7?'month':'week',key,'review');
-  const kind=key.length===7?'month':'week',planning=reportQuestionStore('plan');
-  if(!Array.isArray(planning[nk]))planning[nk]=periodDefaultQuestions(kind,nk,'plan');
-  const cur=A.qs[key]||[],ro=!!reportQuestionLocks()[key],planRo=!!reportQuestionLocks('plan')[nk];
-  const planIsCurrent=kind==='month'?nk===td.slice(0,7):(nk<=td&&td<=addD(nk,6));
-  return summary+`<h3 style="margin-top:1.2rem">${t('questionsFor')} ${per} ${ro?'🔒':''}</h3><section id="report-group-review-${key}">${cur.length?(ro?(answerArchiveUnlocked(td,key)?qb(key,cur,true):reportLockedNotice(key)):reportAutoLockHint()+qb(key,cur,false)+`<button class="g s" onclick="lockQ('${key}',this)">${t('lockAnswers')}</button>`):`<p class="mut">${t('noQuestions')}${t('askedNext')} ${per}.</p>`}
-${!ro&&planning[key]?.length?`<details class="report-plan-review" style="margin-top:1rem"><summary>${tr()?'Bu dönem için yaptığın planlar':'Your earlier plans for this period'}</summary>${reportQuestionLocks('plan')[key]&&!answerArchiveUnlocked(td,key)?reportLockedNotice(key):qb(key,planning[key],true,'plan')}</details>`:''}</section>
-<h3 style="margin-top:1.2rem">${tr()?(kind==='week'?(planIsCurrent?'Bu hafta için plan':'Gelecek hafta için plan'):(planIsCurrent?'Bu ay için plan':'Gelecek ay için plan')):(kind==='week'?(planIsCurrent?'Plan for this week':'Plan for next week'):(planIsCurrent?'Plan for this month':'Plan for next month'))}</h3><section id="report-group-plan-${nk}">${planRo?(answerArchiveUnlocked(td,nk)?qb(nk,planning[nk],true,'plan'):reportLockedNotice(nk)):reportAutoLockHint()+qb(nk,planning[nk],false,'plan')+`<div class="row"><button class="g s" onclick="addRandQ('${nk}','plan')">${t('randomQuestion')}</button></div>`}</section></div>`;
+  return summary+periodReportForm(key.length===7?'month':'week',key,nk)+'</div>';
+}
+function periodReportForm(kind,key,next){
+  const weekly=kind==='week';
+  const heading=tr()?(weekly?'Haftalık rapor':'Aylık rapor'):(weekly?'Weekly report':'Monthly report');
+  const groups=[
+    ['review',key,tr()?'Dönem değerlendirmen':'Your period review'],
+    ['plan',key,tr()?'Bu dönem için yaptığın planlar':'Your earlier plans for this period'],
+    ['plan',next,tr()?(weekly?'Gelecek hafta':'Gelecek ay'):(weekly?'Next week':'Next month')]
+  ];
+  if(!A.qs[next])A.qs[next]=periodDefaultQuestions(kind,next,'review');
+  if(groups.every(([scope,k])=>reportGroupLocked(scope,k))){
+    const nextEnd=calendarReportPeriod(kind,weekly?next:next+'-01').b;
+    return `<section class="report-submitted"><h3>${heading}</h3>${reportLockedNotice(key)}<p>${tr()?'Sonraki rapor':'Next report'} · ${fmt(nextEnd)}</p></section>`;
+  }
+  const fields=groups.map(([scope,k,title])=>{
+    const records=reportQuestionStore(scope);
+    if(!Array.isArray(records[k]))records[k]=periodDefaultQuestions(kind,k,scope);
+    const locked=reportGroupLocked(scope,k);
+    const body=locked?reportLockedNotice(k):qb(k,records[k],false,scope)+`<button type="button" class="g s" onclick="addRandQ('${k}','${scope}')">${t('randomQuestion')}</button>`;
+    return `<section class="${scope==='plan'?'report-plan-period':'report-review-period'}" id="report-group-${scope}-${k}"><h3>${title}</h3>${body}</section>`;
+  }).join('');
+  return `<section class="period-questionnaire" data-period="${key}"><h2>${heading}</h2><p class="mut">${tr()?'Yanıtlarını düzenleyebilirsin. Gönderdiğinde bu dönem kapanır.':'You can edit your answers until you submit this period.'}</p>${fields}<button class="report-send" type="button" onclick="submitPeriodReport('${kind}','${key}')">${tr()?'Gönder':'Submit'}</button></section>`;
 }
 /* ---- gecmis raporlar: kisa ozet (haftalik / aylik) ---- */
 function briefRow(label,val,sub){
@@ -3480,7 +3515,6 @@ function calendarReportPeriod(kind,day){
 }
 function reportSummaryCard(kind,lastCompleted){
  const td=istanbulDayKey(),current=calendarReportPeriod(kind,td),{since,unlock}=reportAvailability(kind,td),title=t(kind==='week'?'weeklyReport':'monthlyReport');
- if(td===current.b&&td>=unlock)repCard(title,kind,lastCompleted.a,lastCompleted.b,lastCompleted.pa,lastCompleted.pb,lastCompleted.key,lastCompleted.nk,defQ(kind));
  const prior=current.pb>=unlock?`<button class="g report-previous" onclick="showReportDetail('${kind}-previous')">${tr()?(kind==='week'?'Önceki hafta raporu':'Önceki ay raporu'):(kind==='week'?'Previous week report':'Previous month report')} <small>${fmt(current.pa)} – ${fmt(current.pb)}</small> →</button>`:'';
  const opens=unlock>current.b?unlock:current.b;
  if(td<opens)return `<section class="report-period-block">${pendingReportCard(title,opens>current.b?since:current.a,opens)}${prior}</section>`;
@@ -3503,23 +3537,12 @@ function periodReportDetail(kind,previous=false){
  return header+periodTaskBreakdown(period.a,td<period.b?td:period.b)+repCard(title,tr()?(kind==='week'?'hafta':'ay'):kind,period.a,period.b,period.pa,period.pb,period.key,period.nk,defQ(kind));
 }
 function reportPlanningOverview(){
-  const td=istanbulDayKey(),wk=mon(td),month=td.slice(0,7),[y,m]=month.split('-').map(Number);
-  const upcomingMonth=D(new Date(y,m,1)).slice(0,7);
-  const periods=[
-    {kind:'week',key:wk,title:tr()?'Bu hafta':'This week'},
-    {kind:'week',key:addD(wk,7),title:tr()?'Gelecek hafta':'Next week'},
-    {kind:'month',key:month,title:tr()?'Bu ay':'This month'},
-    {kind:'month',key:upcomingMonth,title:tr()?'Gelecek ay':'Next month'}
-  ].filter(period=>reportQuestionsOpen(period.kind,td));
-  if(!periods.length)return '';
-  const records=reportQuestionStore('plan'),locks=reportQuestionLocks('plan');
-  const views=periods.map(({kind,key,title})=>{
-    if(!Array.isArray(records[key]))records[key]=periodDefaultQuestions(kind,key,'plan');
-    const locked=!!locks[key],qs=records[key],group=locked?(answerArchiveUnlocked(td,key)?qb(key,qs,true,'plan'):reportLockedNotice(key))
-      :reportAutoLockHint()+qb(key,qs,false,'plan')+`<button class="g s" onclick="addRandQ('${key}','plan')">${t('randomQuestion')}</button>`;
-    return `<div class="report-plan-period"><h3>${title} <small class="mut">${esc(key)}</small></h3><section id="report-group-plan-${key}">${group}</section></div>`;
-  }).join('');
-  return `<section class="card report-planning-overview"><h2>${tr()?'Haftalık ve aylık plan soruları':'Weekly and monthly planning questions'}</h2><div class="report-planning-grid">${views}</div></section>`;
+  const day=istanbulDayKey();
+  const forms=['week','month'].filter(kind=>reportQuestionsOpen(kind,day)).map(kind=>{
+    const period=calendarReportPeriod(kind,day);
+    return periodReportForm(kind,period.key,period.nk);
+  });
+  return forms.length?`<section class="card report-planning-overview">${forms.join('')}</section>`:'';
 }
 P.rep=()=>{
  if(reportDetail){M(reportDetailView());return}
@@ -3898,7 +3921,7 @@ function accountRemovalButtonLabel(account=A){
 P.set=()=>{
   const keys=Object.keys(DB.accounts).filter(u=>DB.accounts[u]&&!accountCloudHints(DB.accounts[u]));
   const ac=keys.map(u=>`<span class="tag"><span>@${esc(u)}</span>${!accountCloudHints(A)&&A.u===u?`<span class="current-account-indicator" aria-current="true">${tr()?'Mevcut hesap':'Current account'}</span>`:`<button class="g s" onclick="switchAcc(${JSON.stringify(u)})">${t('switch')}</button>`}</span>`).join('');
-  M(`${m()}<div class="card"><h2>${t('account')}</h2><p class="mut">${tr()?'Üstteki yuvarlak profil düğmesinden de düzenleyebilirsin.':'You can also edit your profile in the top-right account menu.'}</p><label>${t('username')}</label><div class="row"><input id="su" value="${esc(A.u)}" maxlength="20" oninput="profileUsernameHint(this.value,'settings-name-hint')"><div id="settings-name-hint" aria-live="polite" style="flex-basis:100%"></div><button onclick="chg('u')">${t('change')}</button></div><label>${t('displayName')}</label><div class="row"><input id="sn" value="${esc(A.nick||'')}" maxlength="30"><button onclick="chg('n')">${t('change')}</button></div><label>${t('bio')}</label><textarea id="sb" maxlength="160" rows="3" onchange="A.bio=this.value.slice(0,160);save()">${esc(A.bio||'')}</textarea><p class="mut">${t('email')}: <b>${A.authUid?IYAccount.emailMarkup():esc(A.email||'')}</b></p></div>
+  M(`${m()}<div class="card"><h2>${t('account')}</h2><p class="mut">${tr()?'Üstteki yuvarlak profil düğmesinden de düzenleyebilirsin.':'You can also edit your profile in the top-right account menu.'}</p><label>${t('username')}</label><div class="row"><input id="su" value="${esc(A.u)}" maxlength="20" oninput="profileUsernameHint(this.value,'settings-name-hint')"><div id="settings-name-hint" aria-live="polite" style="flex-basis:100%"></div><button onclick="chg('u')">${t('change')}</button></div><label>${t('displayName')}</label><div class="row"><input id="sn" value="${esc(A.nick||'')}" maxlength="30"><button onclick="chg('n')">${t('change')}</button></div><label>${t('bio')}</label><textarea id="sb" maxlength="160" rows="3" onchange="A.bio=this.value.slice(0,160);save()">${esc(A.bio||'')}</textarea><p class="mut">${t('email')}: <b>${A.authUid?IYAccount.emailMarkup():esc(A.email||'')}</b></p>${profilePasswordLink()}</div>
   <div class="card settings-theme"><h2>${t('theme')}</h2>${themePick(false,false)}</div>
   <div class="card"><h2>${t('lang')}</h2><div class="langbar" style="justify-content:flex-start">${langBtns()}</div></div>
   ${!A.authUid?`<div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>`:''}
