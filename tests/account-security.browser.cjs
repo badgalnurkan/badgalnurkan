@@ -146,18 +146,22 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const session={user:{id:'fixture-user',email:record.email},access_token:'fixture-access-token',refresh_token:'fixture-refresh-token'};
    const db={accounts:{[record.u]:record},lastUser:record.u,last:record.nick,lang:'tr',beige:false};
    await page.addInitScript(({db,session})=>{localStorage.setItem('b1',JSON.stringify(db));localStorage.setItem('b1sb',JSON.stringify(session));localStorage.setItem('iydu.storage-notice.v1','test')},{db,session});
-   const actions=[],requests=[];let closed=false;
+   const actions=[],requests=[];let closed=false,hasPassword=false;
    await page.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
     const url=route.request().url();requests.push(url);
     let data=null;
-    if(url.endsWith('/auth/v1/user'))data={id:'fixture-user',email:record.email,email_confirmed_at:'2026-11-01T00:00:00Z',user_metadata:{},app_metadata:{providers:['google']}};
+    if(url.endsWith('grant_type=password')){assert.equal(route.request().postDataJSON().email,record.email);data=session}
+    else if(url.endsWith('/auth/v1/user')&&route.request().method()==='PUT'){
+     assert.equal(route.request().postDataJSON().password,'Example3-Only');data={id:'fixture-user'};
+    }
+    else if(url.endsWith('/auth/v1/user'))data={id:'fixture-user',email:record.email,email_confirmed_at:'2026-11-01T00:00:00Z',user_metadata:{},app_metadata:{providers:['google']}};
     else if(new URL(url).pathname==='/auth/v1/recover'){
      assert.equal(route.request().postDataJSON().email,record.email);
      assert.equal(new URL(url).searchParams.get('redirect_to'),'https://badgalnurkan.com/');
      data={};
     }
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
-    else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:false,password_required:false,server_time:'2026-11-17T00:00:00Z'};
+    else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:hasPassword,password_required:false,server_time:'2026-11-17T00:00:00Z'};
     else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
     else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
     else if(url.endsWith('/rpc/iydu_save'))data=null;
@@ -179,7 +183,15 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await page.locator('#profile-modal .profile-change-password').click();
    await page.locator('#password-renewal[open]').waitFor();
    const sent=page.waitForResponse(r=>new URL(r.url()).pathname==='/auth/v1/recover');
-   await page.locator('#password-renewal button').click();assert.equal((await sent).status(),200);
+   await page.getByRole('button',{name:'Şifre yenileme bağlantısı gönder'}).click();assert.equal((await sent).status(),200);
+   assert.equal(await page.locator('#security-old').count(),0);
+   hasPassword=true;await page.evaluate(()=>IYAccount.refresh());
+   await page.locator('#security-old').fill('Example2-Only');
+   await page.locator('#security-new').fill('Example3-Only');
+   await page.locator('#security-confirm').fill('Example3-Only');
+   const saved=page.waitForResponse(r=>new URL(r.url()).pathname==='/auth/v1/user'&&r.request().method()==='PUT');
+   await page.getByRole('button',{name:'Şifreyi kaydet'}).click();assert.equal((await saved).status(),200);
+   await page.waitForFunction(()=>document.getElementById('security-new')?.value==='');
    assert.equal(await page.locator('#mn .profile-change-password').count(),1);
 
    await page.locator('.security-summary').waitFor();
