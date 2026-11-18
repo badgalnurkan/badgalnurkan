@@ -73,6 +73,24 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    assert.deepEqual(productivityErrors,[],engine+' productivity page errors');
    await productivity.close();
    console.log('PASS '+engine+': task edit, keyboard and pointer reorder, future countdown and mobile report widths');
+   const pushUi=await browser.newPage({viewport:{width:375,height:812},deviceScaleFactor:2});
+   const pushErrors=[];pushUi.on('pageerror',error=>pushErrors.push(error.message));
+   await pushUi.goto('http://127.0.0.1:4173/review-app.html?lang=en');
+   await pushUi.evaluate(()=>{
+     A.authUid='11111111-1111-4111-8111-111111111111';
+     goTo('app','set');
+   });
+   await pushUi.locator('#device-push-title').waitFor();
+   assert.ok((await pushUi.locator('#device-push-title').innerText()).includes('Device notifications'),engine+' opt-in title');
+   assert.equal(await pushUi.getByRole('button',{name:'Enable on this device'}).count(),1,engine+' consent button');
+   assert.equal(await pushUi.getByRole('button',{name:'Disable on this device'}).count(),1,engine+' revoke button');
+   for(const width of [320,375,430]){
+     await pushUi.setViewportSize({width,height:812});
+     assert.ok(await pushUi.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),engine+' device push settings overflow '+width);
+   }
+   assert.deepEqual(pushErrors,[],engine+' push settings page errors');
+   await pushUi.close();
+   console.log('PASS '+engine+': optional device push settings and mobile layout');
    const page=await browser.newPage({viewport:{width:390,height:844}});
    const session={user:{id:'fixture-user',email:record.email},access_token:'fixture-access-token',refresh_token:'fixture-refresh-token'};
    const db={accounts:{[record.u]:record},lastUser:record.u,last:record.nick,lang:'tr',beige:false};
