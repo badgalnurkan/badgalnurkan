@@ -1,3 +1,9 @@
+# 18 Kasım 2026 · Şifre yenileme, görev planlama, rapor takvimi ve Pomodoro
+
+Şifre yenileme isteği tarayıcıya bağlı bir PKCE doğrulayıcısı üretir. Posta başka tarayıcıda açılırsa tek kullanımlık kod ilk tarayıcıda kullanılabilir. Oturum açma, kapanış onayı ve şifre yenileme ayrı akışlardır. Hesap e-postasının teslim kanalı, Edge hizmetinin salt okunur durum yanıtında görülebilir. İşlem başlıkları için Resend gönderici bilgileri gerekir. Gerçek kullanıcı postaları test amacıyla gönderilmez.
+
+`npm test` kapsamına eski ve yeni hesapların art arda sıfırlanması, eski kayıt tarihinin onarılması, rapor yanıt kilitleri, tamamlanmamış görevle yarını planlama girişimi, gece yarısı ve atlanan günler, tekrar çalıştırma, alfabetik sıra, duraklatılmış özel odak süresi ve iki dilde üç farklı e-posta konusu dahildir. Tarayıcı testleri e-posta ve kimlik uçlarını taklit eder. Aynı ve farklı tarayıcı profillerinde yenileme için Chromium, WebKit ve Firefox çalıştırılır. Odak özetinin sıfır, üç, dört ve daha fazla günlük durumları Chromium ve WebKit ile kontrol edilir.
+
 # 18 Kasım 2026 · Dönem raporunu gönderme ve profil kısayolu
 
 Haftalık ve aylık formlarda taslaklar yazarken saklanır. Gönder, o dönemin açık soru gruplarını birlikte kontrol edip tek kayıtta kilitler. Profilde e-posta altındaki kısayol şifre yenileme bölümünü açar. Uygulama şifresi olan hesaplar mevcut şifreyi doğrulayarak yenisini kaydedebilir. E-posta bağlantısı ilgili hesap için istenir. Arşiv etiketleri dar ekranda tam kelimelerle ortalanır.

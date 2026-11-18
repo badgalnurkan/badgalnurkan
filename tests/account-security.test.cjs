@@ -16,6 +16,7 @@ async function fixture({mail=true,send=true,amr,dbError}={}){
    const body=JSON.parse(opt.body);rpc.push(body);
    return Response.json(dbError?{error:dbError}:body.p_action.startsWith('request_')?{ok:true,id:body.p_fields.id,email:'owner@example.invalid'}:{ok:true,user_id:'server-user',state:'pending_delete',delete_after:'2027-01-01T00:00:00Z'});
   }
+  if(url.includes('/auth/v1/otp?redirect_to=')){return Response.json({})}
   if(url==='https://api.resend.com/emails'){mailBodies.push(JSON.parse(opt.body));return Response.json(send?{id:'mail-fixture'}:{error:'provider error'},{status:send?200:500})}
   throw Error('unexpected network '+url);
  };
@@ -29,13 +30,28 @@ test('interactive authentication expires exactly at ten minutes and rejects futu
  assert.equal(recentAuthentication(claims,'u',1599999),true);assert.equal(recentAuthentication(claims,'u',1600000),false);
  assert.equal(recentAuthentication(claims,'u',999999),false);assert.equal(recentAuthentication({...claims,amr:[{method:'token_refresh',timestamp:1000}]},'u',1000000),false);assert.equal(recentAuthentication(claims,'other',1000000),false);
 });
-test('GET health exposes only readiness and never creates a mail or database request',async()=>{const f=await fixture();const r=await f.handler(new Request('https://x.invalid'));assert.deepEqual(await r.json(),{ok:true,version:1,mailReady:true});assert.equal(f.calls.length,0)});
+test('GET health exposes only readiness and never creates a mail or database request',async()=>{const f=await fixture();const r=await f.handler(new Request('https://x.invalid'));assert.deepEqual(await r.json(),{ok:true,version:3,transactionalMailReady:true,mailReady:true,delivery:'resend'});assert.equal(f.calls.length,0)});
 test('unapproved origins cannot perform actions',async()=>{const f=await fixture();const r=await f.handler(f.req({action:'request_delete'},true,'https://evil.invalid'));assert.equal(r.status,403);assert.equal(f.calls.length,0)});
 test('missing authorization and oversized bodies fail before database access',async()=>{
  const f=await fixture();assert.equal((await f.handler(f.req({action:'request_delete'},false))).status,401);
  assert.equal((await f.handler(f.req('x'.repeat(9000)))).status,413);assert.equal(f.calls.length,0);
 });
-test('missing Resend configuration fails closed without creating a challenge',async()=>{const f=await fixture({mail:false});const r=await f.handler(f.req({action:'request_deactivate'}));assert.equal(r.status,503);assert.equal((await r.json()).code,'MAIL_NOT_CONFIGURED');assert.equal(f.rpc.length,0)});
+test('delivery status distinguishes dedicated mail from the existing compatibility channel',async()=>{
+ const f=await fixture({mail:false});
+ const health=await(await f.handler(new Request('https://x.invalid'))).json();
+ assert.equal(health.transactionalMailReady,false);assert.equal(health.delivery,'supabase-auth');
+ const result=await(await f.handler(f.req({action:'request_deactivate'}))).json();assert.equal(result.delivery,'auth');
+ const url=new URL(f.calls.find(url=>url.includes('/auth/v1/otp?')));assert.match(url.searchParams.get('redirect_to'),/#account-action=deactivate&/);
+});
+test('each account action has a distinct transactional subject in both languages',async()=>{
+ for(const [action,en,tr] of [['deactivate',/temporary account closure code/i,/Geçici hesap kapatma/],['delete',/account deletion request/i,/Kalıcı hesap silme/],['reactivate',/reactivation code/i,/yeniden açma/]]){
+  for(const [lang,label] of [['en',en],['tr',tr]]){
+   const f=await fixture();const data=await(await f.handler(f.req({action:'request_'+action,lang}))).json();
+   assert.equal(data.delivery,'resend');assert.match(f.mailBodies[0].subject,label);assert.ok(!f.calls.some(path=>path.includes('/otp')));
+   assert.match(f.mailBodies[0].text,action==='delete'?/#account-action=delete/:/\b\d{6}\b/);
+  }
+ }
+});
 test('temporary closure sends a six-digit code only to the verified server identity',async()=>{
  const f=await fixture(),r=await f.handler(f.req({action:'request_deactivate',user_id:'victim',email:'victim@example.invalid'})),data=await r.json();
  assert.equal(r.status,200);assert.equal(f.rpc[0].p_uid,'server-user');assert.deepEqual(f.mailBodies[0].to,['owner@example.invalid']);
@@ -100,4 +116,48 @@ test('email confirmation callbacks stay distinct from Google OAuth callbacks',as
    activateCloudUser:async(_identity,_name,method)=>{ctx.method=method},sbClear(){},tr:()=>true};
   vm.createContext(ctx);vm.runInContext(code+'this.start=bootstrapCloudAuth;',ctx);await ctx.start();assert.equal(ctx.method,expected,type||'oauth');
  }
+});
+
+function recoveryProfile(server,storage={},account=null){
+ const dom=new Map(),historyCalls=[],gates=[],modals=[];
+ let session=null;
+ const loc={href:'https://badgalnurkan.com/',origin:'https://badgalnurkan.com',hash:''};
+ const localStorage=new Proxy(storage,{get:(obj,key)=>key==='getItem'?k=>obj[k]??null:key==='setItem'?(k,v)=>{obj[k]=v}:key==='removeItem'?k=>{delete obj[k]}:obj[key]});
+ const ctx={crypto:webcrypto,TextEncoder,URL,URLSearchParams,Uint8Array,btoa,localStorage,location:loc,A:account,tr:()=>false,
+  document:{getElementById(id){if(!dom.has(id))dom.set(id,{value:''});return dom.get(id)}},
+  history:{state:null,replaceState(a,b,url){historyCalls.push(url)}},openModal(id){modals.push(id)},closeModal(){},toast(){},
+  sb:server,sbSave:v=>{session=v},sbSession:()=>session,sbClear:()=>{session=null},IYAccount:{async recovery(user){gates.push(user.id)}}};
+ vm.createContext(ctx);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'..','recovery-browser.js'),'utf8')+';this.flow=IYRecovery;',ctx);
+ return {ctx,flow:ctx.flow,dom,gates,modals,historyCalls,session:()=>session};
+}
+test('email opened elsewhere reveals only a one-use code and the original browser proves possession',async()=>{
+ const {createHash}=require('node:crypto'),email='fixture@example.invalid',code=webcrypto.randomUUID();
+ let redirect,challenge,exchanges=0;
+ const server=async(path,{body})=>{
+  if(path.startsWith('/auth/v1/recover')){
+   redirect=new URL(new URL(path,'https://example.invalid').searchParams.get('redirect_to'));challenge=body.code_challenge;
+   assert.equal(body.code_verifier,undefined);return {};
+  }
+  assert.match(path,/grant_type=pkce/);exchanges++;assert.equal(body.auth_code,code);
+  assert.equal(createHash('sha256').update(body.code_verifier).digest('base64url'),challenge);
+  return {access_token:'fixture',refresh_token:'fixture-refresh',user:{id:'owner',email}};
+ };
+ const storage={},first=recoveryProfile(server,storage),other=recoveryProfile(server);
+ await first.flow.request(email);redirect.searchParams.set('code',code);other.ctx.location.href=redirect.href;
+ assert.equal(await other.flow.callback(),true);assert.equal(exchanges,0);assert.equal(other.session(),null);
+ assert.equal(other.dom.get('recovery-copy').value,code);
+ const resumed=recoveryProfile(server,storage);resumed.flow.resume(email);
+ resumed.ctx.document.getElementById('recovery-return-code').value=code;await resumed.flow.submit();
+ assert.deepEqual(resumed.gates,['owner']);assert.equal(exchanges,1);assert.equal(Object.keys(storage).length,0);
+ await resumed.flow.submit();assert.equal(exchanges,1);
+});
+test('a different verified email cannot change the session for a pending reset',async()=>{
+ const email='original@example.invalid';let redirect;
+ const profile=recoveryProfile(async(path)=>{
+  if(path.includes('/recover?')){redirect=new URL(new URL(path,'https://example.invalid').searchParams.get('redirect_to'));return {}}
+  return {access_token:'fixture',refresh_token:'refresh',user:{id:'wrong',email:'wrong@example.invalid'}};
+ });
+ await profile.flow.request(email);redirect.searchParams.set('code',webcrypto.randomUUID());profile.ctx.location.href=redirect.href;
+ assert.equal(await profile.flow.callback(),true);assert.equal(profile.session(),null);assert.equal(profile.gates.length,0);
+ assert.equal(profile.modals.at(-1),'recovery-browser-error');
 });

@@ -14,7 +14,8 @@ export function createHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=>Dat
  const get=k=>env(k)||'';
  function keySet(name,fallback){try{return JSON.parse(get(name)).default||get(fallback)}catch{return get(fallback)}}
  const base=get('SUPABASE_URL'),publicKey=keySet('SUPABASE_PUBLISHABLE_KEYS','SUPABASE_ANON_KEY'),service=keySet('SUPABASE_SECRET_KEYS','SUPABASE_SERVICE_ROLE_KEY');
- const mailKey=get('RESEND_API_KEY'),from=get('ACCOUNT_MAIL_FROM');
+ const mailKey=get('RESEND_API_KEY');
+ const from=get('ACCOUNT_MAIL_FROM')||get('RESEND_FROM_EMAIL')||get('RESEND_FROM')||"Improvin' Your Day <security@badgalnurkan.com>";
  const mailReady=!!mailKey&&/^[^\r\n]+@[a-z0-9.-]+>?$/i.test(from);
  return async req=>{
   const origin=req.headers.get('origin');
@@ -23,7 +24,7 @@ export function createHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=>Dat
   const reply=(data,status=200)=>new Response(JSON.stringify(data),{status,headers});
   if(origin&&!ALLOWED_ORIGINS.includes(origin))return reply({code:'ORIGIN_NOT_ALLOWED'},403);
   if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
-  if(req.method==='GET')return reply({ok:true,version:1,mailReady});
+  if(req.method==='GET')return reply({ok:true,version:3,transactionalMailReady:mailReady,mailReady:mailReady||!!(base&&publicKey&&service),delivery:mailReady?'resend':'supabase-auth'});
   if(req.method!=='POST')return reply({code:'METHOD_NOT_ALLOWED'},405);
   if(!base||!publicKey||!service)return reply({code:'SERVER_CONFIGURATION_ERROR'},503);
   try{
@@ -55,7 +56,6 @@ export function createHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=>Dat
     return result.json();
    }
    if(REQUESTS.includes(action)){
-    if(!mailReady)return reply({code:'MAIL_NOT_CONFIGURED'},503);
     const id=cryptoImpl.randomUUID(),kind=action.slice(8);
     let secret;
     if(kind==='delete')secret=[...cryptoImpl.getRandomValues(new Uint8Array(32))].map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -63,17 +63,25 @@ export function createHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=>Dat
     const result=await rpc(action,{id,hash:await digest(id+':'+secret,cryptoImpl)});
     if(result.error)return reply({code:result.error},result.error==='RATE_LIMITED'?429:400);
     const en=body.lang==='en';
-    const labels={deactivate:en?'Temporarily close your account':'Hesabını geçici olarak kapat',delete:en?'Account deletion request':'Hesap silme talebi',reactivate:en?'Reactivate your account':'Hesabını yeniden aç'};
-    const link='https://badgalnurkan.com/#account-action=delete&id='+id+'&token='+secret;
+    const labels={
+     deactivate:en?'Your temporary account closure code':'Geçici hesap kapatma onay kodun',
+     delete:en?'Confirm your account deletion request':'Kalıcı hesap silme talebini onayla',
+     reactivate:en?'Your account reactivation code':'Hesabını yeniden açma onay kodun'
+    };
+    const destination=(ALLOWED_ORIGINS.includes(origin)?origin:'https://badgalnurkan.com')+'/#account-action='+kind+'&id='+id+'&token='+secret;
     const content=kind==='delete'
-     ?(en?'Open the link to choose a reason and confirm. Nothing is deleted by opening it. It expires in 30 minutes. After confirmation you have 30 days to reactivate.':'Sebebini seçmek ve onaylamak için bağlantıyı aç. Bağlantıyı açmak hesabını silmez. Bağlantı 30 dakika geçerlidir. Onaydan sonra yeniden açmak için 30 günün olacak.')+'\n\n'+link
+     ?(en?'Open the link to choose a reason and confirm. Nothing is deleted by opening it. It expires in 30 minutes. After confirmation you have 30 days to reactivate.':'Sebebini seçmek ve onaylamak için bağlantıyı aç. Bağlantıyı açmak hesabını silmez. Bağlantı 30 dakika geçerlidir. Onaydan sonra yeniden açmak için 30 günün olacak.')+'\n\n'+destination
      :(en?'Your confirmation code (valid for 10 minutes): ':'Onay kodun (10 dakika geçerli): ')+secret;
     try{
-     const sent=await fetchImpl('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+mailKey,'Content-Type':'application/json','Idempotency-Key':'account-'+id},
-      body:JSON.stringify({from,to:[result.email],subject:labels[kind],text:"Improvin' your day\n\n"+content+'\n\n'+(en?'If you did not request this, ignore this email.':'Bu işlemi sen istemediysen bu e-postayı dikkate alma.')}),signal:AbortSignal.timeout(10000)});
+     // Discard the verifier. This delivery link can reveal the action proof but cannot create an app session.
+     const challenge=btoa(String.fromCharCode(...cryptoImpl.getRandomValues(new Uint8Array(32)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+     const sent=!mailReady?await fetchImpl(base+'/auth/v1/otp?redirect_to='+encodeURIComponent(destination),{
+      method:'POST',headers:{apikey:publicKey,'Content-Type':'application/json'},body:JSON.stringify({email:result.email,create_user:false,code_challenge:challenge,code_challenge_method:'s256'}),signal:AbortSignal.timeout(10000)
+     }):await fetchImpl('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+mailKey,'Content-Type':'application/json','Idempotency-Key':'account-'+id},
+      body:JSON.stringify({from,to:[result.email],subject:labels[kind]+" · Improvin’ Your Day",text:"Improvin' your day\n\n"+content+'\n\n'+(en?'If you did not request this, ignore this email.':'Bu işlemi sen istemediysen bu e-postayı dikkate alma.')}),signal:AbortSignal.timeout(10000)});
      if(!sent.ok){await rpc('cancel',{id});return reply({code:'MAIL_SEND_FAILED'},502)}
     }catch{await rpc('cancel',{id});return reply({code:'MAIL_SEND_FAILED'},502)}
-    return reply({ok:true,id,expiresIn:kind==='delete'?1800:600});
+    return reply({ok:true,id,delivery:mailReady?'resend':'auth',expiresIn:kind==='delete'?1800:600});
    }
    const id=String(body.id||''),secret=String(body.token||'');
    if(!/^[a-f0-9-]{36}$/i.test(id)||(action==='confirm_delete'?!/^[a-f0-9]{64}$/.test(secret):!/^\d{6}$/.test(secret)))return reply({code:'INVALID_CHALLENGE'},400);

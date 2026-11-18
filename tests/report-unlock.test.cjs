@@ -334,3 +334,31 @@ test('a page left open past midnight cannot overwrite answers or add questions',
  context.current='2026-11-30';input.value='Late edit';qa(key,0,input);addRandQ(key);submitPeriodReport('week',key);
  assert.equal(JSON.stringify(context.A),snapshot);
 });
+
+test('reset retains each cohort’s established dates and submitted report while clearing personal tracking',()=>{
+ Object.assign(context,{current:'2026-11-18',DB:{accounts:{}},pm:{},clearInterval(){},closeModal(){},shell(){}});
+ vm.runInContext(extract('function confirmReset()', '// V10: export'),context);
+ for(const rule of [undefined,'full-period-v1']){
+  context.A=norm({u:'n',pctFrom:'2026-11-09',reportStart:'2026-11-09',reportCalendarRule:rule,tasks:[{t:'Personal task'}],journal:{key:'Private journal'},activeDays:{'2026-11-12':true},qs:{week:[{a:'Saved answer'}]},ql:{week:true}});
+  const before=['week','month'].map(kind=>context.reportAvailability(kind).unlock);
+  context.confirmReset();context.confirmReset();
+  assert.deepEqual(['week','month'].map(kind=>context.reportAvailability(kind).unlock),before);
+  assert.equal(context.A.reportStart,'2026-11-09');assert.equal(context.A.reportCalendarRule,rule);
+  assert.equal(context.A.pctFrom,'2026-11-18');assert.equal(context.A.tasks.length,0);assert.equal(Object.keys(context.A.journal).length,0);
+  assert.equal(context.A.ql.week,true);assert.equal(context.A.qs.week[0].a,'Saved answer');
+ }
+});
+test('a previously reset legacy account recovers its date from verified signup while new accounts keep the full-period rule',()=>{
+ const original=context.istanbulDayKey;context.istanbulDayKey=date=>new Date(date.getTime()+3*3600000).toISOString().slice(0,10);
+ try{
+  const old={reportStart:'2026-11-18',reportCalendarRule:'full-period-v1'};
+  context.bindReportCalendar(old,{created_at:'2026-11-08T21:10:00Z'});
+  assert.equal(old.reportStart,'2026-11-09');assert.equal(old.reportCalendarRule,undefined);
+  const fresh={reportStart:'2026-11-18'};context.bindReportCalendar(fresh,{created_at:'2026-11-16T21:10:00Z'},true);
+  assert.equal(fresh.reportStart,'2026-11-17');assert.equal(fresh.reportCalendarRule,'full-period-v1');
+  const previouslyActive={reportStart:'2026-11-18'};context.bindReportCalendar(previouslyActive,{created_at:'2026-11-17T22:30:00Z'});
+  assert.equal(previouslyActive.reportCalendarRule,undefined);
+  const imported={reportStart:'2026-10-15'};context.bindReportCalendar(imported,{created_at:'2026-11-17T00:00:00Z'});
+  assert.equal(imported.reportStart,'2026-10-15');assert.equal(imported.reportCalendarRule,undefined);
+ }finally{context.istanbulDayKey=original}
+});
