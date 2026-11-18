@@ -104,3 +104,52 @@ test('worker notification copy never echoes payload text or arbitrary URLs',()=>
  assert.equal(workerContext.presentation('unknown','en'),null);
  assert.equal(sw.includes('payload.body'),false);
 });
+
+test('server reminder kinds all render privacy-safe translations',()=>{
+ const events={};const ctx={self:{addEventListener:(name,fn)=>events[name]=fn},indexedDB:{}};
+ vm.createContext(ctx);vm.runInContext(sw+'\nthis.presenter=presentation;',ctx);
+ for(const kind of ['morning','study','tasks','evening','project','pomo-five','pomo-break','pomo-focus']){
+   const [title,body]=ctx.presenter(kind,'en')||[];
+   assert.ok(title&&body,kind+' should be shown');
+   assert.equal(/private title|password|user name/i.test(title+' '+body),false);
+ }
+});
+test('device push worker suppresses events after logout and for another account',async()=>{
+ let owner=null;const sent=[],notifications=[],handlers={};
+ const database={createObjectStore(){},close(){},transaction(){
+   const transaction={};
+   transaction.objectStore=()=>({
+     put(value){queueMicrotask(()=>{owner=value;transaction.oncomplete?.()})},
+     get(){const request={};queueMicrotask(()=>{request.result=owner;request.onsuccess?.()});return request}
+   });
+   return transaction;
+ }};
+ const indexedDB={open(){const request={};queueMicrotask(()=>{request.result=database;request.onsuccess?.()});return request}};
+ const ctx={indexedDB,self:{
+   addEventListener:(name,fn)=>handlers[name]=fn,
+   registration:{showNotification:async(title,options)=>notifications.push({title,options})},
+   clients:{matchAll:async()=>[],openWindow:async()=>null},
+   location:{origin:'https://badgalnurkan.com'}
+ }};
+ vm.createContext(ctx);vm.runInContext(sw,ctx);
+ const message=async uid=>{
+   let pending;
+   handlers.message({data:{type:'iydu-push-owner',uid},ports:[{postMessage:msg=>sent.push(msg)}],waitUntil:p=>pending=p});
+   await pending;
+ };
+ const push=async payload=>{
+   let pending;
+   handlers.push({data:{json:()=>payload},waitUntil:p=>pending=p});
+   await pending;
+ };
+ await message(UID);
+ assert.equal(sent.at(-1).ok,true);
+ await push({owner:'22222222-2222-4222-8222-222222222222',kind:'tasks',id:'other'});
+ assert.equal(notifications.length,0,'another account must never show notifications');
+ await push({owner:UID,kind:'project',id:'our-project',body:'secret task title'});
+ assert.equal(notifications.length,1);
+ assert.equal(notifications[0].options.body.includes('secret task title'),false,'notification must not echo server input');
+ await message('');
+ await push({owner:UID,kind:'study',id:'after-logout'});
+ assert.equal(notifications.length,1,'old notifications must be suppressed after logout');
+});
