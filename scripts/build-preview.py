@@ -4,7 +4,7 @@ import shutil
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / 'dist'
 DIST.mkdir(exist_ok=True)
-for name in ('index.html', 'privacy.html', 'kvkk.html', 'terms.html', 'cookies.html', 'account-security.js', 'account-security.css'):
+for name in ('index.html', 'privacy.html', 'kvkk.html', 'terms.html', 'cookies.html', 'account-security.js', 'account-security.css', 'device-push.js', 'push-sw.js', 'manifest.webmanifest', 'app-icon.svg'):
     shutil.copy2(ROOT / name, DIST / name)
 
 # This isolated sample has no cloud requests or persistent browser storage.
