@@ -34,6 +34,8 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const productivityErrors=[];
    productivity.on('pageerror',error=>productivityErrors.push(error.message));
    await productivity.goto('http://127.0.0.1:4173/review-app.html?lang=tr');
+   await productivity.locator('#storage-notice button').click();
+   await productivity.locator('#storage-notice').waitFor({state:'detached'});
    await productivity.evaluate(()=>{
      A.tasks=[{t:'Birinci görev',s:''},{t:'İkinci görev',s:'done'},{t:'Üçüncü görev',s:''}];
      goTo('app','todo');
