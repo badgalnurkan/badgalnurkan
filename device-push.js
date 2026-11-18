@@ -101,7 +101,7 @@ async function enable(){
     }
     if(accepted!==true)throw Error('Subscription rejected');
     if(!identityMatches(uid)){await subscription.unsubscribe();throw Error('Account changed')}
-    if(!await markOwner(uid,true))throw Error('Worker not ready');
+    if(!await markOwner(uid))throw Error('Worker not ready');
     message(wording('Bu cihazın aboneliği kaydedildi. Bildirimler iznin ve tarayıcının desteğiyle çalışır.','This device is subscribed. Notification delivery depends on your permission and browser support.'));
   }catch(error){
     console.warn('Device push subscribe failed:',error?.message||error);
