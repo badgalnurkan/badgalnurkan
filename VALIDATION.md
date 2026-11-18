@@ -2,7 +2,7 @@
 
 - Haftalık sorular İstanbul takviminde pazar günleri, aylık sorular ayın son gününde açılır. Özet, dönem ayrıntıları ve cevap yazma işlemi aynı kuralı kullanır. Önceki dönemlerin istatistikleri okunabilir.
 - Sıralama sırasında satır imleci izler ve komşu satırlar yer açar. Yeni sıra bırakıldığında kaydedilir. İptal, klavye ve azaltılmış hareket yolları desteklenir.
-- Pomodoro kartı üç gün gösterir. Daha eski kayıtlar açılır bölümde kalır. Üç kayıttan az olduğunda eksik tarihler “Kayıt yok” olarak gösterilir.
+- Pomodoro kartı üç gün gösterir. Önceki aylara ait kayıtlar dahil eski günler açılır bölümde kalır. Üç kayıttan az olduğunda eksik tarihler “Kayıt yok” olarak gösterilir.
 - Takvim testleri hafta ve ay sonunun çakışmasını, artık yılı, gece yarısından sonra eski formdan yazma girişimini ve yıl sonu cevap arşivini kapsar. Tarayıcı senaryosu sürüklemenin önizlemesini, açık rapor sekmesinin gün değişimini ve Pomodoro ayrıntılarını kontrol eder.
 
 ---

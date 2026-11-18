@@ -90,11 +90,11 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await productivity.evaluate(()=>showReportDetail('month-previous'));
    assert.equal(await productivity.locator('textarea[id^="report-"]').count(),0,engine+' previous month is read-only statistics');
    await productivity.goto('http://127.0.0.1:4173/review-app.html?page=pomo&lang=en&date=2026-11-18');
-   await productivity.evaluate(()=>{A.focusHistory=Array.from({length:6},(_,i)=>({at:new Date(2026,10,18-i,12).getTime(),seconds:(i+1)*60,completed:true}));P.pomo()});
+   await productivity.evaluate(()=>{A.focusHistory=Array.from({length:6},(_,i)=>({at:new Date(2026,i===5?9:10,i===5?31:18-i,12).getTime(),seconds:(i+1)*60,completed:true}));P.pomo()});
    const analysis=productivity.locator('.focus-history'),more=analysis.locator('summary'),dateRows=analysis.locator('.focus-day:visible');
    const totals=await analysis.locator('.focus-history-totals').innerText();assert.equal(await dateRows.count(),3);
    assert.deepEqual(await dateRows.evaluateAll(rows=>rows.map(el=>el.dataset.focusDay)),['2026-11-18','2026-11-17','2026-11-16']);
-   await more.click();assert.equal(await dateRows.count(),6);assert.equal(await analysis.locator('.focus-history-totals').innerText(),totals);
+   await more.click();assert.equal(await dateRows.count(),6);assert.equal(await dateRows.last().getAttribute('data-focus-day'),'2026-10-31',engine+' older month retained');assert.equal(await analysis.locator('.focus-history-totals').innerText(),totals);
    await more.click();assert.equal(await dateRows.count(),3);assert.ok(await productivity.evaluate(()=>A.focusHistory.length===6));
    await productivity.evaluate(()=>{A.focusHistory=[];P.pomo()});assert.equal(await dateRows.count(),3);assert.equal(await more.count(),0);
    assert.deepEqual(productivityErrors,[]);

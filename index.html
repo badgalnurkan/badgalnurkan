@@ -3046,7 +3046,17 @@ function taskReorderKey(event,index){
   if(taskReorder||!['ArrowUp','ArrowDown'].includes(event.key))return;
   event.preventDefault();
   const destination=index+(event.key==='ArrowUp'?-1:1);
-  if(moveTask(index,destination))document.querySelector('[data-task-index="'+destination+'"] .task-grip')?.focus({preventScroll:true});
+  const before=[...document.querySelectorAll('#tl > [data-task-index]')].map(row=>row.getBoundingClientRect().top);
+  if(!moveTask(index,destination))return;
+  const rows=[...document.querySelectorAll('#tl > [data-task-index]')];
+  rows[destination]?.querySelector('.task-grip')?.focus({preventScroll:true});
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    [before[index],before[destination]]=[before[destination],before[index]];
+    for(const i of [index,destination]){
+      const row=rows[i],offset=before[i]-row.getBoundingClientRect().top;
+      row.animate?.([{transform:'translateY('+offset+'px)'},{transform:'translateY(0)'}],{duration:155,easing:'cubic-bezier(.2,.75,.25,1)'});
+    }
+  }
 }
 window.addEventListener('blur',()=>cancelTaskReorder());
 function startTaskReorder(event,index){
@@ -3562,15 +3572,18 @@ function focusSummary(history,start,end){
 }
 function focusHistoryCard(){
   const now=today(),month=now.slice(0,7)+'-01',week=mon(now);
-  const w=focusSummary(A?.focusHistory,week,now),m=focusSummary(A?.focusHistory,month,now);
+  const entries=new Map(Object.entries(focusSummary(A?.focusHistory,'',now).perDay));
+  const totalSince=start=>{
+    const total={seconds:0,sessions:0};
+    for(const [date,entry] of entries)if(date>=start){total.seconds+=entry.seconds;total.sessions+=entry.sessions}
+    return total;
+  };
+  const w=totalSince(week),m=totalSince(month);
   const time=seconds=>tr()?`${Math.floor(seconds/3600)} sa ${Math.round(seconds%3600/60)} dk`:`${Math.floor(seconds/3600)}h ${Math.round(seconds%3600/60)}m`;
-  const entries=new Map(Object.entries(m.perDay));
-  // Show three actual calendar dates even when the account has fewer than three recorded days.
-  for(let day=now;entries.size<3;day=addD(day,-1)){
-    if(!entries.has(day))entries.set(day,day<month?focusSummary(A?.focusHistory,day,day).perDay[day]||null:null);
-  }
+  // When fewer than three dates have a recording, show real dates with an explicit empty state.
+  for(let day=now;entries.size<3;day=addD(day,-1))if(!entries.has(day))entries.set(day,null);
   const rows=[...entries].sort(([a],[b])=>b.localeCompare(a)).map(([date,entry])=>
-    `<div class="task focus-day" data-focus-day="${date}"><time datetime="${date}">${fmt(date)}</time>${entry?`<b>${time(entry.seconds)} · ${entry.sessions} ${tr()?'seans':'sessions'}</b>`:`<small class="mut">${tr()?'Kayıt yok':'No focus logged'}</small>`}</div>`);
+    `<div class="task focus-day" data-focus-day="${date}"><time datetime="${date}">${fmt(date)}${date.slice(0,4)===now.slice(0,4)?'':'.'+date.slice(0,4)}</time>${entry?`<b>${time(entry.seconds)} · ${entry.sessions} ${tr()?'seans':'sessions'}</b>`:`<small class="mut">${tr()?'Kayıt yok':'No focus logged'}</small>`}</div>`);
   const older=rows.slice(3);
   return `<section class="card focus-history"><h2>${tr()?'Pomodoro çalışma analizi':'Pomodoro focus analysis'}</h2>
     <p class="mut">${tr()?'Kaydedilen gerçek odak süresi; tamamlanan seanslar ayrıca sayılır.':'Recorded focus time; completed sessions are counted separately.'}</p>
