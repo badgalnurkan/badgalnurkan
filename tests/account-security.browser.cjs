@@ -1,8 +1,33 @@
 // Read-only local review: no real credentials, emails, or production writes.
 const { chromium, webkit }=require('playwright');
-const {spawn}=require('node:child_process'),assert=require('node:assert/strict');
+const assert=require('node:assert/strict');
+const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
+const previewRoot=path.resolve(__dirname,'../dist');
+function startPreviewServer(){
+ const server=http.createServer(async(req,res)=>{
+  try{
+   const url=new URL(req.url,'http://127.0.0.1');
+   const pathname=decodeURIComponent(url.pathname);
+   const requested=pathname.endsWith('/')?pathname+'index.html':pathname;
+   const absolute=path.resolve(previewRoot,'.'+requested);
+   if(absolute!==previewRoot&&!absolute.startsWith(previewRoot+path.sep)){
+    res.writeHead(403);res.end('Forbidden');return;
+   }
+   const stat=await fs.promises.stat(absolute);
+   const file=stat.isDirectory()?path.join(absolute,'index.html'):absolute;
+   const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.woff2':'font/woff2'};
+   const bytes=await fs.promises.readFile(file);
+   res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});
+   res.end(bytes);
+  }catch(error){res.writeHead(error?.code==='ENOENT'?404:500);res.end('Preview asset unavailable')}
+ });
+ return new Promise((resolve,reject)=>{
+  server.once('error',reject);
+  server.listen(4173,'127.0.0.1',()=>resolve(server));
+ });
+}
 (async()=>{
- const server=spawn('python',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
+ const server=await startPreviewServer();
  try{
   for(let n=0;n<50;n++){try{if((await fetch('http://127.0.0.1:4173')).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
   for(const [engine,type] of [['chromium',chromium],['webkit',webkit]]){
@@ -85,7 +110,6 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:false,password_required:false,server_time:'2026-11-17T00:00:00Z'};
     else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
-    else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
     else if(url.endsWith('/rpc/iydu_save'))data=null;
     else if(url.endsWith('/functions/v1/account-security')){
      const b=route.request().postDataJSON();actions.push(b.action);
@@ -141,5 +165,5 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
 
    await browser.close();console.log('PASS '+engine+': date form at six widths and manual welcome entry');
   }
- }finally{server.kill()}
+ }finally{await new Promise(resolve=>server.close(resolve))}
 })().catch(e=>{console.error(e);process.exitCode=1});
