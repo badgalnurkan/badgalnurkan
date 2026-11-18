@@ -41,6 +41,11 @@ function presentation(kind,lang){
   switch(kind){
     case 'tasks':return tr?['Küçük bir hatırlatma','Bugünkü planına göz atmak ister misin?']:['A gentle reminder','Ready to check today’s plan?'];
     case 'project':return tr?['Proje hatırlatması','Projene göz atma zamanı.']:['Project reminder','Time to check your project.'];
+    case 'morning':return tr?['Günaydın!','Bugün için küçük bir adımla başlayabilirsin.']:['Good morning!','Start the day with one small step.'];
+    case 'evening':return tr?['Günün nasıl geçti?','Kendine ayırdığın küçük anları hatırla.']:['A little evening check-in','Take a moment to reflect on your day.'];
+    case 'pomo-five':return tr?['Molaya az kaldı','Beş dakika sonra kısa bir mola verebilirsin.']:['Almost break time','Five minutes until a short break.'];
+    case 'pomo-break':return tr?['Mola zamanı','Odak oturumun tamamlandı. Biraz dinlen.']:['Break time','Focus session complete. Enjoy a little rest.'];
+    case 'pomo-focus':return tr?['Yeniden odaklanma zamanı','Yeni bir çalışma aralığına başlayabilirsin.']:['Focus time again','Ready for another focus session?'];
     case 'study':case 'focus':case 'pomo':return tr?['Odaklanma zamanı','Küçük bir çalışma adımı ile başlayabilirsin.']:['Time to focus','Start with a small study step.'];
     case 'daily':case 'motivation':return tr?['Bugün için küçük bir adım','Kendin için ayırdığın zamanı hatırla.']:['One small step today','Remember the time you set aside for yourself.'];
     default:return null;
