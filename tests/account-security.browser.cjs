@@ -2,7 +2,7 @@
 const { chromium, webkit }=require('playwright');
 const {spawn}=require('node:child_process'),assert=require('node:assert/strict');
 (async()=>{
- const server=spawn('python',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
+ const server=spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
  try{
   for(let n=0;n<50;n++){try{if((await fetch('http://127.0.0.1:4173')).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
   for(const [engine,type] of [['chromium',chromium],['webkit',webkit]]){
