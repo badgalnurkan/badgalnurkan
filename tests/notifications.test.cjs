@@ -6,7 +6,7 @@ function fixture(){
  const nodes=new Map(),announcements=[],opened=[],classes=new Set();nodes.set('notification-toggle',{classList:{toggle:(k,on)=>on?classes.add(k):classes.delete(k)},setAttribute(){}});
  const context={A:{tasks:[],projects:[],presets:[{w:25,b:5}]},DB:{lang:'tr'},view:'app',pg:'home',pm:{},announcements,
  tr:()=>context.DB.lang==='tr',t:k=>k,esc:s=>String(s).replace(/</g,'&lt;'),save(){},setInterval(){},setTimeout(){},clearInterval(){},
- document:{visibilityState:'visible',hidden:false,getElementById:id=>nodes.get(id)||null,addEventListener(){}},window:{crypto:{randomUUID:()=> 'test-project'}},openModal:(id,html)=>{opened.push({id,html});nodes.set(id,{})},closeModal:id=>nodes.delete(id),motionReveal(){},goTo(){},$:()=>null,TITLE:'App',beep(){},ft:x=>String(x),persistPomodoroState(){},pi(){},swRender(){}};
+ document:{visibilityState:'visible',hidden:false,getElementById:id=>nodes.get(id)||null,addEventListener(){}},window:{crypto:{randomUUID:()=> 'test-project'}},openModal:(id,html)=>{opened.push({id,html});nodes.set(id,{})},closeModal:id=>nodes.delete(id),motionReveal(){},goTo(){},$:()=>null,TITLE:'App',beep(){},ft:x=>String(x),persistPomodoroState(){},logFocusSegment(){},pi(){},swRender(){}};
  vm.createContext(context);vm.runInContext(extract('const SITE_RELEASE=','/* End shared notification inbox. */')+extract('function persistPomodoroState(){','const fmtDuration=')+extract('function pTick(silent=false){','function pS(){')+'\nthis.f={ensureReleaseNotification,addNotification,deleteNotification,openNotifications,notificationList,checkAppReminders,pTick,restorePomodoroState};showTopNotification=item=>announcements.push(item);',context);
  return {context,f:context.f,nodes,announcements,opened,classes};
 }

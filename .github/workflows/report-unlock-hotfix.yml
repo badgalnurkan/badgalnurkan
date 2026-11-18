@@ -9,6 +9,7 @@ on:
       - 'supabase/**'
       - 'tests/account-security*'
       - 'tests/report-unlock.test.cjs'
+      - 'tests/**'
       - '.github/workflows/report-unlock-hotfix.yml'
   push:
     branches: [main]
@@ -20,6 +21,7 @@ on:
       - 'supabase/**'
       - 'tests/account-security*'
       - 'tests/report-unlock.test.cjs'
+      - 'tests/**'
       - '.github/workflows/report-unlock-hotfix.yml'
 
 permissions:

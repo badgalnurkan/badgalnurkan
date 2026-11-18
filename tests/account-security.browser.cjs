@@ -28,6 +28,51 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await seed.goto('http://127.0.0.1:4173/review-app.html?lang=tr');
    const record=await seed.evaluate(()=>JSON.parse(JSON.stringify(A)));await seed.close();
    record.authUid='fixture-user';record.email='owner@example.invalid';record.mail=record.email;record.loginMethod='google';record.googleConnected=true;record.accountOrigin='cloud';
+   // Independent local account. No real sign-in, network writes or production data.
+   const productivity=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2});
+   const productivityErrors=[];
+   productivity.on('pageerror',error=>productivityErrors.push(error.message));
+   await productivity.goto('http://127.0.0.1:4173/review-app.html?lang=tr');
+   await productivity.evaluate(()=>{
+     A.tasks=[{t:'Birinci görev',s:''},{t:'İkinci görev',s:'done'},{t:'Üçüncü görev',s:''}];
+     goTo('app','todo');
+   });
+   await productivity.locator('#tl .task-grip').first().waitFor();
+   assert.equal(await productivity.locator('#tl .task-grip').count(),3,engine+' task handles');
+   await productivity.locator('#tl .task-grip').first().focus();
+   await productivity.keyboard.press('ArrowDown');
+   assert.deepEqual(await productivity.evaluate(()=>A.tasks.map(({t})=>t)),['İkinci görev','Birinci görev','Üçüncü görev'],engine+' keyboard reorder');
+   assert.equal(await productivity.evaluate(()=>A.tasks[0].s),'done',engine+' reorder must keep status');
+   await productivity.locator('#tl .task').nth(1).getByRole('button',{name:'Düzenle'}).click();
+   await productivity.locator('#task-edit-text').fill('Güncellenmiş görev');
+   await productivity.locator('#task-edit-modal').getByRole('button',{name:'Kaydet'}).click();
+   assert.equal(await productivity.evaluate(()=>A.tasks[1].t),'Güncellenmiş görev',engine+' task editing');
+   const grip=await productivity.locator('#tl .task-grip').nth(1).boundingBox();
+   const dest=await productivity.locator('#tl .task').nth(2).boundingBox();
+   assert.ok(grip&&dest,engine+' grip positions');
+   await productivity.mouse.move(grip.x+grip.width/2,grip.y+grip.height/2);
+   await productivity.mouse.down();
+   await productivity.mouse.move(dest.x+dest.width/2,dest.y+dest.height/2,{steps:6});
+   await productivity.mouse.up();
+   assert.deepEqual(await productivity.evaluate(()=>A.tasks.map(({t})=>t)),['İkinci görev','Üçüncü görev','Güncellenmiş görev'],engine+' pointer reorder');
+   await productivity.evaluate(()=>{
+     const note=addD(today(),3);
+     A.future={[note]:'Üç gün sonra hatırla'};
+     goTo('app','pc');
+   });
+   await productivity.locator('.note-countdown').first().waitFor();
+   assert.ok((await productivity.locator('.note-countdown').first().innerText()).includes('3 gün'),engine+' note countdown');
+   await productivity.evaluate(()=>goTo('app','rep'));
+   await productivity.locator('.report-archives').waitFor();
+   await productivity.evaluate(()=>showReportDetail('summary'));
+   await productivity.locator('.report-heading').first().waitFor();
+   for(const width of [320,375,390,430]){
+     await productivity.setViewportSize({width,height:844});
+     assert.ok(await productivity.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),engine+' report overflow '+width);
+   }
+   assert.deepEqual(productivityErrors,[],engine+' productivity page errors');
+   await productivity.close();
+   console.log('PASS '+engine+': task edit, keyboard and pointer reorder, future countdown and mobile report widths');
    const page=await browser.newPage({viewport:{width:390,height:844}});
    const session={user:{id:'fixture-user',email:record.email},access_token:'fixture-access-token',refresh_token:'fixture-refresh-token'};
    const db={accounts:{[record.u]:record},lastUser:record.u,last:record.nick,lang:'tr',beige:false};
@@ -40,6 +85,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:false,password_required:false,server_time:'2026-11-17T00:00:00Z'};
     else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
+    else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
     else if(url.endsWith('/rpc/iydu_save'))data=null;
     else if(url.endsWith('/functions/v1/account-security')){
      const b=route.request().postDataJSON();actions.push(b.action);
