@@ -1,3 +1,12 @@
+# 18 Kasım 2026 · Rapor zamanı, görev taşıma ve odak özeti
+
+- Haftalık sorular İstanbul takviminde pazar günleri, aylık sorular ayın son gününde açılır. Özet, dönem ayrıntıları ve cevap yazma işlemi aynı kuralı kullanır. Önceki dönemlerin istatistikleri okunabilir.
+- Sıralama sırasında satır imleci izler ve komşu satırlar yer açar. Yeni sıra bırakıldığında kaydedilir. İptal, klavye ve azaltılmış hareket yolları desteklenir.
+- Pomodoro kartı üç gün gösterir. Önceki aylara ait kayıtlar dahil eski günler açılır bölümde kalır. Üç kayıttan az olduğunda eksik tarihler “Kayıt yok” olarak gösterilir.
+- Takvim testleri hafta ve ay sonunun çakışmasını, artık yılı, gece yarısından sonra eski formdan yazma girişimini ve yıl sonu cevap arşivini kapsar. Tarayıcı senaryosu sürüklemenin önizlemesini, açık rapor sekmesinin gün değişimini ve Pomodoro ayrıntılarını kontrol eder.
+
+---
+
 # 16 Kasım 2026 — Mevcut hesaplarda günlük yüzde artışı
 
 Bu sürüm, GitHub main 36a09f16cb4c8b371889d9cb59e4e9754017477f (birleştirilmiş PR #13) üzerine kuruludur. Manuel giriş, mobil proje tarih alanı, tek kapaklı çöp kutusu ve giriş/üyelik gönderimindeki selamlama geçişi korunmuştur. Aşağıdaki eski sürüm notları arşiv niteliğindedir.

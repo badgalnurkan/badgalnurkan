@@ -150,10 +150,10 @@ test('stale RPC responses and offline connections cannot overwrite account progr
 });
 
 test('focus segments split correctly at midnight and month boundary',()=>{
- const context={D:d=>d.toISOString().slice(0,10)};
+ const context={D:d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
  vm.createContext(context);
  vm.runInContext(extract('function focusSummary(', 'function focusHistoryCard(')+'\nthis.focusSummary=focusSummary;',context);
- const end=Date.parse('2026-12-01T00:10:00Z');
+ const end=new Date(2026,11,1,0,10).getTime();
  const entry={at:end,seconds:1200,completed:true};
  const november=context.focusSummary([entry],'2026-11-01','2026-11-30');
  const december=context.focusSummary([entry],'2026-12-01','2026-12-31');
