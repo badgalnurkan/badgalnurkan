@@ -33,6 +33,7 @@ function fixture(options={}){
   window:{isSecureContext:true,PushManager:function(){},Notification:notification,
    matchMedia:()=>({matches:!!options.standalone})},
   navigator:{serviceWorker:swApi,userAgent:options.userAgent||'Mozilla/5.0',standalone:false},
+  Notification:notification,
   document:{addEventListener(){},getElementById:id=>id==='device-push-message'?{set textContent(value){values.status=value},get textContent(){return values.status}}:null},
   MessageChannel,Uint8Array,atob,AbortSignal,URL,setTimeout,clearTimeout,console,
   A:{authUid:UID},
