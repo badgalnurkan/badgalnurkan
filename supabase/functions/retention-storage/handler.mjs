@@ -46,11 +46,6 @@ export function createRetentionHandler({
   return async function retentionHandler(req) {
     if (req.method !== 'POST') return reply({code: 'METHOD_NOT_ALLOWED'}, 405);
 
-    const cronSecret = env('RETENTION_CRON_SECRET');
-    if (!cronSecret || cronSecret.length < 32) return reply({code: 'NOT_CONFIGURED'}, 503);
-    if (!await authenticated(req, cronSecret, cryptoImpl)) {
-      return reply({code: 'UNAUTHORIZED'}, 401);
-    }
     const base = env('SUPABASE_URL') || '';
     const key = serviceKey(env);
     if (!/^https:\/\/[a-z0-9.-]+\/?$/i.test(base) || !key) {
@@ -62,6 +57,32 @@ export function createRetentionHandler({
       ...(key.startsWith('eyJ') ? {Authorization: 'Bearer ' + key} : {}),
       'Content-Type': 'application/json'
     };
+    const cronSecret = env('RETENTION_CRON_SECRET');
+    const offeredToken = req.headers.get('x-iydu-retention-token') || '';
+    if (offeredToken.length < 32 || offeredToken.length > 256) {
+      return reply({code: 'UNAUTHORIZED'}, 401);
+    }
+    if (cronSecret) {
+      if (cronSecret.length < 32) return reply({code: 'NOT_CONFIGURED'}, 503);
+      if (!await authenticated(req, cronSecret, cryptoImpl)) {
+        return reply({code: 'UNAUTHORIZED'}, 401);
+      }
+    } else {
+      // QA/cron-friendly option: verify a token encrypted in Supabase Vault.
+      // The service-only RPC returns only a boolean, never the secret.
+      let allowed = false;
+      try {
+        const verification = await fetchImpl(root + '/rest/v1/rpc/iydu_retention_token_valid', {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({p_token: offeredToken}),
+          signal: AbortSignal.timeout(10000)
+        });
+        if (!verification.ok) return reply({code: 'NOT_CONFIGURED'}, 503);
+        allowed = await verification.json() === true;
+      } catch { return reply({code: 'NOT_CONFIGURED'}, 503); }
+      if (!allowed) return reply({code: 'UNAUTHORIZED'}, 401);
+    }
     let items;
     try {
       const result = await fetchImpl(root + '/rest/v1/rpc/iydu_due_storage_objects', {
