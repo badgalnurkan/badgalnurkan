@@ -1,4 +1,4 @@
-/* Standalone deletion link. The secret stays in memory, never in localStorage. */
+/* Standalone deletion link. The proof is kept in memory and never persisted. */
 (()=>{
 'use strict';
 const SUPABASE_URL="https://flcfqwndqfmbritaywfb.supabase.co";
