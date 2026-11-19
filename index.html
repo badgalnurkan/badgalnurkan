@@ -5063,7 +5063,7 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     if(!user?.id||(expectedUid&&user.id!==expectedUid))return false;
     const session=sbSession();if(!session)return false;
     sbSave({...session,user});
-    if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
+    // Google expiry is tested before and after the profile fetch in activateCloudUser.
     // A closed account must remain on its reactivation gate, not fall through
     // to a redundant Google OAuth dialog on remembered Continue.
     if(window.IYAccount&&!await IYAccount.checkAccess(user))return true;
