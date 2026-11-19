@@ -1,9 +1,8 @@
 # Storage-aware account retention — staged, FREE-only design
 
-**Status: Draft. Do not deploy to production yet.** This complements PR #29's
+**Status: Draft. Real QA end-to-end test passed on 2026-11-19; NOT deployed to production.** This complements PR #29's
 `account_retention_30_60_staging.sql`, without modifying the existing live
-database, scheduler, or user records. The isolated QA project received the
-read-only object-enumeration RPC for functional tests.
+database, scheduler, or user records. The isolated QA project has an active scheduled Edge Function and a separate automatic Auth purge; live production remains untouched.
 
 ## Why there are two jobs
 
@@ -12,8 +11,7 @@ read-only object-enumeration RPC for functional tests.
    if their `storage.objects.owner_id` has **no remaining objects**. Existing
    permanent deletion deadlines and legacy deactivations without deadlines
    are preserved.
-2. **New scheduled Edge Function** (`retention-storage`, *disabled until
-   separately configured and verified*): selects at most 50 due user-owned
+2. **New scheduled Edge Function** (`retention-storage`, *active only in isolated QA*): selects at most 50 due user-owned
    objects from the service-only RPC and calls the supported Storage API's
    exact-path `DELETE /storage/v1/object/{bucket}` request with
    `{ "prefixes": ["file/path"] }`. It NEVER deletes `storage.objects`
@@ -31,8 +29,10 @@ database must still verify the actual remaining ownership metadata.
   for PUBLIC, anon, and authenticated; only service_role has EXECUTE.
 - The Edge Function accepts **POST only**, is not CORS-enabled, and validates
   a dedicated 32+ character `RETENTION_CRON_SECRET` in the
-  `x-iydu-retention-token` header before making any database calls.
-  Use `verify_jwt=false` only with this dedicated server-only check.
+  `x-iydu-retention-token` header, or uses the service-role-only
+  `iydu_retention_token_valid` RPC to compare against an encrypted Vault secret.
+  The RPC returns a boolean, never the secret. Use `verify_jwt=false` only
+  with this server-only validation enabled.
 - No credential, object path, email address, or user ID is returned to the caller
   or logged. Never put the cron secret or service key in GitHub or frontend code.
 - The SQL refuses to select object paths with conflicting ownership, versions,
@@ -47,11 +47,13 @@ database must still verify the actual remaining ownership metadata.
 
 1. Review and apply **both** staged SQL files in the isolated QA Supabase
    project first. Inspect `get_advisors` and verify the service-only grants.
-2. In **QA only**, configure an independently generated long random secret as
-   `RETENTION_CRON_SECRET` under Edge Function secrets, and store the *same
-   value* encrypted under `iydu_retention_cron_secret` in Supabase Vault.
-   Store the exact QA Supabase project URL in Vault as
-   `iydu_retention_project_url`. **Never paste actual secrets into code.**
+2. In **QA only**, generate a 32+ character secret directly inside
+   Supabase Vault under `iydu_retention_cron_secret`. The Edge Function
+   validates it through the service-role-only boolean RPC, so the secret is
+   never copied into an unencrypted app setting. Alternatively, configure
+   a dedicated `RETENTION_CRON_SECRET` as an Edge secret. Store the project
+   URL in Vault under `iydu_retention_project_url`.
+   **Never paste actual secrets into code.**
 3. Deploy `retention-storage` from `supabase/functions/retention-storage`
    into QA with `verify_jwt=false`, and immediately test unauthorized calls
    (401), no config (503) and an authorized empty batch (200, attempted=0).
@@ -67,9 +69,9 @@ database must still verify the actual remaining ownership metadata.
    - More than 50 files take multiple ticks without mixing users or buckets.
    - Legacy accounts, non-due accounts, unknown owner, and versioned/shared
      paths remain untouched.
-5. Only when real QA Storage + retention tests pass, configure the QA cron
-   job, using pg_cron + pg_net + Vault. Below is an **illustrative** command,
-   not an automatically applied migration:
+5. After real QA Storage + retention tests pass, configure pg_cron + pg_net
+   + Vault. An equivalent job was manually created and executed in QA on
+   2026-11-19. Below is a reusable example, not an auto-run migration:
 
 ```sql
 -- QA ONLY. pg_cron/pg_net and Vault secrets must already be configured.
@@ -97,6 +99,35 @@ select cron.schedule(
 6. Keep PR #29 as draft until this test, real signup OTP delivery, and
    browser recovery are all verified. Review potential Free-plan limits
    before scheduling recurring tests or a production release.
+
+## Real QA evidence — 2026-11-19 (isolated Free project)
+
+Project reference: `lvomrcqytfygcmguojcj`. No production user data copied.
+
+- A disposable Auth user was created through the Auth API; a real file was
+  uploaded with that user's JWT via Storage API (HTTP 200). A direct query
+  confirmed `storage.objects.owner_id` matched the Auth user ID.
+- A second Auth user uploaded another actual Storage file as a negative control.
+- The first account was marked `pending_delete` with a deadline in the past,
+  while the other remained 60 days in the future.
+- Scheduled `iydu-qa-storage-retention` (cron job ID 1) invoked the Edge
+  Function over HTTP. The async network result (request ID **12**)
+  returned HTTP **200**, `{"ok":true,"attempted":1,"buckets":1}`.
+- Independent Storage SQL query confirmed the first file was gone and the
+  control user's file still existed.
+- Scheduled `iydu-qa-account-deletion` (cron job ID 2) ran afterward.
+  Independent Auth SQL query confirmed due user count **0**, control user
+  count **1**, due object count **0**, control object count **1**.
+- A request with the wrong 64-character cron token (net request ID **16**)
+  returned HTTP **401**, `{"code":"UNAUTHORIZED"}`.
+- The temporary QA-only fixture creation route was removed by redeploying
+  the standard `retention-storage` Edge Function (version 6).
+
+**Limits:** This proves the real one-file API-to-cron-to-Auth flow, not
+production readiness for all Storage features. Larger-than-50 batches,
+versioned/shared paths, upload races, deliberate Storage failures, and
+cron retry behavior must be reviewed before production. PR #29 still
+requires real signup OTP delivery and coordinated release verification.
 
 ## Rollback / failure recovery
 
