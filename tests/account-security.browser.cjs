@@ -31,6 +31,65 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await welcome.locator('#welcome-continue').click();await welcome.waitForSelector('#u');
    assert.equal(await welcome.locator('#login-portal').count(),0,'Continue opens manual sign-in directly');
    await welcome.close();
+   // Regression: a remembered Google identity must never crush the nickname into
+   // a one-character column or cause an overflowing sign-in button.
+   const rememberedLayout=await browser.newPage({viewport:{width:390,height:844}});
+   const rememberedErrors=[];
+   rememberedLayout.on('pageerror',error=>rememberedErrors.push(error.message));
+   await rememberedLayout.goto('http://127.0.0.1:4173/');
+   await rememberedLayout.waitForSelector('#welcome-continue');
+   await rememberedLayout.evaluate(()=>{
+     const key='fixturegoogleuser';
+     const email='very.long.google.connected.account.for.layout.test@example.invalid';
+     DB.accounts[key]={
+       u:key,nick:'A long Google connected display name for layout regression',
+       email,mail:email,authUid:'fixture-remembered-google-id',
+       loginMethod:'google',googleConnected:true
+     };
+     DB.lastUser=key;
+     view='login';
+     A=null;
+     skipRem=false;
+     renderAppOrAuth();
+   });
+   await rememberedLayout.locator('.auth-google-remembered .remember').waitFor();
+   for(const width of [205,260,320,375,390,430,768,1440]){
+     await rememberedLayout.setViewportSize({width,height:844});
+     const metrics=await rememberedLayout.evaluate(()=>{
+       const card=document.querySelector('.auth-google-remembered .remember');
+       const form=document.querySelector('.auth-google-remembered .box');
+       const name=card.querySelector('.sp b');
+       const user=card.querySelector('.sp small:nth-of-type(2)');
+       const button=card.querySelector('.remember-continue');
+       const email=button.querySelector('.remember-continue-email');
+       const rect=e=>e.getBoundingClientRect();
+       return {
+         bodyScrollWidth:document.documentElement.scrollWidth,
+         viewportWidth:window.innerWidth,
+         cardFits:card.scrollWidth<=card.clientWidth+1,
+         formFits:form.scrollWidth<=form.clientWidth+1,
+         buttonFits:rect(button).left>=rect(card).left-1&&rect(button).right<=rect(card).right+1,
+         buttonOnNewRow:rect(button).top>=rect(name).bottom,
+         nameWidth:rect(name).width,
+         nameSingleLine:getComputedStyle(name).whiteSpace==='nowrap',
+         usernameSingleLine:getComputedStyle(user).whiteSpace==='nowrap',
+         emailSingleLine:getComputedStyle(email).whiteSpace==='nowrap',
+         emailEllipsis:getComputedStyle(email).textOverflow==='ellipsis',
+         emailUnmodified:email.textContent==='very.long.google.connected.account.for.layout.test@example.invalid',
+         loginAction:button.getAttribute('onclick')
+       };
+     });
+     assert.ok(metrics.cardFits&&metrics.formFits,engine+' Google account card overflow at '+width);
+     assert.ok(metrics.buttonFits&&metrics.buttonOnNewRow,engine+' Google sign-in action squeezes identity at '+width);
+     assert.ok(metrics.nameWidth>=60,engine+' remembered account name has no readable width at '+width);
+     assert.ok(metrics.nameSingleLine&&metrics.usernameSingleLine&&metrics.emailSingleLine,engine+' remembered text breaks into vertical letters at '+width);
+     assert.ok(metrics.emailEllipsis&&metrics.emailUnmodified,engine+' account email needs a readable, intact truncation at '+width);
+     assert.ok(metrics.bodyScrollWidth<=metrics.viewportWidth+1,engine+' document overflows at '+width);
+     assert.match(metrics.loginAction,/continueWithRememberedGoogle/,engine+' Google login callback preserved');
+   }
+   assert.deepEqual(rememberedErrors,[],engine+' Google remembered screen JS errors');
+   await rememberedLayout.close();
+   console.log('PASS '+engine+': remembered Google account labels and continue action fit 205–1440px');
    const seed=await browser.newPage();
    await seed.goto('http://127.0.0.1:4173/review-app.html?lang=tr');
    const record=await seed.evaluate(()=>JSON.parse(JSON.stringify(A)));await seed.close();
