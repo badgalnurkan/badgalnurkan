@@ -65,6 +65,14 @@ test('focus, overlay and PiP all use the same live formatter',()=>{
  assert.match(extract('function pTick(','function pS()'),/t2\.textContent=pomoClock\(\)/);
  assert.match(extract('function pTick(','function pS()'),/document\.title=pomoClock\(\)/);
 });
+test('long clocks switch to compact responsive typography in overlay, PiP and main clock',()=>{
+ assert.match(html,/#pt\.pomo-long-clock\{font-size:clamp\(/);
+ assert.match(html,/#pomo-overlay-time\.pomo-long-clock\{font-size:clamp\(/);
+ assert.match(html,/#pip-time\.long-clock\{font-size:clamp\(/);
+ assert.match(script,/value\.classList\.toggle\('pomo-long-clock',pomoPhaseMinutes\(\)>=60\)/);
+ assert.match(script,/time\.classList\.toggle\('long-clock',pomoPhaseMinutes\(\)>=60\)/);
+ assert.match(script,/t2\.classList\.toggle\('pomo-long-clock',pomoPhaseMinutes\(\)>=60\)/);
+});
 test('preset inputs submit with Enter, without double click side effects',()=>{
  assert.match(html,/<form class="row" onsubmit="event\.preventDefault\(\);addP\(\)">/);
  assert.match(html,/<input id="cw" type="number" min="1" max="600" step="1" required/);
