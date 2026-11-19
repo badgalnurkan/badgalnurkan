@@ -128,6 +128,52 @@ test('90-day active password gate preserves account snapshot without revealing t
  assert.equal(events.includes('clear-local'),false);
  assert.ok(events.some(e=>e.id==='security-gate'&&e.html.includes('90 günlük şifre')));
 });
+
+test('successful password PUT followed by expired session reports saved and requires fresh sign-in',async()=>{
+ const {ctx,ui,nodes,events}=uiFixture();
+ let statusCount=0,putCount=0;
+ ctx.sb=async(path)=>{
+  if(path==='/rest/v1/rpc/iydu_account_status'){
+   if(++statusCount===2)throw Object.assign(Error('session expired after password change'),{status:401});
+   return {user_id:'u',email:'real@example.invalid',state:'active',has_password:true,password_required:true,server_time:'2026-11-19T18:48:28Z'};
+  }
+  if(path==='/auth/v1/user'){putCount++;return {id:'u'}}
+  throw Error('Unexpected API request '+path);
+ };
+ const notices=[];
+ ctx.goLogin=()=>{ctx.A=null;ctx.view='login';ctx.session=null;events.push('new-login-required')};
+ ctx.toast=message=>notices.push(message);
+ nodes.set('gate-new',{value:'FixtureStrongPassword123!'});
+ nodes.set('gate-confirm',{value:'FixtureStrongPassword123!'});
+ await ui.password('gate-',false);
+ assert.equal(putCount,1,'password update sent only once');
+ assert.equal(statusCount,2,'post-update status re-check occurred');
+ assert.equal(ctx.session,null,'uncertain session is cleared');
+ assert.equal(ctx.view,'login','old app session not restored');
+ assert.ok(events.includes('new-login-required'));
+ assert.ok(notices.some(text=>text.includes('Şifren kaydedildi')&&text.includes('tekrar giriş')),'report saved despite post-update 401');
+ assert.ok(!notices.some(text=>text.includes('İşlem tamamlanamadı')),'do not misrepresent a completed password change');
+ assert.equal(nodes.get('gate-new').value,'');
+ assert.equal(nodes.get('gate-confirm').value,'');
+});
+
+test('failed password PUT never reports password saved or grants app access',async()=>{
+ const {ctx,ui,nodes,events}=uiFixture();
+ ctx.sb=async(path)=>{
+  if(path==='/rest/v1/rpc/iydu_account_status')return {user_id:'u',email:'real@example.invalid',state:'active',has_password:true};
+  if(path==='/auth/v1/user')throw Object.assign(Error('invalid token'),{status:401});
+  throw Error('Unexpected API '+path);
+ };
+ const notices=[];
+ ctx.toast=message=>notices.push(message);
+ nodes.set('gate-new',{value:'FixtureStrongPassword123!'});
+ nodes.set('gate-confirm',{value:'FixtureStrongPassword123!'});
+ await ui.password('gate-',false);
+ assert.ok(notices.some(text=>text.includes('Oturumun doğrulanamadı')));
+ assert.ok(!notices.some(text=>text.includes('Şifren kaydedildi')));
+ assert.ok(!events.includes('new-login-required'),'post-update success must not be assumed');
+});
+
 test('deactivated account gate clears local app data while retaining only the verified reactivation session',async()=>{
  const {ctx,ui,events}=uiFixture();assert.equal(await ui.checkAccess({id:'u'}),false);assert.equal(ctx.A,null);assert.equal(ctx.session.user.id,'u');
  assert.ok(events.includes('clear-local'));assert.ok(events.some(e=>e.id==='security-gate'&&e.html.includes('Yeniden açma kodu')));
