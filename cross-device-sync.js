@@ -132,8 +132,13 @@
       try {
         const current = confirmedRemote(await load());
         if (!equal(current, base)) {
+          // A focused editor can defer applying remote changes. Never advance
+          // the CAS baseline until the displayed document has actually changed.
+          if (onRemote(clone(current)) === false) {
+            report('remote-pending');
+            return false;
+          }
           base = clone(current);
-          onRemote(clone(current));
         }
         report('synced');
         return true;
