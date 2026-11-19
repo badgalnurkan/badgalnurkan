@@ -223,4 +223,7 @@ test('staged retention SQL preserves legacy deactivations and schedules both pol
  assert.match(sql,/state='deactivated' -- Legacy deactivated rows/);
  assert.match(sql,/coalesce\(p_fields->>'confirmation',''\) <> 'YES_DELETE_IN_60_DAYS'/);
  assert.doesNotMatch(sql,/YES_DELETE_IN_30_DAYS/);
+ assert.match(sql,/revoke execute on function public\.iydu_account_service\(text, uuid, jsonb\) from public, anon, authenticated/);
+ assert.match(sql,/grant execute on function public\.iydu_account_service\(text, uuid, jsonb\) to service_role/);
+ assert.match(sql,/revoke execute on function iydu_private\.purge_due_accounts\(\) from public, anon, authenticated/);
 });
