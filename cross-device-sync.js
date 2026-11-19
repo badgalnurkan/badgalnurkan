@@ -97,6 +97,25 @@
           entry.seq < 1) throw Error('SYNC_PENDING_CORRUPTED');
       return entry;
     }
+    function orphaned() {
+      // New browser tabs have different sessionStorage tab IDs. A prior tab's
+      // unacknowledged draft remains discoverable rather than being hidden.
+      const entries = [], prefix = 'iydu.sync.pending.v2.' + uid + '.';
+      const count = Number(storage.length) || 0;
+      if (typeof storage.key !== 'function') return entries;
+      for (let i = 0; i < count; i++) {
+        const found = storage.key(i);
+        if (typeof found !== 'string' || !found.startsWith(prefix) || found === key)continue;
+        const raw = storage.getItem(found);
+        if (!raw)continue;
+        let pending;
+        try { pending = JSON.parse(raw); } catch (_) { continue; }
+        if (pending?.uid !== uid || !object(pending.local) || !object(pending.base))continue;
+        entries.push({ tabId: pending.tabId, at: pending.at, local: clone(pending.local),
+          base: clone(pending.base) });
+      }
+      return entries;
+    }
     function confirmedRemote(value) {
       if (!object(value)) throw Error('SYNC_INVALID_REMOTE');
       return clone(value);
@@ -105,7 +124,7 @@
       base = confirmedRemote(remote);
       ready = true;
       const pending = getPending();
-      report(pending ? 'pending' : 'synced');
+      report(pending ? 'pending' : orphaned().length ? 'other-pending' : 'synced');
       return pending ? clone(pending.local) : null;
     }
     function enqueue(snapshot) {
@@ -140,7 +159,7 @@
           }
           base = clone(current);
         }
-        report('synced');
+        report(orphaned().length ? 'other-pending' : 'synced');
         return true;
       } catch (error) {
         report('offline');
@@ -155,7 +174,7 @@
           let pending;
           try { pending = getPending(); }
           catch (_) { report('unsafe'); return false; }
-          if (!pending) { report('synced'); return true; }
+          if (!pending) { report(orphaned().length ? 'other-pending' : 'synced'); return true; }
           let latest;
           try { latest = confirmedRemote(await load()); }
           catch (_) { report('offline'); return false; }
@@ -184,7 +203,7 @@
           catch (_) { report('unsafe'); return false; }
           if (!current) {
             if (onRemote(clone(next)) === false) report('remote-pending');
-            else { base = clone(next); report('synced'); }
+            else { base = clone(next); report(orphaned().length ? 'other-pending' : 'synced'); }
             return true;
           }
           if (current.seq === pending.seq) {
@@ -197,7 +216,7 @@
             // stale display as the current CAS base. Future saves will merge
             // from the displayed older version instead of erasing new data.
             if (onRemote(clone(next)) === false) report('remote-pending');
-            else { base = clone(next); report('synced'); }
+            else { base = clone(next); report(orphaned().length ? 'other-pending' : 'synced'); }
             return true;
           }
           base = clone(next);
@@ -241,7 +260,7 @@
     }
     return {
       initialize, enqueue, flush, refresh, conflict, resolveWithRemote,
-      pending: getPending,
+      pending: getPending, orphaned,
       getStatus: () => status,
       getBase: () => base === null ? null : clone(base),
       keys: { pending: key, conflict: conflictKey }
