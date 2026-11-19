@@ -2739,6 +2739,7 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   const fromCloud=await sbPull(); // may throw, never replace cloud data with empty after a failure
   const progressPolicy=await sbProgressPolicy(uid);
   if(sbSession()?.user?.id!==uid)throw new Error('Authenticated identity changed during activation');
+  if(options.requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return null;
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
   if(!fromLocal&&deviceAccountCount()>=MAX_DEVICE_ACCOUNTS){sbClear();throw Object.assign(Error('DEVICE_ACCOUNT_LIMIT'),{code:'DEVICE_ACCOUNT_LIMIT'})}
   const pending=syncStart(uid,fromCloud||{});
@@ -5048,38 +5049,34 @@ async function sbGoogleQuickResumeAllowed(){
  try{const result=await sb('/rest/v1/rpc/iydu_quick_resume_status',{method:'POST',body:{}});return result?.allowed===true}catch(_){return false}
 }
 async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,animateEntry=false){
-  if(!sbSession()?.access_token){if(sbSession()?.refresh_token&&!await sbRefresh())return;else if(!sbSession()?.access_token)return}
+  if(!sbSession()?.access_token){
+    if(sbSession()?.refresh_token&&!await sbRefresh())return false;
+    if(!sbSession()?.access_token)return false;
+  }
   try{
     const user=await sbCurrentUser();
     if(!user?.id||(expectedUid&&user.id!==expectedUid))return false;
     const session=sbSession();if(!session)return false;
     sbSave({...session,user});
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
-    if(window.IYAccount&&!await IYAccount.checkAccess(user))return true;
-    const remote=await sbPull();
-    const progressPolicy=await sbProgressPolicy(user.id);
-    if(sbSession()?.user?.id!==user.id)return false;
-    // A slow profile request must not carry a login across the 30-minute boundary.
-    if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
-    const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
-    const meta=user.user_metadata||{};
-    const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
-    bindReportCalendar(a,user,!remote&&!local);
-    applyServerProgressPolicy(a,progressPolicy);
-    a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
-    if(user.app_metadata?.providers?.includes('google')){a.googleConnected=true;if(!a.loginMethod)a.loginMethod='google'}
-    v13ProtectLegacyCollision(a.u,user.id);
-    DB.accounts[a.u]=a;DB.lastUser=a.u;DB.last=a.nick;A=a;
-    view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();
+    // All entry paths, including remembered Google Continue and reload,
+    // MUST initialize the same UID-scoped CAS baseline before rendering.
+    const account=await activateCloudUser({...session,user},'',
+      user.app_metadata?.providers?.includes('google')?'google':'password',
+      {requireRecentGoogle});
+    if(!account)return false;
     if(animateEntry)playWelcomeTransition();
-    if(!remote)await sbPush();return true;
+    return true;
   }catch(e){
-    // Do not auto-login from unverified localStorage contents.
     if(e.status===401)sbClear();
     if(e.message==='V13_LOCAL_USERNAME_COLLISION'){
-      sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki eski yerel hesapla çakışıyor. Eski veri korunuyor. Yerel hesabından JSON yedeği al ve aktarım adımını kullan.':'A cloud username conflicts with a legacy profile on this device. Local data was preserved. Export it and use the migration flow.';
+      sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki eski yerel hesapla çakışıyor. Eski veri korunuyor.':'Cloud username conflicts with a legacy profile on this device.';
+    }else if(e.message==='SYNC_DURABLE_STORAGE_REQUIRED'||e.message==='LOCAL_SYNC_STORAGE_UNAVAILABLE'){
+      msg=tr()?'Bu tarayıcıda güvenilir kayıt alanı yok. Verilerini korumak için site verilerini silmeden normal bir tarayıcı sekmesi kullan.':
+        'This browser cannot persist data safely. Do not clear site data; use a normal browser tab.';
     }
-    if(!A&&!expectedUid){view='login';renderAppOrAuth()}return false;
+    if(!A&&!expectedUid){view='login';renderAppOrAuth()}
+    return false;
   }
 }
 
