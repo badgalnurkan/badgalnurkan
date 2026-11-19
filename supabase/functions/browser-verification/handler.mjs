@@ -109,7 +109,7 @@ export function createHandler({env,fetchImpl=fetch,webCrypto=crypto,clock=()=>Da
     if(!transportReady)return reply({code:'MAIL_NOT_CONFIGURED'},503);
     const id=webCrypto.randomUUID(),code=generateEmailCode(webCrypto);
     const entry=await serviceRpc('request',{id,hash:await sha256(id+':'+code,webCrypto)});
-    if(entry?.error)return reply({code:entry.error},entry.error==='RATE_LIMITED'?429:403);
+    if(entry?.error)return reply({code:entry.error},entry.error==='RATE_LIMITED'?429:entry.error==='UNAUTHORIZED'?401:403);
     if(entry?.already_verified===true)return reply({ok:true,alreadyVerified:true});
     if(entry?.ok!==true||entry.id!==id||typeof entry.email!=='string')
       return reply({code:'SERVER_UNAVAILABLE'},503);
