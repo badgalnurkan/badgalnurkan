@@ -84,7 +84,7 @@ jobs:
               });
               if (!response.ok) throw new Error(url + ': HTTP ' + response.status);
               const body = await response.text();
-              if (!/<html[\\s>]/i.test(body)) throw new Error(url + ': expected HTML response');
+              if (!body.toLowerCase().includes('<html')) throw new Error(url + ': expected HTML response');
               console.log('PASS:', url, 'HTTP', response.status);
             }
           })().catch(error => { console.error(error); process.exitCode = 1; });
