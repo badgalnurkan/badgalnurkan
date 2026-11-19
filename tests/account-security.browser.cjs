@@ -237,7 +237,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await removal.locator('#account-delete-reasons').getByRole('button',{name:'Continue',exact:true}).click();
    await removal.locator('#account-delete-final').getByRole('button',{name:'Yes, close my account',exact:true}).click();
    await removal.locator('#account-delete-scheduled').waitFor();
-   assert.equal(deletionCalls.length,1);assert.equal(deletionCalls[0].confirmation,'YES_DELETE_IN_30_DAYS');
+   assert.equal(deletionCalls.length,1);assert.equal(deletionCalls[0].confirmation,'YES_DELETE_IN_60_DAYS');
    assert.equal(deletionCalls[0].reason,'other');assert.equal(deletionCalls[0].other,'I want to take a break');
    assert.ok((await removal.locator('#account-delete-scheduled').innerText()).includes('Dec'));
    await removal.close();
