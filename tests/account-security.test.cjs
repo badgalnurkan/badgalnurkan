@@ -103,6 +103,31 @@ function uiFixture(){
  vm.createContext(ctx);vm.runInContext(fs.readFileSync('account-security.js','utf8'),ctx);
  return {ctx,ui:ctx.window.IYAccount,events,nodes};
 }
+
+test('active password recovery does not broadcast account deletion or clear its fresh Auth session',async()=>{
+ const {ctx,ui,events}=uiFixture();
+ ctx.sb=async()=>({user_id:'u',email:'real@example.invalid',state:'active',has_password:true,email_verified:true,server_time:'2026-11-19T18:48:28Z'});
+ const original=ctx.DB.accounts.local;
+ await ui.recovery({id:'u'});
+ assert.equal(ctx.A,null,'private app must be gated during password recovery');
+ assert.equal(ctx.view,'login');
+ assert.equal(ctx.session.user.id,'u','verified PKCE session must remain usable');
+ assert.equal(ctx.DB.accounts.local,original,'do not delete stored active identity during password reset');
+ assert.equal(events.includes('clear-local'),false,'removing profile would broadcast a destructive cross-tab storage event');
+ assert.ok(events.includes('stop'),'active app timers are stopped');
+ assert.ok(events.some(e=>e.id==='security-gate'&&e.html.includes('Yeni uygulama şifresi')));
+});
+
+test('90-day active password gate preserves account snapshot without revealing the app',async()=>{
+ const {ctx,ui,events}=uiFixture();
+ ctx.sb=async()=>({user_id:'u',email:'real@example.invalid',state:'active',password_required:true,has_password:true,server_time:'2026-11-19T18:48:28Z'});
+ const canEnter=await ui.checkAccess({id:'u'});
+ assert.equal(canEnter,false);
+ assert.equal(ctx.A,null);
+ assert.equal(ctx.DB.accounts.local.authUid,'u');
+ assert.equal(events.includes('clear-local'),false);
+ assert.ok(events.some(e=>e.id==='security-gate'&&e.html.includes('90 günlük şifre')));
+});
 test('deactivated account gate clears local app data while retaining only the verified reactivation session',async()=>{
  const {ctx,ui,events}=uiFixture();assert.equal(await ui.checkAccess({id:'u'}),false);assert.equal(ctx.A,null);assert.equal(ctx.session.user.id,'u');
  assert.ok(events.includes('clear-local'));assert.ok(events.some(e=>e.id==='security-gate'&&e.html.includes('Yeniden açma kodu')));
