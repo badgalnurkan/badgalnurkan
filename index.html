@@ -5059,6 +5059,9 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     const session=sbSession();if(!session)return false;
     sbSave({...session,user});
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
+    // A closed account must remain on its reactivation gate, not fall through
+    // to a redundant Google OAuth dialog on remembered Continue.
+    if(window.IYAccount&&!await IYAccount.checkAccess(user))return true;
     // All entry paths, including remembered Google Continue and reload,
     // MUST initialize the same UID-scoped CAS baseline before rendering.
     const account=await activateCloudUser({...session,user},'',
