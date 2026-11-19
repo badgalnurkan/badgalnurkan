@@ -2241,8 +2241,11 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-18-recovery-plans-completed-focus';
+const SITE_RELEASE='2026-11-20-pomodoro-long-duration-enter';
 const SITE_CHANGES=[
+ {date:'2026-11-20',trTitle:'Pomodoro süre ekleme ve uzun sayaç görünümü',enTitle:'Pomodoro duration presets and long timer display',items:[
+ ['Odak ve mola süresi alanında Enter tuşuyla süreyi ekleyebilirsin.','Press Enter in the focus and break duration fields to add a preset.'],
+ ['60 dakika ve üzerindeki süreler ana sayaçta, odak görünümünde ve pencere içinde pencere modunda saat, dakika ve saniye olarak gösterilir.','Durations of 60 minutes or longer show hours, minutes and seconds in the main timer, focus view and Picture-in-Picture.']]},
  {date:'2026-11-18',trTitle:'Şifre yenileme, günlük planlar ve odak geçmişi',enTitle:'Password recovery, daily plans and focus history',items:[
  ['Şifre yenilemeyi isteği başlattığın tarayıcıda tamamlayabilirsin.','Finish a password reset in the browser where you requested it.'],
  ['Sıfırlama rapor takvimini korur. Bugünkü görevlerin tamamı bitince yeni görevler yarına yazılır. Görevler A–Z sıralanabilir.','Reset keeps your report calendar. After all tasks are done, new tasks are planned for tomorrow. Tasks can be sorted A–Z.'],
