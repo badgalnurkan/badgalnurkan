@@ -90,6 +90,48 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    assert.deepEqual(rememberedErrors,[],engine+' Google remembered screen JS errors');
    await rememberedLayout.close();
    console.log('PASS '+engine+': remembered Google account labels and continue action fit 205–1440px');
+   // Browser regression: a password recovery in one tab must not broadcast
+   // account deletion and clear the newly minted recovery JWT in another tab.
+   const recoveryContext=await browser.newContext({viewport:{width:390,height:844}});
+   await recoveryContext.addInitScript(()=>{
+    if(localStorage.getItem('b1'))return;
+    const account={u:'recoverfixture',nick:'Recover fixture',authUid:'fixture-recover-user',email:'recover@example.invalid',mail:'recover@example.invalid',accountOrigin:'cloud'};
+    localStorage.setItem('b1',JSON.stringify({accounts:{recoverfixture:account},lastUser:'recoverfixture',last:account.nick,lang:'en',beige:false}));
+    localStorage.setItem('b1sb',JSON.stringify({access_token:'fixture-recovery-jwt',refresh_token:'fixture-recovery-refresh',user:{id:'fixture-recover-user',email:account.email}}));
+    localStorage.setItem('iydu.storage-notice.v1','test');
+   });
+   const accountRequests=[];
+   await recoveryContext.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
+    const endpoint=new URL(route.request().url()).pathname;
+    accountRequests.push(endpoint);
+    if(endpoint==='/rest/v1/rpc/iydu_account_status'){
+     await route.fulfill({status:200,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({user_id:'fixture-recover-user',email:'recover@example.invalid',state:'active',has_password:true,email_verified:true,server_time:'2026-11-19T18:48:28Z'})});
+    } else await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'MOCK_ONLY'})});
+   });
+   const otherTab=await recoveryContext.newPage();
+   await otherTab.goto('http://127.0.0.1:4173/');
+   const recoveringTab=await recoveryContext.newPage();
+   await recoveringTab.goto('http://127.0.0.1:4173/');
+   await otherTab.evaluate(()=>{A=DB.accounts.recoverfixture;view='app'});
+   await recoveringTab.evaluate(()=>{A=DB.accounts.recoverfixture;view='app'});
+   await recoveringTab.evaluate(async()=>IYAccount.recovery({id:'fixture-recover-user'}));
+   await recoveringTab.locator('#security-gate').waitFor({state:'visible'});
+   await otherTab.waitForTimeout(150);
+   const recoveryState=await recoveringTab.evaluate(()=>({
+    activeUi:A!==null,
+    session:sbSession()?.access_token,
+    locallyRemembered:!!DB.accounts.recoverfixture
+   }));
+   const otherState=await otherTab.evaluate(()=>({
+    stillSignedIn:A?.authUid==='fixture-recover-user',
+    session:sbSession()?.access_token,
+    locallyRemembered:!!DB.accounts.recoverfixture
+   }));
+   assert.deepEqual(recoveryState,{activeUi:false,session:'fixture-recovery-jwt',locallyRemembered:true},engine+' recovery is gated but keeps the verified session');
+   assert.deepEqual(otherState,{stillSignedIn:true,session:'fixture-recovery-jwt',locallyRemembered:true},engine+' second tab must not globally revoke recovery session');
+   assert.deepEqual(accountRequests,['/rest/v1/rpc/iydu_account_status'],engine+' recovery fixture has exactly one mocked API request');
+   await recoveryContext.close();
+   console.log('PASS '+engine+': password recovery retains session with two open tabs');
    const seed=await browser.newPage();
    await seed.goto('http://127.0.0.1:4173/review-app.html?lang=tr');
    const record=await seed.evaluate(()=>JSON.parse(JSON.stringify(A)));await seed.close();
