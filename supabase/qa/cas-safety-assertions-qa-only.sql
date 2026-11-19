@@ -12,7 +12,8 @@ END $guard$;
 INSERT INTO auth.users(id,email,raw_user_meta_data)
 VALUES
  ('9f0d0000-0000-4000-8000-000000000011','synthetic-desktop@example.invalid','{"username":"QaDesktop"}'::jsonb),
- ('9f0d0000-0000-4000-8000-000000000012','synthetic-other@example.invalid','{"username":"QaOther"}'::jsonb);
+ ('9f0d0000-0000-4000-8000-000000000012','synthetic-other@example.invalid','{"username":"QaOther"}'::jsonb),
+ ('9f0d0000-0000-4000-8000-000000000013','synthetic-third@example.invalid','{"username":"QaThird"}'::jsonb);
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','9f0d0000-0000-4000-8000-000000000011',true);
 DO $assert$
@@ -106,6 +107,20 @@ BEGIN
   THEN RAISE EXCEPTION 'Other account could read diary history'; END IF;
 
 END $other$;
+SELECT set_config('request.jwt.claim.sub','9f0d0000-0000-4000-8000-000000000013',true);
+DO $third$
+DECLARE succeeded boolean;
+BEGIN
+  IF (SELECT count(*) FROM public.user_data)<>1 OR
+     EXISTS(SELECT 1 FROM public.iydu_journal_revisions('2026-11-19',20))
+  THEN RAISE EXCEPTION 'Third account can read another account data/history'; END IF;
+  succeeded:=public.iydu_save_cas('{}'::jsonb,
+    '{"u":"QaThird","journal":{"2026-11-19":{"text":"third-only"}}}'::jsonb);
+  IF succeeded IS DISTINCT FROM true OR
+     (SELECT data#>>'{journal,2026-11-19,text}' FROM public.user_data LIMIT 1)
+        <> 'third-only'
+  THEN RAISE EXCEPTION 'Third account could not save its own diary'; END IF;
+END $third$;
 RESET ROLE;
-SELECT 'PASS: stale writes blocked, journal history/recovery preserved and users isolated; all test rows rolled back' AS check_result;
+SELECT 'PASS: stale writes blocked, journal history/recovery preserved and three users isolated; all test rows rolled back' AS check_result;
 ROLLBACK;
