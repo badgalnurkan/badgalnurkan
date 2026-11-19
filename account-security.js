@@ -14,7 +14,7 @@ window.IYAccount=(()=>{
   DELETION_DUE:['Hesabın yeniden açılma süresi doldu.','The account reactivation period has expired.'],
   UNAUTHORIZED:['Oturumun doğrulanamadı. Yeniden giriş yap.','Your session could not be verified. Sign in again.']
  };
- function message(e){const v=errors[e.code||e.message];return v?v[tr()?0:1]:txt('İşlem tamamlanamadı. Bağlantını kontrol edip tekrar dene.','Could not complete the action. Check your connection and retry.')}
+ function message(e){const v=errors[e.code||e.message]||(e.status===401?errors.UNAUTHORIZED:null);return v?v[tr()?0:1]:txt('İşlem tamamlanamadı. Bağlantını kontrol edip tekrar dene.','Could not complete the action. Check your connection and retry.')}
  async function run(work){
   if(busy)return;busy=true;document.querySelectorAll('[data-security-action]').forEach(x=>x.disabled=true);
   try{return await work()}catch(e){const target=document.getElementById('security-message');if(target)target.textContent=message(e);toast(message(e))}
@@ -86,8 +86,21 @@ window.IYAccount=(()=>{
  }
  function gate(s,recovery=false){
   const uid=stateUid;
-  if(A?.authUid===uid||Object.values(DB.accounts||{}).some(a=>a?.authUid===uid)){const verifiedSession=sbSession();stopTimers();removeDeletedAccountFromBrowser(uid,A?.u||'');if(verifiedSession?.user?.id===uid)sbSave(verifiedSession);}
-  // Preserve only the verified Auth session for code-based reactivation or password renewal.
+  const hasLocalIdentity=A?.authUid===uid||Object.values(DB.accounts||{}).some(a=>a?.authUid===uid);
+  if(hasLocalIdentity){
+   stopTimers();
+   if(s.state!=='active'){
+    // A closed account cannot keep a local authenticated app profile.
+    const verifiedSession=sbSession();
+    removeDeletedAccountFromBrowser(uid,A?.u||'');
+    if(verifiedSession?.user?.id===uid)sbSave(verifiedSession);
+   }
+   // Password recovery for an ACTIVE account does not delete its identity.
+   // Removing it would broadcast a storage event to other open tabs, which
+   // clear the new PKCE session from the shared storage before Save password.
+   // Leave persisted profile bytes untouched and hide the app below instead.
+  }
+  // Never display private app content before the required action is complete.
   A=null;view='login';pg='home';renderAppOrAuth();
   document.querySelectorAll('.modal').forEach(x=>x.remove());
   const deletionExpired=s.state!=='active'&&!!s.delete_after&&new Date(s.delete_after)<=new Date(s.server_time);
@@ -158,8 +171,18 @@ window.IYAccount=(()=>{
   }
   const updated=await sb('/auth/v1/user',{method:'PUT',body:{password}});
   if(updated?.id!==uid)throw Error('UNAUTHORIZED');
+  // Auth's successful update is authoritative. A password change may cause
+  // the previous session to expire before the follow-up status request.
+  // Do not report the password update as failed after Supabase accepted it.
   for(const x of ['old','new','confirm']){const input=document.getElementById(prefix+x);if(input)input.value=''}
-  await status();
+  let sessionVerified=false;
+  try{await status();sessionVerified=true}catch(_){}
+  if(!sessionVerified){
+   // Do not expose account data under an unverified post-change session.
+   state=null;stateUid='';goLogin();
+   toast(txt('Şifren kaydedildi. Güvenlik için yeni şifrenle tekrar giriş yap.','Password saved. For security, sign in again with your new password.'));
+   return;
+  }
   if(prefix==='gate-'){closeModal('security-gate');await restoreCloudOnLoad()}else renderDetails();
   toast(txt('Şifren yenilendi. Sonraki yenileme 90 gün sonra.','Password renewed. The next renewal is in 90 days.'));
  })}
