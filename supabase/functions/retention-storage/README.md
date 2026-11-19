@@ -122,6 +122,12 @@ Project reference: `lvomrcqytfygcmguojcj`. No production user data copied.
   returned HTTP **401**, `{"code":"UNAUTHORIZED"}`.
 - The temporary QA-only fixture creation route was removed by redeploying
   the standard `retention-storage` Edge Function (version 6).
+- The second test user's deadline was then advanced **only within QA**.
+  Cron removed that object's file (HTTP 200, request **15**) and then its
+  Auth account. Independent final queries returned **0** disposable QA Auth
+  accounts, **0** account-controls records and **0** QA Storage objects.
+- Both QA cron jobs remain **active** and were changed to **every 15 minutes**
+  (`*/15 * * * *`) after the test to reduce Free-tier usage.
 
 **Limits:** This proves the real one-file API-to-cron-to-Auth flow, not
 production readiness for all Storage features. Larger-than-50 batches,
