@@ -36,10 +36,11 @@ test('newest added handles older tasks without creation timestamps',()=>{
 });
 test('dragging switches back to manual without losing task object identity',()=>{
  const tasks=[{t:'B',s:'done'},{t:'A',s:''},{t:'C',s:'miss'}];
+ const originalTask=tasks[0];
  const f=fixture(tasks);f.api.setTaskOrder('alpha');
  assert.equal(f.api.moveTask(0,2),true);assert.equal(f.ctx.A.taskOrder,'manual');
  assert.deepEqual(Array.from(f.ctx.A.tasks,x=>x.t),['A','C','B']);
- assert.equal(f.ctx.A.tasks[2],tasks[0]);assert.equal(f.ctx.A.tasks[2].s,'done');
+ assert.equal(f.ctx.A.tasks[2],originalTask);assert.equal(f.ctx.A.tasks[2].s,'done');
 });
 test('invalid sort names are rejected',()=>{
  const f=fixture([{t:'A'}]);
