@@ -329,7 +329,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    assert.equal(browserCodeRequests,1);
    assert.ok(cloudReads>0,'Login did not resume after verification');
    assert.equal(await page.evaluate(()=>view),'app','home opens while greeting is active');
-   assert.equal(await page.locator('#login-portal').count(),1,'greeting accompanies home reveal');
+   assert.equal(await page.locator('#login-portal').count(),0,'email challenge completes before entering the home');
    await page.locator('#login-portal').waitFor({state:'detached'});
    await page.evaluate(()=>openProfile());
    await page.locator('#profile-modal .profile-change-password').click();
