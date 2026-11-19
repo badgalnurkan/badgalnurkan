@@ -273,7 +273,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const session={user:{id:'fixture-user',email:record.email},access_token:jwt,refresh_token:'fixture-refresh-token'};
    const db={accounts:{[record.u]:record},lastUser:record.u,last:record.nick,lang:'tr',beige:false};
    await page.addInitScript(({db,session})=>{localStorage.setItem('b1',JSON.stringify(db));localStorage.setItem('b1sb',JSON.stringify(session));localStorage.setItem('iydu.storage-notice.v1','test')},{db,session});
-   const actions=[],requests=[];let closed=false,hasPassword=false;
+   const actions=[],requests=[];let closed=false,hasPassword=false,browserVerified=false,browserCodeRequests=0,cloudReads=0;
    let cloudRecord=structuredClone(record);
    await page.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
     const url=route.request().url();requests.push(url);
@@ -294,10 +294,14 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:hasPassword,password_required:false,server_time:'2026-11-17T00:00:00Z'};
     else if(url.endsWith('/functions/v1/browser-verification')){
      const payload=route.request().postDataJSON();
-     assert.equal(payload.action,'status','Previously approved fixture must only check status');
-     data={ok:true,verified:true};
+     if(payload.action==='status')data={ok:true,verified:browserVerified};
+     else if(payload.action==='request'){
+      browserCodeRequests++;data={ok:true,id:'b04146d1-f2a4-4a04-bd46-70159554b90f',expiresIn:600};
+     }else if(payload.action==='confirm'){
+      assert.equal(payload.code,'123456');browserVerified=true;data={ok:true,verified:true};
+     }else throw Error('Unexpected verification action');
     }
-    else if(url.endsWith('/rpc/iydu_load'))data=[{data:cloudRecord}];
+    else if(url.endsWith('/rpc/iydu_load')){assert.equal(browserVerified,true,'Private data fetched before email verification');cloudReads++;data=[{data:cloudRecord}]}
     else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
     else if(url.endsWith('/rpc/iydu_save_cas')){
      const body=route.request().postDataJSON();
@@ -316,7 +320,14 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    });
    await page.goto('http://127.0.0.1:4173/');
    await page.locator('#welcome-continue').click();
+   await page.locator('#browser-verify-gate').waitFor();
+   assert.equal(cloudReads,0,'Private data loaded before email verification');
+   assert.equal(await page.evaluate(()=>A),null);
+   await page.locator('#browser-verify-code').fill('123456');
+   await page.locator('#browser-verify-gate').getByRole('button',{name:'Kodu doğrula'}).click();
    await page.waitForSelector('.shell');
+   assert.equal(browserCodeRequests,1);
+   assert.ok(cloudReads>0,'Login did not resume after verification');
    assert.equal(await page.evaluate(()=>view),'app','home opens while greeting is active');
    assert.equal(await page.locator('#login-portal').count(),1,'greeting accompanies home reveal');
    await page.locator('#login-portal').waitFor({state:'detached'});
