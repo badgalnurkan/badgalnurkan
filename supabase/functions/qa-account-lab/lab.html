@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Hesap güvenliği • İzole QA testi</title>
+<style>
+:root{color-scheme:light;--rose:#78324c;--rose2:#a75d77;--paper:#fffaf6;--ink:#322b30;--mut:#75646b;--line:#eadbdf;--ok:#176d45;--warn:#8b5b13;--card:#fff;--shade:#fcf2f5}
+*{box-sizing:border-box}html{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--paper)}body{margin:0;min-height:100vh}main{max-width:1100px;margin:auto;padding:clamp(18px,4vw,48px)}header{padding-bottom:26px}.brand{color:var(--rose);font:700 1.06rem Georgia,serif;letter-spacing:.04em}.eyebrow{display:inline-block;margin:24px 0 10px;background:#f4e8ed;padding:7px 12px;border-radius:999px;color:#743c50;font-size:.8rem;font-weight:750}h1{color:var(--rose);font:600 clamp(2rem,5vw,3.3rem) Georgia,serif;line-height:1.15;margin:5px 0 12px}h2{font:600 1.33rem Georgia,serif;color:var(--rose);margin:0 0 12px}h3{margin:18px 0 8px;font-size:1rem}p{line-height:1.65}header p{max-width:750px;color:var(--mut)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:clamp(20px,3vw,30px);box-shadow:0 14px 40px #62384c0a}.span{grid-column:1/-1}.small{font-size:.9rem;color:var(--mut)}.banner{background:#f5ecec;border:1px solid #e7d3da;border-radius:14px;padding:12px 15px;color:#67424d}.notice{border-left:4px solid #9e6e80;padding:10px 14px;background:var(--shade);border-radius:8px}label{display:block;font-weight:650;font-size:.93rem;margin:16px 0 7px}input,textarea,select{width:100%;font:inherit;border:1px solid #cbb6bd;border-radius:11px;padding:12px 13px;background:white;color:var(--ink);min-height:45px}input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid #a75d77;outline-offset:3px}textarea{resize:vertical;min-height:98px}button{font:inherit;border-radius:11px;border:1px solid var(--rose);background:var(--rose);color:#fff;cursor:pointer;font-weight:700;padding:11px 15px;min-height:44px;transition:filter .16s,transform .16s}button:hover:not(:disabled){filter:brightness(1.08)}button:active:not(:disabled){transform:scale(.99)}button:disabled{opacity:.48;cursor:not-allowed}.ghost{background:white;color:var(--rose)}.actions{display:flex;gap:9px;flex-wrap:wrap;margin:15px 0}.actions button{flex:1 1 180px}.status{padding:14px;border:1px solid #d8c7cc;border-radius:12px;min-height:54px;background:#fffdfc;white-space:pre-wrap;overflow-wrap:anywhere}.status[data-kind="error"]{color:#982a35;border-color:#d9a8af;background:#fff5f5}.status[data-kind="success"]{color:#176d45;border-color:#99c8ac;background:#f4faf6}.subtle{font-size:.82rem;color:var(--mut)}.pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#e4f3eb;color:#176d45;font-size:.8rem;font-weight:750}.hidden,[hidden]{display:none!important}.pair{display:flex;gap:8px;align-items:start}.pair input{width:auto;min-height:auto;margin-top:5px}.pair label{font-weight:400;margin:0}a{color:var(--rose)}fieldset{border:0;padding:0;margin:0}fieldset legend{font-weight:700;margin:16px 0 6px}.danger{border-color:#d7b5b9;background:#fffafa}.danger button{background:#772e3d}.separator{border:0;border-top:1px solid var(--line);margin:20px 0}.mono{font-variant-numeric:tabular-nums}footer{padding:24px 0;color:var(--mut);font-size:.82rem}body.busy button{pointer-events:none;opacity:.65}@media(max-width:760px){.grid{grid-template-columns:1fr}.span{grid-column:auto}.card{padding:20px}.actions button{flex:1 1 100%}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="brand">Improvin' Your Day • QA Laboratory</div>
+<span class="eyebrow">SADECE TEST ORTAMI · GERÇEK HESAPLAR ETKİLENMEZ</span>
+<h1>Hesap güvenliği test ekranı</h1>
+<p>Bu sayfa yalnızca <strong>iydu-retention-qa-free</strong> Supabase projesini kullanır. Kayıt doğrulaması, 30 günlük geçici kapatma, 60 günlük kalıcı silme talebi ve yeniden etkinleştirmeyi test etmek içindir. <strong>Gerçek hesabını değil, sana ait bir e-posta takma adresini kullan.</strong></p>
+<div class="banner" role="note">Bu ekran tek başına hesap silmez. Her kapatma/silme işlemi için ayrıca e-postaya gelen kod veya bağlantı ve açık bir son onay gerekir. Süre dolmasını beklemeden yapılan testler yalnızca tarihi doğrular.</div>
+</header>
+<section class="grid">
+<div class="card">
+<h2>1. Test hesabına giriş</h2>
+<p class="small">Gmail'de <code>adın+qa-test@gmail.com</code> gibi bir takma adres kullanabilirsin. Mesaj aynı posta kutuna gelir; canlı siteye üye olmanı gerektirmez.</p>
+<label for="email">Test e-posta adresi</label><input id="email" autocomplete="email" type="email" inputmode="email" spellcheck="false" placeholder="adiniz+qa-test@gmail.com" maxlength="254">
+<div class="actions"><button type="button" id="signup">Yeni QA hesabı / kod gönder</button><button type="button" class="ghost" id="signin">Var olan QA hesabına kod gönder</button></div>
+<label for="loginCode">E-postaya gelen 6 haneli giriş kodu</label><input id="loginCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="••••••">
+<div class="actions"><button type="button" id="verify">Kodu doğrula ve giriş yap</button><button type="button" class="ghost" id="logout">Bu tarayıcı oturumunu kapat</button></div>
+<p class="small">Kodu e-posta ile gönderme veya sohbet içinde paylaşma. Yalnızca buradaki alana gir.</p>
+<div class="status" role="status" aria-live="polite" id="authStatus">Henüz test hesabına giriş yapılmadı.</div>
+</div>
+<div class="card">
+<h2>2. Geçici hesap kapatma</h2>
+<p>Giriş yaptıktan sonra e-posta kodunu iste. Kodu girdikten ve açıkça onayladıktan sonra hesap <strong>30 gün</strong> korunmalı.</p>
+<div class="actions"><button type="button" id="tempRequest" disabled>Geçici kapatma kodunu gönder</button></div>
+<label for="tempCode">Gelen 6 haneli kapatma kodu</label><input id="tempCode" type="text" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
+<div class="pair"><input type="checkbox" id="tempAgree"><label for="tempAgree">Test hesabımın geçici olarak kapanmasını ve 30 günlük sürenin başlamasını onaylıyorum.</label></div>
+<div class="actions"><button type="button" class="ghost" id="tempConfirm" disabled>Evet, geçici olarak kapat</button></div>
+<div class="status" role="status" aria-live="polite" id="tempStatus">Henüz kapatma kodu istenmedi.</div>
+</div>
+<div class="card">
+<h2>3. Hesabı yeniden açma</h2>
+<p class="small">Geçici kapatmanın ardından 1. bölümden aynı QA e-posta adresiyle tekrar giriş yap. Yeni oturumla yeniden etkinleştirme kodu iste.</p>
+<div class="actions"><button type="button" id="reactivateRequest" disabled>Yeniden açma kodunu gönder</button></div>
+<label for="reactivateCode">E-postaya gelen kod</label><input id="reactivateCode" type="text" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="••••••">
+<div class="pair"><input type="checkbox" id="reactivateAgree"><label for="reactivateAgree">Test hesabımı yeniden etkinleştirmek istiyorum.</label></div>
+<div class="actions"><button type="button" class="ghost" id="reactivateConfirm" disabled>Evet, hesabı yeniden aç</button></div>
+<div class="status" role="status" aria-live="polite" id="reactivateStatus">Henüz yeniden etkinleştirme istenmedi.</div>
+</div>
+<div class="card danger">
+<h2>4. Kalıcı silme talebi (60 gün)</h2>
+<p>Giriş yapılmış <strong>yalnızca QA hesabın</strong> için bir e-posta bağlantısı gönderilir. Bağlantıyı açmak hesabı silmez. Ayrı sebep seçimi ve son onay gerekir.</p>
+<div class="actions"><button type="button" id="deleteRequest" disabled>Kalıcı silme bağlantısını e-postama gönder</button></div>
+<p class="subtle">E-posta bağlantısı bu test ekranına dönecektir. Bağlantı 30 dakika geçerlidir.</p>
+<div id="deleteReview" hidden>
+<hr class="separator">
+<h3>Bağlantı doğrulandı. Neden ayrılmak istiyorsun?</h3>
+<label for="reason">Sebep seç</label><select id="reason">
+<option value="">Bir sebep seç</option><option value="break">Bir süre ara vermek istiyorum</option><option value="not_useful">Beklentilerimi karşılamadı</option><option value="hard_to_use">Kullanımı zor</option><option value="technical">Teknik sorun</option><option value="privacy">Gizlilik kaygısı</option><option value="emails">Çok fazla bildirim / e-posta</option><option value="another_account">Başka hesap kullanacağım</option><option value="other">Diğer</option>
+</select>
+<div id="otherWrap" hidden><label for="other">Diğer sebep</label><textarea id="other" maxlength="1000" placeholder="Kısaca açıklayabilirsin"></textarea></div>
+<button type="button" id="goReview" class="ghost">Sebebimi seçtim, son onaya geç</button>
+<div id="finalReview" hidden>
+<p class="notice"><strong>Son onay:</strong> Bu testi onaylarsan QA hesabın kalıcı silme bekleme durumuna alınır. Veriler 60 gün korunur, sonrasında zamanlayıcıyla silinebilir.</p>
+<div class="pair"><input type="checkbox" id="deleteAgree"><label for="deleteAgree">Evet, test hesabım için 60 günlük silme süreci başlasın.</label></div>
+<div class="actions"><button type="button" id="deleteConfirm">Evet, 60 günlük silme sürecini başlat</button><button type="button" class="ghost" id="backReasons">Geri dön</button></div>
+</div></div>
+<div class="status" role="status" aria-live="polite" id="deleteStatus">Henüz silme bağlantısı istenmedi.</div>
+</div>
+<div class="card span">
+<h2>Test durumu ve güvenlik notları</h2>
+<div class="status mono" role="status" aria-live="polite" id="globalStatus">Yalnızca QA ortamı etkin. Oturum bilgisi bu sekmenin oturum depolamasında tutulur; sayfayı kapatınca silinir.</div>
+<p class="small">İşlem başarılı olsa bile gerçek otomatik silme için 30/60 günlük son tarih, Storage API temizliği ve cron kayıtları ayrıca kontrol edilmelidir. Test ekranı gerçek kullanıcı verilerine erişemez. İşlem başlatmak, son onay olmadan hesabı kapatmaz.</p>
+</div>
+</section>
+<footer>İzole test aracı · Supabase proje kodu: <code>lvomrcqytfygcmguojcj</code>. Bu sayfa üretim uygulamasına dahil edilmemelidir.</footer>
+</main>
+<script>
+'use strict';
+(() => {
+ const QA = 'https://lvomrcqytfygcmguojcj.supabase.co';
+ const API_KEY = __QA_KEY_JSON__;
+ const STORAGE = 'iydu-qa-account-lab-session';
+ const $ = id => document.getElementById(id);
+ const endpoint = path => QA + path;
+ let session = null, pending = {deactivate:null,reactivate:null}, deletion = null, busy = false;
+ function note(id, message, kind='info') {const e=$(id);e.textContent=String(message);e.dataset.kind=kind;}
+ function maskedError(error) {return String(error?.code || error?.message || 'İstek tamamlanamadı.').replace(/Bearer\s+\S+|re_[a-z0-9]+/ig,'[gizli]');}
+ function activate() {const ok=!!session?.access_token;$('tempRequest').disabled=!ok;$('reactivateRequest').disabled=!ok;$('deleteRequest').disabled=!ok;$('tempConfirm').disabled=!ok;$('reactivateConfirm').disabled=!ok;}
+ function writeSession(value){session=value;if(value?.access_token){sessionStorage.setItem(STORAGE,JSON.stringify({access_token:value.access_token,refresh_token:value.refresh_token||'',user:value.user?.email||''}));}else sessionStorage.removeItem(STORAGE);activate();}
+ function email(){const v=$('email').value.trim().toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))throw Error('Geçerli bir test e-posta adresi gir.');return v;}
+ function code(id){const v=$(id).value.trim();if(!/^\d{6}$/.test(v))throw Error('Kod tam 6 rakam olmalı.');return v;}
+ async function request(path,method='GET',body=null,authorized=false){
+  const headers={apikey:API_KEY};if(body)headers['Content-Type']='application/json';if(authorized){if(!session?.access_token)throw Error('Önce QA hesabına giriş yap.');headers.Authorization='Bearer '+session.access_token;}
+  const opts={method,headers,cache:'no-store',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(16000)};
+  if(body)opts.body=JSON.stringify(body);
+  const res=await fetch(endpoint(path),opts);
+  const raw=await res.text();let data={};try{data=raw?JSON.parse(raw):{}}catch{throw Error('Sunucudan beklenmeyen yanıt alındı.');}
+  if(!res.ok||data.error||data.code)throw Object.assign(Error(data?.error_description||data?.msg||data?.error||data?.code||('HTTP '+res.status)),{code:data?.code||data?.error||('HTTP '+res.status)});
+  return data;
+ }
+ async function run(fn,id){if(busy)return;busy=true;document.body.classList.add('busy');try{await fn()}catch(error){note(id,maskedError(error),'error');}finally{busy=false;document.body.classList.remove('busy');activate();}}
+ function time(iso){const d=new Date(iso);return Number.isFinite(d.getTime())?d.toLocaleString('tr-TR',{timeZone:'Europe/Istanbul',dateStyle:'full',timeStyle:'short'}):'Geçersiz tarih';}
+ function deadline(kind,iso){if(!iso)return'Beklenen silinme tarihi dönmedi.';const days=(new Date(iso)-new Date())/86400000;const label=kind==='deactivated'?'30':'60';return `Durum: ${kind} | Son tarih: ${time(iso)} | Yaklaşık ${days.toFixed(2)} gün (${label} gün politikası).`;}
+ async function sendLogin(create){await run(async()=>{const v=email();await request('/auth/v1/otp','POST',{email:v,create_user:create});note('authStatus',`QA adresine doğrulama kodu gönderildi: ${v}. E-postana gelen kodu aşağıya gir.`, 'success');},'authStatus');}
+ $('signup').addEventListener('click',()=>sendLogin(true));$('signin').addEventListener('click',()=>sendLogin(false));
+ $('verify').addEventListener('click',()=>run(async()=>{const v=email(),token=code('loginCode');const data=await request('/auth/v1/verify','POST',{email:v,token,type:'email'});if(!data?.access_token||!data?.user?.id||data.user.email?.toLowerCase()!==v)throw Error('Oturum doğrulanamadı.');writeSession(data);$('loginCode').value='';note('authStatus',`QA e-postası doğrulandı. Giriş başarılı: ${v}.`, 'success');note('globalStatus','Doğrulanmış QA hesabı ile oturum açık. İşlem sonrası durum ve son tarih burada gösterilir.','success');},'authStatus'));
+ $('logout').addEventListener('click',()=>{writeSession(null);note('authStatus','Bu tarayıcı sekmesindeki QA oturumu temizlendi.');});
+ async function start(kind,id){await run(async()=>{const result=await request('/functions/v1/account-security','POST',{action:'request_'+kind,lang:'tr'},true);if(!result?.ok||!result.id)throw Error('Sunucu işlem kimliği döndürmedi.');pending[kind]=result.id;note(id,kind==='deactivate'?'Kapatma kodu gönderildi; 10 dakika içinde aşağıdaki alanı doldur.':'Yeniden açma kodu gönderildi; 10 dakika içinde aşağıdaki alanı doldur.','success');},id);}
+ $('tempRequest').addEventListener('click',()=>start('deactivate','tempStatus'));
+ $('reactivateRequest').addEventListener('click',()=>start('reactivate','reactivateStatus'));
+ async function confirm(kind,prefix){await run(async()=>{if(!pending[kind])throw Error('Önce e-posta kodu iste.');if(!$(prefix+'Agree').checked)throw Error('Devam etmek için açık onay vermelisin.');const v=code(prefix+'Code');const data=await request('/functions/v1/account-security','POST',{action:'confirm_'+kind,id:pending[kind],token:v,lang:'tr'},true);
+  if(!data?.ok||data.state!==(kind==='deactivate'?'deactivated':'active'))throw Error('Durum değişikliği doğrulanamadı.');pending[kind]=null;$(prefix+'Code').value='';$(prefix+'Agree').checked=false;
+  const text=kind==='deactivate'?deadline(data.state,data.delete_after):'Yeniden etkinleştirme başarılı; hesabın aktif, silinme son tarihi kaldırılmış olmalı.';
+  note(prefix+'Status',text,'success');note('globalStatus',text,'success');
+  if(kind==='deactivate')writeSession(null);
+ },prefix+'Status');}
+ $('tempConfirm').addEventListener('click',()=>confirm('deactivate','temp'));
+ $('reactivateConfirm').addEventListener('click',()=>confirm('reactivate','reactivate'));
+ $('deleteRequest').addEventListener('click',()=>run(async()=>{const result=await request('/functions/v1/account-security','POST',{action:'request_delete',lang:'tr'},true);if(!result?.ok||!result.id)throw Error('Silme bağlantısı oluşturulamadı.');note('deleteStatus','Kalıcı silme bağlantısı e-postana gönderildi. Bağlantıyı açmak hiçbir şeyi silmez.','success');},'deleteStatus'));
+ function parseDeletionLink(){const hash=location.hash.startsWith('#')?location.hash.slice(1):'';const params=new URLSearchParams(hash);const id=params.get('id')||'',token=params.get('token')||'';
+  if(hash)history.replaceState(null,'',location.pathname);
+  if(/^[a-f0-9-]{36}$/i.test(id)&&/^[a-f0-9]{64}$/i.test(token)){
+   deletion={id,token};$('deleteReview').hidden=false;note('deleteStatus','E-posta bağlantısı alındı. Sebep seçip ayrı son onay verince işlem başlatılabilir.');
+   $('deleteReview').scrollIntoView({block:'start',behavior:'smooth'});
+  }else if(hash)note('deleteStatus','Silme bağlantısı geçersiz veya eksik. Yeniden bağlantı iste.','error');
+ }
+ $('reason').addEventListener('change',()=>{$('otherWrap').hidden=$('reason').value!=='other';$('finalReview').hidden=true;$('deleteAgree').checked=false;});
+ $('goReview').addEventListener('click',()=>{if(!deletion){note('deleteStatus','Önce e-postadaki test bağlantısını aç.','error');return;}if(!$('reason').value){note('deleteStatus','Lütfen ayrılma sebebi seç.','error');return;}if($('reason').value==='other'&&!$('other').value.trim()){note('deleteStatus','Diğer sebebi yaz.','error');return;}$('finalReview').hidden=false;note('deleteStatus','Son onay hazır; bu adım hesabı henüz değiştirmedi.');});
+ $('backReasons').addEventListener('click',()=>{$('finalReview').hidden=true;$('deleteAgree').checked=false;});
+ $('deleteConfirm').addEventListener('click',()=>run(async()=>{if(!deletion)throw Error('Geçerli silme bağlantısı yok.');if($('finalReview').hidden)throw Error('Önce son onay ekranını aç.');if(!$('deleteAgree').checked)throw Error('Son onayı vermelisin.');const reason=$('reason').value,other=reason==='other'?$('other').value.trim():'';if(!reason||reason==='other'&&!other)throw Error('Geçerli bir sebep seç.');
+  const data=await request('/functions/v1/account-security','POST',{action:'confirm_delete',id:deletion.id,token:deletion.token,reason,other,confirmation:'YES_DELETE_IN_60_DAYS',lang:'tr'});
+  if(!data?.ok||data.state!=='pending_delete'||!data.delete_after)throw Error('60 günlük silme talebi doğrulanamadı.');
+  deletion=null;$('deleteReview').hidden=true;writeSession(null);const msg=deadline(data.state,data.delete_after);note('deleteStatus',msg,'success');note('globalStatus',msg,'success');
+ },'deleteStatus'));
+ (async()=>{try{const obj=JSON.parse(sessionStorage.getItem(STORAGE)||'null');if(obj?.access_token){writeSession(obj);const u=await request('/auth/v1/user','GET',null,true);if(!u?.id)throw Error('Oturum sona erdi.');note('authStatus',`QA oturumu geri yüklendi: ${u.email||'doğrulanmış kullanıcı'}.`,'success');}else writeSession(null);}catch{writeSession(null);}finally{parseDeletionLink();activate();}})();
+})();
+</script>
+</body>
+</html>
