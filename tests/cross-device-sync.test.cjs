@@ -9,6 +9,8 @@ function memoryStorage() {
     getItem: key => items.has(key) ? items.get(key) : null,
     setItem: (key, value) => { items.set(key, String(value)); },
     removeItem: key => { items.delete(key); },
+    key: index => [...items.keys()][index] || null,
+    get length() { return items.size; },
     items
   };
 }
@@ -170,4 +172,41 @@ test('remote refresh does not overwrite an unsynced local draft', async () => {
   assert.equal(app.pending(), null);
   assert.equal(remote.current().journal['2026-11-19'], 'local');
   assert.equal(remote.current().journal['2026-11-20'], 'remote');
+});
+
+test('a new browser tab detects but never destroys an older unsynced draft', async () => {
+  const store = memoryStorage(), remote = server({ journal: {} });
+  const previous = engine(1, 1, store, remote);
+  previous.initialize(await remote.load());
+  previous.enqueue({ journal: { '2026-11-19': { text: 'unsent on closed tab' } } });
+  const nextTab = engine(1, 3, store, remote);
+  nextTab.initialize(await remote.load());
+  assert.equal(nextTab.getStatus(), 'other-pending');
+  assert.equal(nextTab.orphaned().length, 1);
+  assert.equal(nextTab.orphaned()[0].local.journal['2026-11-19'].text,
+    'unsent on closed tab');
+  assert.ok(previous.pending(), 'New tab discarded old pending data');
+  const otherUser = engine(2, 4, store, remote);
+  otherUser.initialize(await remote.load());
+  assert.equal(otherUser.orphaned().length, 0, 'Orphans leaked across user IDs');
+});
+test('deferring a remote refresh never moves the local CAS base forward', async () => {
+  const store = memoryStorage(), remote = server({ journal: { '2026-11-19': 'base' } });
+  let editing = true;
+  const app = create({
+    uid: uid(1), tabId: tab(1), storage: store, load: remote.load,
+    cas: remote.cas, onRemote: () => !editing
+  });
+  app.initialize(await remote.load());
+  await remote.cas({ journal: { '2026-11-19': 'base' } },
+    { journal: { '2026-11-19': 'remote change' } });
+  assert.equal(await app.refresh(), false);
+  assert.equal(app.getStatus(), 'remote-pending');
+  assert.equal(app.getBase().journal['2026-11-19'], 'base');
+  app.enqueue({ journal: { '2026-11-19': 'local edit' } });
+  assert.equal(await app.flush(), false);
+  assert.equal(app.getStatus(), 'conflict');
+  assert.equal(remote.current().journal['2026-11-19'], 'remote change');
+  assert.equal(app.pending().local.journal['2026-11-19'], 'local edit');
+  editing = false;
 });
