@@ -20,7 +20,9 @@ QA'ya özel sentetik oturum kapısı `supabase/qa/account-access-shim-qa-only.sq
 
 QA'da **PASS**: 19 Kasım günlüğünün eski telefon kaydıyla silinememesi; iki günlüğün uzlaştırılması; bilinçli silinen günlüğün geçmiş sürümünden geri getirilmesi; eski kör yazma ve doğrudan yetkilerin reddi; üç kimliğin birbirinden veri/history okuyamaması; kapalı hesabın CAS/history erişiminin reddi. Sentetik SQL kayıtları `ROLLBACK` ile geri alındı.
 
-GitHub `Cross-device sync safety` workflow; güvenlik motoru, tüm Node yapısal testleri ve uygulama sözdizimini denetliyor. Bu workflow'nun yeşil olması dış Google consent/SMTP, fiziksel telefon, son kullanıcının tarayıcısı ve canlı yayına uygunluk anlamına gelmez.
+GitHub `Cross-device sync safety` workflow; güvenlik motoru, tüm Node yapısal testleri ve uygulama sözdizimini denetliyor.
+
+**Güncel CI kanıtı:** PR #38 SHA `b92a4091060e...` için `Cross-device sync safety` testleri [başarılı](https://github.com/badgalnurkan/badgalnurkan/actions/runs/44625818252). Aynı HEAD için `Report period unlock regression` altındaki Chromium/WebKit UI ve Firefox password recovery işlerinin ikisi de **başarılı**; ayrı `reports` işi yalnızca yeni `iydu_save_cas` çağrısını henüz onaylı canlı sürüm olmadığı için reddeden bilinçli koruma nedeniyle **başarısız**. [Karma workflow](https://github.com/badgalnurkan/badgalnurkan/actions/runs/44625818260) bir üretim onayı değildir. Bu workflow'nun yeşil olması dış Google consent/SMTP, fiziksel telefon, son kullanıcının tarayıcısı ve canlı yayına uygunluk anlamına gelmez.
 
 ## Bilerek açık bırakılan yayın engelleri
 
