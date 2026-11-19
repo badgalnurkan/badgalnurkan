@@ -86,6 +86,45 @@ async function main(){
     {data:fromA},'PATCH');
   assert.equal(direct.ok,false,'Direct table writer bypassed CAS');
 
+  // Regression: a diary written on 19 November must not disappear when a
+  // second device sends a stale snapshot with a different day's diary.
+  // All texts below are synthetic and this script refuses hosted endpoints.
+  const diaryBase=await load(a);
+  const desktopDiary={...diaryBase,journal:{
+    ...(diaryBase.journal||{}),
+    '2026-11-19':{text:'synthetic desktop diary',updatedAt:1795046400000}
+  }};
+  const phoneDiary={...diaryBase,journal:{
+    ...(diaryBase.journal||{}),
+    '2026-11-20':{text:'synthetic phone diary',updatedAt:1795132800000}
+  }};
+  assert.equal(ok(await cas(a,diaryBase,desktopDiary),'desktop diary CAS'),true);
+  assert.equal(ok(await cas(b,diaryBase,phoneDiary),'stale phone diary CAS'),false,
+    'A stale phone must not erase the 19 November diary');
+  assert.deepEqual(await load(a),desktopDiary,
+    '19 November diary was overwritten by the phone snapshot');
+
+  // After a fresh read, reconciling disjoint calendar days is safe.
+  // This explicitly models a review/merge; the app does not silently
+  // auto-merge drafts, and concurrent edits of the SAME day need review.
+  const recent=await load(b);
+  const reviewed={...recent,journal:{...recent.journal,
+    '2026-11-20':phoneDiary.journal['2026-11-20']}};
+  assert.equal(ok(await cas(b,recent,reviewed),'reviewed diary CAS'),true);
+  const both=await load(a);
+  assert.equal(both.journal['2026-11-19'].text,'synthetic desktop diary');
+  assert.equal(both.journal['2026-11-20'].text,'synthetic phone diary');
+
+  const staleSameDay={...both,journal:{...both.journal,
+    '2026-11-19':{text:'synthetic phone conflicting edit'}}};
+  const desktopEdit={...both,journal:{...both.journal,
+    '2026-11-19':{text:'synthetic desktop updated edit'}}};
+  assert.equal(ok(await cas(a,both,desktopEdit),'same-day desktop CAS'),true);
+  assert.equal(ok(await cas(b,both,staleSameDay),'same-day stale CAS'),false);
+  assert.equal((await load(a)).journal['2026-11-19'].text,
+    'synthetic desktop updated edit',
+    'A conflicting same-day edit overwrote the newer diary');
+
   console.log('PASS: two concurrent CAS writes serialize; stale retries are rejected.');
   console.log('PASS: legacy blind writer and direct UPDATE are denied by the staged server rollout.');
   console.log('Not tested by this test: browser conflict UI, production rollout or Google provider.');
