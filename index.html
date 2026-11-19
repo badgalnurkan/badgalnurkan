@@ -1546,6 +1546,9 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 .task-sort-select:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
 .task-grip:disabled{opacity:.35;cursor:default;touch-action:auto}
 
+/* Long Pomodoro clocks: keep hours/minutes legible on compact phones and PiP. */
+#pt.pomo-long-clock{font-size:clamp(1.05rem,4.6vw,1.85rem)!important;line-height:1.4;white-space:normal;overflow-wrap:normal}
+#pomo-overlay-time.pomo-long-clock{font-size:clamp(.92rem,3.8vw,1.3rem)!important;line-height:1.3;white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;max-width:100%}
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -2269,8 +2272,11 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-18-recovery-plans-completed-focus';
+const SITE_RELEASE='2026-11-20-pomodoro-long-duration-enter';
 const SITE_CHANGES=[
+ {date:'2026-11-20',trTitle:'Pomodoro süre ekleme ve uzun sayaç görünümü',enTitle:'Pomodoro duration presets and long timer display',items:[
+ ['Odak ve mola süresi alanında Enter tuşuyla süreyi ekleyebilirsin.','Press Enter in the focus and break duration fields to add a preset.'],
+ ['60 dakika ve üzerindeki süreler ana sayaçta, odak görünümünde ve pencere içinde pencere modunda saat, dakika ve saniye olarak gösterilir.','Durations of 60 minutes or longer show hours, minutes and seconds in the main timer, focus view and Picture-in-Picture.']]},
  {date:'2026-11-18',trTitle:'Şifre yenileme, günlük planlar ve odak geçmişi',enTitle:'Password recovery, daily plans and focus history',items:[
  ['Şifre yenilemeyi isteği başlattığın tarayıcıda tamamlayabilirsin.','Finish a password reset in the browser where you requested it.'],
  ['Sıfırlama rapor takvimini korur. Bugünkü görevlerin tamamı bitince yeni görevler yarına yazılır. Görevler A–Z sıralanabilir.','Reset keeps your report calendar. After all tasks are done, new tasks are planned for tomorrow. Tasks can be sorted A–Z.'],
@@ -3940,6 +3946,23 @@ function restorePomodoroState(){
 }
 const fmtDuration=m=>{if(m<60)return m+' '+t('minutes');const h=Math.floor(m/60),r=m%60;return r===0?h+(h==1?(tr()?' saat':' hour'):(tr()?' saat':' hours')):h+(tr()?' sa ':' h ')+r+' '+t('minutes')};
 const ft=s=>pad(Math.floor(s/60))+':'+pad(s%60);
+// Presentation only: never round or mutate the remaining seconds. Once a phase
+// starts at 60+ minutes, keep the hour-based clock throughout that phase.
+function formatPomoClock(seconds,phaseMinutes){
+  const whole=Math.max(0,Math.ceil(Number(seconds)||0));
+  if(Number(phaseMinutes)<60)return ft(whole);
+  const h=Math.floor(whole/3600),m=Math.floor(whole%3600/60),s=whole%60;
+  return tr()
+    ? `${h} sa ${pad(m)} dk ${pad(s)} sn`
+    : `${h} h ${pad(m)} min ${pad(s)} sec`;
+}
+function pomoPhaseMinutes(){
+  if(pm.ph==='w')return pm.w;
+  if(!pm.lg)return pm.b;
+  const breaks=Array.isArray(A?.presets)?A.presets.map(p=>Number(p.b)||0):[];
+  return Math.max(pm.b,...breaks);
+}
+function pomoClock(){return formatPomoClock(pm.left,pomoPhaseMinutes())}
 /* kronometre: milisaniye hassasiyetinde HH:MM:SS.mmm */
 /* kronometre: toplam 3 hane (S.dss / SS.dss / M:SS.dss) - bastaki sifir yok */
 const fms=stopwatchFormat;
@@ -3976,7 +3999,7 @@ function updatePomoOverlay(){
   const total=Math.max(1,(pm.ph==='w'?pm.w:(pm.lg?Math.max(pm.b,...(A?.presets||[]).map(p=>Number(p.b)||0)):pm.b))*60);
   const pctRemain=Math.min(100,Math.max(0,pm.left/total*100));
   const ring=$('#pomo-ring');if(ring)ring.style.setProperty('--ring',pctRemain+'%');
-  const value=$('#pomo-overlay-time');if(value)value.textContent=ft(pm.left);
+  const value=$('#pomo-overlay-time');if(value){value.textContent=pomoClock();value.classList.toggle('pomo-long-clock',pomoPhaseMinutes()>=60)}
   const label=$('#pomo-overlay-phase');if(label)label.textContent=pomoPhaseLabel();
   const toggle=$('#pomo-overlay-toggle');if(toggle)toggle.textContent=pm.run?(tr()?'Duraklat':'Pause'):(tr()?'Devam et':'Resume');
   updatePomoPip();
@@ -3986,7 +4009,7 @@ function openPomoOverlay(){
   if(old?.classList.contains('pomo-exit'))old.remove();
   else if(old){updatePomoOverlay();return}
   const overlay=document.createElement('div');overlay.id='pomo-overlay';overlay.className='pomo-overlay';
-  overlay.innerHTML=`<div class="pomo-panel" role="dialog" aria-label="Pomodoro"><div class="pomo-ring" id="pomo-ring"><div class="pomo-ring-inner"><div id="pomo-overlay-phase" class="pomo-meta">${pomoPhaseLabel()}</div><div class="tm" id="pomo-overlay-time">${ft(pm.left)}</div><div class="pomo-meta">${tr()?'Improvin’ your day.':'Improvin’ your day.'}</div></div></div><div class="row pomo-actions" style="justify-content:center"><button id="pomo-overlay-toggle" onclick="pS()">${tr()?'Duraklat':'Pause'}</button><button class="g" onclick="openPomoPip()">PiP</button><button class="g" onclick="pomoFullscreen()">${tr()?'Tam ekran':'Fullscreen'}</button><button class="g" onclick="closePomoOverlay()">${tr()?'Küçült':'Minimize'}</button></div><small class="mut">${tr()?'Küçülttikten sonra sayaç çalışmaya devam eder.':'Timer keeps running when minimized.'}</small></div>`;
+  overlay.innerHTML=`<div class="pomo-panel" role="dialog" aria-label="Pomodoro"><div class="pomo-ring" id="pomo-ring"><div class="pomo-ring-inner"><div id="pomo-overlay-phase" class="pomo-meta">${pomoPhaseLabel()}</div><div class="tm ${pomoPhaseMinutes()>=60?'pomo-long-clock':''}" id="pomo-overlay-time">${pomoClock()}</div><div class="pomo-meta">${tr()?'Improvin’ your day.':'Improvin’ your day.'}</div></div></div><div class="row pomo-actions" style="justify-content:center"><button id="pomo-overlay-toggle" onclick="pS()">${tr()?'Duraklat':'Pause'}</button><button class="g" onclick="openPomoPip()">PiP</button><button class="g" onclick="pomoFullscreen()">${tr()?'Tam ekran':'Fullscreen'}</button><button class="g" onclick="closePomoOverlay()">${tr()?'Küçült':'Minimize'}</button></div><small class="mut">${tr()?'Küçülttikten sonra sayaç çalışmaya devam eder.':'Timer keeps running when minimized.'}</small></div>`;
   document.body.appendChild(overlay);updatePomoOverlay();
   toast(tr()?'Odak ekranı açık; sayaç arka planda çalışmayı sürdürür.':'Focus screen is open; the timer continues in the background.');
 }
@@ -3996,7 +4019,7 @@ function updatePomoPip(){
   const doc=pomoPipWindow.document;
   const time=doc.getElementById('pip-time'),phase=doc.getElementById('pip-phase'),toggle=doc.getElementById('pip-toggle');
   syncPomoPipAppearance(doc);
-  if(time)time.textContent=ft(pm.left);
+  if(time){time.textContent=pomoClock();time.classList.toggle('long-clock',pomoPhaseMinutes()>=60)}
   if(phase)phase.textContent=pomoPhaseLabel();
   if(toggle)toggle.textContent=pm.run?(tr()?'Duraklat':'Pause'):(tr()?'Başlat':'Start');
 }
@@ -4023,7 +4046,7 @@ async function openPomoPip(){
       if(link.href.startsWith('https://fonts.googleapis.com/'))doc.head.appendChild(link.cloneNode(true));
     }
     const style=doc.createElement('style');
-     style.textContent=`*{box-sizing:border-box}html{font-size:16px}body{margin:0;display:grid;place-items:center;min-height:100vh;min-height:100dvh;padding:10px;background:var(--bg,#fff);color:var(--ink,#222);font:600 1rem/1.4 var(--pip-body-font,'Nunito',system-ui,sans-serif);text-align:center}.ring{border:7px solid var(--acc,#777);background:var(--card,#fff);border-radius:50%;width:min(58vw,185px);aspect-ratio:1;display:grid;place-items:center;align-content:center;gap:8px}#pip-time{font:600 clamp(1.8rem,8vw,2.35rem)/1.1 var(--fs,'Fraunces',Georgia,serif);font-variant-numeric:tabular-nums;color:var(--acc,#777)}#pip-phase{font-family:var(--pip-body-font,'Nunito',system-ui,sans-serif);font-size:.85rem;color:var(--ink,#222)}.actions{display:flex;gap:7px;justify-content:center;margin:12px 0;flex-wrap:wrap}button{background:var(--acc,#777);color:var(--on-acc,#fff);border:1px solid var(--ln,#ccc);border-radius:999px;padding:9px 14px;font:600 .9rem/1.2 var(--pip-body-font,'Nunito',system-ui,sans-serif);cursor:pointer}`;
+     style.textContent=`*{box-sizing:border-box}html{font-size:16px}body{margin:0;display:grid;place-items:center;min-height:100vh;min-height:100dvh;padding:10px;background:var(--bg,#fff);color:var(--ink,#222);font:600 1rem/1.4 var(--pip-body-font,'Nunito',system-ui,sans-serif);text-align:center}.ring{border:7px solid var(--acc,#777);background:var(--card,#fff);border-radius:50%;width:min(58vw,185px);aspect-ratio:1;display:grid;place-items:center;align-content:center;gap:8px}#pip-time{font:600 clamp(1.8rem,8vw,2.35rem)/1.1 var(--fs,'Fraunces',Georgia,serif);font-variant-numeric:tabular-nums;color:var(--acc,#777)}#pip-phase{font-family:var(--pip-body-font,'Nunito',system-ui,sans-serif);font-size:.85rem;color:var(--ink,#222)}#pip-time.long-clock{font-size:clamp(.88rem,3.9vw,1.15rem);line-height:1.3;white-space:normal;max-width:100%;padding:0 .2rem}.actions{display:flex;gap:7px;justify-content:center;margin:12px 0;flex-wrap:wrap}button{background:var(--acc,#777);color:var(--on-acc,#fff);border:1px solid var(--ln,#ccc);border-radius:999px;padding:9px 14px;font:600 .9rem/1.2 var(--pip-body-font,'Nunito',system-ui,sans-serif);cursor:pointer}`;
      doc.head.appendChild(style);syncPomoPipAppearance(doc);
     const wrap=doc.createElement('main');wrap.innerHTML='<div class="ring"><div id="pip-phase"></div><div id="pip-time"></div></div><div class="actions"><button id="pip-toggle"></button><button id="pip-reset">Reset</button></div>';
     doc.body.appendChild(wrap);
@@ -4082,8 +4105,8 @@ P.pomo=()=>{
   if(!A.stopwatch||typeof A.stopwatch!=='object')A.stopwatch={elapsed:0,started:0,running:false};
   const pr=A.presets.map((p,i)=>`<div class="tag ${pm.w===p.w&&pm.b===p.b?'on':''}"><span role="button" tabindex="0" style="cursor:pointer;flex:1" onclick="setP(${Number(p.w)},${Number(p.b)})"><b>${fmtDuration(p.w)}</b> ${t('focus')} / <b>${fmtDuration(p.b)}</b> ${t('break')}</span><span class="row"><button class="g s" onclick="editP(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s d" onclick="delP(${i})">${t('delete')}</button></span></div>`).join('');
   const laps=(A.laps||[]).map((x,i)=>`<div class="lap-row"><span>Lap ${i+1}</span><b>${stopwatchFormat(x)}</b></div>`).reverse().join('');
-  M(`<div class="card"><div class="mut" style="text-align:center" id="pl"></div><div class="tm" id="pt">${ft(pm.left)}</div><div class="row" style="justify-content:center"><button onclick="pS()">${pm.run?(tr()?'Duraklat':'Pause'):t('startPause')}</button><button class="g" onclick="pR()">${t('reset')}</button><button class="g" onclick="openPomoOverlay()">${tr()?'Odak ekranı':'Focus screen'}</button><button class="g" onclick="openPomoPip()">PiP</button><button class="g" onclick="pomoFullscreen()">${tr()?'Tam ekran':'Fullscreen'}</button></div><p id="pi" class="mut" style="text-align:center"></p></div>
-  <div class="card"><h2>${t('focusAndBreak')}</h2>${pr||'<p class="mut">'+t('addLength')+'</p>'}<div class="row"><input id="cw" type="number" min="1" max="600" placeholder="${t('focus')} (${t('minutes')})"><input id="cb" type="number" min="1" max="600" placeholder="${t('break')} (${t('minutes')})"><button onclick="addP()">${tr()?'Ekle / Güncelle':'Add / Update'}</button></div><p class="mut">${t('afterFive')}</p></div>
+  M(`<div class="card"><div class="mut" style="text-align:center" id="pl"></div><div class="tm ${pomoPhaseMinutes()>=60?'pomo-long-clock':''}" id="pt">${pomoClock()}</div><div class="row" style="justify-content:center"><button onclick="pS()">${pm.run?(tr()?'Duraklat':'Pause'):t('startPause')}</button><button class="g" onclick="pR()">${t('reset')}</button><button class="g" onclick="openPomoOverlay()">${tr()?'Odak ekranı':'Focus screen'}</button><button class="g" onclick="openPomoPip()">PiP</button><button class="g" onclick="pomoFullscreen()">${tr()?'Tam ekran':'Fullscreen'}</button></div><p id="pi" class="mut" style="text-align:center"></p></div>
+  <div class="card"><h2>${t('focusAndBreak')}</h2>${pr||'<p class="mut">'+t('addLength')+'</p>'}<form class="row" onsubmit="event.preventDefault();addP()"><input id="cw" type="number" min="1" max="600" step="1" required aria-label="${t('focus')} (${t('minutes')})" placeholder="${t('focus')} (${t('minutes')})"><input id="cb" type="number" min="1" max="600" step="1" required aria-label="${t('break')} (${t('minutes')})" placeholder="${t('break')} (${t('minutes')})"><button type="submit">${tr()?'Ekle / Güncelle':'Add / Update'}</button></form><p class="mut">${t('afterFive')}</p></div>
   <div class="card stopwatch-card" data-swipe-stopwatch="true" ontouchstart="swTouchStart(event)" ontouchend="swTouchEnd(event)"><h2>${t('stopwatch')}</h2><div class="row sw-mode-controls" style="justify-content:center"><button class="${stopwatchView==='timer'?'':'g'} s" onclick="swMode('timer')">${tr()?'Kronometre':'Stopwatch'}</button><button class="${stopwatchView==='clock'?'':'g'} s" onclick="swMode('clock')">${tr()?'Saat':'Clock'}</button></div>
   ${stopwatchView==='timer'?`<div id="sw" class="sw-display">${stopwatchFormat(swElapsed())}</div>`:`<div class="chrono-dial" role="img" aria-label="${tr()?'Analog kronometre':'Analog stopwatch'}">${CHRONO_TICKS}<div class="chrono-mini">${[0,10,20].map(v=>{const a=v*Math.PI/15;return `<span class="chrono-number" style="left:${50+37*Math.sin(a)}%;top:${50-37*Math.cos(a)}%">${v}</span>`}).join('')}<div id="chrono-sub-hand" class="chrono-hand" style="top:12%;height:40%"></div></div><div id="chrono-hand" class="chrono-hand"></div><div class="chrono-pivot"></div><div id="chrono-digital" class="chrono-digital">${stopwatchFormat(swElapsed())}</div></div>`}
   <div class="row stopwatch-actions"><button onclick="swStart()" ${A.stopwatch.running?'disabled':''}>${tr()?'Başlat':'Start'}</button><button class="g" onclick="swStop()" ${A.stopwatch.running?'':'disabled'}>${tr()?'Durdur':'Stop'}</button><button class="g" onclick="lap()" ${A.stopwatch.running?'':'disabled'}>Lap</button><button class="g" onclick="swR()">${t('reset')}</button></div><div class="laps">${laps}</div>
@@ -4127,8 +4150,8 @@ function pTick(silent=false){
   pm.left=Math.max(0,Math.ceil((pm.end-now)/1000));
   if(changed){pm.noticeFive=false;if(A&&ensureNoticeState().notificationPrefs.pomo!==false)addNotification('pomo-phase:'+pm.end+':'+pm.ph,pm.ph==='b'?'pomo-break':'pomo-focus',{session:pm.n})}
   if(A&&pm.ph==='w'&&pm.w>5&&pm.left>0&&pm.left<=300&&!pm.noticeFive){pm.noticeFive=true;changed=true;if(ensureNoticeState().notificationPrefs.pomo!==false)addNotification('pomo-five:'+pm.end,'pomo-five')}
-  const t2=$('#pt');if(t2)t2.textContent=ft(pm.left);
-  if(A)document.title=ft(pm.left)+' · '+TITLE;
+  const t2=$('#pt');if(t2){t2.textContent=pomoClock();t2.classList.toggle('pomo-long-clock',pomoPhaseMinutes()>=60)}
+  if(A)document.title=pomoClock()+' · '+TITLE;
   if(changed){
     persistPomodoroState();
     const card=pg==='pomo'?document.querySelector('.focus-history'):null;
