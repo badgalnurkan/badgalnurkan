@@ -61,6 +61,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
        const name=card.querySelector('.sp b');
        const user=card.querySelector('.sp small:nth-of-type(2)');
        const button=card.querySelector('.remember-continue');
+       const manual=card.querySelector('.remember-manual');
        const email=button.querySelector('.remember-continue-email');
        const rect=e=>e.getBoundingClientRect();
        return {
@@ -70,6 +71,9 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
          formFits:form.scrollWidth<=form.clientWidth+1,
          buttonFits:rect(button).left>=rect(card).left-1&&rect(button).right<=rect(card).right+1,
          buttonOnNewRow:rect(button).top>=rect(name).bottom,
+         manualFits:manual&&rect(manual).left>=rect(card).left-1&&rect(manual).right<=rect(card).right+1,
+         manualBelowGoogle:manual&&rect(manual).top>=rect(button).bottom-1,
+         manualAction:manual?.getAttribute('onclick')||'',
          nameWidth:rect(name).width,
          nameSingleLine:getComputedStyle(name).whiteSpace==='nowrap',
          usernameSingleLine:getComputedStyle(user).whiteSpace==='nowrap',
@@ -81,12 +85,24 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
      });
      assert.ok(metrics.cardFits&&metrics.formFits,engine+' Google account card overflow at '+width);
      assert.ok(metrics.buttonFits&&metrics.buttonOnNewRow,engine+' Google sign-in action squeezes identity at '+width);
+     assert.ok(metrics.manualFits&&metrics.manualBelowGoogle,engine+' manual sign-in is unavailable or squeezed at '+width);
+     assert.match(metrics.manualAction,/useAccount/,engine+' remembered Google login must allow an independent password option');
      assert.ok(metrics.nameWidth>=60,engine+' remembered account name has no readable width at '+width);
      assert.ok(metrics.nameSingleLine&&metrics.usernameSingleLine&&metrics.emailSingleLine,engine+' remembered text breaks into vertical letters at '+width);
      assert.ok(metrics.emailEllipsis&&metrics.emailUnmodified,engine+' account email needs a readable, intact truncation at '+width);
      assert.ok(metrics.bodyScrollWidth<=metrics.viewportWidth+1,engine+' document overflows at '+width);
      assert.match(metrics.loginAction,/continueWithRememberedGoogle/,engine+' Google login callback preserved');
    }
+   const beforeManualUrl=rememberedLayout.url();
+   await rememberedLayout.locator('.auth-google-remembered .remember-manual').click();
+   const manualState=await rememberedLayout.evaluate(()=>({
+     input:document.querySelector('#u')?.value,
+     view,
+     noGoogleRedirect:location.href
+   }));
+   assert.equal(manualState.input,'fixturegoogleuser',engine+' manual Google account username not prefilled');
+   assert.equal(manualState.view,'login',engine+' manual login must stay in password form');
+   assert.equal(manualState.noGoogleRedirect,beforeManualUrl,engine+' manual login must not start Google OAuth');
    assert.deepEqual(rememberedErrors,[],engine+' Google remembered screen JS errors');
    await rememberedLayout.close();
    console.log('PASS '+engine+': remembered Google account labels and continue action fit 205–1440px');
