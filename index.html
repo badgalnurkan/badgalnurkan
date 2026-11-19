@@ -2464,6 +2464,10 @@ function renderAppOrAuth(){
     h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" data-user="${esc(rem||'')}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':'signInWithGoogle()'}">${googleRemembered?(tr()?esc(DB.accounts[rem].email||DB.accounts[rem].mail)+' ile devam et':'Continue with '+esc(DB.accounts[rem].email||DB.accounts[rem].mail)):(tr()?'Google ile devam et':'Continue with Google')}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
   else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+box(`<h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='signup-code'){
+    if(!pendingSignup){view='setup';renderAppOrAuth();return}
+    h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${tr()?'E-posta doğrulama kodu':'Email verification code'}</h2>${m()}<p class="mut">${tr()?'E-postana gönderilen 6 haneli kodu yaz. Kod doğrulanmadan hesabın etkinleştirilmez.':'Enter the 6-digit code sent to your email. Your account cannot be activated before confirmation.'}</p><p><strong>${esc(pendingSignup.email)}</strong></p><label for="signup-code-input">${tr()?'6 haneli kod':'Six-digit code'}</label><input id="signup-code-input" inputmode="numeric" type="text" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();verifySignupCode()}"><div class="row"><button type="button" id="signup-code-submit" onclick="verifySignupCode()">${tr()?'Kodu doğrula':'Verify code'}</button><button class="g" type="button" onclick="resendSignupCode()">${tr()?'Yeni kod iste':'Resend code'}</button></div><button class="g s" type="button" onclick="pendingSignup=null;goTo('setup','home')">${tr()?'Geri dön':'Back'}</button><p id="signup-code-status" role="status" aria-live="polite"></p>`);
+  }
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button><button class="g" type="button" onclick="IYRecovery.resume(document.getElementById('u').value)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;ensureReleaseNotification();
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
@@ -2689,6 +2693,43 @@ async function login(){
   }finally{loginBusy(false)}
 }
 const MAX_DEVICE_ACCOUNTS=3;
+let pendingSignup=null,signupOtpBusy=false;
+function signupOtpMessage(text){
+  const node=document.getElementById('signup-code-status');if(node)node.textContent=text;
+  else msg=text;
+}
+async function verifySignupCode(){
+  if(signupOtpBusy||!pendingSignup)return;
+  const request={...pendingSignup};
+  const code=String(document.getElementById('signup-code-input')?.value||'').trim();
+  if(!/^\d{6}$/.test(code)){signupOtpMessage(tr()?'6 haneli kodu gir.':'Enter the six-digit code.');return}
+  signupOtpBusy=true;
+  const submit=document.getElementById('signup-code-submit');if(submit)submit.disabled=true;
+  try{
+    const result=await sb('/auth/v1/verify',{method:'POST',body:{email:request.email,token:code,type:'email'}});
+    if(!result?.access_token||!result?.user?.id||!result?.user?.email_confirmed_at||
+       String(result.user.email||'').toLowerCase()!==request.email)throw Error('EMAIL_NOT_VERIFIED');
+    if(!pendingSignup||pendingSignup.email!==request.email)throw Error('SIGNUP_FLOW_CHANGED');
+    const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
+    await activateCloudUser(result,request.username,'password',{entryTransition});
+    if(sbSession()?.user?.id!==result.user.id)throw Error('SIGNUP_SESSION_CHANGED');
+    pendingSignup=null;formDat={u:'',n:'',b:'',e:'',t:'',p:'',p2:''};
+  }catch(error){
+    console.warn('Email code confirmation failed:',error?.code||error?.message);
+    signupOtpMessage(tr()?'Kod geçersiz veya süresi dolmuş olabilir. E-postanı kontrol et ya da yeni kod iste.':'The code may be invalid or expired. Check your email or request a new code.');
+  }finally{signupOtpBusy=false;if(submit?.isConnected)submit.disabled=false}
+}
+async function resendSignupCode(){
+  if(signupOtpBusy||!pendingSignup)return;
+  signupOtpBusy=true;
+  try{
+    await sb('/auth/v1/resend',{method:'POST',body:{type:'signup',email:pendingSignup.email}});
+    signupOtpMessage(tr()?'Yeni kod isteği alındı. Lütfen e-postanı kontrol et.':'A new code was requested. Check your email.');
+  }catch(error){
+    signupOtpMessage(tr()?'Yeni kod şu an gönderilemedi. Biraz sonra yeniden dene.':'Could not resend the code yet. Try again later.');
+  }finally{signupOtpBusy=false}
+}
+
 function deviceAccountCount(){
   const ids=new Set();
   for(const [name,account] of Object.entries(DB.accounts||{})){
@@ -2714,16 +2755,24 @@ async function setup(){
   if(msg){renderAppOrAuth();if(msg===t('usernameTaken'))debounceNameCheck();return}
   if(Object.values(DB.accounts).some(a=>String(a.email||a.mail||'').toLowerCase()===e)){goExistingEmail(e);return}
   if(deviceAccountCount()>=MAX_DEVICE_ACCOUNTS){msg=tr()?'Bu cihazda en fazla 3 hesap saklanabilir. Önce mevcut bulut hesaplarından birini bu cihazda unut.':'This device can remember at most 3 accounts. Forget an unused cloud profile on this device first.';renderAppOrAuth();return}
-  const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
   loginBusy(true);
   try{
     const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:u}});
     if(available!==true){msg=t('usernameTaken');renderAppOrAuth();debounceNameCheck();return}
     const j=await sbSignUp(u,p,n,e);
     if(!j||!j.access_token){
-      msg=tr()?'Hesabını etkinleştirmek için e-postana gönderilen bağlantıyı aç.':'Open the confirmation link in your email to activate your account.';
+      pendingSignup={email:e,username:u,nick:n};
+      formDat.p='';formDat.p2='';
+      view='signup-code';msg='';renderAppOrAuth();return;
+    }
+    if(!j.user?.email_confirmed_at){
+      sbClear();
+      pendingSignup={email:e,username:u,nick:n};
+      formDat.p='';formDat.p2='';
+      view='signup-code';msg=tr()?'E-posta doğrulaması tamamlanmadan giriş yapılamaz.':'Email verification must be completed before signing in.';
       renderAppOrAuth();return;
     }
+    const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
     await activateCloudUser(j,u,'password',{entryTransition});
     formDat={u:'',n:'',b:'',e:'',t:'',p:''};
     toast(tr()?'Hesabın oluşturuldu. E-posta durumunu Ayarlar’dan kontrol edebilirsin.':'Your account is ready. Check your email status in Settings.');
@@ -4593,7 +4642,7 @@ function sbClear(){setItem(SESS_KEY,'')}
 async function sb(path,opt={}){
   const session=sbSession();
   const headers={'apikey':SUPABASE_KEY,'Content-Type':'application/json',...(opt.headers||{})};
-  const isLogin=/^\/auth\/v1\/(signup|token|recover|resend)/.test(path);
+  const isLogin=/^\/auth\/v1\/(signup|token|recover|resend|verify)/.test(path);
   if(!isLogin&&session?.access_token)headers['Authorization']='Bearer '+session.access_token;
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);
   try{
