@@ -1,0 +1,111 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+const script=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+assert.ok(script,'Inline application script must exist');
+const slice=(start,end)=>{
+ const a=script.indexOf(start),b=script.indexOf(end,a);
+ assert.ok(a>=0&&b>a,'Missing tested block '+start);
+ return script.slice(a,b);
+};
+const authErrorSource=slice('function authErrorMessage(err){','function goExistingEmail(email){');
+const loginSource=slice('async function login(){','const MAX_DEVICE_ACCOUNTS=3;');
+const recoverySource=slice('let recoveryMailBusy=false','const NAV=NAV_KEYS;');
+
+test('frontend inline JS parses and recovery entry is accessible',()=>{
+ assert.doesNotThrow(()=>new Function(script));
+ assert.match(html,/id="forgot-reset-submit"/);
+});
+
+function loginFixture(failure){
+ let rendered=0,codeStatus='',signinCalls=0;
+ const context={
+  authBusy:false,loginDat:{u:'owner@example.invalid',p:''},msg:'',view:'login',pg:'home',
+  DB:{accounts:{}},formDat:{},tr:()=>false,
+  document:{getElementById:()=>null},
+  $:selector=>selector==='#u'?{value:'owner@example.invalid'}:selector==='#p'?{value:'correct-but-unverified-password'}:null,
+  findUser:()=>null,
+  playWelcomeTransition:done=>done(),
+  loginBusy:()=>{},
+  sbSignIn:async()=>{signinCalls++;throw failure},
+  accountCloudHints:()=>true,pwMatch:async()=>false,
+  renderAppOrAuth:()=>{rendered++},
+  signupOtpMessage:text=>{codeStatus=text},
+  authErrorMessage:null,
+  console
+ };
+ vm.createContext(context);
+ vm.runInContext('let pendingSignup=null;',context);
+ vm.runInContext(authErrorSource,context);
+ vm.runInContext(loginSource,context);
+ return {context,calls:()=>signinCalls,renders:()=>rendered,status:()=>codeStatus,pending:()=>vm.runInContext('pendingSignup',context)};
+}
+
+test('interrupted signup recovers with verified email OTP, never assumes a link',async()=>{
+ const x=loginFixture(Object.assign(Error('Email not confirmed'),{code:'email_not_confirmed',status:400}));
+ await x.context.login();
+ assert.equal(x.calls(),1);
+ assert.equal(x.context.view,'signup-code');
+ assert.deepEqual(JSON.parse(JSON.stringify(x.pending())),{email:'owner@example.invalid',username:''});
+ assert.match(x.status(),/six-digit code/);
+ assert.equal(x.renders(),1);
+});
+
+test('invalid password or unrelated auth failure cannot unlock OTP flow',async()=>{
+ const x=loginFixture(Object.assign(Error('Invalid login credentials'),{code:'invalid_credentials',status:400}));
+ await x.context.login();
+ assert.equal(x.context.view,'login');
+ assert.equal(x.pending(),null);
+ assert.match(x.context.msg,/Sign-in failed/);
+});
+
+function recoveryFixture(sender){
+ let now=5000000,calls=0;
+ const submit={disabled:false,isConnected:true};
+ const resumed={dataset:{}};
+ const feedback={textContent:'',innerHTML:'',querySelector:()=>resumed};
+ const emailField={value:'owner@example.invalid'};
+ const D=class extends Date{static now(){return now}};
+ const context={
+  $:s=>s==='#u'?emailField:s==='#fz'?feedback:null,
+  document:{getElementById:id=>id==='forgot-reset-submit'?submit:null},
+  Date:D,msg:'',emailPattern:/^[^@\s]+@[^@\s]+\.[^@\s]+$/,
+  t:k=>k,tr:()=>false,renderAppOrAuth:()=>{},
+  sbRecover:async(email)=>{calls++;return sender(email)}
+ };
+ vm.createContext(context);
+ vm.runInContext(recoverySource,context);
+ return {context,submit,feedback,emailField,resumed,calls:()=>calls,advance:ms=>{now+=ms}};
+}
+
+test('rapid reset clicks send only one email, keep entered address, and honor cooldown',async()=>{
+ let release;const deferred=new Promise(resolve=>{release=resolve});
+ const x=recoveryFixture(()=>deferred);
+ const first=x.context.fSend('email');
+ await x.context.fSend('email');
+ assert.equal(x.calls(),1);
+ assert.equal(x.submit.disabled,true);
+ release();await first;
+ assert.equal(x.submit.disabled,false);
+ assert.equal(x.resumed.dataset.email,'owner@example.invalid');
+ await x.context.fSend('email');
+ assert.equal(x.calls(),1);
+ assert.match(x.feedback.textContent,/Please wait/);
+ assert.equal(x.emailField.value,'owner@example.invalid');
+ x.advance(61000);await x.context.fSend('email');
+ assert.equal(x.calls(),2);
+});
+
+test('server HTTP 429 is explained and retry uses a bounded cooldown',async()=>{
+ let attempt=0;const x=recoveryFixture(async()=>{if(++attempt===1)throw Object.assign(Error('Too Many Requests'),{status:429})});
+ await x.context.fSend('email');
+ assert.equal(x.calls(),1);
+ assert.match(x.feedback.textContent,/Too many reset requests/);
+ assert.equal(x.submit.disabled,false);
+ await x.context.fSend('email');
+ assert.equal(x.calls(),1);
+ x.advance(61000);
+ await x.context.fSend('email');
+ assert.equal(x.calls(),2);
+ assert.equal(x.resumed.dataset.email,'owner@example.invalid');
+});
