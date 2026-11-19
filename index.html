@@ -1556,6 +1556,7 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 <script src="/account-security.js"></script>
 <script src="/recovery-browser.js"></script>
 <script src="/cross-device-sync.js"></script>
+<script src="/browser-verification.js"></script>
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
@@ -2736,6 +2737,10 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
   const meta=j.user.user_metadata||{};
   if(window.IYAccount&&!await IYAccount.checkAccess(j.user))return;
+  if(options.requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return null;
+  // Never load or render private data until this JWT session has confirmed
+  // ownership of the registered email address. RLS and RPCs enforce the gate.
+  if(!window.IYBrowserGate||!await IYBrowserGate.check(j.user))return null;
   const fromCloud=await sbPull(); // may throw, never replace cloud data with empty after a failure
   const progressPolicy=await sbProgressPolicy(uid);
   if(sbSession()?.user?.id!==uid)throw new Error('Authenticated identity changed during activation');
@@ -5067,7 +5072,7 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     const account=await activateCloudUser({...session,user},'',
       user.app_metadata?.providers?.includes('google')?'google':'password',
       {requireRecentGoogle});
-    if(!account)return false;
+    if(!account)return !!window.IYBrowserGate?.isPending();
     if(animateEntry)playWelcomeTransition();
     return true;
   }catch(e){
