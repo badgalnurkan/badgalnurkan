@@ -115,10 +115,29 @@ window.IYAccount=(()=>{
   const token=field('account-code-input').trim();
   if(!/^\d{6}$/.test(token))return toast(txt('6 haneli kodu yaz.','Enter the 6-digit code.'));
   const kind=challenge.kind;
-  if(kind==='deactivate'&&A?.authUid===challenge.uid&&!await sbPush())throw Error('SERVICE_UNAVAILABLE');
-  await api('confirm_'+kind,{id:challenge.id,token});challenge=null;closeModal('account-code');
-  if(kind==='reactivate'){closeModal('security-gate');await restoreCloudOnLoad();toast(txt('Hesabın yeniden açıldı.','Your account is active again.'))}
-  else {clearIdentity();toast(txt('Hesabın geçici olarak kapatıldı.','Your account was temporarily closed.'))}
+  if(kind==='deactivate'){
+   // No server-side closure occurs before the user's separate final Yes.
+   challenge.proof=token;
+   openModal('account-deactivate-final','<h2>'+txt('Emin misin?','Are you sure?')+'</h2>'+
+    '<p>'+txt('Evet dediğinde doğrulama kodun kontrol edilir ve hesabın kapatılır. Verilerin 30 gün korunur. Bu süre içinde yeniden açmazsan otomatik olarak silinir.','When you choose Yes, the server verifies your code and closes the account. Data is retained for 30 days; it is deleted unless you reactivate.')+'</p>'+
+    '<div class="row"><button data-security-action onclick="IYAccount.finalizeDeactivation()">'+txt('Evet, hesabımı geçici kapat','Yes, temporarily close my account')+'</button>'+
+    '<button type="button" class="g" onclick="closeModal(\'account-deactivate-final\')">'+txt('Hayır','No')+'</button></div>');
+   return;
+  }
+  if(kind!=='reactivate')throw Error('INVALID_ACTION');
+  await api('confirm_reactivate',{id:challenge.id,token});
+  challenge=null;closeModal('account-code');closeModal('security-gate');
+  await restoreCloudOnLoad();
+  toast(txt('Hesabın yeniden açıldı.','Your account is active again.'));
+ })}
+ async function finalizeDeactivation(){return run(async()=>{
+  if(!challenge||challenge.kind!=='deactivate'||challenge.uid!==sbSession()?.user?.id)throw Error('UNAUTHORIZED');
+  const token=challenge.proof;
+  if(!/^\d{6}$/.test(token))throw Error('INVALID_CHALLENGE');
+  if(A?.authUid===challenge.uid&&!await sbPush())throw Error('SERVICE_UNAVAILABLE');
+  await api('confirm_deactivate',{id:challenge.id,token});
+  challenge=null;clearIdentity();
+  toast(txt('Hesabın 30 günlüğüne kapatıldı. Bu sürede yeniden açabilirsin.','Your account was closed. You can reactivate within 30 days.'));
  })}
  function clearIdentity(){
   const uid=stateUid||sbSession()?.user?.id;
@@ -205,5 +224,5 @@ window.IYAccount=(()=>{
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&A?.authUid)refresh()});
  }
  document.addEventListener('DOMContentLoaded',init,{once:true});
- return {api,status,checkAccess,emailMarkup,settingsMarkup,refresh,recovery,password,request,confirmCode,signOut,consumeLink,showReasons,confirmReason,finalizeDeletion,cancelDeletion,cookieInfo,dismissCookie};
+ return {api,status,checkAccess,emailMarkup,settingsMarkup,refresh,recovery,password,request,confirmCode,finalizeDeactivation,signOut,consumeLink,showReasons,confirmReason,finalizeDeletion,cancelDeletion,cookieInfo,dismissCookie};
 })();
