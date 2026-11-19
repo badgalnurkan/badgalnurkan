@@ -56,6 +56,28 @@ BEGIN
        <> 'synthetic phone diary'
   THEN RAISE EXCEPTION 'Reviewed disjoint-day merge lost a diary'; END IF;
 
+  -- Even a fresh-base accidental removal is recoverable: the trigger archives
+  -- the exact prior diary entry in an owner-only private table.
+  was_saved := public.iydu_save_cas(combined, combined #- '{journal,2026-11-19}');
+  IF was_saved IS DISTINCT FROM true THEN
+    RAISE EXCEPTION 'Intentional deletion simulation failed';
+  END IF;
+  IF (SELECT count(*) FROM public.iydu_journal_revisions('2026-11-19',20))<>1 OR
+     (SELECT previous_entry->>'text'
+        FROM public.iydu_journal_revisions('2026-11-19',20) LIMIT 1)
+       <> 'synthetic desktop diary'
+  THEN RAISE EXCEPTION 'Server did not preserve deleted journal revision'; END IF;
+
+  SELECT data INTO latest FROM public.user_data WHERE user_id=auth.uid();
+  SELECT jsonb_set(latest,'{journal,2026-11-19}',h.previous_entry,true)
+    INTO combined
+    FROM public.iydu_journal_revisions('2026-11-19',20) AS h LIMIT 1;
+  IF combined IS NULL OR
+     public.iydu_save_cas(latest,combined) IS DISTINCT FROM true OR
+     (SELECT data#>>'{journal,2026-11-19,text}' FROM public.user_data WHERE user_id=auth.uid())
+       <> 'synthetic desktop diary'
+  THEN RAISE EXCEPTION 'Recovery failed to restore the deleted diary'; END IF;
+
   BEGIN
     PERFORM public.iydu_save('QaDesktop','Synthetic',stale_phone);
   EXCEPTION WHEN sqlstate 'P0001' THEN legacy_rejected := true;
@@ -80,7 +102,10 @@ BEGIN
   IF EXISTS(SELECT 1 FROM public.user_data WHERE
       data#>>'{journal,2026-11-19,text}'='synthetic desktop diary')
   THEN RAISE EXCEPTION 'User data leaked across accounts'; END IF;
+  IF EXISTS(SELECT 1 FROM public.iydu_journal_revisions('2026-11-19',20))
+  THEN RAISE EXCEPTION 'Other account could read diary history'; END IF;
+
 END $other$;
 RESET ROLE;
-SELECT 'PASS: stale saves rejected, legacy writes blocked, journal days preserved and users isolated; all test rows rolled back' AS check_result;
+SELECT 'PASS: stale writes blocked, journal history/recovery preserved and users isolated; all test rows rolled back' AS check_result;
 ROLLBACK;
