@@ -1,5 +1,15 @@
 # Supabase Confirm sign up template — required release dependency
 
+## Resend/Supabase Free-only implementation checklist
+
+A complete, project-specific setup and release-gate checklist is maintained in
+[`supabase/TRANSACTIONAL_EMAIL_RELEASE.md`](../TRANSACTIONAL_EMAIL_RELEASE.md).
+The domain already has Resend-related DNS records in Vercel; confirm the
+**Verified** status in Resend before changing any existing DNS records.
+Resend SMTP credentials and Edge Function secrets must be entered only through
+their provider dashboards. Never commit or send an API key in chat.
+
+
 This app has a six-digit signup code flow using `POST /auth/v1/verify` with `type: "email"`. A pending Auth user record is created by Supabase at sign-up, but no app data or login is activated before verification.
 
 **Manual test-project setup, then controlled production configuration:**
