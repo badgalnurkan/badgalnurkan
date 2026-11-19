@@ -24,7 +24,7 @@ export function createHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=>Dat
   const reply=(data,status=200)=>new Response(JSON.stringify(data),{status,headers});
   if(origin&&!ALLOWED_ORIGINS.includes(origin))return reply({code:'ORIGIN_NOT_ALLOWED'},403);
   if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
-  if(req.method==='GET')return reply({ok:true,version:3,transactionalMailReady:mailReady,mailReady:mailReady||!!(base&&publicKey&&service),delivery:mailReady?'resend':'supabase-auth'});
+  if(req.method==='GET')return reply({ok:true,version:4,transactionalMailReady:mailReady,mailReady:mailReady||!!(base&&publicKey&&service),delivery:mailReady?'resend':'supabase-auth'});
   if(req.method!=='POST')return reply({code:'METHOD_NOT_ALLOWED'},405);
   if(!base||!publicKey||!service)return reply({code:'SERVER_CONFIGURATION_ERROR'},503);
   try{
@@ -68,9 +68,10 @@ export function createHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=>Dat
      delete:en?'Confirm your account deletion request':'Kalıcı hesap silme talebini onayla',
      reactivate:en?'Your account reactivation code':'Hesabını yeniden açma onay kodun'
     };
-    const destination=(ALLOWED_ORIGINS.includes(origin)?origin:'https://badgalnurkan.com')+'/#account-action='+kind+'&id='+id+'&token='+secret;
+    const safeOrigin=ALLOWED_ORIGINS.includes(origin)?origin:'https://badgalnurkan.com';
+    const destination=safeOrigin+(kind==='delete'?'/account-close.html#id='+id+'&token='+secret:'/#account-action='+kind+'&id='+id+'&token='+secret);
     const content=kind==='delete'
-     ?(en?'Open the link to choose a reason and confirm. Nothing is deleted by opening it. It expires in 30 minutes. After confirmation you have 30 days to reactivate.':'Sebebini seçmek ve onaylamak için bağlantıyı aç. Bağlantıyı açmak hesabını silmez. Bağlantı 30 dakika geçerlidir. Onaydan sonra yeniden açmak için 30 günün olacak.')+'\n\n'+destination
+     ?(en?'Open the link to choose a reason and confirm. Nothing is deleted by opening it. It expires in 30 minutes. After confirmation you have 60 days to reactivate.':'Sebebini seçmek ve onaylamak için bağlantıyı aç. Bağlantıyı açmak hesabını silmez. Bağlantı 30 dakika geçerlidir. Onaydan sonra yeniden açmak için 60 günün olacak.')+'\n\n'+destination
      :(en?'Your confirmation code (valid for 10 minutes): ':'Onay kodun (10 dakika geçerli): ')+secret;
     try{
      // Discard the verifier. This delivery link can reveal the action proof but cannot create an app session.
