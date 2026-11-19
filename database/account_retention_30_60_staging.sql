@@ -107,6 +107,11 @@ begin
  delete from iydu_private.account_challenges where created_at<now()-interval '7 days';
  return n;
 end $function$;
+-- A SECURITY DEFINER service endpoint must never inherit default PUBLIC EXECUTE.
+-- The Edge Function uses the Supabase service role; browsers must not call this RPC.
+revoke execute on function public.iydu_account_service(text, uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.iydu_account_service(text, uuid, jsonb) to service_role;
+revoke execute on function iydu_private.purge_due_accounts() from public, anon, authenticated;
 commit;
 -- After deployment:
 -- select state,count(*) from iydu_private.account_controls group by state;
