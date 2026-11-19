@@ -268,7 +268,9 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await productivity.close();
    console.log('PASS '+engine+': task edit, keyboard and pointer reorder, future countdown and mobile report widths');
    const page=await browser.newPage({viewport:{width:390,height:844}});
-   const session={user:{id:'fixture-user',email:record.email},access_token:'fixture-access-token',refresh_token:'fixture-refresh-token'};
+   const mockClaims={sub:'fixture-user',role:'authenticated',session_id:'c0ffee00-0000-4000-8000-000000000001',exp:Math.floor(Date.now()/1000)+3600};
+   const jwt=[{alg:'HS256',typ:'JWT'},mockClaims].map(x=>Buffer.from(JSON.stringify(x)).toString('base64url')).join('.')+'.test-signature';
+   const session={user:{id:'fixture-user',email:record.email},access_token:jwt,refresh_token:'fixture-refresh-token'};
    const db={accounts:{[record.u]:record},lastUser:record.u,last:record.nick,lang:'tr',beige:false};
    await page.addInitScript(({db,session})=>{localStorage.setItem('b1',JSON.stringify(db));localStorage.setItem('b1sb',JSON.stringify(session));localStorage.setItem('iydu.storage-notice.v1','test')},{db,session});
    const actions=[],requests=[];let closed=false,hasPassword=false;
@@ -290,6 +292,11 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     }
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:hasPassword,password_required:false,server_time:'2026-11-17T00:00:00Z'};
+    else if(url.endsWith('/functions/v1/browser-verification')){
+     const payload=route.request().postDataJSON();
+     assert.equal(payload.action,'status','Previously approved fixture must only check status');
+     data={ok:true,verified:true};
+    }
     else if(url.endsWith('/rpc/iydu_load'))data=[{data:cloudRecord}];
     else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
     else if(url.endsWith('/rpc/iydu_save_cas')){
