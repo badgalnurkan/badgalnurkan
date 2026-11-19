@@ -72,3 +72,11 @@ test('English empty state and HTML safety are retained', () => {
   assert.match(tasks, /&lt;unsafe&gt;/);
   assert.doesNotMatch(tasks, /<unsafe>/);
 });
+
+test('repository email templates use OTP tokens only, not magic links', () => {
+  for (const name of ['confirm-signup-otp.html', 'magic-link-otp.html']) {
+    const template = fs.readFileSync(path.join(__dirname, '..', 'supabase', 'email-templates', name), 'utf8');
+    assert.match(template, /\{\{\s*\.Token\s*\}\}/, name);
+    assert.doesNotMatch(template, /\{\{\s*\.ConfirmationURL\s*\}\}/, name);
+  }
+});
