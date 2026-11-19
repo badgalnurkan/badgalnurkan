@@ -154,7 +154,7 @@ test('conflict cloud selection requires a durable recovery archive', async () =>
   b.enqueue({ journal: { entry: 'B' } });
   await a.flush();
   await b.flush();
-  const archiveKey = b.resolveWithRemote();
+  const archiveKey = await b.resolveWithRemote();
   assert.ok(storage.getItem(archiveKey));
   assert.equal(JSON.parse(storage.getItem(archiveKey)).pending.local.journal.entry, 'B');
   assert.equal(b.pending(), null);
