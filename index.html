@@ -1120,12 +1120,66 @@ footer .legal-links{margin:.15rem auto .3rem}
   font-family:Georgia,'Times New Roman',serif!important;
 }
 .login-wrap.auth-google-remembered .box .auth-signin-title{font-size:clamp(1.65rem,3vw,2.1rem)!important;font-weight:700!important}
-/* Keep the remembered account label readable rather than breaking mid-sentence on phones. */
-@media(max-width:440px){
- .auth-google-remembered .remember{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:.65rem;row-gap:.4rem}
- .auth-google-remembered .remember .av{grid-column:1;grid-row:1}
- .auth-google-remembered .remember .sp{grid-column:2;grid-row:1}
- .auth-google-remembered .remember>button{grid-column:1/-1;width:100%;justify-self:stretch;margin-top:.1rem}
+
+/* Remembered Google identity: use an independent full-width action row at ALL sizes.
+   A long email must never squeeze the username into a one-character column. */
+.login-wrap.auth-google-remembered .remember{
+  display:grid;
+  grid-template-columns:2.4rem minmax(0,1fr);
+  align-items:center;
+  gap:.5rem .7rem;
+  width:100%;
+  min-width:0;
+}
+.login-wrap.auth-google-remembered .remember .av{grid-column:1;grid-row:1}
+.login-wrap.auth-google-remembered .remember .sp{
+  grid-column:2;
+  grid-row:1;
+  min-width:0;
+  max-width:100%;
+}
+.login-wrap.auth-google-remembered .remember .sp > :is(b,small){
+  display:block;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  overflow-wrap:normal;
+  word-break:normal;
+  line-height:1.4;
+}
+.login-wrap.auth-google-remembered .remember > .remember-continue{
+  grid-column:1/-1;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  margin-top:.3rem;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:.12rem;
+  text-align:center;
+  line-height:1.35;
+  white-space:normal;
+  overflow:hidden;
+}
+.login-wrap.auth-google-remembered .remember-continue > :is(.remember-continue-label,.remember-continue-email){
+  display:block;
+  max-width:100%;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  overflow-wrap:normal;
+  word-break:normal;
+}
+.login-wrap.auth-google-remembered .remember-continue-email{font-size:.83rem;opacity:.87}
+@media(max-width:300px){
+  .login-wrap.auth-google-remembered .remember{grid-template-columns:minmax(0,1fr)}
+  .login-wrap.auth-google-remembered .remember .av{grid-column:1;grid-row:1}
+  .login-wrap.auth-google-remembered .remember .sp{grid-column:1;grid-row:2}
+  .login-wrap.auth-google-remembered .remember > .remember-continue{grid-column:1;grid-row:3}
 }
 /* Register page: keep headings separate from all helper labels and controls. */
 .login-wrap.auth-register .box,
@@ -2459,7 +2513,19 @@ function renderAppOrAuth(){
     const rem=(skipRem?null:rememberedUser()),others=Object.keys(DB.accounts).filter(k=>k!==rem);
     if(!loginDat.u&&rem)loginDat.u=rem;
     const googleRemembered=!!(rem&&DB.accounts[rem].authUid&&DB.accounts[rem].loginMethod==='google');
-    const remCard=rem?`<div class="remember"><div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div><div class="sp"><small>${t('remembered')}</small><b>${esc(DB.accounts[rem].nick||rem)}</b><small>@${esc(rem)}</small></div><button class="g s" data-user="${esc(rem)}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':`useAccount('${esc(rem)}')` }">${googleRemembered?(tr()?esc(DB.accounts[rem].email||DB.accounts[rem].mail)+' ile devam et':'Continue with '+esc(DB.accounts[rem].email||DB.accounts[rem].mail)):t('useAccount')}</button></div>`:``;
+    const googleEmail=googleRemembered?(DB.accounts[rem].email||DB.accounts[rem].mail||''):'';
+    const remCard=rem?`<div class="remember">
+      <div class="av">${esc((DB.accounts[rem].nick||rem).slice(0,1).toUpperCase())}</div>
+      <div class="sp">
+        <small>${t('remembered')}</small>
+        <b title="${esc(DB.accounts[rem].nick||rem)}">${esc(DB.accounts[rem].nick||rem)}</b>
+        <small title="@${esc(rem)}">@${esc(rem)}</small>
+        ${googleRemembered?`<small class="remember-account-email" title="${esc(googleEmail)}">${esc(googleEmail)}</small>`:``}
+      </div>
+      <button class="g s${googleRemembered?' remember-continue':''}" type="button" data-user="${esc(rem)}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':`useAccount('${esc(rem)}')`}">
+        ${googleRemembered?`<span class="remember-continue-label">${tr()?'Google ile devam et':'Continue with Google'}</span><span class="remember-continue-email" title="${esc(googleEmail)}">${esc(googleEmail)}</span>`:t('useAccount')}
+      </button>
+    </div>`:``;
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button onclick="useAccount('${esc(k)}')">@${esc(k)}</button>`).join('')}</div></div>`:'';
     h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" data-user="${esc(rem||'')}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':'signInWithGoogle()'}">${googleRemembered?(tr()?esc(DB.accounts[rem].email||DB.accounts[rem].mail)+' ile devam et':'Continue with '+esc(DB.accounts[rem].email||DB.accounts[rem].mail)):(tr()?'Google ile devam et':'Continue with Google')}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
