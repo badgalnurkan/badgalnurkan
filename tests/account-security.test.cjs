@@ -36,12 +36,27 @@ test('missing authorization and oversized bodies fail before database access',as
  const f=await fixture();assert.equal((await f.handler(f.req({action:'request_delete'},false))).status,401);
  assert.equal((await f.handler(f.req('x'.repeat(9000)))).status,413);assert.equal(f.calls.length,0);
 });
-test('delivery status distinguishes dedicated mail from the existing compatibility channel',async()=>{
+test('account closure requests fail closed without a configured mail transport',async()=>{
  const f=await fixture({mail:false});
  const health=await(await f.handler(new Request('https://x.invalid'))).json();
- assert.equal(health.transactionalMailReady,false);assert.equal(health.delivery,'supabase-auth');
- const result=await(await f.handler(f.req({action:'request_deactivate'}))).json();assert.equal(result.delivery,'auth');
- const url=new URL(f.calls.find(url=>url.includes('/auth/v1/otp?')));assert.match(url.searchParams.get('redirect_to'),/#account-action=deactivate&/);
+ assert.equal(health.transactionalMailReady,false);
+ assert.equal(health.mailReady,false);
+ assert.equal(health.delivery,'unavailable');
+ for(const action of ['request_deactivate','request_delete','request_reactivate']){
+  const response=await f.handler(f.req({action}));
+  assert.equal(response.status,503);
+  assert.equal((await response.json()).code,'MAIL_NOT_CONFIGURED');
+ }
+ assert.equal(f.rpc.length,0,'an undeliverable challenge must not be created');
+ assert.equal(f.mailBodies.length,0);
+ assert.equal(f.calls.filter(url=>url.includes('/auth/v1/otp')).length,0);
+});
+test('previously delivered delete challenge remains usable if mail config is lost',async()=>{
+ const f=await fixture({mail:false});
+ const id='b04146d1-f2a4-4a04-bd46-70159554b90f';
+ const r=await f.handler(f.req({action:'confirm_delete',id,token:'a'.repeat(64),reason:'privacy',confirmation:'YES_DELETE_IN_60_DAYS'},false));
+ assert.equal(r.status,200);
+ assert.equal(f.rpc[0].p_action,'confirm_delete');
 });
 test('each account action has a distinct transactional subject in both languages',async()=>{
  for(const [action,en,tr] of [['deactivate',/temporary account closure code/i,/Geçici hesap kapatma/],['delete',/account deletion request/i,/Kalıcı hesap silme/],['reactivate',/reactivation code/i,/yeniden açma/]]){
@@ -206,5 +221,6 @@ test('staged retention SQL preserves legacy deactivations and schedules both pol
  assert.match(sql,/state='pending_delete',delete_after=now\(\)\+interval '60 days'/);
  assert.match(sql,/state in \('pending_delete','deactivated'\)/);
  assert.match(sql,/state='deactivated' -- Legacy deactivated rows/);
- assert.match(sql,/coalesce\(p_fields->>'confirmation',''\) not in/);
+ assert.match(sql,/coalesce\(p_fields->>'confirmation',''\) <> 'YES_DELETE_IN_60_DAYS'/);
+ assert.doesNotMatch(sql,/YES_DELETE_IN_30_DAYS/);
 });
