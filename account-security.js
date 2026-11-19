@@ -14,7 +14,7 @@ window.IYAccount=(()=>{
   DELETION_DUE:['Hesabın yeniden açılma süresi doldu.','The account reactivation period has expired.'],
   UNAUTHORIZED:['Oturumun doğrulanamadı. Yeniden giriş yap.','Your session could not be verified. Sign in again.']
  };
- function message(e){const v=errors[e.code||e.message];return v?v[tr()?0:1]:txt('İşlem tamamlanamadı. Bağlantını kontrol edip tekrar dene.','Could not complete the action. Check your connection and retry.')}
+ function message(e){const v=errors[e.code||e.message]||(e.status===401?errors.UNAUTHORIZED:null);return v?v[tr()?0:1]:txt('İşlem tamamlanamadı. Bağlantını kontrol edip tekrar dene.','Could not complete the action. Check your connection and retry.')}
  async function run(work){
   if(busy)return;busy=true;document.querySelectorAll('[data-security-action]').forEach(x=>x.disabled=true);
   try{return await work()}catch(e){const target=document.getElementById('security-message');if(target)target.textContent=message(e);toast(message(e))}
