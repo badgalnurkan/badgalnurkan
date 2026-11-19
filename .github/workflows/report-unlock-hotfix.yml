@@ -84,7 +84,7 @@ jobs:
           node - <<'NODE'
           const fs=require('node:fs'),crypto=require('node:crypto');
           const digest=buffer=>crypto.createHash('sha256').update(buffer).digest('hex');
-          const files=[['index.html','/'],['recovery-browser.js','/recovery-browser.js'],['account-security.js','/account-security.js'],['account-security.css','/account-security.css'],['cookies.html','/cookies.html']];
+          const files=[['index.html','/'],['recovery-browser.js','/recovery-browser.js'],['account-security.js','/account-security.js'],['account-security.css','/account-security.css'],['cookies.html','/cookies.html'],['account-close.html','/account-close.html'],['account-close.js','/account-close.js']];
           const expected=files.map(([filename,path])=>({filename,path,hash:digest(fs.readFileSync(filename))}));
           const base='https://badgalnurkan.com';
           const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
