@@ -46,6 +46,23 @@ revoke execute on function public.iydu_due_storage_objects(integer)
   from public, anon, authenticated;
 grant execute on function public.iydu_due_storage_objects(integer) to service_role;
 
+-- Optional secure cron authentication when Edge Secrets are not provisioned.
+-- Only the service role may ask whether a supplied token matches the Vault secret.
+-- The secret itself is never returned from this RPC.
+create or replace function public.iydu_retention_token_valid(p_token text)
+returns boolean language plpgsql security definer set search_path=''
+as $function$
+begin
+ if coalesce(auth.role(),'') <> 'service_role' then raise insufficient_privilege; end if;
+ return length(coalesce(p_token,'')) >= 32 and exists(
+  select 1 from vault.decrypted_secrets
+  where name='iydu_retention_cron_secret' and decrypted_secret=p_token
+ );
+end $function$;
+revoke execute on function public.iydu_retention_token_valid(text)
+  from public, anon, authenticated;
+grant execute on function public.iydu_retention_token_valid(text) to service_role;
+
 commit;
 
 -- Only after deploying and smoke-testing the separately authenticated Edge Function,
