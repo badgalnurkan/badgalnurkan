@@ -4,7 +4,7 @@
   "version": "1.2.0",
   "description": "Improvin' your day — tek dosyalık günlük disiplin uygulaması (TR/EN)",
   "scripts": {
-    "test": "node --test tests/deneme.test.cjs tests/report-unlock.test.cjs tests/mobile-navigation.test.cjs tests/report-questions.test.cjs tests/entry-transition.test.cjs tests/notifications.test.cjs tests/remembered-google.test.cjs tests/progress-activity.test.cjs tests/project-form.test.cjs tests/task-status.test.cjs tests/theme-entry.test.cjs tests/notification-swipe.test.cjs tests/manual-entry-inbox-mobile.test.cjs tests/account-security.test.cjs tests/productivity-v12.test.cjs tests/task-sort-modes.test.cjs tests/todo-empty-state.test.cjs tests/signup-otp.test.cjs tests/auth-entry-resilience.test.cjs tests/retention-storage.test.cjs tests/cross-device-sync.test.cjs tests/browser-verification.test.cjs",
+    "test": "node --test tests/deneme.test.cjs tests/report-unlock.test.cjs tests/mobile-navigation.test.cjs tests/report-questions.test.cjs tests/entry-transition.test.cjs tests/notifications.test.cjs tests/remembered-google.test.cjs tests/progress-activity.test.cjs tests/project-form.test.cjs tests/task-status.test.cjs tests/theme-entry.test.cjs tests/notification-swipe.test.cjs tests/manual-entry-inbox-mobile.test.cjs tests/account-security.test.cjs tests/productivity-v12.test.cjs tests/task-sort-modes.test.cjs tests/todo-empty-state.test.cjs tests/signup-otp.test.cjs tests/auth-entry-resilience.test.cjs tests/retention-storage.test.cjs tests/cross-device-sync.test.cjs tests/browser-verification.test.cjs tests/pomodoro-long-duration.test.cjs",
     "test:e2e": "node tests/e2e.cjs deneme.html && node tests/e2e-new.cjs deneme.html"
   }
 }
