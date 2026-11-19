@@ -171,8 +171,18 @@ window.IYAccount=(()=>{
   }
   const updated=await sb('/auth/v1/user',{method:'PUT',body:{password}});
   if(updated?.id!==uid)throw Error('UNAUTHORIZED');
+  // Auth's successful update is authoritative. A password change may cause
+  // the previous session to expire before the follow-up status request.
+  // Do not report the password update as failed after Supabase accepted it.
   for(const x of ['old','new','confirm']){const input=document.getElementById(prefix+x);if(input)input.value=''}
-  await status();
+  let sessionVerified=false;
+  try{await status();sessionVerified=true}catch(_){}
+  if(!sessionVerified){
+   // Do not expose account data under an unverified post-change session.
+   state=null;stateUid='';goLogin();
+   toast(txt('Şifren kaydedildi. Güvenlik için yeni şifrenle tekrar giriş yap.','Password saved. For security, sign in again with your new password.'));
+   return;
+  }
   if(prefix==='gate-'){closeModal('security-gate');await restoreCloudOnLoad()}else renderDetails();
   toast(txt('Şifren yenilendi. Sonraki yenileme 90 gün sonra.','Password renewed. The next renewal is in 90 days.'));
  })}
