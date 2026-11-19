@@ -7,7 +7,7 @@ const core = import('../supabase/functions/retention-storage/handler.mjs');
 const TOKEN = 'fixture-retention-cron-secret-longer-than-thirty-two-characters';
 const OWNER = '11111111-1111-4111-8111-111111111111';
 const OTHER = '22222222-2222-4222-8222-222222222222';
-function fixture({items=[],errorAt='',cronSecret=TOKEN,serviceKey='eyJfixture',presented=TOKEN}={}) {
+function fixture({items=[],errorAt='',cronSecret=TOKEN,serviceKey='eyJfixture',presented=TOKEN,vaultAccept=false}={}) {
  const calls=[];
  const values={
   SUPABASE_URL:'https://fixture.supabase.co',
@@ -16,6 +16,10 @@ function fixture({items=[],errorAt='',cronSecret=TOKEN,serviceKey='eyJfixture',p
  };
  const fetchImpl=async(url,options)=>{
   calls.push({url,options});
+  if(url.includes('/rpc/iydu_retention_token_valid')){
+   if(errorAt==='vault')return Response.json({code:'NOT_CONFIGURED'},{status:503});
+   return Response.json(vaultAccept);
+  }
   if(url.includes('/rpc/iydu_due_storage_objects')){
    if(errorAt==='rpc')return Response.json({code:'ERROR'},{status:503});
    return Response.json(items);
@@ -44,13 +48,24 @@ test('denies missing and wrong cron credentials before inspecting any records',a
  }
  assert.equal(f.calls.length,0);
 });
-test('fails closed when cron secret or service credential is missing',async()=>{
- const missing=fixture({cronSecret:''});
+test('fails closed when cron secret verifier or service credential is unavailable',async()=>{
+ const missing=fixture({cronSecret:'',errorAt:'vault'});
  assert.equal((await missing.run()).status,503);
- assert.equal(missing.calls.length,0);
+ assert.equal(missing.calls.length,1);
  const f=fixture({serviceKey:''});
  assert.equal((await f.run()).status,503);
  assert.equal(f.calls.length,0);
+});
+test('Vault-verified cron tokens permit only authorized server requests',async()=>{
+ const valid=fixture({cronSecret:'',vaultAccept:true});
+ assert.equal((await valid.run()).status,200);
+ assert.match(valid.calls[0].url,/iydu_retention_token_valid/);
+ assert.match(valid.calls[1].url,/iydu_due_storage_objects/);
+ const invalid=fixture({cronSecret:'',vaultAccept:false});
+ const reply=await invalid.run();
+ assert.equal(reply.status,401);
+ assert.equal((await reply.json()).code,'UNAUTHORIZED');
+ assert.equal(invalid.calls.length,1);
 });
 test('rejects GET even when authorized',async()=>{
  const f=fixture();
