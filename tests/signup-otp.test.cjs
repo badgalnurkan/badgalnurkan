@@ -48,7 +48,7 @@ test('verified six-digit signup code activates precisely its email owner',async(
  const x=fixture();
  await x.context.verifySignupCode();
  assert.equal(x.calls.auth[0].path,'/auth/v1/verify');
- assert.deepEqual(x.calls.auth[0].body,{email:'person@example.invalid',token:'123456',type:'email'});
+ assert.deepEqual(JSON.parse(JSON.stringify(x.calls.auth[0].body)),{email:'person@example.invalid',token:'123456',type:'email'});
  assert.equal(x.calls.activate.length,1);
  assert.equal(x.calls.activate[0][1],'user_one');
  assert.equal(x.calls.welcome,1);
@@ -70,7 +70,7 @@ test('re-request uses signup-only Auth resend endpoint',async()=>{
  const x=fixture();
  await x.context.resendSignupCode();
  assert.equal(x.calls.auth[0].path,'/auth/v1/resend');
- assert.deepEqual(x.calls.auth[0].body,{email:'person@example.invalid',type:'signup'});
+ assert.deepEqual(JSON.parse(JSON.stringify(x.calls.auth[0].body)),{email:'person@example.invalid',type:'signup'});
  assert.equal(x.calls.activate.length,0);
 });
 test('OTP verification does not inherit an unrelated account access token',()=>{
