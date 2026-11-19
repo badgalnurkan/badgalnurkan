@@ -179,21 +179,28 @@
           }
           if (!committed) continue;
 
-          base = clone(next);
           let current;
           try { current = getPending(); }
           catch (_) { report('unsafe'); return false; }
-          if (!current) { onRemote(clone(next)); report('synced'); return true; }
+          if (!current) {
+            if (onRemote(clone(next)) === false) report('remote-pending');
+            else { base = clone(next); report('synced'); }
+            return true;
+          }
           if (current.seq === pending.seq) {
             try {
               storage.removeItem(key);
               if (storage.getItem(key) !== null) throw Error('SYNC_PENDING_REMOVE_FAILED');
               storage.removeItem(conflictKey);
             } catch (_) { report('unsafe'); return false; }
-            onRemote(clone(next));
-            report('synced');
+            // If the user is typing into an unsaved editor, do NOT mark its
+            // stale display as the current CAS base. Future saves will merge
+            // from the displayed older version instead of erasing new data.
+            if (onRemote(clone(next)) === false) report('remote-pending');
+            else { base = clone(next); report('synced'); }
             return true;
           }
+          base = clone(next);
           // A local edit arrived during the network request. Rebase that edit
           // onto the just-acknowledged remote snapshot without deleting it.
           const rebased = merge(pending.local, current.local, next);
