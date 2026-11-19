@@ -5,7 +5,9 @@
 -- This update does not backfill, rewrite or delete any existing account rows.
 --
 -- Deployment order: backup -> SQL rollout -> verify permissions -> new index.html.
--- IMPORTANT: This change does NOT solve the separate cross-device lost-update risk.
+-- CAS blocks stale overwrites; browser-level reconciliation is a separate release gate.
+-- Account closure and 90-day security restrictions MUST still be enforced by
+-- public.iydu_account_access_allowed(), including SECURITY DEFINER RPCs.
 
 BEGIN;
 
@@ -13,6 +15,7 @@ BEGIN;
 DO $preflight$
 BEGIN
   IF to_regclass('public.user_data') IS NULL
+     OR to_regprocedure('public.iydu_account_access_allowed()') IS NULL
      OR to_regclass('public.iydu_usernames') IS NULL
      OR to_regclass('public.profiles') IS NULL
      OR NOT EXISTS (
@@ -65,6 +68,9 @@ DECLARE
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'not authenticated' USING ERRCODE='28000';
+  END IF;
+  IF NOT public.iydu_account_access_allowed() THEN
+    RAISE EXCEPTION 'account access restricted' USING ERRCODE='42501';
   END IF;
   IF v_name IS NULL
      OR v_name !~ '^[A-Za-z0-9ÇĞİÖŞÜçğıöşü_.-]{3,20}$'
@@ -120,6 +126,9 @@ DECLARE
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'not authenticated' USING ERRCODE='28000';
+  END IF;
+  IF NOT public.iydu_account_access_allowed() THEN
+    RAISE EXCEPTION 'account access restricted' USING ERRCODE='42501';
   END IF;
   IF p_data IS NULL OR jsonb_typeof(p_data) IS DISTINCT FROM 'object' THEN
     RAISE EXCEPTION 'Invalid user data' USING ERRCODE='22023';
@@ -204,6 +213,9 @@ BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'not authenticated' USING ERRCODE='28000';
   END IF;
+  IF NOT public.iydu_account_access_allowed() THEN
+    RAISE EXCEPTION 'account access restricted' USING ERRCODE='42501';
+  END IF;
   IF v_name IS NULL
      OR v_name !~ '^[A-Za-z0-9ÇĞİÖŞÜçğıöşü_.-]{3,20}$' THEN
     RAISE EXCEPTION 'invalid username' USING ERRCODE='22023';
@@ -246,6 +258,9 @@ DECLARE
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'not authenticated' USING ERRCODE='28000';
+  END IF;
+  IF NOT public.iydu_account_access_allowed() THEN
+    RAISE EXCEPTION 'account access restricted' USING ERRCODE='42501';
   END IF;
   IF p_expected_data IS NULL
      OR jsonb_typeof(p_expected_data) IS DISTINCT FROM 'object'
@@ -312,6 +327,9 @@ DECLARE
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'not authenticated' USING ERRCODE='28000';
+  END IF;
+  IF NOT public.iydu_account_access_allowed() THEN
+    RAISE EXCEPTION 'account access restricted' USING ERRCODE='42501';
   END IF;
   IF p_data IS NULL OR jsonb_typeof(p_data) IS DISTINCT FROM 'object'
      OR p_data->>'authUid' IS DISTINCT FROM v_uid::text
