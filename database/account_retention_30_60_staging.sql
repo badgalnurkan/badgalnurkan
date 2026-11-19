@@ -69,7 +69,7 @@ begin
  if k='delete' then
   why=p_fields->>'reason';
   if c.state<>'active' then return jsonb_build_object('error','INVALID_STATE'); end if;
-  if p_fields->>'confirmation' not in ('YES_DELETE_IN_60_DAYS','YES_DELETE_IN_30_DAYS')
+  if coalesce(p_fields->>'confirmation','') not in ('YES_DELETE_IN_60_DAYS','YES_DELETE_IN_30_DAYS')
    or why is null or why not in ('break','not_useful','hard_to_use','technical','privacy','emails','another_account','other')
    or (why='other' and length(btrim(coalesce(p_fields->>'other','')))=0)
    or length(coalesce(p_fields->>'other',''))>1000 then return jsonb_build_object('error','CONFIRMATION_REQUIRED'); end if;
