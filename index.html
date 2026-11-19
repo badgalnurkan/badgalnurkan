@@ -4887,8 +4887,8 @@ function syncStart(uid,remote){
 }
 function syncEditing(){
   const el=document.activeElement;
-  return !!(el&&el.closest?.('#mn')&&
-    (el.matches?.('input,textarea,select')||el.isContentEditable));
+  return !!(el&&el.closest?.('#app,[role="dialog"]')&&
+    (el.matches?.('input:not([type="hidden"]),textarea,select')||el.isContentEditable));
 }
 function syncReceiveRemote(uid,remote){
   if(A?.authUid!==uid||sbSession()?.user?.id!==uid||syncEditing())return false;
@@ -4945,6 +4945,17 @@ function syncDownloadDraft(){
   document.body.appendChild(link);link.click();link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
+function syncDownloadOrphans(){
+  const uid=A?.authUid,other=activeSync?.orphaned();
+  if(!uid||!other?.length)return;
+  const bundle={format:'iydu-orphan-drafts-v2',uid,exportedAt:new Date().toISOString(),
+    preservedDrafts:other};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'}));
+  const link=document.createElement('a');
+  link.href=url;link.download='iydu-kaydedilmemis-eski-sekmeler-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
 function syncDownloadLegacy(){
   const uid=A?.authUid;if(!uid)return;
   const item=store()?.getItem('iydu.sync.legacy.v2.'+uid);
@@ -4991,6 +5002,8 @@ function syncNotice(){
     syncStatus==='offline'?(tr()?'Çevrimdışı kayıt':'Offline copy'):
     syncStatus==='unsafe'?(tr()?'Kaydetme güvenliği uyarısı':'Save safety warning'):
     syncStatus==='remote-pending'?(tr()?'Başka cihazdaki değişiklik hazır':'Other-device changes available'):
+    syncStatus==='other-pending'?(tr()?'Önceki sekmelerde kaydedilmemiş veri var':'Unsent drafts from other tabs'):
+    syncStatus==='synced'?(tr()?'Eski cihaz kaydı korunuyor':'Old device backup preserved'):
     (tr()?'Eşitleme bekleniyor':'Sync pending');
   text.textContent=tr()?'Yerel kayıtlarını silme. Bulut kaydı doğrulanana kadar bu cihazdaki değişiklikler korunur.':
     'Do not clear browser storage. Changes stay on this device until cloud confirmation.';
@@ -4999,6 +5012,10 @@ function syncNotice(){
     const btn=document.createElement('button');btn.type='button';
     btn.textContent=tr()?'Sürümleri incele':'Review versions';
     btn.addEventListener('click',syncOpenConflict);card.append(btn);
+  }else if(syncStatus==='other-pending'){
+    const btn=document.createElement('button');btn.type='button';
+    btn.textContent=tr()?'Eski sekme taslaklarını indir':'Download previous tab drafts';
+    btn.addEventListener('click',syncDownloadOrphans);card.append(btn);
   }else if(syncStatus!=='synced'){
     const btn=document.createElement('button');btn.type='button';
     btn.textContent=tr()?'Şimdi eşitle':'Sync now';
