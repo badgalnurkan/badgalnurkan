@@ -2543,7 +2543,7 @@ function renderAppOrAuth(){
     if(!pendingSignup){view='setup';renderAppOrAuth();return}
     h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${tr()?'E-posta doğrulama kodu':'Email verification code'}</h2>${m()}<p class="mut">${tr()?'E-postana gönderilen 6 haneli kodu yaz. Kod doğrulanmadan hesabın etkinleştirilmez.':'Enter the 6-digit code sent to your email. Your account cannot be activated before confirmation.'}</p><p><strong>${esc(pendingSignup.email)}</strong></p><label for="signup-code-input">${tr()?'6 haneli kod':'Six-digit code'}</label><input id="signup-code-input" inputmode="numeric" type="text" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();verifySignupCode()}"><div class="row"><button type="button" id="signup-code-submit" onclick="verifySignupCode()">${tr()?'Kodu doğrula':'Verify code'}</button><button class="g" type="button" onclick="resendSignupCode()">${tr()?'Yeni kod iste':'Resend code'}</button></div><button class="g s" type="button" onclick="pendingSignup=null;goTo('setup','home')">${tr()?'Geri dön':'Back'}</button><p id="signup-code-status" role="status" aria-live="polite"></p>`);
   }
-  else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button><button class="g" type="button" onclick="IYRecovery.resume(document.getElementById('u').value)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button id="forgot-reset-submit" type="button" onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button><button class="g" type="button" onclick="IYRecovery.resume(document.getElementById('u').value)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;ensureReleaseNotification();
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
 }
@@ -2691,7 +2691,7 @@ function checkEmailHint(){
 function authErrorMessage(err){
   if(err&&(/already registered|already exists|user_already_exists/i.test(err.message||'')||err.code==='user_already_exists'))return 'already-email';
   if(err&&(/duplicate key|unique|iydu_usernames|username/i.test(err.message||'')))return 'username';
-  if(err&&(/email not confirmed/i.test(err.message||'')))return 'email-unconfirmed';
+  if(err&&(err.code==='email_not_confirmed'||/email(?: address)? not confirmed/i.test(err.message||'')))return 'email-unconfirmed';
   if(err&&(/invalid login credentials/i.test(err.message||'')))return 'credentials';
   return 'unknown';
 }
@@ -2751,8 +2751,15 @@ async function login(){
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
         loginDat.p='';
-        msg=authErrorMessage(e)==='email-unconfirmed'?(tr()?'E-postana gönderilen doğrulama bağlantısını aç, ardından giriş yap.':'Open your email confirmation link, then sign in.'):
-          (tr()?'Giriş başarısız. E-posta ve şifreni kontrol et.':'Sign-in failed. Check email and password.');
+        if(authErrorMessage(e)==='email-unconfirmed'&&email){
+          // Recovery from an interrupted signup needs the OTP, not a link.
+          // Supabase explicitly returned email_not_confirmed for this sign-in.
+          pendingSignup={email,username:localAcc?.u||''};
+          view='signup-code';msg='';renderAppOrAuth();
+          signupOtpMessage(tr()?'Kayıt doğrulaman tamamlanmamış. E-postandaki 6 haneli kodu gir veya yeni kod iste.':'Your registration is not yet confirmed. Enter the six-digit code from your email or request a new one.');
+          return;
+        }
+        msg=tr()?'Giriş başarısız. E-posta ve şifreni kontrol et.':'Sign-in failed. Check email and password.';
         if(authErrorMessage(e)==='credentials'&&localAcc?.googleConnected)msg=tr()?'E-posta veya şifre doğrulanamadı. Uygulama şifren yoksa “Şifremi unuttum” üzerinden e-postanı doğrulayarak oluşturabilirsin. Google ile giriş de kullanılabilir.':'Email or password could not be verified. If you do not have an app password, use “Forgot password” to create one after verifying your email. Google sign-in remains available.';
         if(e.code==='DEVICE_ACCOUNT_LIMIT')msg=tr()?'Bu cihazda üç hesap sınırına ulaşıldı. Önce kullanılmayan bir bulut profilini bu cihazda unut.':'This device already remembers three accounts. Forget one cloud profile locally before signing in to another.';
         if(e.name==='AbortError')msg=tr()?'Bağlantı zaman aşımına uğradı.':'Connection timed out.';
@@ -2865,15 +2872,38 @@ async function setup(){
 async function sbRecover(email){
   return IYRecovery.request(email);
 }
+let recoveryMailBusy=false,recoveryMailRetryAfter=0;
 async function fSend(k){
+  if(recoveryMailBusy)return;
   const email=String($('#u')?.value||'').trim().toLowerCase();
-  if(!emailPattern.test(email)){msg=t('emailInvalid');return renderAppOrAuth()}
+  const feedback=$('#fz');
+  const inform=text=>{msg=text;if(feedback)feedback.textContent=text;else renderAppOrAuth()};
+  if(!emailPattern.test(email)){inform(t('emailInvalid'));return}
+  if(Date.now()<recoveryMailRetryAfter){
+    inform(tr()?'Yeni bağlantı istemeden önce biraz bekle. Önceki e-postanı da kontrol edebilirsin.':'Please wait before requesting another link. You can check your previous email.');
+    return;
+  }
+  recoveryMailBusy=true;
+  const button=document.getElementById('forgot-reset-submit');
+  if(button)button.disabled=true;
   try{
     await sbRecover(email);
-    const box=$('#fz');if(box){box.innerHTML=`<div class="note">${tr()?'E-posta isteği alındı.':'Email requested.'}</div><button class="g" type="button" onclick="IYRecovery.resume(this.dataset.email)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button>`;box.querySelector('button').dataset.email=email}
-  }catch(_){
-    msg=tr()?'E-posta şu an gönderilemedi. Biraz sonra tekrar dene.':'Could not send the email. Try again shortly.';
-    renderAppOrAuth();
+    recoveryMailRetryAfter=Date.now()+60000;
+    msg='';
+    if(feedback){
+      feedback.innerHTML=`<div class="note">${tr()?'E-posta isteği alındı.':'Email requested.'}</div><button class="g" type="button" onclick="IYRecovery.resume(this.dataset.email)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button>`;
+      feedback.querySelector('button').dataset.email=email;
+    }
+  }catch(error){
+    if(error?.status===429||error?.code==='over_email_send_rate_limit'){
+      recoveryMailRetryAfter=Date.now()+60000;
+      inform(tr()?'Çok fazla sıfırlama isteği gönderildi. En az bir dakika bekleyip tekrar dene.':'Too many reset requests. Wait at least one minute before trying again.');
+    }else{
+      inform(tr()?'E-posta şu an gönderilemedi. Biraz sonra tekrar dene.':'Could not send the email. Try again shortly.');
+    }
+  }finally{
+    recoveryMailBusy=false;
+    if(button?.isConnected)button.disabled=false;
   }
 }
 
@@ -4249,7 +4279,7 @@ async function completePasswordRecovery(){
 }
 function showDeactivationRequirements(){if(A?.authUid)return IYAccount.request('deactivate')}
 function vSend(){return requestMyEmailVerification()}
-function vOk(){toast(tr()?'E-postandaki doğrulama bağlantısını aç.':'Open the confirmation link in your email.')}
+function vOk(){toast(tr()?'E-postandaki 6 haneli doğrulama kodunu kullan.':'Use the six-digit verification code sent to your email.')}
 let settingGooglePassword=false;
 async function setGoogleAccountPassword(scope='settings'){
   if(settingGooglePassword||!A?.authUid||A.loginMethod!=='google')return;
