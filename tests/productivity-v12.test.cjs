@@ -31,7 +31,7 @@ function fixture(){
  };
  vm.createContext(context);
  vm.runInContext(
-  extract('function moveTask(', 'function taskReorderKey(')+
+  extract('function taskSortMode(){', 'function taskReorderKey(')+
   extract('function editTask(', 'function allTodayTasksArchived(')+
   extract('function futureNoteCountdown(', 'P.pc=()=>')+
   '\nthis.features={moveTask,editTask,saveTaskEdit,futureNoteCountdown};',context

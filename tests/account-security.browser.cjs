@@ -212,6 +212,9 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await page.getByRole('button',{name:'Onay kodu gönder',exact:true}).click();
    await page.locator('#account-code-input').fill('123456');
    await page.locator('#account-code button').filter({hasText:'Onayla'}).click();
+   await page.locator('#account-deactivate-final').waitFor();
+   assert.deepEqual(actions,['request_deactivate'],'entering the code must not deactivate before final confirmation');
+   await page.locator('#account-deactivate-final').getByRole('button',{name:'Evet, hesabımı geçici kapat'}).click();
    await page.waitForFunction(()=>view==='welcome'&&A===null);
    assert.deepEqual(actions,['request_deactivate','confirm_deactivate']);
    assert.equal(await page.evaluate(()=>Object.values(DB.accounts).some(x=>x.authUid==='fixture-user')),false,'closed identity removed from browser');
@@ -237,12 +240,36 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await removal.locator('#account-delete-reasons').getByRole('button',{name:'Continue',exact:true}).click();
    await removal.locator('#account-delete-final').getByRole('button',{name:'Yes, close my account',exact:true}).click();
    await removal.locator('#account-delete-scheduled').waitFor();
-   assert.equal(deletionCalls.length,1);assert.equal(deletionCalls[0].confirmation,'YES_DELETE_IN_30_DAYS');
+   assert.equal(deletionCalls.length,1);assert.equal(deletionCalls[0].confirmation,'YES_DELETE_IN_60_DAYS');
    assert.equal(deletionCalls[0].reason,'other');assert.equal(deletionCalls[0].other,'I want to take a break');
    assert.ok((await removal.locator('#account-delete-scheduled').innerText()).includes('Dec'));
    await removal.close();
    console.log('PASS '+engine+': deletion email link, Other, No and explicit Yes confirmation');
 
+   const standalone=await browser.newPage({viewport:{width:375,height:844}});
+   const posted=[];
+   await standalone.route('https://flcfqwndqfmbritaywfb.supabase.co/functions/v1/account-security',async route=>{
+     posted.push(route.request().postDataJSON());
+     await route.fulfill({status:200,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({ok:true,state:'pending_delete',delete_after:'2027-01-18T00:00:00Z'})});
+   });
+   await standalone.goto('http://127.0.0.1:4173/account-close.html#id=b04146d1-f2a4-4a04-bd46-70159554b90f&token='+'b'.repeat(64));
+   await standalone.locator('#deletion-reason').waitFor({state:'visible'});
+   assert.equal(await standalone.evaluate(()=>location.hash),'');
+   assert.equal(posted.length,0);
+   await standalone.locator('#deletion-reason').selectOption('other');
+   await standalone.locator('#deletion-other').fill('I want to change my routine');
+   await standalone.locator('#review-deletion').click();
+   assert.equal(posted.length,0);
+   await standalone.locator('#return-to-reasons').click();
+   assert.equal(posted.length,0);
+   await standalone.locator('#review-deletion').click();
+   await standalone.locator('#finalize-deletion').click();
+   await standalone.locator('#done-step').waitFor({state:'visible'});
+   assert.equal(posted.length,1);
+   assert.equal(posted[0].reason,'other');
+   assert.equal(posted[0].confirmation,'YES_DELETE_IN_60_DAYS');
+   await standalone.close();
+   console.log('PASS '+engine+': separate email-link reason form, No cancellation and final Yes');
    await browser.close();console.log('PASS '+engine+': date form at six widths and manual welcome entry');
   }
  }finally{try{await browser?.close()}finally{server.kill()}}

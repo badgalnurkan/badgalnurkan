@@ -1476,6 +1476,14 @@ main#mn.swap{opacity:.66;transition:opacity 65ms ease-out}
 main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 @keyframes menuFadeIn{from{opacity:.66}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){main#mn.swap,main#mn.an{opacity:1;animation:none;transition:none}}
+
+/* Sorting changes only presentation; manual drag order remains persistent. */
+.task-sort-control{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;margin:.6rem 0 .9rem}
+.task-sort-control label{margin:0;font-size:.86rem}
+.task-sort-select{font:inherit;min-width:175px;max-width:100%;border-radius:11px;padding:.6rem .75rem;color:var(--txt);background:var(--card);border:1px solid var(--line)}
+.task-sort-select:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.task-grip:disabled{opacity:.35;cursor:default;touch-action:auto}
+
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -1857,7 +1865,7 @@ function roll(){
       A.backlog.push(...pending.map(task=>task.t));delete A.plans[date];
     }
     while(A.backlog.length>10)A.backlog.shift();
-    A.tasks=Array.isArray(A.plans&&A.plans[t])?A.plans[t].map(t=>({t,s:''})):[];if(A.plans)delete A.plans[t];A.day=t;if(A.completedBatches&&typeof A.completedBatches==='object')A.completedBatches={};save();
+    A.tasks=Array.isArray(A.plans&&A.plans[t])?A.plans[t].map(t=>({t,s:'',createdAt:Date.now()})):[];if(A.plans)delete A.plans[t];A.day=t;if(A.completedBatches&&typeof A.completedBatches==='object')A.completedBatches={};save();
   }
 }
 const items=d=>{
@@ -2456,6 +2464,10 @@ function renderAppOrAuth(){
     h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Bu hesap son olarak Google ile açıldı. Google ile devam edebilir veya Ayarlar’dan ayrı bir manuel giriş şifresi belirleyebilirsin.':'You last signed in with Google. Continue with Google, or set a separate app password under Settings.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" data-user="${esc(rem||'')}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':'signInWithGoogle()'}">${googleRemembered?(tr()?esc(DB.accounts[rem].email||DB.accounts[rem].mail)+' ile devam et':'Continue with '+esc(DB.accounts[rem].email||DB.accounts[rem].mail)):(tr()?'Google ile devam et':'Continue with Google')}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
   else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+box(`<h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='signup-code'){
+    if(!pendingSignup){view='setup';renderAppOrAuth();return}
+    h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${tr()?'E-posta doğrulama kodu':'Email verification code'}</h2>${m()}<p class="mut">${tr()?'E-postana gönderilen 6 haneli kodu yaz. Kod doğrulanmadan hesabın etkinleştirilmez.':'Enter the 6-digit code sent to your email. Your account cannot be activated before confirmation.'}</p><p><strong>${esc(pendingSignup.email)}</strong></p><label for="signup-code-input">${tr()?'6 haneli kod':'Six-digit code'}</label><input id="signup-code-input" inputmode="numeric" type="text" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();verifySignupCode()}"><div class="row"><button type="button" id="signup-code-submit" onclick="verifySignupCode()">${tr()?'Kodu doğrula':'Verify code'}</button><button class="g" type="button" onclick="resendSignupCode()">${tr()?'Yeni kod iste':'Resend code'}</button></div><button class="g s" type="button" onclick="pendingSignup=null;goTo('setup','home')">${tr()?'Geri dön':'Back'}</button><p id="signup-code-status" role="status" aria-live="polite"></p>`);
+  }
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button><button class="g" type="button" onclick="IYRecovery.resume(document.getElementById('u').value)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;ensureReleaseNotification();
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
@@ -2623,6 +2635,7 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   const progressPolicy=await sbProgressPolicy(uid);
   if(sbSession()?.user?.id!==uid)throw new Error('Authenticated identity changed during activation');
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
+  if(!fromLocal&&deviceAccountCount()>=MAX_DEVICE_ACCOUNTS){sbClear();throw Object.assign(Error('DEVICE_ACCOUNT_LIMIT'),{code:'DEVICE_ACCOUNT_LIMIT'})}
   const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
   const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
   bindReportCalendar(a,j.user,!fromCloud&&!fromLocal);
@@ -2666,6 +2679,7 @@ async function login(){
         msg=authErrorMessage(e)==='email-unconfirmed'?(tr()?'E-postana gönderilen doğrulama bağlantısını aç, ardından giriş yap.':'Open your email confirmation link, then sign in.'):
           (tr()?'Giriş başarısız. E-posta ve şifreni kontrol et.':'Sign-in failed. Check email and password.');
         if(authErrorMessage(e)==='credentials'&&localAcc?.googleConnected)msg=tr()?'Bu hesap Google ile açılmış olabilir. Google ile devam et; manuel giriş için önce Ayarlar’da uygulama şifresi belirle.':'This account may use Google sign-in. Continue with Google, or set an app password in Settings first.';
+        if(e.code==='DEVICE_ACCOUNT_LIMIT')msg=tr()?'Bu cihazda üç hesap sınırına ulaşıldı. Önce kullanılmayan bir bulut profilini bu cihazda unut.':'This device already remembers three accounts. Forget one cloud profile locally before signing in to another.';
         if(e.name==='AbortError')msg=tr()?'Bağlantı zaman aşımına uğradı.':'Connection timed out.';
         return renderAppOrAuth();
       }
@@ -2677,6 +2691,55 @@ async function login(){
     msg=tr()?'Başka cihazda kayıtlıysan kullanıcı adı yerine e-posta adresinle giriş yap.':'Sign in with email on a new device.';
     renderAppOrAuth();
   }finally{loginBusy(false)}
+}
+const MAX_DEVICE_ACCOUNTS=3;
+let pendingSignup=null,signupOtpBusy=false;
+function signupOtpMessage(text){
+  const node=document.getElementById('signup-code-status');if(node)node.textContent=text;
+  else msg=text;
+}
+async function verifySignupCode(){
+  if(signupOtpBusy||!pendingSignup)return;
+  const request={...pendingSignup};
+  const code=String(document.getElementById('signup-code-input')?.value||'').trim();
+  if(!/^\d{6}$/.test(code)){signupOtpMessage(tr()?'6 haneli kodu gir.':'Enter the six-digit code.');return}
+  signupOtpBusy=true;
+  const submit=document.getElementById('signup-code-submit');if(submit)submit.disabled=true;
+  try{
+    const result=await sb('/auth/v1/verify',{method:'POST',body:{email:request.email,token:code,type:'email'}});
+    if(!result?.access_token||!result?.user?.id||!result?.user?.email_confirmed_at||
+       String(result.user.email||'').toLowerCase()!==request.email)throw Error('EMAIL_NOT_VERIFIED');
+    if(!pendingSignup||pendingSignup.email!==request.email)throw Error('SIGNUP_FLOW_CHANGED');
+    const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
+    await activateCloudUser(result,request.username,'password',{entryTransition});
+    if(sbSession()?.user?.id!==result.user.id)throw Error('SIGNUP_SESSION_CHANGED');
+    pendingSignup=null;formDat={u:'',n:'',b:'',e:'',t:'',p:'',p2:''};
+  }catch(error){
+    console.warn('Email code confirmation failed:',error?.code||error?.message);
+    signupOtpMessage(tr()?'Kod geçersiz veya süresi dolmuş olabilir. E-postanı kontrol et ya da yeni kod iste.':'The code may be invalid or expired. Check your email or request a new code.');
+  }finally{signupOtpBusy=false;if(submit?.isConnected)submit.disabled=false}
+}
+async function resendSignupCode(){
+  if(signupOtpBusy||!pendingSignup)return;
+  signupOtpBusy=true;
+  try{
+    await sb('/auth/v1/resend',{method:'POST',body:{type:'signup',email:pendingSignup.email}});
+    signupOtpMessage(tr()?'Yeni kod isteği alındı. Lütfen e-postanı kontrol et.':'A new code was requested. Check your email.');
+  }catch(error){
+    signupOtpMessage(tr()?'Yeni kod şu an gönderilemedi. Biraz sonra yeniden dene.':'Could not resend the code yet. Try again later.');
+  }finally{signupOtpBusy=false}
+}
+
+function deviceAccountCount(){
+  const ids=new Set();
+  for(const [name,account] of Object.entries(DB.accounts||{})){
+    if(!account||typeof account!=='object')continue;
+    ids.add(account.authUid?'cloud:'+String(account.authUid):'local:'+String(name).toLocaleLowerCase('tr-TR'));
+  }
+  return ids.size;
+}
+function isKnownDeviceCloudUser(uid){
+  return !!uid&&Object.values(DB.accounts||{}).some(account=>account?.authUid===uid);
 }
 async function setup(){
   if(authBusy)return;
@@ -2691,16 +2754,25 @@ async function setup(){
   else msg=pwOk(p,u);
   if(msg){renderAppOrAuth();if(msg===t('usernameTaken'))debounceNameCheck();return}
   if(Object.values(DB.accounts).some(a=>String(a.email||a.mail||'').toLowerCase()===e)){goExistingEmail(e);return}
-  const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
+  if(deviceAccountCount()>=MAX_DEVICE_ACCOUNTS){msg=tr()?'Bu cihazda en fazla 3 hesap saklanabilir. Önce mevcut bulut hesaplarından birini bu cihazda unut.':'This device can remember at most 3 accounts. Forget an unused cloud profile on this device first.';renderAppOrAuth();return}
   loginBusy(true);
   try{
     const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:u}});
     if(available!==true){msg=t('usernameTaken');renderAppOrAuth();debounceNameCheck();return}
     const j=await sbSignUp(u,p,n,e);
     if(!j||!j.access_token){
-      msg=tr()?'Hesabını etkinleştirmek için e-postana gönderilen bağlantıyı aç.':'Open the confirmation link in your email to activate your account.';
+      pendingSignup={email:e,username:u,nick:n};
+      formDat.p='';formDat.p2='';
+      view='signup-code';msg='';renderAppOrAuth();return;
+    }
+    if(!j.user?.email_confirmed_at){
+      sbClear();
+      pendingSignup={email:e,username:u,nick:n};
+      formDat.p='';formDat.p2='';
+      view='signup-code';msg=tr()?'E-posta doğrulaması tamamlanmadan giriş yapılamaz.':'Email verification must be completed before signing in.';
       renderAppOrAuth();return;
     }
+    const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
     await activateCloudUser(j,u,'password',{entryTransition});
     formDat={u:'',n:'',b:'',e:'',t:'',p:''};
     toast(tr()?'Hesabın oluşturuldu. E-posta durumunu Ayarlar’dan kontrol edebilirsin.':'Your account is ready. Check your email status in Settings.');
@@ -3058,38 +3130,53 @@ P.todo=()=>{
   try{fixTodoData()}catch(e){A.tasks=[];A.backlog=[]}
   if(archiveFinishedTasks())save();
   const next=addD(today(),1);
-  if(A.taskOrder==='alpha')sortTaskLists(next);
+  const sortedTaskEntries=sortTaskLists();
   const planned=(A.plans?.[next]||[]).map((name,i)=>`<div class="task"><span>${esc(name)}</span><button class="g s" onclick="removePlan(${i})">${t('delete')}</button></div>`).join('');
   const bl=A.backlog.map((bt,i)=>`<div class="task"><span>${esc(bt)}</span><button class="g s" onclick="fromBack(${i})">${t('addToToday')}</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">${t('delete')}</button></div>`).join('');
 
   const dayFinished=allTodayTasksArchived();
-  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><button type="button" class="g s task-sort" aria-pressed="${A.taskOrder==='alpha'}" onclick="toggleTaskAlphabetical()">${tr()?'Alfabetik sırala (A–Z)':'Sort alphabetically (A–Z)'}</button><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">'+(dayFinished?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.'):t('addTask'))+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'){event.preventDefault();addT()}"><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${sortedTaskEntries.map(({task,index})=>tk(task,index)).join('')}||'<p class="mut">'+(dayFinished?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.'):t('addTask'))+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'){event.preventDefault();addT()}"><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
   <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><input id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'){event.preventDefault();addTomorrowPlan()}"><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
 function vibrateTask(){try{if(navigator.vibrate)navigator.vibrate(12)}catch(_){}}
-const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}" data-task-index="${i}"><button type="button" class="g s task-grip" aria-label="${tr()?'Görevi taşı':'Reorder task'}" title="${tr()?'Sürükle veya ok tuşlarını kullan':'Drag or use arrow keys'}" onpointerdown="startTaskReorder(event,${i})" onpointermove="previewTaskReorder(event)" onpointerup="finishTaskReorder(event)" onpointercancel="cancelTaskReorder(event)" onlostpointercapture="cancelTaskReorder(event)" onkeydown="taskReorderKey(event,${i})">☰</button><span class="task-label">${esc(x.t)}</span><button class="ck ${x.s==='done'?'on':''}" aria-label="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s==='miss'?'on':''}" aria-label="${t('notDone')}" onclick="mk(${i},'miss')">✕</button><button class="g s" onclick="editTask(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
+const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}" data-task-index="${i}"><button type="button" class="g s task-grip" ${taskSortMode()!=='manual'?'disabled aria-disabled="true"':''} aria-label="${tr()?'Görevi taşı':'Reorder task'}" title="${tr()?'Sürükle veya ok tuşlarını kullan':'Drag or use arrow keys'}" onpointerdown="startTaskReorder(event,${i})" onpointermove="previewTaskReorder(event)" onpointerup="finishTaskReorder(event)" onpointercancel="cancelTaskReorder(event)" onlostpointercapture="cancelTaskReorder(event)" onkeydown="taskReorderKey(event,${i})">☰</button><span class="task-label">${esc(x.t)}</span><button class="ck ${x.s==='done'?'on':''}" aria-label="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s==='miss'?'on':''}" aria-label="${t('notDone')}" onclick="mk(${i},'miss')">✕</button><button class="g s" onclick="editTask(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
 let taskReorder=null,taskEditContext=null;
-function sortTaskLists(next){
-  const collator=new Intl.Collator(tr()?'tr':'en',{numeric:true,sensitivity:'base'});
-  A.tasks.sort((a,b)=>collator.compare(a.t,b.t));
-  if(Array.isArray(A.plans?.[next]))A.plans[next].sort(collator.compare);
+function taskSortMode(){
+  return ['manual','alpha','newest','reverse'].includes(A?.taskOrder)?A.taskOrder:'manual';
 }
-function toggleTaskAlphabetical(){
-  A.taskOrder=A.taskOrder==='alpha'?'manual':'alpha';
-  if(A.taskOrder==='alpha')sortTaskLists(addD(today(),1));
-  save();P.todo();
+function sortTaskLists(){
+  const mode=taskSortMode(),entries=A.tasks.map((task,index)=>({task,index}));
+  if(mode==='manual')return entries;
+  if(mode==='reverse')return entries.reverse();
+  if(mode==='alpha'){
+    const collator=new Intl.Collator(tr()?'tr':'en',{numeric:true,sensitivity:'base'});
+    return entries.sort((a,b)=>collator.compare(a.task.t,b.task.t)||a.index-b.index);
+  }
+  return entries.sort((a,b)=>{
+    const aTime=Number.isFinite(a.task.createdAt)?a.task.createdAt:null;
+    const bTime=Number.isFinite(b.task.createdAt)?b.task.createdAt:null;
+    if(aTime!==null&&bTime!==null&&aTime!==bTime)return bTime-aTime;
+    if(aTime!==null&&bTime===null)return -1;
+    if(bTime!==null&&aTime===null)return 1;
+    return b.index-a.index;
+  });
 }
+function setTaskOrder(mode){
+  if(!A||!['manual','alpha','newest','reverse'].includes(mode))return false;
+  A.taskOrder=mode;save();P.todo();return true;
+}
+function toggleTaskAlphabetical(){return setTaskOrder(taskSortMode()==='alpha'?'manual':'alpha')}
 function moveTask(from,to){
   if(!A||!Number.isInteger(from)||!Number.isInteger(to)||from<0||to<0||from>=A.tasks.length||to>=A.tasks.length||from===to)return false;
-  if(A.taskOrder==='alpha')A.taskOrder='manual';
+  if(taskSortMode()!=='manual')A.taskOrder='manual';
   const [task]=A.tasks.splice(from,1);
   A.tasks.splice(to,0,task);
   save();P.todo();return true;
 }
 function taskReorderKey(event,index){
   if(event.key==='Escape'){cancelTaskReorder();return}
-  if(taskReorder||!['ArrowUp','ArrowDown'].includes(event.key))return;
+  if(taskSortMode()!=='manual'||taskReorder||!['ArrowUp','ArrowDown'].includes(event.key))return;
   event.preventDefault();
   const destination=index+(event.key==='ArrowUp'?-1:1);
   const before=[...document.querySelectorAll('#tl > [data-task-index]')].map(row=>row.getBoundingClientRect().top);
@@ -3106,7 +3193,7 @@ function taskReorderKey(event,index){
 }
 window.addEventListener('blur',()=>cancelTaskReorder());
 function startTaskReorder(event,index){
-  if(taskReorder||event.isPrimary===false||event.button!==0||!A?.tasks?.[index])return;
+  if(taskSortMode()!=='manual'||taskReorder||event.isPrimary===false||event.button!==0||!A?.tasks?.[index])return;
   const grip=event.currentTarget,list=grip.closest('#tl');if(!list)return;
   const nodes=[...list.querySelectorAll(':scope > [data-task-index]')];
   if(nodes.length!==A.tasks.length||!nodes[index])return;
@@ -3207,7 +3294,7 @@ function fromBack(i){
     if(!pushTomorrowPlan(task))return;
     A.backlog.splice(i,1);recordActivity();P.todo();return;
   }
-  A.tasks.push({t:A.backlog[i],s:''});A.backlog.splice(i,1);recordActivity();P.todo();
+  A.tasks.push({t:A.backlog[i],s:'',createdAt:Date.now()});A.backlog.splice(i,1);recordActivity();P.todo();
 }
 function delT(i){if(A.day!==today()){shell();return}if(!A.tasks[i])return;A.tasks.splice(i,1);archiveFinishedTasks();vibrateTask();recordActivity();P.todo()}
 function addT(){
@@ -3218,7 +3305,7 @@ function addT(){
     if(addTomorrowPlan(v))$('#nt')?.focus({preventScroll:true});
     return;
   }
-  A.tasks.push({t:v,s:''});recordActivity();P.todo();
+  A.tasks.push({t:v,s:'',createdAt:Date.now()});recordActivity();P.todo();
   $('#nt')?.focus({preventScroll:true});
 }
 function mk(i,status){
@@ -3969,8 +4056,15 @@ function accountRemovalButtonLabel(account=A){
 }
 
 P.set=()=>{
-  const keys=Object.keys(DB.accounts).filter(u=>DB.accounts[u]&&!accountCloudHints(DB.accounts[u]));
-  const ac=keys.map(u=>`<span class="tag"><span>@${esc(u)}</span>${!accountCloudHints(A)&&A.u===u?`<span class="current-account-indicator" aria-current="true">${tr()?'Mevcut hesap':'Current account'}</span>`:`<button class="g s" onclick="switchAcc(${JSON.stringify(u)})">${t('switch')}</button>`}</span>`).join('');
+  const keys=Object.keys(DB.accounts).filter(u=>DB.accounts[u]&&u!==A.u);
+  const ac=keys.map(u=>{
+    const cloud=!!DB.accounts[u]?.authUid;
+    return '<span class="tag"><span>@'+esc(u)+'</span>'+
+      (cloud?'<small class="mut">'+(tr()?'Bulut · yeniden giriş gerekli':'Cloud · sign-in required')+'</small>':'')+
+      '<button class="g s" data-user="'+esc(u)+'" onclick="switchAcc(this.dataset.user)">'+(tr()?'Giriş yap':'Sign in')+'</button>'+
+      (cloud?'<button class="g s" data-user="'+esc(u)+'" onclick="forgetKnownProfile(this.dataset.user)">'+(tr()?'Bu cihazda unut':'Forget on device')+'</button>':'')+
+      '</span>';
+  }).join('');
   M(`${m()}<div class="card"><h2>${t('account')}</h2><p class="mut">${tr()?'Üstteki yuvarlak profil düğmesinden de düzenleyebilirsin.':'You can also edit your profile in the top-right account menu.'}</p><label>${t('username')}</label><div class="row"><input id="su" value="${esc(A.u)}" maxlength="20" oninput="profileUsernameHint(this.value,'settings-name-hint')"><div id="settings-name-hint" aria-live="polite" style="flex-basis:100%"></div><button onclick="chg('u')">${t('change')}</button></div><label>${t('displayName')}</label><div class="row"><input id="sn" value="${esc(A.nick||'')}" maxlength="30"><button onclick="chg('n')">${t('change')}</button></div><label>${t('bio')}</label><textarea id="sb" maxlength="160" rows="3" onchange="A.bio=this.value.slice(0,160);save()">${esc(A.bio||'')}</textarea><p class="mut">${t('email')}: <b>${A.authUid?IYAccount.emailMarkup():esc(A.email||'')}</b></p>${profilePasswordLink()}</div>
   <div class="card settings-theme"><h2>${t('theme')}</h2>${themePick(false,false)}</div>
   <div class="card"><h2>${t('lang')}</h2><div class="langbar" style="justify-content:flex-start">${langBtns()}</div></div>
@@ -3984,7 +4078,26 @@ P.set=()=>{
   <div class="card"><h2>${tr()?'Oturum':'Session'}</h2><p class="mut">${tr()?'Hesabından güvenli şekilde çıkış yap.':'Sign out of your account.'}</p><button class="danger-logout" onclick="confirmLogout()">${t('logout')}</button></div>`);
 };
 
-function switchAcc(u){stopTimers();A=null;sbClear();loginDat={u,p:''};goTo('login','home')}
+function switchAcc(u){if(!A||!DB.accounts[u]||A.u===u)return;stopTimers();A=null;sbClear();loginDat={u,p:''};goTo('login','home')}
+function forgetKnownProfile(name){
+  const other=DB.accounts?.[name];
+  if(!A||!other?.authUid||other.authUid===A.authUid)return false;
+  openModal('forget-profile-modal','<h2>'+(tr()?'Bu cihazda hesabı unut':'Forget account on this device')+'</h2>'+
+    '<p>'+(tr()?'Bulut hesabı ve Supabase verileri silinmez. Tekrar erişmek için yeniden giriş yapman gerekir.':'The cloud account and its Supabase data stay intact. You must sign in again to access it.')+'</p>'+
+    '<div class="row"><button class="g" data-name="'+esc(name)+'" onclick="confirmForgetKnownProfile(this.dataset.name)">'+(tr()?'Evet, bu cihazda unut':'Yes, forget on device')+'</button>'+
+    '<button class="g" onclick="closeModal(\'forget-profile-modal\')">'+(tr()?'Vazgeç':'Cancel')+'</button></div>');
+  return true;
+}
+function confirmForgetKnownProfile(name){
+  const other=DB.accounts?.[name];
+  if(!A||!other?.authUid||other.authUid===A.authUid)return false;
+  delete DB.accounts[name];
+  if(DB.lastUser===name)DB.lastUser=A.u;
+  save();closeModal('forget-profile-modal');P.set();
+  toast(tr()?'Hesap yalnızca bu cihazda unutuldu. Bulut verileri korundu.':'Account forgotten on this device only. Cloud data retained.');
+  return true;
+}
+
 /* oturum kapaninca sayac ve kronometre durur, sonraki kullaniciya gecmez */
 function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,end:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0,noticeFive:false};persistPomodoroState();document.title=TITLE}catch(e){}}
 function goLogin(){pendingDeleteUid=null;stopTimers();sbClear();A=null;loginDat={u:'',p:''};goTo('login','home')}
@@ -4529,7 +4642,7 @@ function sbClear(){setItem(SESS_KEY,'')}
 async function sb(path,opt={}){
   const session=sbSession();
   const headers={'apikey':SUPABASE_KEY,'Content-Type':'application/json',...(opt.headers||{})};
-  const isLogin=/^\/auth\/v1\/(signup|token|recover|resend)/.test(path);
+  const isLogin=/^\/auth\/v1\/(signup|token|recover|resend|verify)/.test(path);
   if(!isLogin&&session?.access_token)headers['Authorization']='Bearer '+session.access_token;
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);
   try{

@@ -30,25 +30,40 @@ test('interactive authentication expires exactly at ten minutes and rejects futu
  assert.equal(recentAuthentication(claims,'u',1599999),true);assert.equal(recentAuthentication(claims,'u',1600000),false);
  assert.equal(recentAuthentication(claims,'u',999999),false);assert.equal(recentAuthentication({...claims,amr:[{method:'token_refresh',timestamp:1000}]},'u',1000000),false);assert.equal(recentAuthentication(claims,'other',1000000),false);
 });
-test('GET health exposes only readiness and never creates a mail or database request',async()=>{const f=await fixture();const r=await f.handler(new Request('https://x.invalid'));assert.deepEqual(await r.json(),{ok:true,version:3,transactionalMailReady:true,mailReady:true,delivery:'resend'});assert.equal(f.calls.length,0)});
+test('GET health exposes only readiness and never creates a mail or database request',async()=>{const f=await fixture();const r=await f.handler(new Request('https://x.invalid'));assert.deepEqual(await r.json(),{ok:true,version:4,transactionalMailReady:true,mailReady:true,delivery:'resend'});assert.equal(f.calls.length,0)});
 test('unapproved origins cannot perform actions',async()=>{const f=await fixture();const r=await f.handler(f.req({action:'request_delete'},true,'https://evil.invalid'));assert.equal(r.status,403);assert.equal(f.calls.length,0)});
 test('missing authorization and oversized bodies fail before database access',async()=>{
  const f=await fixture();assert.equal((await f.handler(f.req({action:'request_delete'},false))).status,401);
  assert.equal((await f.handler(f.req('x'.repeat(9000)))).status,413);assert.equal(f.calls.length,0);
 });
-test('delivery status distinguishes dedicated mail from the existing compatibility channel',async()=>{
+test('account closure requests fail closed without a configured mail transport',async()=>{
  const f=await fixture({mail:false});
  const health=await(await f.handler(new Request('https://x.invalid'))).json();
- assert.equal(health.transactionalMailReady,false);assert.equal(health.delivery,'supabase-auth');
- const result=await(await f.handler(f.req({action:'request_deactivate'}))).json();assert.equal(result.delivery,'auth');
- const url=new URL(f.calls.find(url=>url.includes('/auth/v1/otp?')));assert.match(url.searchParams.get('redirect_to'),/#account-action=deactivate&/);
+ assert.equal(health.transactionalMailReady,false);
+ assert.equal(health.mailReady,false);
+ assert.equal(health.delivery,'unavailable');
+ for(const action of ['request_deactivate','request_delete','request_reactivate']){
+  const response=await f.handler(f.req({action}));
+  assert.equal(response.status,503);
+  assert.equal((await response.json()).code,'MAIL_NOT_CONFIGURED');
+ }
+ assert.equal(f.rpc.length,0,'an undeliverable challenge must not be created');
+ assert.equal(f.mailBodies.length,0);
+ assert.equal(f.calls.filter(url=>url.includes('/auth/v1/otp')).length,0);
+});
+test('previously delivered delete challenge remains usable if mail config is lost',async()=>{
+ const f=await fixture({mail:false});
+ const id='b04146d1-f2a4-4a04-bd46-70159554b90f';
+ const r=await f.handler(f.req({action:'confirm_delete',id,token:'a'.repeat(64),reason:'privacy',confirmation:'YES_DELETE_IN_60_DAYS'},false));
+ assert.equal(r.status,200);
+ assert.equal(f.rpc[0].p_action,'confirm_delete');
 });
 test('each account action has a distinct transactional subject in both languages',async()=>{
  for(const [action,en,tr] of [['deactivate',/temporary account closure code/i,/Geçici hesap kapatma/],['delete',/account deletion request/i,/Kalıcı hesap silme/],['reactivate',/reactivation code/i,/yeniden açma/]]){
   for(const [lang,label] of [['en',en],['tr',tr]]){
    const f=await fixture();const data=await(await f.handler(f.req({action:'request_'+action,lang}))).json();
    assert.equal(data.delivery,'resend');assert.match(f.mailBodies[0].subject,label);assert.ok(!f.calls.some(path=>path.includes('/otp')));
-   assert.match(f.mailBodies[0].text,action==='delete'?/#account-action=delete/:/\b\d{6}\b/);
+   assert.match(f.mailBodies[0].text,action==='delete'?/\/account-close\.html#id=/:/\b\d{6}\b/);
   }
  }
 });
@@ -60,14 +75,14 @@ test('temporary closure sends a six-digit code only to the verified server ident
 });
 test('permanent closure emails a fragment token and does not schedule deletion yet',async()=>{
  const f=await fixture(),r=await f.handler(f.req({action:'request_delete',lang:'en'})),data=await r.json();
- assert.equal(data.expiresIn,1800);assert.match(f.mailBodies[0].text,/https:\/\/badgalnurkan\.com\/#account-action=delete&id=/);
+ assert.equal(data.expiresIn,1800);assert.match(f.mailBodies[0].text,/https:\/\/badgalnurkan\.com\/account-close\.html#id=/);
  assert.match(f.mailBodies[0].text,/token=[a-f0-9]{64}/);assert.equal(f.rpc.length,1);assert.equal(f.rpc[0].p_action,'request_delete');
 });
 test('provider failure invalidates its challenge and never closes the account',async()=>{const f=await fixture({send:false}),r=await f.handler(f.req({action:'request_delete'}));assert.equal(r.status,502);assert.equal(f.rpc.length,2);assert.equal(f.rpc[1].p_action,'cancel')});
 test('expired interactive sign-in cannot request account emails',async()=>{const f=await fixture({amr:[{method:'oauth',timestamp:1799999399}]}),r=await f.handler(f.req({action:'request_delete'}));assert.equal(r.status,403);assert.equal(f.rpc.length,0)});
 test('a mail link finalizes only through explicit POST and the one-use challenge RPC',async()=>{
  const f=await fixture(),id='b04146d1-f2a4-4a04-bd46-70159554b90f',token='a'.repeat(64);
- const r=await f.handler(f.req({action:'confirm_delete',id,token,reason:'privacy',confirmation:'YES_DELETE_IN_30_DAYS'},false));
+ const r=await f.handler(f.req({action:'confirm_delete',id,token,reason:'privacy',confirmation:'YES_DELETE_IN_60_DAYS'},false));
  assert.equal(r.status,200);assert.equal(f.calls.some(x=>x.endsWith('/auth/v1/user')),false);assert.equal(f.rpc[0].p_uid,null);assert.equal(f.rpc[0].p_action,'confirm_delete');
  assert.equal(f.rpc[0].p_fields.hash,await(await core).digest(id+':'+token,webcrypto));
 });
@@ -160,4 +175,55 @@ test('a different verified email cannot change the session for a pending reset',
  await profile.flow.request(email);redirect.searchParams.set('code',webcrypto.randomUUID());profile.ctx.location.href=redirect.href;
  assert.equal(await profile.flow.callback(),true);assert.equal(profile.session(),null);assert.equal(profile.gates.length,0);
  assert.equal(profile.modals.at(-1),'recovery-browser-error');
+});
+
+test('temporary closure code leads to a separate explicit Yes without closing account first',async()=>{
+ const {ctx,ui,nodes,events}=uiFixture();const actions=[];
+ ctx.fetch=async(_url,opt)=>{
+  const body=JSON.parse(opt.body);actions.push(body.action);
+  return Response.json({ok:true,id:'b04146d1-f2a4-4a04-bd46-70159554b90f',delivery:'resend'});
+ };
+ ctx.sbPush=async()=>true;ctx.sbClear=()=>{ctx.session=null};ctx.goTo=()=>{};ctx.closeModal=()=>{};
+ ctx.SUPABASE_URL='https://example.supabase.co';ctx.SUPABASE_KEY='public-fixture';ctx.DB.lang='tr';
+ await ui.request('deactivate');
+ assert.ok(events.some(e=>e.id==='account-code'));
+ nodes.set('account-code-input',{value:'123456'});
+ await ui.confirmCode();
+ assert.equal(actions.includes('confirm_deactivate'),false,'typing the code must not close the account');
+ assert.ok(events.some(e=>e.id==='account-deactivate-final'&&e.html.includes('Emin misin?')));
+ await ui.finalizeDeactivation();
+ assert.ok(actions.includes('confirm_deactivate'),'only explicit Yes sends server confirmation');
+ assert.equal(ctx.A,null);
+});
+test('deactivation deadline and permanent deletion retention are explained separately',()=>{
+ const {ctx,ui,events}=uiFixture();
+ ctx.sb=async()=>({user_id:'u',email:'real@example.invalid',state:'deactivated',delete_after:'2027-01-10T00:00:00Z',server_time:'2027-01-01T00:00:00Z'});
+ return ui.checkAccess({id:'u'}).then(()=>{
+  const gate=events.find(e=>e.id==='security-gate');
+  assert.ok(gate&&gate.html.includes('2027'));
+  assert.match(fs.readFileSync('account-security.js','utf8'),/YES_DELETE_IN_60_DAYS/);
+ });
+});
+test('standalone account deletion page requires the reason and a final Yes',()=>{
+ const html=fs.readFileSync('account-close.html','utf8');
+ const code=fs.readFileSync('account-close.js','utf8');
+ assert.match(html,/id="deletion-reason"/);
+ assert.match(html,/value="other"/);
+ assert.match(html,/id="finalize-deletion"/);
+ assert.match(html,/60 gün/);
+ assert.match(code,/confirmation:'YES_DELETE_IN_60_DAYS'/);
+ assert.match(code,/history\.replaceState/);
+ assert.doesNotMatch(code,/localStorage/);
+});
+test('staged retention SQL preserves legacy deactivations and schedules both policy windows',()=>{
+ const sql=fs.readFileSync('database/account_retention_30_60_staging.sql','utf8');
+ assert.match(sql,/state='deactivated',delete_after=now\(\)\+interval '30 days'/);
+ assert.match(sql,/state='pending_delete',delete_after=now\(\)\+interval '60 days'/);
+ assert.match(sql,/state in \('pending_delete','deactivated'\)/);
+ assert.match(sql,/state='deactivated' -- Legacy deactivated rows/);
+ assert.match(sql,/coalesce\(p_fields->>'confirmation',''\) <> 'YES_DELETE_IN_60_DAYS'/);
+ assert.doesNotMatch(sql,/YES_DELETE_IN_30_DAYS/);
+ assert.match(sql,/revoke execute on function public\.iydu_account_service\(text, uuid, jsonb\) from public, anon, authenticated/);
+ assert.match(sql,/grant execute on function public\.iydu_account_service\(text, uuid, jsonb\) to service_role/);
+ assert.match(sql,/revoke execute on function iydu_private\.purge_due_accounts\(\) from public, anon, authenticated/);
 });

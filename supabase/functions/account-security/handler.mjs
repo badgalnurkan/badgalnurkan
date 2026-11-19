@@ -24,7 +24,7 @@ export function createHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=>Dat
   const reply=(data,status=200)=>new Response(JSON.stringify(data),{status,headers});
   if(origin&&!ALLOWED_ORIGINS.includes(origin))return reply({code:'ORIGIN_NOT_ALLOWED'},403);
   if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
-  if(req.method==='GET')return reply({ok:true,version:3,transactionalMailReady:mailReady,mailReady:mailReady||!!(base&&publicKey&&service),delivery:mailReady?'resend':'supabase-auth'});
+  if(req.method==='GET')return reply({ok:true,version:4,transactionalMailReady:mailReady,mailReady,delivery:mailReady?'resend':'unavailable'});
   if(req.method!=='POST')return reply({code:'METHOD_NOT_ALLOWED'},405);
   if(!base||!publicKey||!service)return reply({code:'SERVER_CONFIGURATION_ERROR'},503);
   try{
@@ -56,6 +56,8 @@ export function createHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=>Dat
     return result.json();
    }
    if(REQUESTS.includes(action)){
+    // Never issue a challenge that the configured mail transport cannot deliver.
+    if(!mailReady)return reply({code:'MAIL_NOT_CONFIGURED'},503);
     const id=cryptoImpl.randomUUID(),kind=action.slice(8);
     let secret;
     if(kind==='delete')secret=[...cryptoImpl.getRandomValues(new Uint8Array(32))].map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -68,20 +70,18 @@ export function createHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=>Dat
      delete:en?'Confirm your account deletion request':'Kalıcı hesap silme talebini onayla',
      reactivate:en?'Your account reactivation code':'Hesabını yeniden açma onay kodun'
     };
-    const destination=(ALLOWED_ORIGINS.includes(origin)?origin:'https://badgalnurkan.com')+'/#account-action='+kind+'&id='+id+'&token='+secret;
+    const safeOrigin=ALLOWED_ORIGINS.includes(origin)?origin:'https://badgalnurkan.com';
+    const destination=safeOrigin+(kind==='delete'?'/account-close.html#id='+id+'&token='+secret:'/#account-action='+kind+'&id='+id+'&token='+secret);
     const content=kind==='delete'
-     ?(en?'Open the link to choose a reason and confirm. Nothing is deleted by opening it. It expires in 30 minutes. After confirmation you have 30 days to reactivate.':'Sebebini seçmek ve onaylamak için bağlantıyı aç. Bağlantıyı açmak hesabını silmez. Bağlantı 30 dakika geçerlidir. Onaydan sonra yeniden açmak için 30 günün olacak.')+'\n\n'+destination
+     ?(en?'Open the link to choose a reason and confirm. Nothing is deleted by opening it. It expires in 30 minutes. After confirmation you have 60 days to reactivate.':'Sebebini seçmek ve onaylamak için bağlantıyı aç. Bağlantıyı açmak hesabını silmez. Bağlantı 30 dakika geçerlidir. Onaydan sonra yeniden açmak için 60 günün olacak.')+'\n\n'+destination
      :(en?'Your confirmation code (valid for 10 minutes): ':'Onay kodun (10 dakika geçerli): ')+secret;
     try{
-     // Discard the verifier. This delivery link can reveal the action proof but cannot create an app session.
-     const challenge=btoa(String.fromCharCode(...cryptoImpl.getRandomValues(new Uint8Array(32)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-     const sent=!mailReady?await fetchImpl(base+'/auth/v1/otp?redirect_to='+encodeURIComponent(destination),{
-      method:'POST',headers:{apikey:publicKey,'Content-Type':'application/json'},body:JSON.stringify({email:result.email,create_user:false,code_challenge:challenge,code_challenge_method:'s256'}),signal:AbortSignal.timeout(10000)
-     }):await fetchImpl('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+mailKey,'Content-Type':'application/json','Idempotency-Key':'account-'+id},
+     // Use one transport that actually carries the generated challenge.
+     const sent=await fetchImpl('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+mailKey,'Content-Type':'application/json','Idempotency-Key':'account-'+id},
       body:JSON.stringify({from,to:[result.email],subject:labels[kind]+" · Improvin’ Your Day",text:"Improvin' your day\n\n"+content+'\n\n'+(en?'If you did not request this, ignore this email.':'Bu işlemi sen istemediysen bu e-postayı dikkate alma.')}),signal:AbortSignal.timeout(10000)});
      if(!sent.ok){await rpc('cancel',{id});return reply({code:'MAIL_SEND_FAILED'},502)}
     }catch{await rpc('cancel',{id});return reply({code:'MAIL_SEND_FAILED'},502)}
-    return reply({ok:true,id,delivery:mailReady?'resend':'auth',expiresIn:kind==='delete'?1800:600});
+    return reply({ok:true,id,delivery:'resend',expiresIn:kind==='delete'?1800:600});
    }
    const id=String(body.id||''),secret=String(body.token||'');
    if(!/^[a-f0-9-]{36}$/i.test(id)||(action==='confirm_delete'?!/^[a-f0-9]{64}$/.test(secret):!/^\d{6}$/.test(secret)))return reply({code:'INVALID_CHALLENGE'},400);
