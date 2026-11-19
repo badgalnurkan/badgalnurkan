@@ -168,7 +168,8 @@ test('temporary closure code leads to a separate explicit Yes without closing ac
   const body=JSON.parse(opt.body);actions.push(body.action);
   return Response.json({ok:true,id:'b04146d1-f2a4-4a04-bd46-70159554b90f',delivery:'resend'});
  };
- ctx.sbPush=async()=>true;ctx.sbClear=()=>{ctx.session=null};ctx.goTo=()=>{};
+ ctx.sbPush=async()=>true;ctx.sbClear=()=>{ctx.session=null};ctx.goTo=()=>{};ctx.closeModal=()=>{};
+ ctx.SUPABASE_URL='https://example.supabase.co';ctx.SUPABASE_KEY='public-fixture';ctx.DB.lang='tr';
  await ui.request('deactivate');
  assert.ok(events.some(e=>e.id==='account-code'));
  nodes.set('account-code-input',{value:'123456'});
