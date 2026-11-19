@@ -122,5 +122,28 @@ BEGIN
   THEN RAISE EXCEPTION 'Third account could not save its own diary'; END IF;
 END $third$;
 RESET ROLE;
-SELECT 'PASS: stale writes blocked, journal history/recovery preserved and three users isolated; all test rows rolled back' AS check_result;
+-- A closed account must not bypass lifecycle policies via SECURITY DEFINER.
+UPDATE iydu_private.account_controls
+ SET state='deactivated'
+ WHERE user_id='9f0d0000-0000-4000-8000-000000000011';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','9f0d0000-0000-4000-8000-000000000011',true);
+DO $closed$
+DECLARE save_rejected boolean:=false; history_rejected boolean:=false;
+BEGIN
+ BEGIN
+  PERFORM public.iydu_save_cas('{}'::jsonb,
+    '{"u":"QaDesktop","journal":{"2026-11-21":{"text":"must not write"}}}'::jsonb);
+ EXCEPTION WHEN SQLSTATE '42501' THEN save_rejected:=true;
+ END;
+ BEGIN
+  PERFORM 1 FROM public.iydu_journal_revisions('2026-11-19',10);
+ EXCEPTION WHEN SQLSTATE '42501' THEN history_rejected:=true;
+ END;
+ IF NOT save_rejected OR NOT history_rejected THEN
+  RAISE EXCEPTION 'Closed account bypassed data or history access';
+ END IF;
+END $closed$;
+RESET ROLE;
+SELECT 'PASS: stale writes blocked, journal history/recovery preserved, three users isolated and closed-account access denied; all test rows rolled back' AS check_result;
 ROLLBACK;
