@@ -28,7 +28,7 @@
 <div class="actions"><button type="button" id="signup">Yeni QA hesabı / kod gönder</button><button type="button" class="ghost" id="signin">Var olan QA hesabına kod gönder</button></div>
 <label for="loginCode">E-postaya gelen 6 haneli giriş kodu</label><input id="loginCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="••••••">
 <div class="actions"><button type="button" id="verify">Kodu doğrula ve giriş yap</button><button type="button" class="ghost" id="logout">Bu tarayıcı oturumunu kapat</button></div>
-<p class="small">Kodu e-posta ile gönderme veya sohbet içinde paylaşma. Yalnızca buradaki alana gir.</p>
+<p class="small">İlk kayıt ve sonraki giriş farklı Supabase e-posta şablonları kullanır. Mevcut hesabında “Your sign-in link” gelirse Magic Link or OTP şablonunun 6 haneli kod içermesi gerekir. Kodu sohbet içinde paylaşma.</p>
 <div class="status" role="status" aria-live="polite" id="authStatus">Henüz test hesabına giriş yapılmadı.</div>
 </div>
 <div class="card">
@@ -42,7 +42,7 @@
 </div>
 <div class="card">
 <h2>3. Hesabı yeniden açma</h2>
-<p class="small">Geçici kapatmanın ardından 1. bölümden aynı QA e-posta adresiyle tekrar giriş yap. Yeni oturumla yeniden etkinleştirme kodu iste.</p>
+<p class="small">Geçici kapatmanın ardından 1. bölümden <strong>Var olan QA hesabına kod gönder</strong> seçeneğini kullan. Giriş kodunu doğrula; sistem hesabını kapalı durumda gösterince bu bölümdeki <strong>Yeniden açma kodunu gönder</strong> etkinleşir. Bu, giriş kodundan ayrı bir e-postadır.</p>
 <div class="actions"><button type="button" id="reactivateRequest" disabled>Yeniden açma kodunu gönder</button></div>
 <label for="reactivateCode">E-postaya gelen kod</label><input id="reactivateCode" type="text" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="••••••">
 <div class="pair"><input type="checkbox" id="reactivateAgree"><label for="reactivateAgree">Test hesabımı yeniden etkinleştirmek istiyorum.</label></div>
@@ -85,11 +85,11 @@
  const STORAGE = 'iydu-qa-account-lab-session';
  const $ = id => document.getElementById(id);
  const endpoint = path => QA + path;
- let session = null, pending = {deactivate:null,reactivate:null}, deletion = null, busy = false;
+ let session = null, accountState = null, pending = {deactivate:null,reactivate:null}, deletion = null, busy = false;
  function note(id, message, kind='info') {const e=$(id);e.textContent=String(message);e.dataset.kind=kind;}
  function maskedError(error) {return String(error?.code || error?.message || 'İstek tamamlanamadı.').replace(/Bearer\s+\S+|re_[a-z0-9]+/ig,'[gizli]');}
- function activate() {const ok=!!session?.access_token;$('tempRequest').disabled=!ok;$('reactivateRequest').disabled=!ok;$('deleteRequest').disabled=!ok;$('tempConfirm').disabled=!ok;$('reactivateConfirm').disabled=!ok;}
- function writeSession(value){session=value;if(value?.access_token){sessionStorage.setItem(STORAGE,JSON.stringify({access_token:value.access_token,refresh_token:value.refresh_token||'',user:value.user?.email||''}));}else sessionStorage.removeItem(STORAGE);activate();}
+ function activate() {const ok=!!session?.access_token;const active=ok&&accountState?.state==='active';const inactive=ok&&['deactivated','pending_delete'].includes(accountState?.state);$('tempRequest').disabled=!active;$('reactivateRequest').disabled=!inactive;$('deleteRequest').disabled=!active;$('tempConfirm').disabled=!active||!pending.deactivate;$('reactivateConfirm').disabled=!inactive||!pending.reactivate;}
+ function writeSession(value){session=value;accountState=null;pending={deactivate:null,reactivate:null};if(value?.access_token){sessionStorage.setItem(STORAGE,JSON.stringify({access_token:value.access_token,refresh_token:value.refresh_token||'',user:value.user?.email||''}));}else sessionStorage.removeItem(STORAGE);activate();}
  function email(){const v=$('email').value.trim().toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))throw Error('Geçerli bir test e-posta adresi gir.');return v;}
  function code(id){const v=$(id).value.trim();if(!/^\d{6}$/.test(v))throw Error('Kod tam 6 rakam olmalı.');return v;}
  async function request(path,method='GET',body=null,authorized=false){
@@ -104,22 +104,35 @@
  async function run(fn,id){if(busy)return;busy=true;document.body.classList.add('busy');try{await fn()}catch(error){note(id,maskedError(error),'error');}finally{busy=false;document.body.classList.remove('busy');activate();}}
  function time(iso){const d=new Date(iso);return Number.isFinite(d.getTime())?d.toLocaleString('tr-TR',{timeZone:'Europe/Istanbul',dateStyle:'full',timeStyle:'short'}):'Geçersiz tarih';}
  function deadline(kind,iso){if(!iso)return'Beklenen silinme tarihi dönmedi.';const days=(new Date(iso)-new Date())/86400000;const label=kind==='deactivated'?'30':'60';return `Durum: ${kind} | Son tarih: ${time(iso)} | Yaklaşık ${days.toFixed(2)} gün (${label} gün politikası).`;}
- async function sendLogin(create){await run(async()=>{const v=email();await request('/auth/v1/otp','POST',{email:v,create_user:create});note('authStatus',`QA adresine doğrulama kodu gönderildi: ${v}. E-postana gelen kodu aşağıya gir.`, 'success');},'authStatus');}
+ async function loadAccountState(){
+  const current=await request('/rest/v1/rpc/iydu_qa_account_status','POST',{},true);
+  if(!['active','deactivated','pending_delete'].includes(current?.state))throw Error('QA hesap durumuna erişilemedi. İşlem başlatılmadı.');
+  accountState=current;activate();
+  const status=current.state==='active'?'Hesap aktif. Geçici veya kalıcı kapatma testine geçebilirsin.':
+    current.state==='deactivated'?'Hesap geçici olarak kapalı. Şimdi 3. bölümden yeniden açma kodu iste.':
+    'Hesap 60 günlük kalıcı silme beklemesinde. Şimdi 3. bölümden yeniden açma kodu iste.';
+  note('globalStatus',status+(current.delete_after?'\n'+deadline(current.state,current.delete_after):''),'success');
+  if(current.state!=='active')note('reactivateStatus','Bu hesap kapalı. Yeniden etkinleştirme kodunu buradan iste.','info');
+  return current;
+ }
+ async function sendLogin(create){await run(async()=>{const v=email();await request('/auth/v1/otp','POST',{email:v,create_user:create});$('loginCode').value='';
+  const help=create?'İlk kayıt için Confirm sign up e-postasındaki 6 haneli kodu gir.':'Mevcut hesaplarda Magic Link or OTP şablonu kullanılır. 6 haneli kod gelmiyor, giriş bağlantısı geliyorsa Supabase Dashboard üzerinden bu şablonu kod gösterecek şekilde değiştirmelisin.';
+  note('authStatus',`QA adresine giriş isteği gönderildi: ${v}. ${help}`,'success');},'authStatus');}
  $('signup').addEventListener('click',()=>sendLogin(true));$('signin').addEventListener('click',()=>sendLogin(false));
- $('verify').addEventListener('click',()=>run(async()=>{const v=email(),token=code('loginCode');const data=await request('/auth/v1/verify','POST',{email:v,token,type:'email'});if(!data?.access_token||!data?.user?.id||data.user.email?.toLowerCase()!==v)throw Error('Oturum doğrulanamadı.');writeSession(data);$('loginCode').value='';note('authStatus',`QA e-postası doğrulandı. Giriş başarılı: ${v}.`, 'success');note('globalStatus','Doğrulanmış QA hesabı ile oturum açık. İşlem sonrası durum ve son tarih burada gösterilir.','success');},'authStatus'));
+ $('verify').addEventListener('click',()=>run(async()=>{const v=email(),token=code('loginCode');const data=await request('/auth/v1/verify','POST',{email:v,token,type:'email'});if(!data?.access_token||!data?.user?.id||data.user.email?.toLowerCase()!==v)throw Error('Oturum doğrulanamadı.');writeSession(data);$('loginCode').value='';const state=await loadAccountState();note('authStatus',`QA e-postası doğrulandı. Giriş başarılı: ${v}. Hesap durumu: ${state.state}.`,'success');},'authStatus'));
  $('logout').addEventListener('click',()=>{writeSession(null);note('authStatus','Bu tarayıcı sekmesindeki QA oturumu temizlendi.');});
- async function start(kind,id){await run(async()=>{const result=await request('/functions/v1/account-security','POST',{action:'request_'+kind,lang:'tr'},true);if(!result?.ok||!result.id)throw Error('Sunucu işlem kimliği döndürmedi.');pending[kind]=result.id;note(id,kind==='deactivate'?'Kapatma kodu gönderildi; 10 dakika içinde aşağıdaki alanı doldur.':'Yeniden açma kodu gönderildi; 10 dakika içinde aşağıdaki alanı doldur.','success');},id);}
+ async function start(kind,id){await run(async()=>{if(kind==='deactivate'&&accountState?.state!=='active')throw Error('Geçici kapatma yalnızca aktif hesap için kullanılabilir.');if(kind==='reactivate'&&!['deactivated','pending_delete'].includes(accountState?.state))throw Error('Yeniden açma yalnızca kapalı hesap için kullanılabilir.');const result=await request('/functions/v1/account-security','POST',{action:'request_'+kind,lang:'tr'},true);if(!result?.ok||!result.id)throw Error('Sunucu işlem kimliği döndürmedi.');pending[kind]=result.id;activate();note(id,kind==='deactivate'?'Kapatma kodu gönderildi; 10 dakika içinde aşağıdaki alanı doldur.':'Yeniden açma kodu gönderildi; 10 dakika içinde aşağıdaki alanı doldur.','success');},id);}
  $('tempRequest').addEventListener('click',()=>start('deactivate','tempStatus'));
  $('reactivateRequest').addEventListener('click',()=>start('reactivate','reactivateStatus'));
  async function confirm(kind,prefix){await run(async()=>{if(!pending[kind])throw Error('Önce e-posta kodu iste.');if(!$(prefix+'Agree').checked)throw Error('Devam etmek için açık onay vermelisin.');const v=code(prefix+'Code');const data=await request('/functions/v1/account-security','POST',{action:'confirm_'+kind,id:pending[kind],token:v,lang:'tr'},true);
   if(!data?.ok||data.state!==(kind==='deactivate'?'deactivated':'active'))throw Error('Durum değişikliği doğrulanamadı.');pending[kind]=null;$(prefix+'Code').value='';$(prefix+'Agree').checked=false;
   const text=kind==='deactivate'?deadline(data.state,data.delete_after):'Yeniden etkinleştirme başarılı; hesabın aktif, silinme son tarihi kaldırılmış olmalı.';
   note(prefix+'Status',text,'success');note('globalStatus',text,'success');
-  if(kind==='deactivate')writeSession(null);
+  if(kind==='deactivate')writeSession(null);else await loadAccountState();
  },prefix+'Status');}
  $('tempConfirm').addEventListener('click',()=>confirm('deactivate','temp'));
  $('reactivateConfirm').addEventListener('click',()=>confirm('reactivate','reactivate'));
- $('deleteRequest').addEventListener('click',()=>run(async()=>{const result=await request('/functions/v1/account-security','POST',{action:'request_delete',lang:'tr'},true);if(!result?.ok||!result.id)throw Error('Silme bağlantısı oluşturulamadı.');note('deleteStatus','Kalıcı silme bağlantısı e-postana gönderildi. Bağlantıyı açmak hiçbir şeyi silmez.','success');},'deleteStatus'));
+ $('deleteRequest').addEventListener('click',()=>run(async()=>{if(accountState?.state!=='active')throw Error('Kalıcı silme yalnızca aktif QA hesabında başlatılabilir.');const result=await request('/functions/v1/account-security','POST',{action:'request_delete',lang:'tr'},true);if(!result?.ok||!result.id)throw Error('Silme bağlantısı oluşturulamadı.');note('deleteStatus','Kalıcı silme bağlantısı e-postana gönderildi. Bağlantıyı açmak hiçbir şeyi silmez.','success');},'deleteStatus'));
  function parseDeletionLink(){const hash=location.hash.startsWith('#')?location.hash.slice(1):'';const params=new URLSearchParams(hash);const id=params.get('id')||'',token=params.get('token')||'';
   if(hash)history.replaceState(null,'',location.pathname);
   if(/^[a-f0-9-]{36}$/i.test(id)&&/^[a-f0-9]{64}$/i.test(token)){
@@ -135,7 +148,7 @@
   if(!data?.ok||data.state!=='pending_delete'||!data.delete_after)throw Error('60 günlük silme talebi doğrulanamadı.');
   deletion=null;$('deleteReview').hidden=true;writeSession(null);const msg=deadline(data.state,data.delete_after);note('deleteStatus',msg,'success');note('globalStatus',msg,'success');
  },'deleteStatus'));
- (async()=>{try{const obj=JSON.parse(sessionStorage.getItem(STORAGE)||'null');if(obj?.access_token){writeSession(obj);const u=await request('/auth/v1/user','GET',null,true);if(!u?.id)throw Error('Oturum sona erdi.');note('authStatus',`QA oturumu geri yüklendi: ${u.email||'doğrulanmış kullanıcı'}.`,'success');}else writeSession(null);}catch{writeSession(null);}finally{parseDeletionLink();activate();}})();
+ (async()=>{try{const obj=JSON.parse(sessionStorage.getItem(STORAGE)||'null');if(obj?.access_token){writeSession(obj);const u=await request('/auth/v1/user','GET',null,true);if(!u?.id)throw Error('Oturum sona erdi.');const state=await loadAccountState();note('authStatus',`QA oturumu geri yüklendi: ${u.email||'doğrulanmış kullanıcı'}. Durum: ${state.state}.`,'success');}else writeSession(null);}catch{writeSession(null);}finally{parseDeletionLink();activate();}})();
 })();
 </script>
 </body>
