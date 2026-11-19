@@ -14,8 +14,20 @@ VALUES
  ('9f0d0000-0000-4000-8000-000000000011','synthetic-desktop@example.invalid','{"username":"QaDesktop"}'::jsonb),
  ('9f0d0000-0000-4000-8000-000000000012','synthetic-other@example.invalid','{"username":"QaOther"}'::jsonb),
  ('9f0d0000-0000-4000-8000-000000000013','synthetic-third@example.invalid','{"username":"QaThird"}'::jsonb);
+-- Synthetic approval for the pre-existing CAS tests under browser verification.
+INSERT INTO auth.sessions(id,user_id,created_at) VALUES
+ ('9f100000-0000-4000-8000-000000000011','9f0d0000-0000-4000-8000-000000000011',now()),
+ ('9f100000-0000-4000-8000-000000000012','9f0d0000-0000-4000-8000-000000000012',now()),
+ ('9f100000-0000-4000-8000-000000000013','9f0d0000-0000-4000-8000-000000000013',now());
+INSERT INTO iydu_private.browser_verified_sessions(user_id,session_id)
+SELECT user_id,id FROM auth.sessions
+WHERE id IN ('9f100000-0000-4000-8000-000000000011'::uuid,
+ '9f100000-0000-4000-8000-000000000012'::uuid,
+ '9f100000-0000-4000-8000-000000000013'::uuid);
 SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.role','authenticated',true);
 SELECT set_config('request.jwt.claim.sub','9f0d0000-0000-4000-8000-000000000011',true);
+SELECT set_config('request.jwt.claims','{"sub":"9f0d0000-0000-4000-8000-000000000011","role":"authenticated","session_id":"9f100000-0000-4000-8000-000000000011"}',true);
 DO $assert$
 DECLARE
   was_saved boolean;
@@ -91,6 +103,7 @@ BEGIN
   END IF;
 END $assert$;
 SELECT set_config('request.jwt.claim.sub','9f0d0000-0000-4000-8000-000000000012',true);
+SELECT set_config('request.jwt.claims','{"sub":"9f0d0000-0000-4000-8000-000000000012","role":"authenticated","session_id":"9f100000-0000-4000-8000-000000000012"}',true);
 DO $other$
 DECLARE ok boolean;
 BEGIN
@@ -108,6 +121,7 @@ BEGIN
 
 END $other$;
 SELECT set_config('request.jwt.claim.sub','9f0d0000-0000-4000-8000-000000000013',true);
+SELECT set_config('request.jwt.claims','{"sub":"9f0d0000-0000-4000-8000-000000000013","role":"authenticated","session_id":"9f100000-0000-4000-8000-000000000013"}',true);
 DO $third$
 DECLARE succeeded boolean;
 BEGIN
@@ -127,7 +141,9 @@ UPDATE iydu_private.account_controls
  SET state='deactivated'
  WHERE user_id='9f0d0000-0000-4000-8000-000000000011';
 SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.role','authenticated',true);
 SELECT set_config('request.jwt.claim.sub','9f0d0000-0000-4000-8000-000000000011',true);
+SELECT set_config('request.jwt.claims','{"sub":"9f0d0000-0000-4000-8000-000000000011","role":"authenticated","session_id":"9f100000-0000-4000-8000-000000000011"}',true);
 DO $closed$
 DECLARE save_rejected boolean:=false; history_rejected boolean:=false;
 BEGIN
