@@ -86,8 +86,21 @@ window.IYAccount=(()=>{
  }
  function gate(s,recovery=false){
   const uid=stateUid;
-  if(A?.authUid===uid||Object.values(DB.accounts||{}).some(a=>a?.authUid===uid)){const verifiedSession=sbSession();stopTimers();removeDeletedAccountFromBrowser(uid,A?.u||'');if(verifiedSession?.user?.id===uid)sbSave(verifiedSession);}
-  // Preserve only the verified Auth session for code-based reactivation or password renewal.
+  const hasLocalIdentity=A?.authUid===uid||Object.values(DB.accounts||{}).some(a=>a?.authUid===uid);
+  if(hasLocalIdentity){
+   stopTimers();
+   if(s.state!=='active'){
+    // A closed account cannot keep a local authenticated app profile.
+    const verifiedSession=sbSession();
+    removeDeletedAccountFromBrowser(uid,A?.u||'');
+    if(verifiedSession?.user?.id===uid)sbSave(verifiedSession);
+   }
+   // Password recovery for an ACTIVE account does not delete its identity.
+   // Removing it would broadcast a storage event to other open tabs, which
+   // clear the new PKCE session from the shared storage before Save password.
+   // Leave persisted profile bytes untouched and hide the app below instead.
+  }
+  // Never display private app content before the required action is complete.
   A=null;view='login';pg='home';renderAppOrAuth();
   document.querySelectorAll('.modal').forEach(x=>x.remove());
   const deletionExpired=s.state!=='active'&&!!s.delete_after&&new Date(s.delete_after)<=new Date(s.server_time);
