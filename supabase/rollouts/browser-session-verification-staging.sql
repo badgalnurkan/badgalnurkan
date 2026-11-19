@@ -185,7 +185,7 @@ BEGIN
   ) THEN RAISE EXCEPTION 'Missing RLS on %',table_name; END IF;
   EXECUTE pg_catalog.format('DROP POLICY IF EXISTS browser_session_verified_required ON public.%I',table_name);
   EXECUTE pg_catalog.format(
-   'CREATE POLICY browser_session_verified_required ON public.%I AS RESTRICTIVE FOR ALL TO authenticated USING (public.iydu_browser_session_allowed()) WITH CHECK (public.iydu_browser_session_allowed())',
+   'CREATE POLICY browser_session_verified_required ON public.%I AS RESTRICTIVE FOR ALL TO authenticated USING (public.iydu_account_access_allowed()) WITH CHECK (public.iydu_account_access_allowed())',
    table_name);
  END LOOP;
 END $policies$;
