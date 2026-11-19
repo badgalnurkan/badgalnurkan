@@ -212,6 +212,9 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await page.getByRole('button',{name:'Onay kodu gönder',exact:true}).click();
    await page.locator('#account-code-input').fill('123456');
    await page.locator('#account-code button').filter({hasText:'Onayla'}).click();
+   await page.locator('#account-deactivate-final').waitFor();
+   assert.deepEqual(actions,['request_deactivate'],'entering the code must not deactivate before final confirmation');
+   await page.locator('#account-deactivate-final').getByRole('button',{name:'Evet, hesabımı geçici kapat'}).click();
    await page.waitForFunction(()=>view==='welcome'&&A===null);
    assert.deepEqual(actions,['request_deactivate','confirm_deactivate']);
    assert.equal(await page.evaluate(()=>Object.values(DB.accounts).some(x=>x.authUid==='fixture-user')),false,'closed identity removed from browser');
