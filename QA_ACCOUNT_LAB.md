@@ -28,3 +28,13 @@ Supabase's account-security handler restricts the Origin to this exact QA Vercel
 **Never copy QA credentials/allowlist into production, merge this branch into main, or share one-time codes or API secrets in chat.**
 
 Official docs: https://supabase.com/docs/guides/functions/limits and https://supabase.com/docs/guides/auth/auth-email-templates
+
+## Returning users receive a sign-in LINK instead of six digits?
+
+Supabase Auth uses **two separate email templates**. The signup template `Confirm sign up` was customized already, but subsequent `POST /auth/v1/otp` requests for existing users invoke **Magic Link or OTP**. If that template contains `{{ .ConfirmationURL }}` instead of `{{ .Token }}`, Gmail receives a sign-in link even though the browser expects a six-digit code. This is a **server-side template configuration mismatch**, not a Resend SMTP failure.
+
+**QA-only manual fix:** Open https://supabase.com/dashboard/project/lvomrcqytfygcmguojcj/auth/templates, select **Magic Link or OTP**, set subject `Improvin' Your Day - Giriş Doğrulama Kodu`, and replace its HTML with [supabase/email-templates/magic-link-otp.html](supabase/email-templates/magic-link-otp.html) from this QA branch. Ensure `{{ .Token }}` is present, then Save. Do not change production Auth templates or resend keys.
+
+The browser UI now queries an authenticated, least-data read-only status RPC `public.iydu_qa_account_status()` and enables **temporary/permanent close only while active**, and **reactivation only while deactivated or pending deletion**. This is QA-only. The UI reports that the login email and the later reactivation email are different code issuers: Supabase Auth OTP vs Resend account-security.
+
+**Observed real QA database evidence:** at least one disposable account genuinely entered `deactivated` with ~30 days remaining, and a different disposable account `pending_delete` with ~60 days remaining. Both policies have real database evidence; a full post-template-change **re-login and reactivation** test remains pending. Automated browser state gating was exercised locally with mocked HTTP calls (13 requests; Chromium PASS; 390px overflow 0). Do not claim live reactivation passed based on mocked tests.
