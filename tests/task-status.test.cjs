@@ -67,10 +67,10 @@ test('tomorrow plans require every task to be done, survive today, and promote o
  f.mk(0,'done');f.mk(1,'miss');assert.equal(context.addTomorrowPlan('Still early'),false);
  f.mk(1,'done');assert.equal(context.addTomorrowPlan('Çalış'),true);
  context.$=()=>({value:'Ara',focus(){}});context.addT();
- context.toggleTaskAlphabetical();assert.deepEqual(Array.from(context.A.plans['2026-11-16']),['Ara','Çalış']);
+ context.toggleTaskAlphabetical();assert.deepEqual(Array.from(context.A.plans['2026-11-16']),['Çalış','Ara'],'display sorting must not change saved plan order');
  f.roll();assert.equal(context.A.tasks.length,0);
  context.current='2026-11-16';f.roll();f.roll();
- assert.deepEqual(Array.from(context.A.tasks,x=>x.t),['Ara','Çalış']);
+ assert.deepEqual(Array.from(context.A.tasks,x=>x.t),['Çalış','Ara'],'manual order must be retained when tomorrow opens');
  assert.deepEqual(Array.from(context.A.tasks,x=>x.s),['','']);assert.equal(context.A.plans['2026-11-16'],undefined);
  assert.equal(context.addTomorrowPlan('Premature again'),false);
 });
