@@ -93,7 +93,7 @@ BEGIN
 
   BEGIN
     PERFORM public.iydu_save('QaDesktop','Synthetic',stale_phone);
-  EXCEPTION WHEN sqlstate 'P0001' THEN legacy_rejected := true;
+  EXCEPTION WHEN sqlstate 'P0001' OR SQLSTATE '42501' THEN legacy_rejected := true;
   END;
   IF NOT legacy_rejected THEN
     RAISE EXCEPTION 'Legacy blind-save endpoint still accepts writes';
