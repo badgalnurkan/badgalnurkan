@@ -75,7 +75,7 @@ DECLARE
  v_id uuid;
  v_hash text;
 BEGIN
- IF current_user<>'service_role' THEN RAISE insufficient_privilege; END IF;
+ IF coalesce(current_setting('request.jwt.claim.role',true),'')<>'service_role' THEN RAISE insufficient_privilege; END IF;
  IF p_uid IS NULL OR p_sid IS NULL OR NOT EXISTS(
   SELECT 1 FROM auth.sessions AS s
   WHERE s.id=p_sid AND s.user_id=p_uid
