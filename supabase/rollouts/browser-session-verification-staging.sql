@@ -173,6 +173,23 @@ $access$;
 REVOKE ALL ON FUNCTION public.iydu_account_access_allowed() FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.iydu_account_access_allowed() TO authenticated;
 
+-- Ensure the QA schema and production share the same fail-closed load RPC.
+CREATE OR REPLACE FUNCTION public.iydu_load(p_username text)
+RETURNS TABLE(data jsonb)
+LANGUAGE plpgsql SECURITY INVOKER SET search_path TO ''
+AS $load$
+BEGIN
+ IF auth.uid() IS NULL THEN
+  RAISE EXCEPTION 'not authenticated' USING ERRCODE='28000';
+ END IF;
+ IF NOT public.iydu_account_access_allowed() THEN
+  RAISE EXCEPTION 'account access restricted' USING ERRCODE='42501';
+ END IF;
+ RETURN QUERY SELECT ud.data FROM public.user_data ud
+ WHERE ud.user_id=auth.uid() LIMIT 1;
+END;
+$load$;
+
 -- IMPORTANT: direct SELECT currently has a permissive owner-only RLS policy.
 -- A RESTRICTIVE policy is needed to block bypassing iydu_load via Data API.
 DO $policies$
