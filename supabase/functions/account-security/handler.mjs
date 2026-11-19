@@ -1,7 +1,8 @@
 // Pure request handler: no browser identity, email address or user_id is trusted.
 // QA branch only: permit the isolated QA-hosted test screen. NEVER merge this origin into production.
 const QA_LAB_ORIGIN = 'https://lvomrcqytfygcmguojcj.supabase.co';
-export const ALLOWED_ORIGINS = ['https://badgalnurkan.com','https://www.badgalnurkan.com','https://badgalnurkan.vercel.app',QA_LAB_ORIGIN];
+const QA_PREVIEW_ORIGIN = 'https://badgalnurkan-git-qa-account-security-lab-5044.vercel.app';
+export const ALLOWED_ORIGINS = ['https://badgalnurkan.com','https://www.badgalnurkan.com','https://badgalnurkan.vercel.app',QA_LAB_ORIGIN,QA_PREVIEW_ORIGIN];
 export const REQUESTS = ['request_deactivate','request_delete','request_reactivate'];
 export async function digest(value,cryptoImpl=crypto){
  const bytes=await cryptoImpl.subtle.digest('SHA-256',new TextEncoder().encode(value));
@@ -74,8 +75,10 @@ export function createHandler({env,fetchImpl=fetch,cryptoImpl=crypto,now=()=>Dat
     };
     const safeOrigin=ALLOWED_ORIGINS.includes(origin)?origin:'https://badgalnurkan.com';
     // QA-only permanent-deletion links return to the QA laboratory, never the real site.
-    const destination=kind==='delete'&&safeOrigin===QA_LAB_ORIGIN
-     ? QA_LAB_ORIGIN+'/functions/v1/qa-account-lab#id='+id+'&token='+secret
+    const destination=kind==='delete'&&safeOrigin===QA_PREVIEW_ORIGIN
+     ? QA_PREVIEW_ORIGIN+'/qa-account-lab.html#id='+id+'&token='+secret
+     : kind==='delete'&&safeOrigin===QA_LAB_ORIGIN
+     ? QA_PREVIEW_ORIGIN+'/qa-account-lab.html#id='+id+'&token='+secret
      : safeOrigin+(kind==='delete'?'/account-close.html#id='+id+'&token='+secret:'/#account-action='+kind+'&id='+id+'&token='+secret);
     const content=kind==='delete'
      ?(en?'Open the link to choose a reason and confirm. Nothing is deleted by opening it. It expires in 30 minutes. After confirmation you have 60 days to reactivate.':'Sebebini seçmek ve onaylamak için bağlantıyı aç. Bağlantıyı açmak hesabını silmez. Bağlantı 30 dakika geçerlidir. Onaydan sonra yeniden açmak için 60 günün olacak.')+'\n\n'+destination
