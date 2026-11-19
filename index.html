@@ -1476,6 +1476,14 @@ main#mn.swap{opacity:.66;transition:opacity 65ms ease-out}
 main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 @keyframes menuFadeIn{from{opacity:.66}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){main#mn.swap,main#mn.an{opacity:1;animation:none;transition:none}}
+
+/* Sorting changes only presentation; manual drag order remains persistent. */
+.task-sort-control{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;margin:.6rem 0 .9rem}
+.task-sort-control label{margin:0;font-size:.86rem}
+.task-sort-select{font:inherit;min-width:175px;max-width:100%;border-radius:11px;padding:.6rem .75rem;color:var(--txt);background:var(--card);border:1px solid var(--line)}
+.task-sort-select:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.task-grip:disabled{opacity:.35;cursor:default;touch-action:auto}
+
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -1857,7 +1865,7 @@ function roll(){
       A.backlog.push(...pending.map(task=>task.t));delete A.plans[date];
     }
     while(A.backlog.length>10)A.backlog.shift();
-    A.tasks=Array.isArray(A.plans&&A.plans[t])?A.plans[t].map(t=>({t,s:''})):[];if(A.plans)delete A.plans[t];A.day=t;if(A.completedBatches&&typeof A.completedBatches==='object')A.completedBatches={};save();
+    A.tasks=Array.isArray(A.plans&&A.plans[t])?A.plans[t].map(t=>({t,s:'',createdAt:Date.now()})):[];if(A.plans)delete A.plans[t];A.day=t;if(A.completedBatches&&typeof A.completedBatches==='object')A.completedBatches={};save();
   }
 }
 const items=d=>{
@@ -3058,38 +3066,53 @@ P.todo=()=>{
   try{fixTodoData()}catch(e){A.tasks=[];A.backlog=[]}
   if(archiveFinishedTasks())save();
   const next=addD(today(),1);
-  if(A.taskOrder==='alpha')sortTaskLists(next);
+  const sortedTaskEntries=sortTaskLists();
   const planned=(A.plans?.[next]||[]).map((name,i)=>`<div class="task"><span>${esc(name)}</span><button class="g s" onclick="removePlan(${i})">${t('delete')}</button></div>`).join('');
   const bl=A.backlog.map((bt,i)=>`<div class="task"><span>${esc(bt)}</span><button class="g s" onclick="fromBack(${i})">${t('addToToday')}</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">${t('delete')}</button></div>`).join('');
 
   const dayFinished=allTodayTasksArchived();
-  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><button type="button" class="g s task-sort" aria-pressed="${A.taskOrder==='alpha'}" onclick="toggleTaskAlphabetical()">${tr()?'Alfabetik sırala (A–Z)':'Sort alphabetically (A–Z)'}</button><div id="tl">${A.tasks.map((x,i)=>tk(x,i)).join('')||'<p class="mut">'+(dayFinished?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.'):t('addTask'))+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'){event.preventDefault();addT()}"><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${sortedTaskEntries.map(({task,index})=>tk(task,index)).join('')}||'<p class="mut">'+(dayFinished?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.'):t('addTask'))+'</p>'}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'){event.preventDefault();addT()}"><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
   <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><input id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'){event.preventDefault();addTomorrowPlan()}"><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
 function vibrateTask(){try{if(navigator.vibrate)navigator.vibrate(12)}catch(_){}}
-const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}" data-task-index="${i}"><button type="button" class="g s task-grip" aria-label="${tr()?'Görevi taşı':'Reorder task'}" title="${tr()?'Sürükle veya ok tuşlarını kullan':'Drag or use arrow keys'}" onpointerdown="startTaskReorder(event,${i})" onpointermove="previewTaskReorder(event)" onpointerup="finishTaskReorder(event)" onpointercancel="cancelTaskReorder(event)" onlostpointercapture="cancelTaskReorder(event)" onkeydown="taskReorderKey(event,${i})">☰</button><span class="task-label">${esc(x.t)}</span><button class="ck ${x.s==='done'?'on':''}" aria-label="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s==='miss'?'on':''}" aria-label="${t('notDone')}" onclick="mk(${i},'miss')">✕</button><button class="g s" onclick="editTask(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
+const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}" data-task-index="${i}"><button type="button" class="g s task-grip" ${taskSortMode()!=='manual'?'disabled aria-disabled="true"':''} aria-label="${tr()?'Görevi taşı':'Reorder task'}" title="${tr()?'Sürükle veya ok tuşlarını kullan':'Drag or use arrow keys'}" onpointerdown="startTaskReorder(event,${i})" onpointermove="previewTaskReorder(event)" onpointerup="finishTaskReorder(event)" onpointercancel="cancelTaskReorder(event)" onlostpointercapture="cancelTaskReorder(event)" onkeydown="taskReorderKey(event,${i})">☰</button><span class="task-label">${esc(x.t)}</span><button class="ck ${x.s==='done'?'on':''}" aria-label="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s==='miss'?'on':''}" aria-label="${t('notDone')}" onclick="mk(${i},'miss')">✕</button><button class="g s" onclick="editTask(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
 let taskReorder=null,taskEditContext=null;
-function sortTaskLists(next){
-  const collator=new Intl.Collator(tr()?'tr':'en',{numeric:true,sensitivity:'base'});
-  A.tasks.sort((a,b)=>collator.compare(a.t,b.t));
-  if(Array.isArray(A.plans?.[next]))A.plans[next].sort(collator.compare);
+function taskSortMode(){
+  return ['manual','alpha','newest','reverse'].includes(A?.taskOrder)?A.taskOrder:'manual';
 }
-function toggleTaskAlphabetical(){
-  A.taskOrder=A.taskOrder==='alpha'?'manual':'alpha';
-  if(A.taskOrder==='alpha')sortTaskLists(addD(today(),1));
-  save();P.todo();
+function sortTaskLists(){
+  const mode=taskSortMode(),entries=A.tasks.map((task,index)=>({task,index}));
+  if(mode==='manual')return entries;
+  if(mode==='reverse')return entries.reverse();
+  if(mode==='alpha'){
+    const collator=new Intl.Collator(tr()?'tr':'en',{numeric:true,sensitivity:'base'});
+    return entries.sort((a,b)=>collator.compare(a.task.t,b.task.t)||a.index-b.index);
+  }
+  return entries.sort((a,b)=>{
+    const aTime=Number.isFinite(a.task.createdAt)?a.task.createdAt:null;
+    const bTime=Number.isFinite(b.task.createdAt)?b.task.createdAt:null;
+    if(aTime!==null&&bTime!==null&&aTime!==bTime)return bTime-aTime;
+    if(aTime!==null&&bTime===null)return -1;
+    if(bTime!==null&&aTime===null)return 1;
+    return b.index-a.index;
+  });
 }
+function setTaskOrder(mode){
+  if(!A||!['manual','alpha','newest','reverse'].includes(mode))return false;
+  A.taskOrder=mode;save();P.todo();return true;
+}
+function toggleTaskAlphabetical(){return setTaskOrder(taskSortMode()==='alpha'?'manual':'alpha')}
 function moveTask(from,to){
   if(!A||!Number.isInteger(from)||!Number.isInteger(to)||from<0||to<0||from>=A.tasks.length||to>=A.tasks.length||from===to)return false;
-  if(A.taskOrder==='alpha')A.taskOrder='manual';
+  if(taskSortMode()!=='manual')A.taskOrder='manual';
   const [task]=A.tasks.splice(from,1);
   A.tasks.splice(to,0,task);
   save();P.todo();return true;
 }
 function taskReorderKey(event,index){
   if(event.key==='Escape'){cancelTaskReorder();return}
-  if(taskReorder||!['ArrowUp','ArrowDown'].includes(event.key))return;
+  if(taskSortMode()!=='manual'||taskReorder||!['ArrowUp','ArrowDown'].includes(event.key))return;
   event.preventDefault();
   const destination=index+(event.key==='ArrowUp'?-1:1);
   const before=[...document.querySelectorAll('#tl > [data-task-index]')].map(row=>row.getBoundingClientRect().top);
@@ -3106,7 +3129,7 @@ function taskReorderKey(event,index){
 }
 window.addEventListener('blur',()=>cancelTaskReorder());
 function startTaskReorder(event,index){
-  if(taskReorder||event.isPrimary===false||event.button!==0||!A?.tasks?.[index])return;
+  if(taskSortMode()!=='manual'||taskReorder||event.isPrimary===false||event.button!==0||!A?.tasks?.[index])return;
   const grip=event.currentTarget,list=grip.closest('#tl');if(!list)return;
   const nodes=[...list.querySelectorAll(':scope > [data-task-index]')];
   if(nodes.length!==A.tasks.length||!nodes[index])return;
@@ -3207,7 +3230,7 @@ function fromBack(i){
     if(!pushTomorrowPlan(task))return;
     A.backlog.splice(i,1);recordActivity();P.todo();return;
   }
-  A.tasks.push({t:A.backlog[i],s:''});A.backlog.splice(i,1);recordActivity();P.todo();
+  A.tasks.push({t:A.backlog[i],s:'',createdAt:Date.now()});A.backlog.splice(i,1);recordActivity();P.todo();
 }
 function delT(i){if(A.day!==today()){shell();return}if(!A.tasks[i])return;A.tasks.splice(i,1);archiveFinishedTasks();vibrateTask();recordActivity();P.todo()}
 function addT(){
@@ -3218,7 +3241,7 @@ function addT(){
     if(addTomorrowPlan(v))$('#nt')?.focus({preventScroll:true});
     return;
   }
-  A.tasks.push({t:v,s:''});recordActivity();P.todo();
+  A.tasks.push({t:v,s:'',createdAt:Date.now()});recordActivity();P.todo();
   $('#nt')?.focus({preventScroll:true});
 }
 function mk(i,status){
