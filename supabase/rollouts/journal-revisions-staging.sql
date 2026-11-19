@@ -6,6 +6,7 @@ BEGIN;
 DO $preflight$
 BEGIN
  IF to_regclass('public.user_data') IS NULL OR
+    to_regprocedure('public.iydu_account_access_allowed()') IS NULL OR
     to_regnamespace('iydu_private') IS NULL OR
     to_regclass('iydu_private.journal_revisions') IS NOT NULL
  THEN RAISE EXCEPTION 'Journal history schema unexpected; abort'; END IF;
@@ -72,6 +73,9 @@ DECLARE v_uid uuid := (SELECT auth.uid());
 BEGIN
  IF v_uid IS NULL THEN
    RAISE EXCEPTION 'not authenticated' USING ERRCODE='28000';
+ END IF;
+ IF NOT public.iydu_account_access_allowed() THEN
+   RAISE EXCEPTION 'account access restricted' USING ERRCODE='42501';
  END IF;
  IF p_day IS NOT NULL AND p_day !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' THEN
    RAISE EXCEPTION 'invalid day key' USING ERRCODE='22023';
