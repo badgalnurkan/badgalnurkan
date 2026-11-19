@@ -215,17 +215,20 @@
       try { parsed = JSON.parse(raw); } catch (_) { return null; }
       return parsed?.uid === uid && parsed.tabId === tabId ? parsed : null;
     }
-    function resolveWithRemote() {
+    async function resolveWithRemote() {
       const issue = conflict();
       const pending = getPending();
       if (!issue || !pending) throw Error('SYNC_CONFLICT_NOT_FOUND');
+      // The displayed conflict snapshot can be old. Read the current cloud
+      // state again before choosing it; archive local edits before clearing.
+      const newest = confirmedRemote(await load());
       const archive = 'iydu.sync.archive.v2.' + uid + '.' + tabId + '.' + clock();
       durablePut(archive, { uid, tabId, issue, pending });
       storage.removeItem(key);
       if (storage.getItem(key) !== null) throw Error('SYNC_PENDING_REMOVE_FAILED');
       storage.removeItem(conflictKey);
-      base = clone(issue.remote);
-      onRemote(clone(issue.remote));
+      base = clone(newest);
+      onRemote(clone(newest));
       report('synced');
       return archive;
     }
