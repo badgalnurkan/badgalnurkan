@@ -61,7 +61,7 @@ test('tomorrow plans require every task to be done, survive today, and promote o
  const {f,context}=fixture();
  context.addD=(value,n)=>new Date(Date.parse(value+'T12:00Z')+n*864e5).toISOString().slice(0,10);
  context.$=()=>({value:'',focus(){}});
- vm.runInContext(extract('function allTodayTasksArchived()', '/* sis:')+extract('function sortTaskLists(', 'function moveTask('),context);
+ vm.runInContext(extract('function allTodayTasksArchived()', '/* sis:')+extract('function taskSortMode(){', 'function moveTask('),context);
  context.A.tasks=[{t:'A',s:''},{t:'B',s:''}];
  assert.equal(context.addTomorrowPlan('Too early'),false);
  f.mk(0,'done');f.mk(1,'miss');assert.equal(context.addTomorrowPlan('Still early'),false);
