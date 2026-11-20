@@ -114,4 +114,10 @@ test('email-change token rotation rechecks browser gate before showing private a
  assert.ok(f.log.some(x=>x[0]==='close'),'Email change dialog remained above browser gate');
  assert.equal(f.log.some(x=>x[0]==='toast'),false,
   'Email change must not be announced complete before browser verification');
+ assert.equal(f.api.resume(),true,
+  'Browser OTP approval must restore the unfinished second mailbox step');
+ assert.equal(f.log.filter(x=>x[0]==='open').length,2,
+  'Email-change form was not reopened after browser verification');
+ f.api.cancel();
+ assert.equal(f.api.resume(),false,'Cancelled email change was resurrected');
 });
