@@ -210,3 +210,82 @@ test('deferring a remote refresh never moves the local CAS base forward', async 
   assert.equal(app.pending().local.journal['2026-11-19'], 'local edit');
   editing = false;
 });
+
+test('a conflicting edit arriving during acknowledged CAS stays recoverable', async () => {
+  const store = memoryStorage();
+  const original = { u: 'Test', journal: {} };
+  const remote = server(original);
+  let app, injected = false;
+  const racing = {
+    load: remote.load,
+    cas: async (expected, next) => {
+      const committed = await remote.cas(expected, next);
+      if (committed && !injected) {
+        injected = true;
+        const newerLocal = structuredClone(app.pending().local);
+        newerLocal.journal['2026-11-20'] = { text: 'new local edit' };
+        assert.equal(app.enqueue(newerLocal), true);
+      }
+      return committed;
+    }
+  };
+  app = engine(1, 1, store, racing);
+  app.initialize(await remote.load());
+  assert.equal(app.enqueue({ u: 'Test', journal: {
+    '2026-11-19': { text: 'desktop draft' }
+  } }), true);
+  assert.equal(await remote.cas(original, { u: 'Test', journal: {
+    '2026-11-20': { text: 'phone draft' }
+  } }), true);
+  assert.equal(await app.flush(), false);
+  assert.equal(app.getStatus(), 'conflict');
+  assert.equal(remote.current().journal['2026-11-19'].text, 'desktop draft');
+  assert.equal(remote.current().journal['2026-11-20'].text, 'phone draft');
+  assert.equal(app.pending().local.journal['2026-11-20'].text, 'new local edit');
+  assert.deepEqual(app.conflict().paths, ['journal.2026-11-20']);
+  assert.equal(app.conflict().remote.journal['2026-11-20'].text, 'phone draft');
+  const reopened = engine(1, 1, store, remote);
+  reopened.initialize(await remote.load());
+  assert.equal(reopened.pending().local.journal['2026-11-20'].text, 'new local edit');
+  assert.deepEqual(reopened.conflict().paths, ['journal.2026-11-20']);
+  const archiveKey = await reopened.resolveWithRemote();
+  assert.ok(store.getItem(archiveKey), 'Local draft not archived before resolution');
+  assert.equal(JSON.parse(store.getItem(archiveKey)).pending.local.journal['2026-11-20'].text,
+    'new local edit');
+});
+
+test('disjoint second edit during CAS rebases and saves without false conflict', async () => {
+  const store = memoryStorage();
+  const original = { u: 'Test', journal: {} };
+  const remote = server(original);
+  let app, injected = false;
+  const racing = {
+    load: remote.load,
+    cas: async (expected, next) => {
+      const committed = await remote.cas(expected, next);
+      if (committed && !injected) {
+        injected = true;
+        assert.equal(app.enqueue({ u: 'Test', journal: {
+          '2026-11-19': { text: 'first draft' },
+          '2026-11-21': { text: 'second edit during send' }
+        } }), true);
+      }
+      return committed;
+    }
+  };
+  app = engine(1, 1, store, racing);
+  app.initialize(await remote.load());
+  app.enqueue({ u: 'Test', journal: {
+    '2026-11-19': { text: 'first draft' }
+  } });
+  await remote.cas(original, { u: 'Test', journal: {
+    '2026-11-20': { text: 'different device' }
+  } });
+  assert.equal(await app.flush(), true);
+  assert.equal(app.pending(), null);
+  assert.equal(app.conflict(), null);
+  const days = remote.current().journal;
+  assert.equal(days['2026-11-19'].text, 'first draft');
+  assert.equal(days['2026-11-20'].text, 'different device');
+  assert.equal(days['2026-11-21'].text, 'second edit during send');
+});
