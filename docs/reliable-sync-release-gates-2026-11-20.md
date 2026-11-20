@@ -1,3 +1,14 @@
+## Güncel ek denetim — 20 Kasım 2026 (önceki notların üzerine geçer)
+
+- Prod'da salt okunur kimlik bütünlüğü sayımı: **7 cloud veri kaydı, 1 eksik rezervasyon, 4 profil/kullanıcı adı farklılığı**, mevcut rezervasyonlarla JSON `u` arasında **0** farklılık. Bu durum doğrudan CAS'a geçişi engeller.
+- `sync-cas-staging.sql` artık eksik rezervasyon veya profil kimlik sapması varsa **fail-closed** durur. Kullanıcıları yanlışlıkla kaydetme yetkisinden mahrum bırakmaz.
+- `supabase/rollouts/username-reservation-reconcile-staging.sql`: şifre/Auth veya uygulamanın JSON içeriğini değiştirmeden rezervasyon ve görünür profil adlarını tek transaction'da eşler; çakışma varsa tamamı rollback. **Yalnızca yedek ve izole restore sonrası prod'a uygulanmalı.**
+- `supabase/qa/username-reconciliation-qa-only.sql` QA üzerinde gerçek SQL içeriğiyle **PASS** (1 sentetik eksik rezervasyon ve 2 tutarsız profil, rollback). [Güncel CI](https://github.com/badgalnurkan/badgalnurkan/actions/runs/44745172342) Node güvenlik testleri başarılı.
+- QA için production API'sinden izole tarayıcı testi PR #41 üzerinde hazırlanmıştır: https://badgalnurkan-git-qa-browser-otp-e2e-20261120-5044.vercel.app. Vercel Preview Protection nedeniyle oturum açılması gerekebilir; **gerçek üretim hesabıyla burada giriş yapmayın.**
+
+
+---
+
 # Güvenli çok cihazlı eşitleme — geliştirme durum raporu
 
 Tarih: 20 Kasım 2026. Kapsam: PR #38 (güncel `main` tabanlı), üretim Supabase'e değişiklik **yok**.
