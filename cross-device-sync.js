@@ -223,9 +223,23 @@
           // A local edit arrived during the network request. Rebase that edit
           // onto the just-acknowledged remote snapshot without deleting it.
           const rebased = merge(pending.local, current.local, next);
-          if (rebased.conflicts.length) { report('conflict'); return false; }
+          if (rebased.conflicts.length) {
+            // CAS succeeded, but another edit was made before its response.
+            // Keep the newer pending draft AND a durable three-way conflict
+            // snapshot so the recovery UI can show both versions after reload.
+            try {
+              durablePut(conflictKey, {
+                uid, tabId, at: clock(), paths: rebased.conflicts,
+                base: clone(pending.local), local: clone(current.local),
+                remote: clone(next)
+              });
+            } catch (_) { report('unsafe'); return false; }
+            report('conflict');
+            return false;
+          }
           try {
             durablePut(key, { ...current, base: clone(next), local: rebased.merged });
+            storage.removeItem(conflictKey);
           } catch (_) { report('unsafe'); return false; }
         }
         report('pending');
