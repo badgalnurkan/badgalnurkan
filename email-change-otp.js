@@ -5,7 +5,7 @@
 window.IYEmailChange=(()=>{
  'use strict';
  let pending=null,busy=false;
- const lang=(tr,en)=>typeof window.tr==='function'&&window.tr()?tr:en;
+ const lang=(tr,en)=>typeof DB!=='undefined'&&DB?.lang==='tr'?tr:en;
  function identity(){
   const s=sbSession();
   return s?.access_token&&s?.user?.id?s.user.id:'';
