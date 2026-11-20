@@ -262,7 +262,14 @@
       // The displayed conflict snapshot can be old. Read the current cloud
       // state again before choosing it; archive local edits before clearing.
       const newest = confirmedRemote(await load());
-      const archive = 'iydu.sync.archive.v2.' + uid + '.' + tabId + '.' + clock();
+      const archivePrefix = 'iydu.sync.archive.v2.' + uid + '.' + tabId + '.' + clock();
+      let archive = archivePrefix, suffix = 0;
+      // Two conflict resolutions can occur in the same millisecond, including
+      // after a reload. Never overwrite an earlier recovery snapshot.
+      while (storage.getItem(archive) !== null) {
+        if (++suffix > 10000) throw Error('SYNC_ARCHIVE_SPACE_EXHAUSTED');
+        archive = archivePrefix + '.' + suffix;
+      }
       durablePut(archive, { uid, tabId, issue, pending });
       // The application may be editing an input and unable to display cloud
       // data yet. Never delete pending drafts or advance the CAS baseline
