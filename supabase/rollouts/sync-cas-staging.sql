@@ -33,6 +33,30 @@ BEGIN
   THEN
     RAISE EXCEPTION 'Schema or unique index differs from audited structure; abort rollout';
   END IF;
+  -- The CAS RPC requires every cloud account to own an authoritative username
+  -- reservation. Refuse the whole transaction if even one user would be locked
+  -- out or a profile still advertises somebody else's username.
+  IF EXISTS(
+    SELECT 1 FROM public.user_data d
+    LEFT JOIN public.iydu_usernames n ON n.user_id=d.user_id
+    WHERE n.user_id IS NULL
+  ) THEN
+    RAISE EXCEPTION 'Production account identity drift: missing username reservations; reconcile from verified backups before CAS rollout';
+  END IF;
+  IF EXISTS(
+    SELECT 1 FROM public.user_data d
+    JOIN public.iydu_usernames n ON n.user_id=d.user_id
+    WHERE d.data->>'u' IS DISTINCT FROM n.username
+  ) THEN
+    RAISE EXCEPTION 'Production account identity drift: data username disagrees with reservation; abort CAS rollout';
+  END IF;
+  IF EXISTS(
+    SELECT 1 FROM public.profiles p
+    JOIN public.iydu_usernames n ON n.user_id=p.id
+    WHERE p.username IS DISTINCT FROM n.username
+  ) THEN
+    RAISE EXCEPTION 'Production account identity drift: profiles and reserved usernames disagree; abort CAS rollout';
+  END IF;
 END;
 $preflight$;
 
