@@ -4284,7 +4284,7 @@ function invalidateCloudSession(){
   const session=sbSession();
   if(!session?.access_token)return false;
   try{
-    const req=fetch(SUPABASE_URL+'/auth/v1/logout',{
+    const req=fetch(SUPABASE_URL+'/auth/v1/logout?scope=local',{
       method:'POST',
       headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+session.access_token},
       credentials:'omit',cache:'no-store',keepalive:true
