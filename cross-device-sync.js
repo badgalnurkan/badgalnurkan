@@ -223,9 +223,23 @@
           // A local edit arrived during the network request. Rebase that edit
           // onto the just-acknowledged remote snapshot without deleting it.
           const rebased = merge(pending.local, current.local, next);
-          if (rebased.conflicts.length) { report('conflict'); return false; }
+          if (rebased.conflicts.length) {
+            // CAS succeeded, but another edit was made before its response.
+            // Keep the newer pending draft AND a durable three-way conflict
+            // snapshot so the recovery UI can show both versions after reload.
+            try {
+              durablePut(conflictKey, {
+                uid, tabId, at: clock(), paths: rebased.conflicts,
+                base: clone(pending.local), local: clone(current.local),
+                remote: clone(next)
+              });
+            } catch (_) { report('unsafe'); return false; }
+            report('conflict');
+            return false;
+          }
           try {
             durablePut(key, { ...current, base: clone(next), local: rebased.merged });
+            storage.removeItem(conflictKey);
           } catch (_) { report('unsafe'); return false; }
         }
         report('pending');
@@ -248,13 +262,26 @@
       // The displayed conflict snapshot can be old. Read the current cloud
       // state again before choosing it; archive local edits before clearing.
       const newest = confirmedRemote(await load());
-      const archive = 'iydu.sync.archive.v2.' + uid + '.' + tabId + '.' + clock();
+      const archivePrefix = 'iydu.sync.archive.v2.' + uid + '.' + tabId + '.' + clock();
+      let archive = archivePrefix, suffix = 0;
+      // Two conflict resolutions can occur in the same millisecond, including
+      // after a reload. Never overwrite an earlier recovery snapshot.
+      while (storage.getItem(archive) !== null) {
+        if (++suffix > 10000) throw Error('SYNC_ARCHIVE_SPACE_EXHAUSTED');
+        archive = archivePrefix + '.' + suffix;
+      }
       durablePut(archive, { uid, tabId, issue, pending });
+      // The application may be editing an input and unable to display cloud
+      // data yet. Never delete pending drafts or advance the CAS baseline
+      // until the current screen has accepted the selected cloud version.
+      if (onRemote(clone(newest)) === false) {
+        report('remote-pending');
+        throw Error('SYNC_REMOTE_APPLY_DEFERRED');
+      }
       storage.removeItem(key);
       if (storage.getItem(key) !== null) throw Error('SYNC_PENDING_REMOVE_FAILED');
       storage.removeItem(conflictKey);
       base = clone(newest);
-      onRemote(clone(newest));
       report('synced');
       return archive;
     }

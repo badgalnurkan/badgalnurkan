@@ -4,6 +4,15 @@ Durum: **QA doğrulama bekliyor, üretime alınmadı.** PR #42, PR #40'ın üzer
 Uygulama, Supabase Auth'ın kendi `/auth/v1/user` e-posta değişimi başlatma ve
 `/auth/v1/verify` `type:email_change` doğrulama sözleşmesini kullanır; ayrı kimlik veritabanı oluşturmaz.
 
+## 20 Kasım doğrulaması
+
+- QA projesinin Supabase panelinde adres değişikliği postası bağlantı şablonu kullanıyordu. Kod şablonu kaydedildi. Sayfa yeniden yüklendikten sonra önizlemede `{{ .Token }}` ve yeni adres alanı doğrulandı. QA Email sağlayıcısında Secure email change etkin ve OTP uzunluğu 6.
+- QA'da Google sağlayıcısı kapalı. Ayrı bir Google test istemcisiyle gerçek giriş ve sürenin dolması bekleniyor. SQL saat sınırı testi ve gerçek OAuth oturumu ayrı kontroller.
+- Özel üretim yedeği ve izole geri yükleme henüz doğrulanmadı. Üretim Storage envanterinde bu kontrolde sıfır kova ve sıfır nesne vardı. Üretimde CAS yordamı mevcut değil; önceki kayıt yolu açık. Mevcut yayın koruması geçerli.
+- Üretimdeki dört anonim SECURITY DEFINER yordamının tanımları ve şema yetkileri salt okunur incelendi. İki yordam kullanıcı adı uygunluğu için boolean döndürüyor. Eski yordam biçim sınırı uygulamıyor ve farklı kullanıcı adı tablosunu okuyor. İki aktarım yordamı geçici doğrulama akışına ait. Teslim alma süresine ve alıcı kanıtına bağlı; anonim ve oturum açmış roller public şemasında nesne oluşturamıyor. Bu inceleme gerçek kişilerin verilerini okumadı.
+- QA proje envanterinde cihaz aboneliği tablosu, Web Push yordamları ve gönderim işlevi bulunmadı. Gerçek cihazda abonelik ve teslim alındısı yayın kanıtına henüz eklenmedi.
+
+
 ## Geliştirilen davranış
 
 - E-posta değiştirmeyi başlatan tarayıcıda mevcut ve yeni adres için 6 haneli OTP alanları açılır.

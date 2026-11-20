@@ -190,3 +190,52 @@ test('password-only login is not misclassified as a Google session',async()=>{
  const result=await handler(request('status',token));
  assert.equal(result.status,200);
 });
+
+test('explicit logout revokes only this browser and clears the local session', async () => {
+ const fs=require('node:fs'),vm=require('node:vm'),p=require('node:path');
+ const source=fs.readFileSync(p.join(__dirname,'../index.html'),'utf8');
+ const from=source.indexOf('function invalidateCloudSession(){');
+ const end=source.indexOf('async function chg(',from);
+ assert.ok(from>0&&end>from,'Auth logout helpers are present');
+ const block=source.slice(from,end);
+ let calls=[],cleared=0,stopped=0;
+ const context={
+  pendingDeleteUid:'unused', A:{authUid:UID}, loginDat:{u:'before',p:'private'},
+  SUPABASE_URL:'https://qa.supabase.invalid', SUPABASE_KEY:'test-public-key',
+  sbSession:()=>({access_token:'test-access-token'}),
+  fetch:(url,options)=>{calls.push({url,options});return Promise.resolve({ok:true})},
+  sbClear:()=>{cleared++},stopTimers:()=>{stopped++},goTo(){},
+  Promise
+ };
+ vm.createContext(context);
+ vm.runInContext(block+'\nthis.signOut=goLogin;',context);
+ context.signOut();
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].url,'https://qa.supabase.invalid/auth/v1/logout?scope=local');
+ assert.equal(calls[0].options.method,'POST');
+ assert.equal(calls[0].options.headers.Authorization,'Bearer test-access-token');
+ assert.equal(calls[0].options.keepalive,true);
+ assert.equal(cleared,1);
+ assert.equal(stopped,1);
+ assert.equal(context.A,null);
+ assert.equal(context.loginDat.p,'');
+});
+test('explicit logout clears local token even when remote session revoke fails',async()=>{
+ const fs=require('node:fs'),vm=require('node:vm'),p=require('node:path');
+ const source=fs.readFileSync(p.join(__dirname,'../index.html'),'utf8');
+ const from=source.indexOf('function invalidateCloudSession(){');
+ const end=source.indexOf('async function chg(',from);
+ let cleared=false;
+ const context={
+  pendingDeleteUid:null,A:{},loginDat:{},
+  SUPABASE_URL:'https://qa.supabase.invalid',SUPABASE_KEY:'public',
+  sbSession:()=>({access_token:'test-access-token'}),
+  fetch:()=>{throw Error('offline')},
+  sbClear:()=>{cleared=true},stopTimers(){},goTo(){},Promise
+ };
+ vm.createContext(context);
+ vm.runInContext(source.slice(from,end)+'\nthis.signOut=goLogin;',context);
+ context.signOut();
+ assert.equal(cleared,true);
+ assert.equal(context.A,null);
+});
