@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "Improvin’ Your Day",
+  "short_name": "Improvin’",
+  "description": "Plan, focus and celebrate small daily steps.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fffafa",
+  "theme_color": "#800000",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

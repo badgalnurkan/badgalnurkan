@@ -117,7 +117,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     localStorage.setItem('iydu.storage-notice.v1','test');
    });
    const accountRequests=[];
-   await recoveryContext.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
+   await recoveryContext.route('https://lvomrcqytfygcmguojcj.supabase.co/**',async route=>{
     const endpoint=new URL(route.request().url()).pathname;
     accountRequests.push(endpoint);
     if(endpoint==='/rest/v1/rpc/iydu_account_status'){
@@ -275,7 +275,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await page.addInitScript(({db,session})=>{localStorage.setItem('b1',JSON.stringify(db));localStorage.setItem('b1sb',JSON.stringify(session));localStorage.setItem('iydu.storage-notice.v1','test')},{db,session});
    const actions=[],requests=[];let closed=false,hasPassword=false,browserVerified=false,browserCodeRequests=0,cloudReads=0;
    let cloudRecord=structuredClone(record);
-   await page.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
+   await page.route('https://lvomrcqytfygcmguojcj.supabase.co/**',async route=>{
     const url=route.request().url();requests.push(url);
     let data=null;
     if(url.endsWith('grant_type=password')){assert.equal(route.request().postDataJSON().email,record.email);data=session}
@@ -368,7 +368,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const removal=await browser.newPage({viewport:{width:390,height:844}});
    await removal.addInitScript(()=>localStorage.setItem('iydu.storage-notice.v1','test'));
    const deletionCalls=[];
-   await removal.route('https://flcfqwndqfmbritaywfb.supabase.co/functions/v1/account-security',async route=>{
+   await removal.route('https://lvomrcqytfygcmguojcj.supabase.co/functions/v1/account-security',async route=>{
     const body=route.request().postDataJSON();deletionCalls.push(body);
     await route.fulfill({status:200,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({ok:true,user_id:'fixture-user',state:'pending_delete',delete_after:'2026-12-17T00:00:00Z'})});
    });
@@ -390,7 +390,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
 
    const standalone=await browser.newPage({viewport:{width:375,height:844}});
    const posted=[];
-   await standalone.route('https://flcfqwndqfmbritaywfb.supabase.co/functions/v1/account-security',async route=>{
+   await standalone.route('https://lvomrcqytfygcmguojcj.supabase.co/functions/v1/account-security',async route=>{
      posted.push(route.request().postDataJSON());
      await route.fulfill({status:200,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({ok:true,state:'pending_delete',delete_after:'2027-01-18T00:00:00Z'})});
    });

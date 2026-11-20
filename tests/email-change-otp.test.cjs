@@ -123,7 +123,9 @@ test('email-change token rotation rechecks browser gate before showing private a
 });
 
 test('email change template sends copyable OTP instead of a browser redirect',()=>{
- const template=fs.readFileSync(path.join(__dirname,'../supabase/email-templates/email-change-otp.html'),'utf8');
+ const template=fs.readFileSync(path.join(__dirname,'../supabase/email-templates/change-email-otp.html'),'utf8');
+ const inherited=fs.readFileSync(path.join(__dirname,'../supabase/email-templates/email-change-otp.html'),'utf8');
+ assert.equal(template,inherited,'Both release branches must use the same confirmation template');
  assert.match(template,/\{\{ \.Token \}\}/);
  assert.match(template,/\{\{ \.NewEmail \}\}/);
  assert.doesNotMatch(template,/ConfirmationURL|TokenHash|<script/);
