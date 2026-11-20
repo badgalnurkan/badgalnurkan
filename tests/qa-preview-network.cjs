@@ -8,12 +8,16 @@ const { createHash } = require('node:crypto');
 
 const origin = 'https://badgalnurkan-git-qa-browser-otp-e2e-20261120-5044.vercel.app';
 const qaHost = 'lvomrcqytfygcmguojcj.supabase.co';
+const packageRun = process.env.IYD_QA_PACKAGE_MODE === '1';
 const root = path.resolve(__dirname, '..');
 const assets = [
   'index.html', 'account-close.html', 'account-close.js', 'account-security.js',
   'browser-verification.js', 'email-change-otp.js', 'cross-device-sync.js',
   'device-push.js', 'push-sw.js', 'manifest.webmanifest'
 ];
+const packageFiles = new Set([...assets, 'account-security.css', 'recovery-browser.js',
+  'app-icon.svg', 'cookies.html', 'terms.html', 'privacy.html', 'kvkk.html']);
+const previewToolbar = /<script async data-explicit-opt-in="true" data-deployment-id="dpl_[a-zA-Z0-9]+" src="https:\/\/vercel\.live\/_next-live\/feedback\/feedback\.js"><\/script>$/;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 
 async function verify() {
@@ -29,7 +33,13 @@ async function verify() {
     const errors = [];
     await context.route('**/*', route => {
       const req = route.request();
-      const host = new URL(req.url()).hostname;
+      const url = new URL(req.url());
+      const host = url.hostname;
+      if (packageRun && url.origin === origin) {
+        const file = url.pathname.slice(1) || 'index.html';
+        if (req.method() !== 'GET' || !packageFiles.has(file)) return route.fulfill({ status: 404, body: '' });
+        return route.fulfill({ path: path.join(root, file) });
+      }
       if (host.endsWith('.supabase.co')) {
         if (host !== qaHost || !['GET', 'HEAD', 'OPTIONS'].includes(req.method())) {
           forbidden.add(host + ' ' + req.method());
@@ -84,16 +94,20 @@ async function verify() {
     await page.goto(origin + '/account-close.html');
     await page.waitForFunction(() => /missing|geçersiz/i.test(document.querySelector('#status')?.textContent || ''));
     assert.equal(await page.locator('#reason-step').isVisible(), false);
-    for (const file of assets) {
+    for (const file of (packageRun ? [] : assets)) {
       const response = await context.request.get(origin + '/' + (file === 'index.html' ? '' : file), { maxRedirects: 0 });
       assert.equal(response.status(), 200, file);
-      assert.equal(hash(await response.body()), hash(fs.readFileSync(path.join(root, file))), file + ' deployed hash');
+      const bytes = await response.body();
+      // Vercel may append its own QA feedback script after the closing HTML.
+      const appBytes = file.endsWith('.html') ? Buffer.from(bytes.toString('utf8').replace(previewToolbar, '')) : bytes;
+      assert.equal(hash(appBytes), hash(fs.readFileSync(path.join(root, file))), file + ' deployed app hash');
     }
     assert.deepEqual([...forbidden], [], 'Unexpected Supabase destination or write');
     assert.deepEqual(errors, [], 'Application error in the public QA flows');
     assert(readRoutes.has('/auth/v1/settings') && readRoutes.has('/functions/v1/device-push'));
-    console.log('QA public screens, read-only Auth / Web Push requests and %d deployed SHA-256 hashes passed. Google enabled: %s.',
-      assets.length, observed.googleEnabled);
+    console.log('QA public screens and read-only Auth / Web Push requests passed. Google enabled: %s.', observed.googleEnabled);
+    console.log(packageRun ? 'Browser used the checked-out preview assets.'
+      : assets.length + ' hosted application hashes matched the checkout.');
   } finally {
     await browser.close();
   }
