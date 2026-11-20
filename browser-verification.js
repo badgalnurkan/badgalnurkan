@@ -181,6 +181,10 @@ window.IYBrowserGate=(()=>{
    entered=true;
    await activateCloudUser(active,'',active.user.app_metadata?.providers?.includes('google')?'google':'password');
    entered=false;
+   // A verified email-change OTP can rotate the Auth session. Once this new
+   // session has passed its own browser challenge, restore the remaining
+   // old/new mailbox verification form without reissuing or losing the codes.
+   if(window.IYEmailChange?.resume)window.IYEmailChange.resume();
    return true;
   }catch(error){
     entered=false;
@@ -193,6 +197,9 @@ window.IYBrowserGate=(()=>{
  function signOut(){
   pendingUid='';pendingSid='';challengeId='';entered=false;
   closeModal('browser-verify-gate');
+  // This is explicit user sign-out (or a forced OAuth expiry).
+  // Revoke the Supabase session before discarding its local bearer.
+  if(typeof invalidateCloudSession==='function')invalidateCloudSession();
   sbClear();
   A=null;view='login';renderAppOrAuth();
  }

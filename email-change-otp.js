@@ -39,12 +39,23 @@ window.IYEmailChange=(()=>{
  function start({uid,oldEmail,newEmail}){
   const old=safeValue(oldEmail),next=safeValue(newEmail);
   if(!uid||identity()!==uid||!validEmail(old)||!validEmail(next)||old===next)return false;
-  pending={uid,oldEmail:old,newEmail:next,oldAccepted:false,newAccepted:false};
+  pending={uid,oldEmail:old,newEmail:next,oldAccepted:false,newAccepted:false,at:Date.now()};
   render();
   message(lang('E-postalarına gelen kodları girebilirsin.','Enter the codes from your inboxes.'));
   return true;
  }
  function cancel(){pending=null;closeModal('email-change-otp')}
+ function resume(){
+  // Email-change OTPs are deliberately kept only in memory. A browser session
+  // can rotate during the first mailbox proof; do not discard the remaining
+  // mailbox step when the new browser session is approved.
+  if(!pending||identity()!==pending.uid)return false;
+  if(Date.now()-pending.at>30*60*1000){cancel();return false}
+  render();
+  message(lang('E-posta doğrulamasına kaldığın yerden devam edebilirsin.',
+    'You can continue confirming your email change.'));
+  return true;
+ }
  function disableButtons(value){
   busy=value;
   document.querySelectorAll('[data-email-change-verify]').forEach(e=>{e.disabled=value});
@@ -67,11 +78,26 @@ window.IYEmailChange=(()=>{
      body:{email,token,type:'email_change'}});
    if(!pending||pending!==saved||identity()!==saved.uid)throw Error('SESSION_CHANGED');
    if(verified?.user?.id&&verified.user.id!==saved.uid)throw Error('USER_CHANGED');
-   if(verified?.access_token&&verified?.refresh_token&&verified?.user?.id===saved.uid){
-    sbSave({...verified,at:Date.now()});
-   }
    if(which==='old')saved.oldAccepted=true;
    if(which==='new')saved.newAccepted=true;
+   if(verified?.access_token&&verified?.refresh_token&&verified?.user?.id===saved.uid){
+    // Auth may rotate the session after email-change verification. A new
+    // session_id has not yet passed the per-browser email challenge, so never
+    // continue displaying private account data until that server gate agrees.
+    sbSave({...verified,at:Date.now()});
+    if(!window.IYBrowserGate?.check){
+      cancel();
+      if(typeof goLogin==='function')goLogin();
+      return true;
+    }
+    const approved=await window.IYBrowserGate.check(verified.user);
+    if(!approved){
+      // Browser verification replaces this modal with its own. Retain the
+      // completed mailbox proof so it can resume after the next OTP.
+      closeModal('email-change-otp');
+      return true;
+    }
+   }
    const current=await sbCurrentUser();
    if(!pending||pending!==saved||current?.id!==saved.uid)throw Error('SESSION_CHANGED');
    if(safeValue(current.email)===saved.newEmail&&current.email_confirmed_at){
@@ -92,5 +118,5 @@ window.IYEmailChange=(()=>{
    return false;
   }finally{disableButtons(false)}
  }
- return {start,verify,cancel};
+ return {start,verify,cancel,resume};
 })();
