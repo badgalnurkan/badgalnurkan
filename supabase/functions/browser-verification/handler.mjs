@@ -134,9 +134,21 @@ export function createHandler({env,fetchImpl=fetch,webCrypto=crypto,clock=()=>Da
      sent=email.ok;
     }catch{}
     if(!sent){
+     // Cancel only the unsent candidate. The previous delivered challenge
+     // stays usable until its original expiry/attempt limit.
      try{await serviceRpc('cancel',{id})}catch{}
      return reply({code:'MAIL_SEND_FAILED'},502);
     }
+    // Only now retire the previous code and activate this mailed challenge.
+    // The action is idempotent so a lost RPC response can be retried safely.
+    let activated=false;
+    for(let attempt=0;attempt<2&&!activated;attempt++){
+     try{
+      const committed=await serviceRpc('activate_delivery',{id});
+      activated=committed?.ok===true;
+     }catch{}
+    }
+    if(!activated)return reply({code:'SERVER_UNAVAILABLE'},503);
     return reply({ok:true,id,expiresIn:600});
    }
    if(!uidRe.test(body.id||'')||!codeRe.test(body.code||''))

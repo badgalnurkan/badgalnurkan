@@ -33,7 +33,7 @@ function request(action,token=jwt(),body={}) {
  });
 }
 function fixture(options={}){
- let verified=!!options.verified,requests=0,emails=0,cancels=0,attempts=0;
+ let verified=!!options.verified,requests=0,emails=0,cancels=0,attempts=0,activations=0;
  let challenge=null;
  const fetchImpl=async(resource,config)=>{
   const pathname=new URL(resource).pathname;
@@ -60,6 +60,10 @@ function fixture(options={}){
    if(body.p_action==='cancel'){
     cancels++;return Response.json({ok:true});
    }
+   if(body.p_action==='activate_delivery'){
+    activations++;
+    return Response.json(options.activationFailure?{error:'SERVER_UNAVAILABLE'}:{ok:true});
+   }
    if(body.p_action==='confirm'){
     attempts++;
     const correct=challenge&&body.p_fields.id===CID&&
@@ -80,7 +84,7 @@ function fixture(options={}){
   }
   throw Error('Unexpected request '+resource);
  };
- return {fetchImpl,get counts(){return{verified,requests,emails,cancels,attempts}}};
+ return {fetchImpl,get counts(){return{verified,requests,emails,cancels,attempts,activations}}};
 }
 test('unverified browser gets a code; one verified session can enter',async()=>{
  const {createHandler}=await import(uri);
@@ -102,7 +106,7 @@ test('unverified browser gets a code; one verified session can enter',async()=>{
  assert.deepEqual(await (await handler(request('status'))).json(),{ok:true,verified:true});
  const replay=await handler(request('confirm',jwt(),{id:CID,code:'123456'}));
  assert.equal(replay.status,400);
- assert.deepEqual(fixtureState.counts,{verified:true,requests:1,emails:1,cancels:0,attempts:3});
+ assert.deepEqual(fixtureState.counts,{verified:true,requests:1,emails:1,cancels:0,attempts:3,activations:1});
 });
 test('failed Resend delivery cancels the challenge and does not approve',async()=>{
  const {createHandler}=await import(uri);
@@ -238,4 +242,29 @@ test('explicit logout clears local token even when remote session revoke fails',
  context.signOut();
  assert.equal(cleared,true);
  assert.equal(context.A,null);
+});
+
+test('mail failure cancels only the new staged browser challenge',async()=>{
+ const {createHandler}=await import(uri);
+ const f=fixture({mailFailure:true});
+ const handler=createHandler({env,fetchImpl:f.fetchImpl,webCrypto:fakeCrypto});
+ assert.equal((await handler(request('request'))).status,502);
+ assert.equal(f.counts.activations,0);
+ assert.equal(f.counts.cancels,1);
+});
+test('browser OTP is not declared delivered until service confirms activation',async()=>{
+ const {createHandler}=await import(uri);
+ const f=fixture({activationFailure:true});
+ const handler=createHandler({env,fetchImpl:f.fetchImpl,webCrypto:fakeCrypto});
+ const response=await handler(request('request'));
+ assert.equal(response.status,503);
+ assert.equal((await response.json()).code,'SERVER_UNAVAILABLE');
+ assert.equal(f.counts.activations,2);
+ assert.equal(f.counts.cancels,0);
+});
+test('browser code UI explicitly distinguishes a separate browser OTP from signup OTP',()=>{
+ const fs=require('node:fs'),p=require('node:path');
+ const source=fs.readFileSync(p.join(__dirname,'../browser-verification.js'),'utf8');
+ assert.match(source,/account signup code will not work here/i);
+ assert.match(source,/resend browser code/i);
 });

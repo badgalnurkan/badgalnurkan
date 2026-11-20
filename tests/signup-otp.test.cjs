@@ -197,3 +197,9 @@ test('resend in flight locks verify and repeated resend requests',async()=>{
  assert.equal(x.submit.disabled,false);
  assert.equal(x.resend.disabled,false);
 });
+
+test('signup code screen distinguishes registration code from browser-session code',()=>{
+ assert.match(html,/Step 1 · Account signup code/);
+ assert.match(html,/browser sign-in code you may receive in the next step/);
+ assert.match(html,/Resend signup code/);
+});
