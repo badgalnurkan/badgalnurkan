@@ -181,6 +181,10 @@ window.IYBrowserGate=(()=>{
    entered=true;
    await activateCloudUser(active,'',active.user.app_metadata?.providers?.includes('google')?'google':'password');
    entered=false;
+   // A verified email-change OTP can rotate the Auth session. Once this new
+   // session has passed its own browser challenge, restore the remaining
+   // old/new mailbox verification form without reissuing or losing the codes.
+   if(window.IYEmailChange?.resume)window.IYEmailChange.resume();
    return true;
   }catch(error){
     entered=false;
