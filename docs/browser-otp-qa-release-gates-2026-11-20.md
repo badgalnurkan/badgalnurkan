@@ -1,3 +1,16 @@
+## Güncel ek denetim — 20 Kasım 2026 (önceki maddeleri günceller)
+
+- QA `account-security` sağlık endpoint'i HTTP **200**, `transactionalMailReady=true`, `mailReady=true` döndü. Bu **gerçek gelen kutusu teslimatı kanıtı değildir**.
+- QA `browser-verification` Edge Function **v3 ACTIVE**, `verify_jwt=true`; CORS listesine yalnızca izin verilen QA preview Origin eklendi. Üretim Edge ayarları değiştirilmedi.
+- PR #41 `qa/browser-otp-e2e-20261120` ön yüzünü QA Supabase URL/public publishable key'e sabitler. `account-close.html` CSP'sindeki production host sızıntısı düzeltilmiş, QA-only isolation regresyonu eklenmiştir.
+- **Google 30 dakika artık kodda geliştirildi:** hem Edge tarafından imzalı JWT'nin OAuth `amr` bilgisi sunucuya taşınır, hem verified_sessions üzerindeki `was_oauth` durumu saklanır, hem de RLS `auth.sessions.created_at` üzerinden 30 dakika sonra yazma/okumayı reddeder. Frontend süresi dolan OAuth oturumunu kapatır. `supabase/qa/oauth-session-expiry-qa-only.sql` **PASS**: 29m aktif, 31m reddedildi, parola oturumu etkilenmedi; rollback.
+- QA / Production hesap silme + Storage cron'ları etkin. Son 24 saatlik çalıştırma sonuçları QA **99/99 ve 105/105**, production **96/96 ve 77/77** başarılı; bu sonuç gerçek 30/60 günlük hesap verisinin başarılı silindiğini tek başına kanıtlamaz.
+- `Cross-device sync safety` otomatik testleri [PASS](https://github.com/badgalnurkan/badgalnurkan/actions/runs/44744320876). Chromium/WebKit ve Firefox karma browser alt işleri [PASS](https://github.com/badgalnurkan/badgalnurkan/actions/runs/44744320746); `reports` kasıtlı yayın korumasından kırmızı.
+- **Hâlâ engeller:** gerçek SMTP mailbox/Google QA Auth 3-account fiziksel tarayıcı testi, production backup/restore, üretimdeki 1+4 kullanıcı adı sapmasının onaylı onarımı, Web Push VAPID/subscription ve kod odaklı e-posta değiştirme doğrulaması. PR #40 taslak, hiçbir üretim SQL/Edge değişikliği yok.
+
+
+---
+
 # Yeni tarayıcı doğrulaması — QA ve yayın engelleri
 
 Durum: **TASLAK / YAYINLANMADI** · PR #40, PR #38 üzerine kuruludur · 20 Kasım 2026.
