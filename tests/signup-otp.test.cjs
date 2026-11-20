@@ -14,11 +14,14 @@ function fixture(options={}){
  const calls={auth:[],activate:[],welcome:0};
  let session=null;
  const context={
+  window:{IYBrowserGate:{isPending:()=>false}},view:'signup-code',pg:'home',loginDat:{},formDat:{},
+  renderAppOrAuth:()=>{},toast:()=>{},
   document:{getElementById:id=>({'signup-code-input':input,'signup-code-status':status,'signup-code-submit':submit}[id]||null)},
   tr:()=>false,msg:'',console,Date,Promise,
   sb:async(path,opt)=>{
    calls.auth.push({path,body:opt.body});
-   if(options.error)throw Error('invalid OTP');
+   if(path==='/auth/v1/verify'&&options.error)throw Object.assign(Error('invalid OTP'),options.error===true?{}:options.error);
+   if(path==='/auth/v1/resend'&&options.resendError)throw Object.assign(Error('resend denied'),options.resendError);
    return options.response??{
     user:{id:'one-user',email:'person@example.invalid',email_confirmed_at:'2026-11-19T12:00:00Z'},
     access_token:'token',refresh_token:'refresh'
@@ -84,4 +87,37 @@ test('signup email template contains the six-digit token and no auto-accept link
  assert.doesNotMatch(file,/\{\{\s*\.ConfirmationURL\s*\}\}/);
  assert.match(html,/view==='signup-code'/);
  assert.match(html,/autocomplete="one-time-code"/);
+});
+
+test('accepted OTP does not turn into invalid-code feedback when account activation fails',async()=>{
+ const x=fixture({activationError:true});
+ await x.context.verifySignupCode();
+ assert.equal(x.calls.auth.length,1);
+ assert.equal(vm.runInContext('pendingSignup',x.context),null);
+ assert.equal(x.context.view,'login');
+ assert.match(x.context.msg,/email code was accepted/i);
+ assert.doesNotMatch(x.context.msg,/invalid|expired/i);
+});
+test('server-side otp_expired is not confused with successful account activation',async()=>{
+ const x=fixture({error:{code:'otp_expired',status:403}});
+ await x.context.verifySignupCode();
+ assert.equal(x.calls.activate.length,0);
+ assert.match(x.status.textContent,/server rejected this code/i);
+ assert.notEqual(vm.runInContext('pendingSignup',x.context),null);
+});
+test('successful resend has a cooldown and warns about older delivered emails',async()=>{
+ const x=fixture();
+ await x.context.resendSignupCode();
+ assert.equal(x.calls.auth.length,1);
+ assert.match(x.status.textContent,/older email codes may no longer work/i);
+ await x.context.resendSignupCode();
+ assert.equal(x.calls.auth.length,1);
+ assert.match(x.status.textContent,/avoid requesting codes repeatedly/i);
+});
+test('rate-limited resend keeps existing signup active and warns correctly',async()=>{
+ const x=fixture({resendError:{status:429,code:'over_email_send_rate_limit'}});
+ await x.context.resendSignupCode();
+ assert.equal(x.calls.auth.length,1);
+ assert.match(x.status.textContent,/temporarily rate-limited/i);
+ assert.notEqual(vm.runInContext('pendingSignup',x.context),null);
 });
