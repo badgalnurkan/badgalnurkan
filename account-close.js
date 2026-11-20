@@ -1,8 +1,8 @@
 /* Standalone deletion link. The proof is kept in memory and never persisted. */
 (()=>{
 'use strict';
-const SUPABASE_URL="https://flcfqwndqfmbritaywfb.supabase.co";
-const SUPABASE_KEY="sb_publishable_4QTEEc6tSYV2QtNhmeP6Iw_B3sM6dtm";
+const SUPABASE_URL="https://lvomrcqytfygcmguojcj.supabase.co";
+const SUPABASE_KEY="sb_publishable_93htU70YyAzgryKnf18idg_i7sYgbHQ";
 const locale=(navigator.language||'tr').toLowerCase().startsWith('tr')?'tr':'en';
 const tr=(a,b)=>locale==='tr'?a:b;
 document.documentElement.lang=locale;
