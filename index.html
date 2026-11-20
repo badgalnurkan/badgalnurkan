@@ -4277,7 +4277,23 @@ function confirmForgetKnownProfile(name){
 
 /* oturum kapaninca sayac ve kronometre durur, sonraki kullaniciya gecmez */
 function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,end:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0,noticeFive:false};persistPomodoroState();document.title=TITLE}catch(e){}}
-function goLogin(){pendingDeleteUid=null;stopTimers();sbClear();A=null;loginDat={u:'',p:''};goTo('login','home')}
+// Explicit sign-out revokes the Auth session on the server whenever the
+// network is available. The UI clears its local token immediately, even when
+// offline; the server's session-aware RLS keeps sensitive operations guarded.
+function invalidateCloudSession(){
+  const session=sbSession();
+  if(!session?.access_token)return false;
+  try{
+    const req=fetch(SUPABASE_URL+'/auth/v1/logout',{
+      method:'POST',
+      headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+session.access_token},
+      credentials:'omit',cache:'no-store',keepalive:true
+    });
+    Promise.resolve(req).catch(()=>{});
+    return true;
+  }catch(_){return false}
+}
+function goLogin(){pendingDeleteUid=null;stopTimers();invalidateCloudSession();sbClear();A=null;loginDat={u:'',p:''};goTo('login','home')}
 async function chg(k){
   const v=String($(k==='u'?'#su':'#sn')?.value||'').trim();if(!v)return;
   if(k==='u'){
