@@ -90,11 +90,12 @@ export function createHandler({env,fetchImpl=fetch,webCrypto=crypto,clock=()=>Da
       verifiedUser.is_anonymous===true||!(Number(claims.exp)>clock()/1000))
     return reply({code:'UNAUTHORIZED'},401);
 
+   const usingOAuth=Array.isArray(claims.amr)&&claims.amr.some(x=>x&&x.method==='oauth');
    async function serviceRpc(method,fields={}){
     const response=await fetchImpl(base+'/rest/v1/rpc/iydu_browser_service',{
      method:'POST',headers:{apikey:service,Authorization:'Bearer '+service,
       'Content-Type':'application/json'},
-     body:JSON.stringify({p_action:method,p_uid:uid,p_sid:sid,p_fields:fields}),
+     body:JSON.stringify({p_action:method,p_uid:uid,p_sid:sid,p_fields:{...fields,using_oauth:usingOAuth}}),
      signal:AbortSignal.timeout(10000)
     });
     if(!response.ok)throw Error('SERVER_UNAVAILABLE');
