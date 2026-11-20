@@ -94,7 +94,8 @@ test('a gesture cannot finish on a different page from the one where it started'
 
 function transitionFixture(reduced=false){
  const timers=new Map(),renders=[];let nextId=0;
- const main={isConnected:true,classList:{add(){},remove(){}},setAttribute(){}};
+ const main={isConnected:true,classList:{add(){},remove(){}},setAttribute(){},
+  style:{setProperty(key,value){main.navShift={key,value}}}};
  const links=navigation.map(([key])=>({dataset:{k:key},classList:{toggle(){}},setAttribute(){},removeAttribute(){}}));
  const aside={querySelectorAll:()=>links};
  const context={A:{},view:'app',pg:'home',msg:'',selDay:null,pm:{run:false},TITLE:'App',
@@ -104,7 +105,7 @@ function transitionFixture(reduced=false){
   renderPage:()=>renders.push(context.pg),centerNav(){},softPaint(){renders.push('auth')},navLabel:key=>key,
  };
  vm.createContext(context);vm.runInContext(section('function uiMotionTime(name,fallback){','const feedbackAnimations=')+section('let pageSwapTimer=0;','/* mobil/tablet: secilen sekme'),context);
- return {context,renders,timers,flush:()=>{for(const [id,fn] of [...timers]){timers.delete(id);fn()}}};
+ return {context,main,renders,timers,flush:()=>{for(const [id,fn] of [...timers]){timers.delete(id);fn()}}};
 }
 test('rapid menu taps render only the most recently selected page',()=>{
  const f=transitionFixture();f.context.goTo('app','pomo');f.context.goTo('app','pc');f.context.goTo('app','set');
@@ -152,4 +153,19 @@ test('reduced motion closes a menu immediately without delaying focus restoratio
  const context={document:{getElementById:()=>dialog},window:{matchMedia:()=>({matches:true})},setTimeout:()=>assert.fail('Reduced motion must not wait')};
  vm.createContext(context);vm.runInContext(section('function closeNavMenu(){','function selectNavPage('),context);
  context.closeNavMenu();assert.equal(closed,true);
+});
+
+test('video-inspired mobile tabs emphasize selection while swipe navigation remains supported',()=>{
+ assert.match(html,/\.nav-shell aside a\.on\{[^}]*font-weight:850/s);
+ assert.match(html,/\.nav-shell aside a\.on::after\{transform:scaleX\(1\)\}/);
+ assert.match(html,/\.nav-shell aside a\.on \.nav-icon svg\{stroke-width:2\.5/);
+ assert.match(html,/@media\(prefers-reduced-motion:reduce\)[\s\S]*?\.nav-shell aside a::after/);
+ const f=gestureFixture();f.start();f.end(100,201);assert.deepEqual(f.changes,['todo']);
+});
+test('page transition movement tracks previous and newly selected menu item',()=>{
+ const f=transitionFixture();
+ f.context.NAV=navigation;
+ f.context.goTo('app','pc');assert.equal(f.main.navShift.value,'14px');
+ f.flush();
+ f.context.goTo('app','pomo');assert.equal(f.main.navShift.value,'-14px');
 });
