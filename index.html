@@ -2836,6 +2836,9 @@ function signupOtpMessage(text){
 }
 function signupOtpFeedback(error){
   const code=String(error?.code||'');
+  if(error?.status===429)return tr()
+    ?'Çok fazla kod denemesi yapıldı. Güvenlik sınırı nedeniyle biraz bekle; hemen yeni kod isteme.'
+    :'Too many verification attempts. Wait for the security limit to reset before trying again.';
   if(code==='otp_expired')return tr()
     ?'Bu kod sunucu tarafından kabul edilmedi. Son gelen e-postadaki kodu kullan. Önceden doğruladıysan yeniden kod istemeden giriş yapmayı dene.'
     :'The server rejected this code. Use the code in the latest email. If you already verified it, try signing in before requesting another code.';
@@ -2926,6 +2929,8 @@ async function resendSignupCode(){
     if(pendingSignup!==request)return;
     request.nextResendAt=Date.now()+60000;
     request.requestedAt=Date.now();
+    const oldCode=document.getElementById('signup-code-input');
+    if(oldCode)oldCode.value='';
     signupOtpMessage(tr()
       ?'Yeni kod isteği sunucu tarafından kabul edildi. Önceki e-postadaki kod çalışmayabilir; en son gelen kodu kullan.'
       :'The server accepted a new code request. Older email codes may no longer work; use the latest one.');

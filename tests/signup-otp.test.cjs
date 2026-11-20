@@ -122,3 +122,17 @@ test('rate-limited resend keeps existing signup active and warns correctly',asyn
  assert.match(x.status.textContent,/temporarily rate-limited/i);
  assert.notEqual(vm.runInContext('pendingSignup',x.context),null);
 });
+
+test('verification rate limit is not falsely reported as an expired OTP',async()=>{
+ const x=fixture({error:{status:429,code:'over_request_rate_limit'}});
+ await x.context.verifySignupCode();
+ assert.equal(x.calls.auth.length,1);
+ assert.equal(x.calls.activate.length,0);
+ assert.match(x.status.textContent,/too many verification attempts/i);
+});
+test('resending clears previously typed code instead of suggesting it is still current',async()=>{
+ const x=fixture();
+ x.input.value='654321';
+ await x.context.resendSignupCode();
+ assert.equal(x.input.value,'');
+});
