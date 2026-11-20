@@ -193,6 +193,9 @@ window.IYBrowserGate=(()=>{
  function signOut(){
   pendingUid='';pendingSid='';challengeId='';entered=false;
   closeModal('browser-verify-gate');
+  // This is explicit user sign-out (or a forced OAuth expiry).
+  // Revoke the Supabase session before discarding its local bearer.
+  if(typeof invalidateCloudSession==='function')invalidateCloudSession();
   sbClear();
   A=null;view='login';renderAppOrAuth();
  }
