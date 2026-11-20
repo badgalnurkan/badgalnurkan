@@ -4,6 +4,12 @@ on:
     paths:
       - 'index.html'
       - 'cross-device-sync.js'
+      - 'browser-verification.js'
+      - 'email-change-otp.js'
+      - 'tests/email-change-otp.test.cjs'
+      - 'supabase/functions/browser-verification/**'
+      - 'supabase/rollouts/browser-session-verification-staging.sql'
+      - 'supabase/qa/browser-session-verification-assertions-qa-only.sql'
       - 'tests/cross-device-sync.test.cjs'
       - 'package.json'
       - '.github/workflows/cross-device-sync.yml'
@@ -23,6 +29,11 @@ jobs:
           node-version: '22'
       - name: Check sync JavaScript syntax
         run: node --check cross-device-sync.js
+      - name: Check browser OTP code and Edge handler syntax
+        run: |
+          node --check browser-verification.js
+          node --check email-change-otp.js
+          node --check supabase/functions/browser-verification/handler.mjs
       - name: Check inline application JavaScript syntax
         run: |
           node - <<'NODE'
@@ -34,5 +45,7 @@ jobs:
           NODE
       - name: Verify conflict, retry and three-account tests
         run: node --test tests/cross-device-sync.test.cjs
+      - name: Verify new-browser email OTP safety tests
+        run: node --test tests/browser-verification.test.cjs
       - name: Run all existing regression tests
         run: npm test

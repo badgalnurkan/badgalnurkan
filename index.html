@@ -1559,6 +1559,8 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 <script src="/account-security.js"></script>
 <script src="/recovery-browser.js"></script>
 <script src="/cross-device-sync.js"></script>
+<script src="/browser-verification.js"></script>
+<script src="/email-change-otp.js"></script>
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
@@ -2740,8 +2742,13 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   const uid=j&&j.user&&j.user.id;
   if(!uid||!j.access_token)throw new Error('Missing authenticated session');
   sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
+  if(window.IYBrowserGate&&!IYBrowserGate.enforceSessionLifetime())return null;
   const meta=j.user.user_metadata||{};
   if(window.IYAccount&&!await IYAccount.checkAccess(j.user))return;
+  if(options.requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return null;
+  // Never load or render private data until this JWT session has confirmed
+  // ownership of the registered email address. RLS and RPCs enforce the gate.
+  if(!window.IYBrowserGate||!await IYBrowserGate.check(j.user))return null;
   const fromCloud=await sbPull(); // may throw, never replace cloud data with empty after a failure
   const progressPolicy=await sbProgressPolicy(uid);
   if(sbSession()?.user?.id!==uid)throw new Error('Authenticated identity changed during activation');
@@ -4271,7 +4278,23 @@ function confirmForgetKnownProfile(name){
 
 /* oturum kapaninca sayac ve kronometre durur, sonraki kullaniciya gecmez */
 function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,end:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0,noticeFive:false};persistPomodoroState();document.title=TITLE}catch(e){}}
-function goLogin(){pendingDeleteUid=null;stopTimers();sbClear();A=null;loginDat={u:'',p:''};goTo('login','home')}
+// Explicit sign-out revokes the Auth session on the server whenever the
+// network is available. The UI clears its local token immediately, even when
+// offline; the server's session-aware RLS keeps sensitive operations guarded.
+function invalidateCloudSession(){
+  const session=sbSession();
+  if(!session?.access_token)return false;
+  try{
+    const req=fetch(SUPABASE_URL+'/auth/v1/logout?scope=local',{
+      method:'POST',
+      headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+session.access_token},
+      credentials:'omit',cache:'no-store',keepalive:true
+    });
+    Promise.resolve(req).catch(()=>{});
+    return true;
+  }catch(_){return false}
+}
+function goLogin(){pendingDeleteUid=null;stopTimers();invalidateCloudSession();sbClear();A=null;loginDat={u:'',p:''};goTo('login','home')}
 async function chg(k){
   const v=String($(k==='u'?'#su':'#sn')?.value||'').trim();if(!v)return;
   if(k==='u'){
@@ -4314,10 +4337,11 @@ async function requestMyEmailChange(){
   if(!emailPattern.test(email)){toast(tr()?'Geçerli bir e-posta adresi gir.':'Enter a valid email.');return}
   try{
     const user=await sbCurrentUser();if(!user?.id||user.id!==(A?.authUid||sbSession()?.user?.id))throw Error('auth');
-    const changed=await sb('/auth/v1/user?redirect_to='+encodeURIComponent('https://badgalnurkan.com/'),{method:'PUT',body:{email}});
+    const changed=await sb('/auth/v1/user?redirect_to='+encodeURIComponent(location.origin+'/'),{method:'PUT',body:{email}});
     if(changed?.id!==user.id)throw Error('invalid');
     await IYAccount.refresh();
-    toast(tr()?'E-posta değişikliği talep edildi. Doğrulama bağlantılarını kontrol et.':'Email change requested. Check confirmation links.');
+    if(!window.IYEmailChange?.start({uid:user.id,oldEmail:user.email,newEmail:email}))
+      throw Error('EMAIL_CHANGE_UI_UNAVAILABLE');
   }catch(_){toast(tr()?'E-posta değiştirilemedi. Yeniden giriş yapıp tekrar dene.':'Email change failed. Sign in again and retry.')}
 }
 function openPasswordRecoveryModal(){
@@ -5072,6 +5096,7 @@ async function sbGoogleQuickResumeAllowed(){
  try{const result=await sb('/rest/v1/rpc/iydu_quick_resume_status',{method:'POST',body:{}});return result?.allowed===true}catch(_){return false}
 }
 async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,animateEntry=false){
+  if(window.IYBrowserGate&&!IYBrowserGate.enforceSessionLifetime())return true;
   if(!sbSession()?.access_token){
     if(sbSession()?.refresh_token&&!await sbRefresh())return false;
     if(!sbSession()?.access_token)return false;
@@ -5081,7 +5106,7 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     if(!user?.id||(expectedUid&&user.id!==expectedUid))return false;
     const session=sbSession();if(!session)return false;
     sbSave({...session,user});
-    if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
+    // Google expiry is tested before and after the profile fetch in activateCloudUser.
     // A closed account must remain on its reactivation gate, not fall through
     // to a redundant Google OAuth dialog on remembered Continue.
     if(window.IYAccount&&!await IYAccount.checkAccess(user))return true;
@@ -5090,7 +5115,7 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     const account=await activateCloudUser({...session,user},'',
       user.app_metadata?.providers?.includes('google')?'google':'password',
       {requireRecentGoogle});
-    if(!account)return false;
+    if(!account)return !!window.IYBrowserGate?.isPending();
     if(animateEntry)playWelcomeTransition();
     return true;
   }catch(e){
