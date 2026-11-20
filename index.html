@@ -4301,7 +4301,7 @@ async function requestMyEmailVerification(){
   try{
     const user=await sbCurrentUser();if(!user?.id||user.id!==(A?.authUid||sbSession()?.user?.id))throw Error('auth');
     if(user.email_confirmed_at){toast(tr()?'E-posta zaten doğrulanmış.':'Email is already verified.');return}
-    await sb('/auth/v1/resend?redirect_to='+encodeURIComponent('https://badgalnurkan.com/'),{method:'POST',body:{type:'signup',email:user.email}});
+    await sb('/auth/v1/resend?redirect_to='+encodeURIComponent(location.origin+'/'),{method:'POST',body:{type:'signup',email:user.email}});
     toast(tr()?'Doğrulama isteği gönderildi. E-postanı kontrol et.':'Verification requested. Check your inbox.');
   }catch(_){toast(tr()?'Doğrulama e-postası gönderilemedi. Biraz sonra tekrar dene.':'Could not send the verification email. Try again shortly.')}
 }
@@ -4319,7 +4319,7 @@ async function requestMyEmailChange(){
   if(!emailPattern.test(email)){toast(tr()?'Geçerli bir e-posta adresi gir.':'Enter a valid email.');return}
   try{
     const user=await sbCurrentUser();if(!user?.id||user.id!==(A?.authUid||sbSession()?.user?.id))throw Error('auth');
-    const changed=await sb('/auth/v1/user?redirect_to='+encodeURIComponent('https://badgalnurkan.com/'),{method:'PUT',body:{email}});
+    const changed=await sb('/auth/v1/user?redirect_to='+encodeURIComponent(location.origin+'/'),{method:'PUT',body:{email}});
     if(changed?.id!==user.id)throw Error('invalid');
     await IYAccount.refresh();
     toast(tr()?'E-posta değişikliği talep edildi. Doğrulama bağlantılarını kontrol et.':'Email change requested. Check confirmation links.');
@@ -4752,9 +4752,9 @@ async function v13FinishMigration(j){
 }
 
 /* ================= Auth + RLS-protected Supabase sync ================= */
-const SUPABASE_URL='https://flcfqwndqfmbritaywfb.supabase.co';
+const SUPABASE_URL='https://lvomrcqytfygcmguojcj.supabase.co';
 // Public publishable key is intended for browsers. Never place secret/service_role here.
-const SUPABASE_KEY='sb_publishable_4QTEEc6tSYV2QtNhmeP6Iw_B3sM6dtm';
+const SUPABASE_KEY='sb_publishable_93htU70YyAzgryKnf18idg_i7sYgbHQ';
 const SESS_KEY='b1sb', CLOUD_KEY='b1cloud';
 const cloud=()=>true;
 
@@ -4829,7 +4829,7 @@ async function sb(path,opt={}){
   }finally{clearTimeout(timer)}
 }
 async function sbSignUp(username,password,nick,email){
-  return sb('/auth/v1/signup?redirect_to='+encodeURIComponent('https://badgalnurkan.com/'),{method:'POST',body:{email,password,data:{username,nick}}});
+  return sb('/auth/v1/signup?redirect_to='+encodeURIComponent(location.origin+'/'),{method:'POST',body:{email,password,data:{username,nick}}});
 }
 async function sbSignIn(_username,password,email){
   return sb('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password}});
