@@ -5,6 +5,9 @@
 <title>Improvin' your day</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f6eee3">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/app-icon.svg">
+<script defer src="/device-push.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Fraunces:wght@500;600;700&family=Homemade+Apple&family=Libre+Baskerville:wght@400;700&family=Patrick+Hand&family=Nunito:wght@400;600;700&family=UnifrakturCook:wght@700&display=swap">
 <style>
 :root{--bg:#FFFAFA;--card:#ffffff;--ink:#542A0C;--mut:#835C3B;--acc:#800000;--acc2:#FDD7E4;--ok:#387C44;--no:#C71585;--ln:#ebd8d4;--sh:0 12px 32px #542A0C13;--on-acc:#fff;--okbg:#eaf4ed;--fs:'Fraunces',Georgia,'Times New Roman',serif;--okbg:#e6f1e6}
@@ -2549,7 +2552,7 @@ function welcomeScreen(){
 function renderAppOrAuth(){
  if(!A){document.getElementById('notification-banners')?.remove();document.getElementById('notifications-modal')?.remove()}
 
-  if(A){try{sessionStorage.setItem('b1.view','app')}catch(e){}shell();return}
+  if(A){try{sessionStorage.setItem('b1.view','app')}catch(e){}window.IYPush?.syncScope();shell();return}
   try{sessionStorage.setItem('b1.view',view==='app'?'login':view)}catch(e){}
   document.title=TITLE;
   if(view==='app')view=Object.keys(DB.accounts).length?'login':'welcome';
@@ -4244,6 +4247,7 @@ P.set=()=>{
       '</span>';
   }).join('');
   M(`${m()}<div class="card"><h2>${t('account')}</h2><p class="mut">${tr()?'Üstteki yuvarlak profil düğmesinden de düzenleyebilirsin.':'You can also edit your profile in the top-right account menu.'}</p><label>${t('username')}</label><div class="row"><input id="su" value="${esc(A.u)}" maxlength="20" oninput="profileUsernameHint(this.value,'settings-name-hint')"><div id="settings-name-hint" aria-live="polite" style="flex-basis:100%"></div><button onclick="chg('u')">${t('change')}</button></div><label>${t('displayName')}</label><div class="row"><input id="sn" value="${esc(A.nick||'')}" maxlength="30"><button onclick="chg('n')">${t('change')}</button></div><label>${t('bio')}</label><textarea id="sb" maxlength="160" rows="3" onchange="A.bio=this.value.slice(0,160);save()">${esc(A.bio||'')}</textarea><p class="mut">${t('email')}: <b>${A.authUid?IYAccount.emailMarkup():esc(A.email||'')}</b></p>${profilePasswordLink()}</div>
+  ${A.authUid&&window.IYPush?IYPush.settingsMarkup():''}
   <div class="card settings-theme"><h2>${t('theme')}</h2>${themePick(false,false)}</div>
   <div class="card"><h2>${t('lang')}</h2><div class="langbar" style="justify-content:flex-start">${langBtns()}</div></div>
   ${!A.authUid?`<div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>`:''}
@@ -4830,7 +4834,7 @@ async function bootstrapCloudAuth(){
 
 const sbSession=()=>{try{return JSON.parse(getItem(SESS_KEY)||'null')}catch(e){return null}};
 function sbSave(session){if(session&&session.user&&session.access_token)setItem(SESS_KEY,JSON.stringify(session))}
-function sbClear(){setItem(SESS_KEY,'');syncStop()}
+function sbClear(){window.IYPush?.resetScope();setItem(SESS_KEY,'');syncStop()}
 async function sb(path,opt={}){
   const session=sbSession();
   const headers={'apikey':SUPABASE_KEY,'Content-Type':'application/json',...(opt.headers||{})};
