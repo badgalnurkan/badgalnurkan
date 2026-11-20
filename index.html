@@ -1560,6 +1560,7 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 <script src="/recovery-browser.js"></script>
 <script src="/cross-device-sync.js"></script>
 <script src="/browser-verification.js"></script>
+<script src="/email-change-otp.js"></script>
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
@@ -4320,10 +4321,11 @@ async function requestMyEmailChange(){
   if(!emailPattern.test(email)){toast(tr()?'Geçerli bir e-posta adresi gir.':'Enter a valid email.');return}
   try{
     const user=await sbCurrentUser();if(!user?.id||user.id!==(A?.authUid||sbSession()?.user?.id))throw Error('auth');
-    const changed=await sb('/auth/v1/user?redirect_to='+encodeURIComponent('https://badgalnurkan.com/'),{method:'PUT',body:{email}});
+    const changed=await sb('/auth/v1/user?redirect_to='+encodeURIComponent(location.origin+'/'),{method:'PUT',body:{email}});
     if(changed?.id!==user.id)throw Error('invalid');
     await IYAccount.refresh();
-    toast(tr()?'E-posta değişikliği talep edildi. Doğrulama bağlantılarını kontrol et.':'Email change requested. Check confirmation links.');
+    if(!window.IYEmailChange?.start({uid:user.id,oldEmail:user.email,newEmail:email}))
+      throw Error('EMAIL_CHANGE_UI_UNAVAILABLE');
   }catch(_){toast(tr()?'E-posta değiştirilemedi. Yeniden giriş yapıp tekrar dene.':'Email change failed. Sign in again and retry.')}
 }
 function openPasswordRecoveryModal(){
