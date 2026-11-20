@@ -2741,6 +2741,7 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   const uid=j&&j.user&&j.user.id;
   if(!uid||!j.access_token)throw new Error('Missing authenticated session');
   sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
+  if(window.IYBrowserGate&&!IYBrowserGate.enforceSessionLifetime())return null;
   const meta=j.user.user_metadata||{};
   if(window.IYAccount&&!await IYAccount.checkAccess(j.user))return;
   if(options.requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return null;
@@ -5077,6 +5078,7 @@ async function sbGoogleQuickResumeAllowed(){
  try{const result=await sb('/rest/v1/rpc/iydu_quick_resume_status',{method:'POST',body:{}});return result?.allowed===true}catch(_){return false}
 }
 async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,animateEntry=false){
+  if(window.IYBrowserGate&&!IYBrowserGate.enforceSessionLifetime())return true;
   if(!sbSession()?.access_token){
     if(sbSession()?.refresh_token&&!await sbRefresh())return false;
     if(!sbSession()?.access_token)return false;
