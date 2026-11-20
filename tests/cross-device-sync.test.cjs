@@ -289,3 +289,33 @@ test('disjoint second edit during CAS rebases and saves without false conflict',
   assert.equal(days['2026-11-20'].text, 'different device');
   assert.equal(days['2026-11-21'].text, 'second edit during send');
 });
+
+test('cloud conflict resolution refuses to discard draft while editor is focused', async () => {
+  const storage = memoryStorage();
+  const remote = server({ journal: {} });
+  const first = engine(1, 1, memoryStorage(), remote);
+  let editable = false;
+  const second = create({
+    uid: uid(1), tabId: tab(2), storage,
+    load: remote.load, cas: remote.cas,
+    onRemote: () => editable
+  });
+  first.initialize(await remote.load());
+  second.initialize(await remote.load());
+  first.enqueue({ journal: { '2026-11-20': { text: 'cloud note' } } });
+  second.enqueue({ journal: { '2026-11-20': { text: 'local note' } } });
+  assert.equal(await first.flush(), true);
+  assert.equal(await second.flush(), false);
+  assert.ok(second.conflict());
+  await assert.rejects(second.resolveWithRemote(), /SYNC_REMOTE_APPLY_DEFERRED/);
+  assert.equal(second.pending().local.journal['2026-11-20'].text, 'local note');
+  assert.ok(second.conflict(), 'Conflict details disappeared before remote could render');
+  assert.equal(second.getBase().journal['2026-11-20'], undefined,
+    'CAS base advanced despite remote view being deferred');
+  editable = true;
+  const archiveKey = await second.resolveWithRemote();
+  assert.equal(second.pending(), null);
+  assert.equal(second.conflict(), null);
+  assert.ok(storage.getItem(archiveKey));
+  assert.equal(second.getBase().journal['2026-11-20'].text, 'cloud note');
+});
