@@ -68,7 +68,20 @@ window.IYEmailChange=(()=>{
    if(!pending||pending!==saved||identity()!==saved.uid)throw Error('SESSION_CHANGED');
    if(verified?.user?.id&&verified.user.id!==saved.uid)throw Error('USER_CHANGED');
    if(verified?.access_token&&verified?.refresh_token&&verified?.user?.id===saved.uid){
+    // Auth may rotate the session after email-change verification. A new
+    // session_id has not yet passed the per-browser email challenge, so never
+    // continue displaying private account data until that server gate agrees.
     sbSave({...verified,at:Date.now()});
+    if(!window.IYBrowserGate?.check){
+      cancel();
+      if(typeof goLogin==='function')goLogin();
+      return true;
+    }
+    const approved=await window.IYBrowserGate.check(verified.user);
+    if(!approved){
+      cancel();
+      return true;
+    }
    }
    if(which==='old')saved.oldAccepted=true;
    if(which==='new')saved.newAccepted=true;
