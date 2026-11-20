@@ -33,6 +33,9 @@ CREATE TABLE IF NOT EXISTS iydu_private.browser_verified_sessions(
  verified_at timestamptz NOT NULL DEFAULT now(),
  PRIMARY KEY(user_id,session_id)
 );
+-- Keep the OAuth method across access-token refreshes.
+ALTER TABLE iydu_private.browser_verified_sessions
+ ADD COLUMN IF NOT EXISTS was_oauth boolean NOT NULL DEFAULT false;
 ALTER TABLE iydu_private.browser_session_challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE iydu_private.browser_verified_sessions ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON iydu_private.browser_session_challenges FROM PUBLIC,anon,authenticated;
@@ -53,6 +56,12 @@ AS $allowed$
    WHERE v.user_id=(SELECT auth.uid())
      AND v.session_id::text=(SELECT auth.jwt()->>'session_id')
      AND (s.not_after IS NULL OR s.not_after>statement_timestamp())
+     AND (
+       (NOT v.was_oauth AND NOT pg_catalog.jsonb_path_exists(
+          coalesce(auth.jwt()->'amr','[]'::jsonb),
+          '$[*] ? (@.method == "oauth")'::jsonpath))
+       OR s.created_at+interval '30 minutes'>statement_timestamp()
+     )
   ),false);
 $allowed$;
 REVOKE ALL ON FUNCTION public.iydu_browser_session_allowed() FROM PUBLIC,anon;
@@ -71,6 +80,7 @@ DECLARE
  v_confirmed boolean;
  v_state text;
  v_password_due boolean;
+ v_oauth boolean;
  v_challenge iydu_private.browser_session_challenges%ROWTYPE;
  v_id uuid;
  v_hash text;
@@ -94,6 +104,15 @@ BEGIN
   RETURN pg_catalog.jsonb_build_object('error','ACCOUNT_RESTRICTED');
  END IF;
  IF NOT v_confirmed THEN RETURN pg_catalog.jsonb_build_object('error','EMAIL_NOT_VERIFIED'); END IF;
+ -- Expire Google OAuth sessions based on the original Auth session, not JWT iat.
+ v_oauth:=coalesce((p_fields->>'using_oauth')::boolean,false)
+   OR EXISTS(SELECT 1 FROM iydu_private.browser_verified_sessions v
+      WHERE v.user_id=p_uid AND v.session_id=p_sid AND v.was_oauth);
+ IF v_oauth AND NOT EXISTS(SELECT 1 FROM auth.sessions s
+   WHERE s.id=p_sid AND s.user_id=p_uid
+     AND s.created_at+interval '30 minutes'>statement_timestamp()) THEN
+   RETURN pg_catalog.jsonb_build_object('error','SESSION_EXPIRED');
+ END IF;
  IF p_action='status' THEN
   RETURN pg_catalog.jsonb_build_object('ok',true,'verified',EXISTS(
     SELECT 1 FROM iydu_private.browser_verified_sessions v
@@ -142,8 +161,10 @@ BEGIN
  UPDATE iydu_private.browser_session_challenges SET attempts=attempts+1 WHERE id=v_id;
  IF v_challenge.hash IS DISTINCT FROM v_hash
  THEN RETURN pg_catalog.jsonb_build_object('error','INVALID_CHALLENGE'); END IF;
- INSERT INTO iydu_private.browser_verified_sessions(user_id,session_id)
- VALUES(p_uid,p_sid) ON CONFLICT(user_id,session_id) DO NOTHING;
+ INSERT INTO iydu_private.browser_verified_sessions(user_id,session_id,was_oauth)
+ VALUES(p_uid,p_sid,v_oauth)
+ ON CONFLICT(user_id,session_id) DO UPDATE
+ SET was_oauth=iydu_private.browser_verified_sessions.was_oauth OR EXCLUDED.was_oauth;
  UPDATE iydu_private.browser_session_challenges SET used_at=statement_timestamp()
  WHERE user_id=p_uid AND session_id=p_sid AND used_at IS NULL;
  RETURN pg_catalog.jsonb_build_object('ok',true,'verified',true);
