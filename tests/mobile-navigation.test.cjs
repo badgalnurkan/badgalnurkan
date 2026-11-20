@@ -98,7 +98,7 @@ function transitionFixture(reduced=false){
   style:{setProperty(key,value){main.navShift={key,value}}}};
  const links=navigation.map(([key])=>({dataset:{k:key},classList:{toggle(){}},setAttribute(){},removeAttribute(){}}));
  const aside={querySelectorAll:()=>links};
- const context={A:{},view:'app',pg:'home',msg:'',selDay:null,pm:{run:false},TITLE:'App',
+ const context={A:{},view:'app',pg:'home',msg:'',selDay:null,pm:{run:false},TITLE:'App',NAV:navigation,
   setTimeout:fn=>{timers.set(++nextId,fn);return nextId},clearTimeout:id=>timers.delete(id),
   document:{getElementById:()=>main,querySelector:selector=>selector==='main'?main:aside},
   window:{scrollY:0,matchMedia:()=>({matches:reduced}),scrollTo(){}},history:{pushState(){}},
