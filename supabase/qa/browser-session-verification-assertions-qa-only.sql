@@ -62,6 +62,13 @@ BEGIN
  IF result->>'email'<>'otp-first@example.invalid' THEN
   RAISE EXCEPTION 'Browser request recipient not server owner';
  END IF;
+ -- The first request only reserves a code; a real email delivery acknowledgement
+ -- must precede all confirmation attempts.
+ result:=public.iydu_browser_service('activate_delivery',
+   'ab000000-0000-4000-8000-000000000011'::uuid,
+   'ab100000-0000-4000-8000-000000000001'::uuid,
+   '{"id":"ab200000-0000-4000-8000-000000000001"}'::jsonb);
+ IF result->>'ok'<>'true' THEN RAISE EXCEPTION 'First browser code not activated'; END IF;
  result:=public.iydu_browser_service('confirm',
    'ab000000-0000-4000-8000-000000000011'::uuid,
    'ab100000-0000-4000-8000-000000000001'::uuid,
@@ -94,6 +101,11 @@ BEGIN
    'ab100000-0000-4000-8000-000000000003'::uuid,
    '{"id":"ab200000-0000-4000-8000-000000000003","hash":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"}'::jsonb);
  IF result->>'ok'<>'true' THEN RAISE EXCEPTION 'Second account email challenge failed'; END IF;
+ result:=public.iydu_browser_service('activate_delivery',
+   'ab000000-0000-4000-8000-000000000012'::uuid,
+   'ab100000-0000-4000-8000-000000000003'::uuid,
+   '{"id":"ab200000-0000-4000-8000-000000000003"}'::jsonb);
+ IF result->>'ok'<>'true' THEN RAISE EXCEPTION 'Second browser code not activated'; END IF;
  FOR i IN 1..5 LOOP
   result:=public.iydu_browser_service('confirm',
    'ab000000-0000-4000-8000-000000000012'::uuid,
