@@ -48,6 +48,8 @@ function fixture(options={}){
    assert.equal(config.headers.Authorization,'Bearer service-test-only');
    assert.equal(body.p_uid,UID);
    assert.equal(body.p_sid,SID);
+   if(options.expectOauthMethod)assert.equal(body.p_fields.using_oauth,true,'OAuth JWT must be classified server-side');
+   if(options.expectPasswordMethod)assert.equal(body.p_fields.using_oauth,false,'Password JWT must not inherit OAuth timeout');
    if(options.badServerSession)return Response.json({error:'UNAUTHORIZED'});
    if(body.p_action==='status')return Response.json({ok:true,verified});
    if(body.p_action==='request'){
@@ -169,4 +171,22 @@ test('OTP generation rejects out-of-range randomness without modulo bias',async(
  const cryptoStub={getRandomValues(a){a[0]=calls.shift();return a}};
  assert.equal(generateEmailCode(cryptoStub),'000042');
  assert.equal(calls.length,0);
+});
+
+test('signed OAuth AMR is forwarded to the time-limited database gate',async()=>{
+ const {createHandler}=await import(uri);
+ const f=fixture({expectOauthMethod:true});
+ const handler=createHandler({env,fetchImpl:f.fetchImpl,webCrypto:fakeCrypto});
+ const token=jwt({amr:[{method:'oauth',timestamp:Math.floor(Date.now()/1000)-100}]});
+ const result=await handler(request('status',token));
+ assert.equal(result.status,200);
+ assert.equal((await result.json()).verified,false);
+});
+test('password-only login is not misclassified as a Google session',async()=>{
+ const {createHandler}=await import(uri);
+ const f=fixture({expectPasswordMethod:true});
+ const handler=createHandler({env,fetchImpl:f.fetchImpl,webCrypto:fakeCrypto});
+ const token=jwt({amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)-100}]});
+ const result=await handler(request('status',token));
+ assert.equal(result.status,200);
 });
