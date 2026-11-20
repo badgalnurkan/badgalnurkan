@@ -242,12 +242,12 @@ test('a conflicting edit arriving during acknowledged CAS stays recoverable', as
   assert.equal(remote.current().journal['2026-11-19'].text, 'desktop draft');
   assert.equal(remote.current().journal['2026-11-20'].text, 'phone draft');
   assert.equal(app.pending().local.journal['2026-11-20'].text, 'new local edit');
-  assert.deepEqual(app.conflict().paths, ['journal.2026-11-20']);
+  assert.deepEqual(app.conflict().paths, ['journal.2026-11-20.text']);
   assert.equal(app.conflict().remote.journal['2026-11-20'].text, 'phone draft');
   const reopened = engine(1, 1, store, remote);
   reopened.initialize(await remote.load());
   assert.equal(reopened.pending().local.journal['2026-11-20'].text, 'new local edit');
-  assert.deepEqual(reopened.conflict().paths, ['journal.2026-11-20']);
+  assert.deepEqual(reopened.conflict().paths, ['journal.2026-11-20.text']);
   const archiveKey = await reopened.resolveWithRemote();
   assert.ok(store.getItem(archiveKey), 'Local draft not archived before resolution');
   assert.equal(JSON.parse(store.getItem(archiveKey)).pending.local.journal['2026-11-20'].text,
