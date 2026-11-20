@@ -10,18 +10,21 @@ if(a<0||b<=a)throw Error('Signup OTP verification block not found');
 function fixture(options={}){
  const status={textContent:''};
  const submit={disabled:false,isConnected:true};
+ const resend={disabled:false,isConnected:true};
  const input={value:options.code??'123456'};
  const calls={auth:[],activate:[],welcome:0};
  let session=null;
  const context={
-  window:{IYBrowserGate:{isPending:()=>false}},view:'signup-code',pg:'home',loginDat:{},formDat:{},
+  window:{IYBrowserGate:{isPending:()=>options.browserGatePending===true}},view:'signup-code',pg:'home',loginDat:{},formDat:{},
   renderAppOrAuth:()=>{},toast:()=>{},
-  document:{getElementById:id=>({'signup-code-input':input,'signup-code-status':status,'signup-code-submit':submit}[id]||null)},
+  document:{getElementById:id=>({'signup-code-input':input,'signup-code-status':status,'signup-code-submit':submit,'signup-code-resend':resend}[id]||null)},
   tr:()=>false,msg:'',console,Date,Promise,
   sb:async(path,opt)=>{
    calls.auth.push({path,body:opt.body});
    if(path==='/auth/v1/verify'&&options.error)throw Object.assign(Error('invalid OTP'),options.error===true?{}:options.error);
    if(path==='/auth/v1/resend'&&options.resendError)throw Object.assign(Error('resend denied'),options.resendError);
+   if(path==='/auth/v1/verify'&&options.verifyPromise)return options.verifyPromise;
+   if(path==='/auth/v1/resend'&&options.resendPromise)return options.resendPromise;
    return options.response??{
     user:{id:'one-user',email:'person@example.invalid',email_confirmed_at:'2026-11-19T12:00:00Z'},
     access_token:'token',refresh_token:'refresh'
@@ -32,13 +35,14 @@ function fixture(options={}){
    calls.activate.push(args);
    if(options.activationError)throw Error('activation failed');
    session={user:{id:args[0].user.id}};
+   return options.activationResult===null?null:{authUid:args[0].user.id};
   },
   sbSession:()=>session
  };
  vm.createContext(context);
  vm.runInContext(code.slice(a,b),context);
  vm.runInContext("pendingSignup={email:'person@example.invalid',username:'user_one',nick:'User One'}",context);
- return {context,status,input,submit,calls};
+ return {context,status,input,submit,resend,calls};
 }
 test('signup OTP cannot accept a malformed or incomplete code',async()=>{
  const x=fixture({code:'12ab'});
@@ -61,14 +65,17 @@ test('another email cannot be activated with the pending signup code',async()=>{
  const x=fixture({response:{user:{id:'another-account',email:'another@example.invalid',email_confirmed_at:'2026-11-19T12:00:00Z'},access_token:'a',refresh_token:'b'}});
  await x.context.verifySignupCode();
  assert.equal(x.calls.activate.length,0);
- assert.match(x.status.textContent,/did not match this email/);
- assert.notEqual(vm.runInContext('pendingSignup',x.context),null);
+ assert.match(x.context.msg,/did not match this email/);
+ assert.equal(x.context.view,'login');
+ assert.equal(vm.runInContext('pendingSignup',x.context),null);
 });
 test('unconfirmed account cannot enter the app even if an Auth API returns a token',async()=>{
  const x=fixture({response:{user:{id:'one-user',email:'person@example.invalid',email_confirmed_at:null},access_token:'a',refresh_token:'b'}});
  await x.context.verifySignupCode();
  assert.equal(x.calls.activate.length,0);
- assert.equal(vm.runInContext('pendingSignup.email',x.context),'person@example.invalid');
+ assert.equal(vm.runInContext('pendingSignup',x.context),null);
+ assert.equal(x.context.view,'login');
+ assert.match(x.context.msg,/session response was incomplete/i);
 });
 test('re-request uses signup-only Auth resend endpoint',async()=>{
  const x=fixture();
@@ -135,4 +142,58 @@ test('resending clears previously typed code instead of suggesting it is still c
  x.input.value='654321';
  await x.context.resendSignupCode();
  assert.equal(x.input.value,'');
+});
+
+test('HTTP 200 with no session cannot invite reuse of a consumed code',async()=>{
+ const x=fixture({response:{user:{id:'one-user',email:'person@example.invalid',email_confirmed_at:'2026-11-19T12:00:00Z'}}});
+ await x.context.verifySignupCode();
+ assert.equal(x.calls.activate.length,0);
+ assert.equal(x.context.view,'login');
+ assert.equal(vm.runInContext('pendingSignup',x.context),null);
+});
+test('silent activation failure redirects without asking for the spent code',async()=>{
+ const x=fixture({activationResult:null});
+ await x.context.verifySignupCode();
+ assert.equal(x.calls.auth.length,1);
+ assert.equal(x.context.view,'login');
+ assert.equal(vm.runInContext('pendingSignup',x.context),null);
+ assert.match(x.context.msg,/activation did not finish/i);
+});
+test('pending browser verification can take over after successful signup OTP',async()=>{
+ const x=fixture({activationResult:null,browserGatePending:true});
+ await x.context.verifySignupCode();
+ assert.equal(x.calls.auth.length,1);
+ assert.equal(vm.runInContext('pendingSignup',x.context),null);
+ assert.equal(x.context.view,'signup-code');
+});
+test('rapid duplicate verify/resend click only triggers one request',async()=>{
+ let release;
+ const verifyPromise=new Promise(resolve=>{release=resolve});
+ const x=fixture({verifyPromise});
+ const first=x.context.verifySignupCode();
+ assert.equal(x.submit.disabled,true);
+ assert.equal(x.resend.disabled,true);
+ await x.context.verifySignupCode();
+ await x.context.resendSignupCode();
+ assert.equal(x.calls.auth.length,1);
+ release({user:{id:'one-user',email:'person@example.invalid',email_confirmed_at:'2026-11-19T12:00:00Z'},access_token:'a',refresh_token:'b'});
+ await first;
+ assert.equal(x.calls.auth.length,1);
+ assert.equal(x.submit.disabled,false);
+ assert.equal(x.resend.disabled,false);
+});
+test('resend in flight locks verify and repeated resend requests',async()=>{
+ let release;
+ const resendPromise=new Promise(resolve=>{release=resolve});
+ const x=fixture({resendPromise});
+ const first=x.context.resendSignupCode();
+ assert.equal(x.submit.disabled,true);
+ assert.equal(x.resend.disabled,true);
+ await x.context.resendSignupCode();
+ await x.context.verifySignupCode();
+ assert.equal(x.calls.auth.length,1);
+ release({});
+ await first;
+ assert.equal(x.submit.disabled,false);
+ assert.equal(x.resend.disabled,false);
 });
