@@ -1427,6 +1427,43 @@ body{font-size:1rem!important}
   .mobile-menu[open]{animation:none}
   .nav-shell aside,.nav-shell aside a,.shell main{scroll-behavior:auto;transition:none}
 }
+/* Mobile video reference: selected pill emphasis without replacing swipe navigation. */
+@media(max-width:900px){
+  .nav-shell aside a{
+    position:relative;
+    font-weight:550;
+    transition:background .23s var(--motion-ease),color .23s var(--motion-ease),
+      box-shadow .23s var(--motion-ease),transform .23s var(--motion-spring);
+  }
+  .nav-shell aside a .nav-icon svg{
+    transition:stroke-width .19s var(--motion-ease),transform .25s var(--motion-spring);
+  }
+  .nav-shell aside a::after{
+    content:'';position:absolute;left:27%;right:27%;bottom:3px;
+    height:2px;border-radius:99px;background:currentColor;opacity:.85;
+    transform:scaleX(0);
+    transition:transform .26s var(--motion-spring);
+    pointer-events:none;
+  }
+  .nav-shell aside a.on{
+    font-weight:850;
+    background:var(--acc);color:var(--on-acc,#fff);
+    box-shadow:inset 0 -1px 0 color-mix(in srgb,currentColor 17%,transparent);
+  }
+  .nav-shell aside a.on::after{transform:scaleX(1)}
+  .nav-shell aside a.on .nav-icon svg{stroke-width:2.5;transform:scale(1.08)}
+}
+@media(max-width:900px) and (prefers-reduced-motion:no-preference){
+  .shell main.an{animation:mobileNavPageIn .3s var(--motion-ease) both}
+  @keyframes mobileNavPageIn{
+    from{opacity:.45;transform:translate3d(var(--iydu-nav-dir,0px),0,0)}
+    to{opacity:1;transform:translate3d(0,0,0)}
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .nav-shell aside a::after,.nav-shell aside a .nav-icon svg{transition:none}
+}
+
 /* Welcome entry: 180ms brand, 340ms forward, 240ms reverse, then 840ms greeting. */
 #login-portal.entry-portal{background:var(--bg);pointer-events:auto;animation:entryPortalOut calc(var(--entry-total-ms)*1ms) linear both!important}
 #login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .58s linear .18s both!important}
@@ -1728,6 +1765,13 @@ let pageSwapTimer=0;
 function goTo(v,p,push=true){
   if(typeof taskReorder!=='undefined'&&taskReorder)cancelTaskReorder();
   const same=A&&v==='app'&&view==='app'&&document.getElementById('mn')&&document.querySelector('#nav-aside,aside');
+  // Direction is derived from navigation order; existing left/right swipe
+  // detection remains untouched. Visual motion is disabled when requested.
+  if(same){
+    const from=NAV.findIndex(item=>item[0]===pg),to=NAV.findIndex(item=>item[0]===p);
+    const shift=from<0||to<0||from===to?'0px':to>from?'14px':'-14px';
+    document.getElementById('mn')?.style?.setProperty('--iydu-nav-dir',shift);
+  }
   view=v;pg=p;msg='';selDay=null;
   if(push){try{history.pushState({v,p},'','')}catch(e){}}
   if(same){swapPage();return}
@@ -2202,7 +2246,16 @@ function pressTo(el,fn){
 function navGo(el,v,p){
   if(p!=='rep')reportDetail='';
   /* aninda vurgulanir; kabuk yeniden cizilmez, menu yerinde kalir */
-  if(el){const bar=el.parentElement;if(bar)bar.querySelectorAll('a.on').forEach(a=>a.classList.remove('on'));el.classList.add('on')}
+  if(el){
+    const bar=el.parentElement;
+    if(bar)bar.querySelectorAll('a[data-k]').forEach(a=>{
+      const selected=a===el;
+      a.classList.toggle('on',selected);
+      if(selected)a.setAttribute('aria-current','page');
+      else a.removeAttribute('aria-current');
+    });
+    el.classList.add('on');
+  }
   pressTo(el,()=>goTo(v,p));
 }
 const NAV_ICON_PATHS={
@@ -2561,6 +2614,10 @@ function renderAppOrAuth(){
   else if(view==='login'){
     const rem=(skipRem?null:rememberedUser()),others=Object.keys(DB.accounts).filter(k=>k!==rem);
     if(!loginDat.u&&rem)loginDat.u=rem;
+    if(!loginDat.u&&!skipRem){
+      const previousEmail=String(getItem('iydu.lastConfirmedLoginEmail.v1')||'').trim().toLowerCase();
+      if(emailPattern.test(previousEmail))loginDat.u=previousEmail;
+    }
     const googleRemembered=!!(rem&&DB.accounts[rem].authUid&&DB.accounts[rem].loginMethod==='google');
     const googleEmail=googleRemembered?(DB.accounts[rem].email||DB.accounts[rem].mail||''):'';
     const remCard=rem?`<div class="remember">
@@ -2582,7 +2639,7 @@ function renderAppOrAuth(){
   else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+box(`<h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='signup-code'){
     if(!pendingSignup){view='setup';renderAppOrAuth();return}
-    h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${tr()?'E-posta doğrulama kodu':'Email verification code'}</h2>${m()}<p class="mut">${tr()?'E-postana gönderilen 6 haneli kodu yaz. Kod doğrulanmadan hesabın etkinleştirilmez.':'Enter the 6-digit code sent to your email. Your account cannot be activated before confirmation.'}</p><p><strong>${esc(pendingSignup.email)}</strong></p><label for="signup-code-input">${tr()?'6 haneli kod':'Six-digit code'}</label><input id="signup-code-input" inputmode="numeric" type="text" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();verifySignupCode()}"><div class="row"><button type="button" id="signup-code-submit" onclick="verifySignupCode()">${tr()?'Kodu doğrula':'Verify code'}</button><button class="g" type="button" onclick="resendSignupCode()">${tr()?'Yeni kod iste':'Resend code'}</button></div><button class="g s" type="button" onclick="pendingSignup=null;goTo('setup','home')">${tr()?'Geri dön':'Back'}</button><p id="signup-code-status" role="status" aria-live="polite"></p>`);
+    h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${tr()?'1. adım · Hesap kayıt kodu':'Step 1 · Account signup code'}</h2>${m()}<p class="mut">${tr()?'Hesap oluşturmak için gönderilen 6 haneli kayıt kodunu gir. Bu kod, yeni tarayıcı için daha sonra istenebilecek oturum kodundan farklıdır.':'Enter the six-digit account signup code. This differs from the browser sign-in code you may receive in the next step.'}</p><p><strong>${esc(pendingSignup.email)}</strong></p><label for="signup-code-input">${tr()?'6 haneli kod':'Six-digit code'}</label><input id="signup-code-input" inputmode="numeric" type="text" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();verifySignupCode()}"><div class="row"><button type="button" id="signup-code-submit" onclick="verifySignupCode()">${tr()?'Kodu doğrula':'Verify code'}</button><button class="g" type="button" id="signup-code-resend" onclick="resendSignupCode()">${tr()?'Yeni kayıt kodu iste':'Resend signup code'}</button></div><button class="g s" type="button" onclick="pendingSignup=null;goTo('setup','home')">${tr()?'Geri dön':'Back'}</button><p class="mut">${tr()?'E-posta gecikirse aynı anda birden çok kod isteme. En son isteğe ait kodu kullan.':'If delivery is slow, avoid requesting several codes at once. Use the code from the latest request.'}</p><p id="signup-code-status" role="status" aria-live="polite"></p>`);
   }
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button id="forgot-reset-submit" type="button" onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button><button class="g" type="button" onclick="IYRecovery.resume(document.getElementById('u').value)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;ensureReleaseNotification();
@@ -2795,16 +2852,35 @@ async function login(){
   loginBusy(true);
   try{
     if(email){
+      let serverAccepted=false;
       try{
         const j=await sbSignIn(raw,password,email);
+        serverAccepted=true;
+        // Only a confirmed identity is remembered, never a failed guess or password.
+        try{setItem('iydu.lastConfirmedLoginEmail.v1',email)}catch(_){}
         await activateCloudUser(j,raw,'password',{entryTransition});
         return;
       }catch(e){
-        if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
+        // Do not fall back to an unrelated local account when the cloud
+        // credentials were accepted but profile/security activation failed.
+        if(!serverAccepted&&localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
           sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();await entryTransition;goTo('app','home');
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
         loginDat.p='';
+        if(serverAccepted){
+          loginDat.u=email;
+          if(e.code==='DEVICE_ACCOUNT_LIMIT'){
+            msg=tr()
+              ?'Giriş doğrulandı ancak bu cihazın üç hesap sınırına ulaşıldı. Kullanmadığın bir hesabı yalnızca cihazdan unut.'
+              :'Sign-in was accepted, but this device has reached its three-account limit. Forget one account on this device.';
+          }else{
+            msg=tr()
+              ?'E-posta ve şifre kabul edildi ancak hesap verileri yüklenemedi. Hesabın korunuyor; tekrar deneyebilir veya daha sonra giriş yapabilirsin.'
+              :'Sign-in succeeded but your account data could not be loaded. Your account is preserved; retry or sign in later.';
+          }
+          return renderAppOrAuth();
+        }
         if(authErrorMessage(e)==='email-unconfirmed'&&email){
           // Recovery from an interrupted signup needs the OTP, not a link.
           // Supabase explicitly returned email_not_confirmed for this sign-in.
@@ -2834,36 +2910,150 @@ function signupOtpMessage(text){
   const node=document.getElementById('signup-code-status');if(node)node.textContent=text;
   else msg=text;
 }
+// A successful /verify request consumes a one-time token. An incomplete
+// response must never return a user to a form that asks for the spent code.
+function signupOtpFinishWithSignIn(email,notice){
+  pendingSignup=null;
+  formDat.p='';formDat.p2='';
+  loginDat={u:email,p:''};
+  view='login';pg='home';msg=notice;
+  renderAppOrAuth();
+}
+function signupOtpFeedback(error){
+  const code=String(error?.code||'');
+  if(error?.status===429)return tr()
+    ?'Çok fazla kod denemesi yapıldı. Güvenlik sınırı nedeniyle biraz bekle; hemen yeni kod isteme.'
+    :'Too many verification attempts. Wait for the security limit to reset before trying again.';
+  if(code==='otp_expired')return tr()
+    ?'Bu kod sunucu tarafından kabul edilmedi. Son gelen e-postadaki kodu kullan. Önceden doğruladıysan yeniden kod istemeden giriş yapmayı dene.'
+    :'The server rejected this code. Use the code in the latest email. If you already verified it, try signing in before requesting another code.';
+  if(error?.name==='AbortError')return tr()
+    ?'Bağlantı zaman aşımına uğradı. Kod kabul edilmiş olabilir; yeniden göndermeden önce giriş yapmayı dene.'
+    :'The request timed out. Your code may have been accepted; try signing in before requesting another.';
+  return tr()
+    ?'Kod doğrulanamadı. Son gelen e-postadaki kodu kontrol et; tekrar hata alırsan yeni kod iste.'
+    :'The code could not be verified. Check the latest email, then request a new code if needed.';
+}
 async function verifySignupCode(){
   if(signupOtpBusy||!pendingSignup)return;
   const request={...pendingSignup};
   const code=String(document.getElementById('signup-code-input')?.value||'').trim();
   if(!/^\d{6}$/.test(code)){signupOtpMessage(tr()?'6 haneli kodu gir.':'Enter the six-digit code.');return}
   signupOtpBusy=true;
-  const submit=document.getElementById('signup-code-submit');if(submit)submit.disabled=true;
+  const submit=document.getElementById('signup-code-submit');
+  const resend=document.getElementById('signup-code-resend');
+  if(submit)submit.disabled=true;
+  if(resend)resend.disabled=true;
+  let result;
   try{
-    const result=await sb('/auth/v1/verify',{method:'POST',body:{email:request.email,token:code,type:'email'}});
-    if(!result?.access_token||!result?.user?.id||!result?.user?.email_confirmed_at||
-       String(result.user.email||'').toLowerCase()!==request.email)throw Error('EMAIL_NOT_VERIFIED');
-    if(!pendingSignup||pendingSignup.email!==request.email)throw Error('SIGNUP_FLOW_CHANGED');
-    const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
-    await activateCloudUser(result,request.username,'password',{entryTransition});
-    if(sbSession()?.user?.id!==result.user.id)throw Error('SIGNUP_SESSION_CHANGED');
-    pendingSignup=null;formDat={u:'',n:'',b:'',e:'',t:'',p:'',p2:''};
+    result=await sb('/auth/v1/verify',{method:'POST',body:{email:request.email,token:code,type:'email'}});
   }catch(error){
-    console.warn('Email code confirmation failed:',error?.code||error?.message);
-    signupOtpMessage(tr()?'Kod geçersiz veya süresi dolmuş olabilir. E-postanı kontrol et ya da yeni kod iste.':'The code may be invalid or expired. Check your email or request a new code.');
-  }finally{signupOtpBusy=false;if(submit?.isConnected)submit.disabled=false}
+    // Only a rejected /verify request should be described as an OTP problem.
+    signupOtpMessage(signupOtpFeedback(error));
+    signupOtpBusy=false;
+    if(submit?.isConnected)submit.disabled=false;
+    if(resend?.isConnected)resend.disabled=false;
+    return;
+  }
+  try{
+    if(result?.user?.id&&String(result.user.email||'').toLowerCase()!==request.email){
+      // Reject unexpected identities; do not keep a potentially spent OTP.
+      signupOtpFinishWithSignIn(request.email,tr()
+        ?'Doğrulama yanıtı bu e-postayla eşleşmedi. Farklı hesap etkinleştirilmedi. Giriş ekranından devam et.'
+        :'Verification did not match this email. No other account was activated. Continue from sign-in.');
+      return;
+    }
+    if(!result?.access_token||!result?.user?.id||!result?.user?.email_confirmed_at){
+      signupOtpFinishWithSignIn(request.email,tr()
+        ?'Sunucu doğrulamayı kabul etti ancak oturum yanıtı eksik. Aynı kodu tekrar kullanmadan giriş yapmayı dene.'
+        :'Verification was accepted but the session response was incomplete. Try signing in without reusing the code.');
+      return;
+    }
+    if(!pendingSignup||pendingSignup.email!==request.email)return;
+    // A verified signup must preserve its email hint even if browser verification
+    // or profile initialization requires an extra step.
+    try{setItem('iydu.lastConfirmedLoginEmail.v1',request.email)}catch(_){}
+    // The one-time token has already been consumed by Auth. Never leave the
+    // signup OTP form active while subsequent profile/browser activation runs.
+    pendingSignup=null;
+    formDat={u:'',n:'',b:'',e:'',t:'',p:'',p2:''};
+    const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
+    try{
+      const account=await activateCloudUser(result,request.username,'password',{entryTransition});
+      if(!account){
+        // A separate browser gate or account recovery UI may take over.
+        if(window.IYBrowserGate?.isPending?.()||view!=='signup-code')return;
+        signupOtpFinishWithSignIn(request.email,tr()
+          ?'E-posta doğrulandı ancak hesap oturumu açılamadı. Aynı kodu tekrar girmeden giriş yap.'
+          :'Email verified but account activation did not finish. Sign in without reusing the code.');
+        return;
+      }
+      if(sbSession()?.user?.id!==result.user.id)throw Error('SIGNUP_SESSION_CHANGED');
+    }catch(error){
+      // A profile, storage or network error is NOT an invalid/expired code.
+      // Preserve server verification and offer a fresh sign-in instead.
+      if(window.IYBrowserGate?.isPending?.())return;
+      if(view==='signup-code'){
+        loginDat={u:request.email,p:''};
+        view='login';pg='home';
+        msg=tr()
+          ?'E-posta kodun kabul edildi ancak hesap oturumu tamamlanamadı. Giriş yaparak devam et.'
+          :'Your email code was accepted, but account setup could not finish. Sign in to continue.';
+        renderAppOrAuth();
+      }else{
+        toast(tr()
+          ?'E-posta doğrulandı. Oturum açılışını tamamlayamadık; tekrar giriş yapabilirsin.'
+          :'Email verified. Account setup did not finish; you can sign in again.');
+      }
+    }
+  }finally{
+    signupOtpBusy=false;
+    if(submit?.isConnected)submit.disabled=false;
+    if(resend?.isConnected)resend.disabled=false;
+  }
 }
 async function resendSignupCode(){
   if(signupOtpBusy||!pendingSignup)return;
+  const request=pendingSignup,now=Date.now();
+  const remaining=Math.ceil((Number(request.nextResendAt||0)-now)/1000);
+  if(remaining>0){
+    signupOtpMessage(tr()
+      ?'Arka arkaya kod isteme. '+remaining+' saniye sonra yeniden deneyebilirsin. Geciken ilk e-postayı da kontrol et.'
+      :'Avoid requesting codes repeatedly. Try again in '+remaining+' seconds and check for the delayed first email.');
+    return;
+  }
   signupOtpBusy=true;
+  const resend=document.getElementById('signup-code-resend');
+  const submit=document.getElementById('signup-code-submit');
+  if(resend)resend.disabled=true;
+  if(submit)submit.disabled=true;
   try{
-    await sb('/auth/v1/resend',{method:'POST',body:{type:'signup',email:pendingSignup.email}});
-    signupOtpMessage(tr()?'Yeni kod isteği alındı. Lütfen e-postanı kontrol et.':'A new code was requested. Check your email.');
+    await sb('/auth/v1/resend',{method:'POST',body:{type:'signup',email:request.email}});
+    if(pendingSignup!==request)return;
+    request.nextResendAt=Date.now()+60000;
+    request.requestedAt=Date.now();
+    const oldCode=document.getElementById('signup-code-input');
+    if(oldCode)oldCode.value='';
+    signupOtpMessage(tr()
+      ?'Yeni kod isteği sunucu tarafından kabul edildi. Önceki e-postadaki kod çalışmayabilir; en son gelen kodu kullan.'
+      :'The server accepted a new code request. Older email codes may no longer work; use the latest one.');
   }catch(error){
-    signupOtpMessage(tr()?'Yeni kod şu an gönderilemedi. Biraz sonra yeniden dene.':'Could not resend the code yet. Try again later.');
-  }finally{signupOtpBusy=false}
+    if(pendingSignup!==request)return;
+    if(error?.status===429||error?.code==='over_email_send_rate_limit'){
+      request.nextResendAt=Date.now()+30000;
+      signupOtpMessage(tr()
+        ?'E-posta gönderim sınırına ulaşıldı. Yeni istek göndermeden önce biraz bekle; mevcut e-postalarına bak.'
+        :'Email sending is temporarily rate-limited. Wait before retrying and check existing emails.');
+    }else{
+      signupOtpMessage(tr()
+        ?'Yeni kod isteği başarısız oldu. Önceki kod hâlâ geçerli olabilir; bir süre sonra yeniden dene.'
+        :'The new code request failed. Your previous code may still work; retry later.');
+    }
+  }finally{
+    signupOtpBusy=false;
+    if(resend?.isConnected)resend.disabled=false;
+    if(submit?.isConnected)submit.disabled=false;
+  }
 }
 
 function deviceAccountCount(){
@@ -2897,13 +3087,13 @@ async function setup(){
     if(available!==true){msg=t('usernameTaken');renderAppOrAuth();debounceNameCheck();return}
     const j=await sbSignUp(u,p,n,e);
     if(!j||!j.access_token){
-      pendingSignup={email:e,username:u,nick:n};
+      pendingSignup={email:e,username:u,nick:n,requestedAt:Date.now(),nextResendAt:Date.now()+60000};
       formDat.p='';formDat.p2='';
       view='signup-code';msg='';renderAppOrAuth();return;
     }
     if(!j.user?.email_confirmed_at){
       sbClear();
-      pendingSignup={email:e,username:u,nick:n};
+      pendingSignup={email:e,username:u,nick:n,requestedAt:Date.now(),nextResendAt:Date.now()+60000};
       formDat.p='';formDat.p2='';
       view='signup-code';msg=tr()?'E-posta doğrulaması tamamlanmadan giriş yapılamaz.':'Email verification must be completed before signing in.';
       renderAppOrAuth();return;

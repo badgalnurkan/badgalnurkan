@@ -5,7 +5,7 @@ window.IYBrowserGate=(()=>{
  const trText=(a,b)=>tr()?a:b;
  const messages={
   MAIL_NOT_CONFIGURED:['Güvenlik e-postası henüz yapılandırılmamış. Giriş doğrulanamadı.','Security email is not configured. Sign-in could not be verified.'],
-  MAIL_SEND_FAILED:['Kod e-postası gönderilemedi. Tekrar deneyebilirsin.','Code email could not be sent. You can retry.'],
+  MAIL_SEND_FAILED:['Yeni oturum kodu gönderilemedi. Önceki oturum kodun hâlâ geçerliyse onu kullanabilirsin.','Could not send the new browser code. Your previous browser code may still work if valid.'],
   RATE_LIMITED:['Çok sık kod istendi. Yeni kod için biraz bekle.','Too many code requests. Please wait before retrying.'],
   INVALID_CHALLENGE:['Kod yanlış, süresi dolmuş veya daha önce kullanılmış.','Code is incorrect, expired, or already used.'],
   UNAUTHORIZED:['Oturum değişmiş veya sona ermiş. Yeniden giriş yap.','Your session changed or expired. Sign in again.'],
@@ -103,16 +103,16 @@ window.IYBrowserGate=(()=>{
  function display(user){
   A=null;view='login';pg='home';renderAppOrAuth();
   const email=String(user?.email||sbSession()?.user?.email||'');
-  const subtitle=trText('Bu oturum yeni bir tarayıcıdan veya cihazdan açıldı. Hesabındaki günlükleri ve görevleri görüntülemek için e-postana gönderilen 6 haneli kodu gir.',
-    'This is a new browser or device session. Enter the 6-digit code sent to your email before accessing journals and tasks.');
+  const subtitle=trText('Bu ayrı bir oturum güvenliği kodudur; hesap oluştururken gelen kayıt kodu burada kullanılmaz. Günlüklerine ve görevlerine erişmek için yeni tarayıcı doğrulama e-postasındaki 6 haneli kodu gir.',
+    'This is a separate browser sign-in code. Your account signup code will not work here. Enter the six-digit code from the browser-verification email to access journals and tasks.');
   openModal('browser-verify-gate',
-   '<h2>'+trText('Yeni tarayıcıyı doğrula','Verify this browser')+'</h2>'+
+   '<h2>'+trText('Oturum kodu · Tarayıcı doğrulama','Browser sign-in code · Session verification')+'</h2>'+
    '<p>'+subtitle+'</p><p class="mut">'+esc(email)+'</p>'+
    '<label for="browser-verify-code">'+trText('E-posta kodu','Email code')+'</label>'+
    '<input id="browser-verify-code" type="text" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" aria-describedby="browser-verify-message">'+
    '<p id="browser-verify-message" role="status" aria-live="polite">'+trText('Kod kontrolü bekleniyor.','Waiting for verification code.')+'</p>'+
    '<div class="row"><button data-browser-verify onclick="IYBrowserGate.confirm()">'+trText('Kodu doğrula','Verify code')+'</button>'+
-   '<button class="g" data-browser-verify onclick="IYBrowserGate.request()">'+trText('Yeni kod gönder','Resend code')+'</button>'+
+   '<button class="g" data-browser-verify onclick="IYBrowserGate.request()">'+trText('Yeni oturum kodu gönder','Resend browser code')+'</button>'+
    '<button class="g" onclick="IYBrowserGate.signOut()">'+trText('Girişe dön','Back to sign in')+'</button></div>');
  }
  function setBusy(value){
