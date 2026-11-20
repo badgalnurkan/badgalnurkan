@@ -208,7 +208,7 @@ test('explicit logout revokes only this browser and clears the local session', a
   Promise
  };
  vm.createContext(context);
- vm.runInContext(block+'\\nthis.signOut=goLogin;',context);
+ vm.runInContext(block+'\nthis.signOut=goLogin;',context);
  context.signOut();
  assert.equal(calls.length,1);
  assert.equal(calls[0].url,'https://qa.supabase.invalid/auth/v1/logout?scope=local');
@@ -234,7 +234,7 @@ test('explicit logout clears local token even when remote session revoke fails',
   sbClear:()=>{cleared=true},stopTimers(){},goTo(){},Promise
  };
  vm.createContext(context);
- vm.runInContext(source.slice(from,end)+'\\nthis.signOut=goLogin;',context);
+ vm.runInContext(source.slice(from,end)+'\nthis.signOut=goLogin;',context);
  context.signOut();
  assert.equal(cleared,true);
  assert.equal(context.A,null);
