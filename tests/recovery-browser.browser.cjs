@@ -14,7 +14,7 @@ module.exports = async function verifyRecovery(browser, engine) {
     try {
       for (const context of [original, other]) {
         await context.addInitScript(() => localStorage.setItem('iydu.storage-notice.v1', 'test'));
-        await context.route('https://flcfqwndqfmbritaywfb.supabase.co/**', async route => {
+        await context.route('https://lvomrcqytfygcmguojcj.supabase.co/**', async route => {
           const request = route.request(), url = new URL(request.url());
           if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: {'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'POST,OPTIONS'} });
           const body = request.postDataJSON();
