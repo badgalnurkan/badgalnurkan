@@ -272,6 +272,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const db={accounts:{[record.u]:record},lastUser:record.u,last:record.nick,lang:'tr',beige:false};
    await page.addInitScript(({db,session})=>{localStorage.setItem('b1',JSON.stringify(db));localStorage.setItem('b1sb',JSON.stringify(session));localStorage.setItem('iydu.storage-notice.v1','test')},{db,session});
    const actions=[],requests=[];let closed=false,hasPassword=false;
+   let cloudRecord=structuredClone(record);
    await page.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
     const url=route.request().url();requests.push(url);
     let data=null;
@@ -289,9 +290,15 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     }
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:hasPassword,password_required:false,server_time:'2026-11-17T00:00:00Z'};
-    else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
+    else if(url.endsWith('/rpc/iydu_load'))data=[{data:cloudRecord}];
     else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
-    else if(url.endsWith('/rpc/iydu_save'))data=null;
+    else if(url.endsWith('/rpc/iydu_save_cas')){
+     const body=route.request().postDataJSON();
+     assert.ok(body&&body.p_expected_data&&body.p_data,'CAS must include expected and next');
+     data=require('node:util').isDeepStrictEqual(body.p_expected_data,cloudRecord);
+     if(data)cloudRecord=structuredClone(body.p_data);
+    }
+    else if(url.endsWith('/rpc/iydu_save'))throw Error('Legacy blind save must not be called');
     else if(url.endsWith('/functions/v1/account-security')){
      const b=route.request().postDataJSON();actions.push(b.action);
      if(b.action==='request_deactivate')data={ok:true,id:'b04146d1-f2a4-4a04-bd46-70159554b90f'};

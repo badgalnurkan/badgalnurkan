@@ -1558,6 +1558,7 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 
 <script src="/account-security.js"></script>
 <script src="/recovery-browser.js"></script>
+<script src="/cross-device-sync.js"></script>
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
@@ -1579,16 +1580,42 @@ if((!DBraw||!DBraw.accounts||!Object.keys(DBraw.accounts).length)&&DBbak&&DBbak.
 DB=DBraw&&DBraw.accounts?DBraw:{accounts:{},last:'',lastUser:'',lock:{},lang:'en',beige:false};
 if(!DB.lang)DB.lang='en';if(DB.beige===undefined)DB.beige=false;if(!DB.lastUser)DB.lastUser='';
 document.documentElement.lang=DB.lang;
-let pushT=null;
-function schedulePush(){clearTimeout(pushT);if(!A?.authUid)return;pushT=setTimeout(()=>{sbPush().then(ok=>{if(!ok&&A)console.warn('Cloud sync could not complete')})},850)}
-const save=()=>{
+let pushT=null, activeSync=null, syncTimer=0, syncGeneration=0;
+let syncStatus='idle', syncLegacyBackup=false, syncWarningAt=0;
+function syncWarn(){
+  if(Date.now()-syncWarningAt<30000)return;
+  syncWarningAt=Date.now();
+  toast(tr()?'Değişikliklerin buluta henüz kaydedilmedi. Tarayıcı verilerini silme.':
+    'Changes are not yet in the cloud. Keep this browser data.');
+}
+function schedulePush(){
+  clearTimeout(pushT);
+  if(!A?.authUid||!activeSync)return;
+  const uid=A.authUid;
+  pushT=setTimeout(()=>{
+    if(A?.authUid!==uid||sbSession()?.user?.id!==uid)return;
+    sbPush().then(ok=>{if(!ok)syncWarn()}).catch(()=>syncWarn());
+  },850);
+}
+const save=(options={})=>{
   try{
-    if(A)A.updatedAt=Date.now();
+    if(A&&!options.skipCloudPush)A.updatedAt=Date.now();
     DB.savedAt=Date.now();
-    setItem(LSK,JSON.stringify(DB));
+    // An authenticated edit is never announced as safely saved until a
+    // separate UID+tab draft has been durably persisted.
+    if(A?.authUid&&!options.skipCloudPush){
+      if(!activeSync||!activeSync.enqueue(syncAccountSnapshot(A))){
+        syncStatus='unsafe';syncNotice();syncWarn();return false;
+      }
+    }
+    const stored=setItem(LSK,JSON.stringify(DB));
+    if(!stored&&A?.authUid){
+      syncStatus='unsafe';syncNotice();syncWarn();return false;
+    }
     touchSession();
-    schedulePush();
-  }catch(e){}
+    if(!options.skipCloudPush)schedulePush();
+    return true;
+  }catch(_){syncStatus='unsafe';syncNotice();syncWarn();return false}
 };
 /* oturum: kullanici bilgisi kucuk ve ayri tutulur -> ana kayit bozulsa da geri donus var */
 function touchSession(){
@@ -1622,6 +1649,9 @@ function restoreSession(){
 /* baska sekmede yapilan degisiklik bu sekmeye de yansir (veri ayrismasi olmaz) */
 window.addEventListener('storage',e=>{
   if(e.key!==LSK||!e.newValue)return;
+  // The legacy shared b1 cache is NOT an authoritative cross-tab message.
+  // Pull the CAS-protected server copy instead of replacing an unsynced editor.
+  if(A?.authUid){if(activeSync)syncCheck();return}
   let nd;try{nd=JSON.parse(e.newValue)}catch(_){return}
   if(!nd||!nd.accounts)return;
   DB=nd;
@@ -2715,10 +2745,13 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   const fromCloud=await sbPull(); // may throw, never replace cloud data with empty after a failure
   const progressPolicy=await sbProgressPolicy(uid);
   if(sbSession()?.user?.id!==uid)throw new Error('Authenticated identity changed during activation');
+  if(options.requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return null;
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
   if(!fromLocal&&deviceAccountCount()>=MAX_DEVICE_ACCOUNTS){sbClear();throw Object.assign(Error('DEVICE_ACCOUNT_LIMIT'),{code:'DEVICE_ACCOUNT_LIMIT'})}
+  const pending=syncStart(uid,fromCloud||{});
+  if(fromLocal&&!pending&&fromCloud)syncArchiveLegacy(uid,fromLocal,fromCloud);
   const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
-  const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
+  const a=norm(pending||fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
   bindReportCalendar(a,j.user,!fromCloud&&!fromLocal);
   applyServerProgressPolicy(a,progressPolicy);
   a.u=username;a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
@@ -2727,10 +2760,15 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   if(method==='google'||j.user.app_metadata?.providers?.includes('google'))a.googleConnected=true;
   v13ProtectLegacyCollision(a.u,uid,options.allowLegacyReplacement===true);
   DB.accounts[a.u]=a;DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
-  restorePomodoroState();applyTheme();save();loginDat={u:'',p:''};
+  restorePomodoroState();applyTheme();
+  if(!save({skipCloudPush:true}))throw Error('LOCAL_SYNC_STORAGE_UNAVAILABLE');
+  loginDat={u:'',p:''};
   if(options.entryTransition)await options.entryTransition;
   goTo('app','home');
-  if(!fromCloud)await sbPush();
+  // A newly created row initially contains {}. Only this case queues an
+  // explicit first write; logging in NEVER re-uploads stale normalized cache.
+  if(!fromCloud&&!pending){if(save())await sbPush()}
+  syncNotice();
   return a;
 }
 async function login(){
@@ -3097,7 +3135,7 @@ function shell(){
   const oldBackdrop=document.getElementById('mini-backdrop');if(oldBackdrop)oldBackdrop.remove();
   $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navIcon(k)}<span>${navLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
-  renderPage();setTimeout(checkAppReminders,0);
+  renderPage();syncNotice();setTimeout(checkAppReminders,0);
   requestAnimationFrame(()=>centerNav(true));
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),650)}
   const cal=$('#mini-cal');if(cal&&cal.parentElement!==document.body)document.body.appendChild(cal);
@@ -4771,7 +4809,7 @@ async function bootstrapCloudAuth(){
 
 const sbSession=()=>{try{return JSON.parse(getItem(SESS_KEY)||'null')}catch(e){return null}};
 function sbSave(session){if(session&&session.user&&session.access_token)setItem(SESS_KEY,JSON.stringify(session))}
-function sbClear(){setItem(SESS_KEY,'')}
+function sbClear(){setItem(SESS_KEY,'');syncStop()}
 async function sb(path,opt={}){
   const session=sbSession();
   const headers={'apikey':SUPABASE_KEY,'Content-Type':'application/json',...(opt.headers||{})};
@@ -4804,18 +4842,9 @@ async function sbCurrentUser(){
   catch(e){if(e.status===401&&await sbRefresh())return sb('/auth/v1/user');throw e}
 }
 async function sbPush(){
-  const session=sbSession();
-  if(!A?.authUid||!session?.user?.id||A.authUid!==session.user.id)return false;
-  const sanitized=JSON.parse(JSON.stringify(A));sanitized.pw='';delete sanitized.salt;
-  try{
-    await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true;
-  }catch(e){
-    if(e.status===401&&await sbRefresh()){
-      const current=sbSession();if(current?.user?.id!==A.authUid)return false;
-      try{await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true}catch(_){return false}
-    }
-    return false;
-  }
+  const uid=A?.authUid;
+  if(!uid||sbSession()?.user?.id!==uid||!activeSync)return false;
+  return activeSync.flush();
 }
 async function sbPull(){
   const session=sbSession();if(!session?.user?.id)throw new Error('Not authenticated');
@@ -4825,6 +4854,204 @@ async function sbPull(){
   const row=Array.isArray(rows)?rows[0]:rows;
   if(row?.data&&(!row.data||typeof row.data!=='object'||Array.isArray(row.data)))throw new Error('Invalid cloud data');
   return row?.data&&Object.keys(row.data).length?row.data:null;
+}
+
+// === Durable, account-scoped cross-device synchronization ===
+function syncAccountSnapshot(account){
+  const value=JSON.parse(JSON.stringify(account));
+  value.pw='';delete value.salt;
+  return value;
+}
+function syncTabId(){
+  const key='iydu.sync.tab.v2';
+  let id=sessionStorage.getItem(key);
+  if(!id){
+    if(!globalThis.crypto?.randomUUID)throw Error('SYNC_SECURE_ID_UNAVAILABLE');
+    id=crypto.randomUUID();
+    sessionStorage.setItem(key,id);
+  }
+  return id;
+}
+function syncStop(){
+  syncGeneration++;
+  clearTimeout(pushT);pushT=null;
+  clearInterval(syncTimer);syncTimer=0;
+  activeSync=null;syncStatus='idle';syncLegacyBackup=false;
+}
+function syncStart(uid,remote){
+  syncStop();
+  const persistent=store();
+  if(!persistent||!window.IYSync)throw Error('SYNC_DURABLE_STORAGE_REQUIRED');
+  const generation=++syncGeneration;
+  const engine=IYSync.create({
+    uid,tabId:syncTabId(),storage:persistent,
+    load:async()=>await sbPull()||{},
+    cas:async(expected,next)=>{
+      try{
+        return await sb('/rest/v1/rpc/iydu_save_cas',{method:'POST',
+          body:{p_expected_data:expected,p_data:next}});
+      }catch(e){
+        if(e.status===401&&await sbRefresh()&&sbSession()?.user?.id===uid)
+          return sb('/rest/v1/rpc/iydu_save_cas',{method:'POST',
+            body:{p_expected_data:expected,p_data:next}});
+        throw e;
+      }
+    },
+    onRemote:value=>syncReceiveRemote(uid,value),
+    onStatus:status=>{
+      if(generation!==syncGeneration)return;
+      syncStatus=status;syncNotice();
+    }
+  });
+  activeSync=engine;
+  const pending=engine.initialize(remote);
+  syncStatus=engine.getStatus();
+  syncTimer=setInterval(syncCheck,12000);
+  return pending;
+}
+function syncEditing(){
+  const el=document.activeElement;
+  return !!(el&&el.closest?.('#app,[role="dialog"]')&&
+    (el.matches?.('input:not([type="hidden"]),textarea,select')||el.isContentEditable));
+}
+function syncReceiveRemote(uid,remote){
+  if(A?.authUid!==uid||sbSession()?.user?.id!==uid||syncEditing())return false;
+  if(IYSync.equal(syncAccountSnapshot(A),remote))return true;
+  const next=norm(JSON.parse(JSON.stringify(remote)));
+  const previous=A, oldName=previous.u;
+  const newName=String(remote.u||oldName);
+  if(newName!==oldName&&DB.accounts[newName]&&DB.accounts[newName].authUid!==uid)return false;
+  next.u=newName;next.authUid=uid;next.accountOrigin='cloud';
+  next.email=previous.email;next.mail=previous.mail;next.pw='';
+  next.loginMethod=previous.loginMethod;next.googleConnected=previous.googleConnected;
+  if(previous.progressPolicy&&!next.progressPolicy)next.progressPolicy=previous.progressPolicy;
+  const updated={...DB,accounts:{...DB.accounts}};
+  if(newName!==oldName)delete updated.accounts[oldName];
+  updated.accounts[newName]=next;updated.lastUser=newName;updated.last=next.nick||newName;
+  updated.savedAt=Date.now();
+  if(!setItem(LSK,JSON.stringify(updated))){syncStatus='unsafe';syncNotice();return false}
+  DB=updated;A=next;
+  restorePomodoroState();applyTheme();
+  if(view==='app')shell();
+  return true;
+}
+async function syncCheck(){
+  if(!activeSync||!A?.authUid||sbSession()?.user?.id!==A.authUid||
+     document.hidden||syncEditing())return;
+  try{await activeSync.refresh()}catch(_){syncStatus='offline';syncNotice()}
+}
+window.addEventListener('online',syncCheck);
+window.addEventListener('focus',syncCheck);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncCheck()});
+function syncArchiveLegacy(uid,local,remote){
+  const snapshot=syncAccountSnapshot(local);
+  if(IYSync.equal(snapshot,remote))return;
+  const key='iydu.sync.legacy.v2.'+uid;
+  const db=store();
+  if(!db)throw Error('SYNC_LEGACY_ARCHIVE_UNAVAILABLE');
+  if(!db.getItem(key)){
+    const raw=JSON.stringify({uid,at:Date.now(),account:snapshot});
+    db.setItem(key,raw);
+    if(db.getItem(key)!==raw)throw Error('SYNC_LEGACY_ARCHIVE_UNAVAILABLE');
+  }
+  syncLegacyBackup=true;
+}
+function syncDownloadDraft(){
+  if(!A?.authUid)return;
+  let draft=null;
+  try{draft=activeSync?.pending()?.local||syncAccountSnapshot(A)}catch(_){return}
+  const issue=activeSync?.conflict();
+  const record={format:'iydu-sync-recovery-v2',at:new Date().toISOString(),
+    uid:A.authUid,local:draft,remote:issue?.remote||null};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(record,null,2)],{type:'application/json'}));
+  const link=document.createElement('a');
+  link.href=url;link.download='iydu-yerel-kurtarma-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+function syncDownloadOrphans(){
+  const uid=A?.authUid,other=activeSync?.orphaned();
+  if(!uid||!other?.length)return;
+  const bundle={format:'iydu-orphan-drafts-v2',uid,exportedAt:new Date().toISOString(),
+    preservedDrafts:other};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'}));
+  const link=document.createElement('a');
+  link.href=url;link.download='iydu-kaydedilmemis-eski-sekmeler-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+function syncDownloadLegacy(){
+  const uid=A?.authUid;if(!uid)return;
+  const item=store()?.getItem('iydu.sync.legacy.v2.'+uid);
+  if(!item)return;
+  const url=URL.createObjectURL(new Blob([item],{type:'application/json'}));
+  const link=document.createElement('a');
+  link.href=url;link.download='iydu-onceki-kayit-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+function syncOpenConflict(){
+  const issue=activeSync?.conflict();
+  if(!issue){syncWarn();return}
+  const paths=issue.paths.slice(0,8).map(p=>'<li>'+esc(p)+'</li>').join('');
+  openModal('sync-conflict-dialog',
+    '<h2>'+(tr()?'Eşitleme çakışması':'Sync conflict')+'</h2>'+
+    '<p>'+(tr()?'İki cihaz aynı kaydı değiştirdi. Hiçbir sürümü silmedik.':
+    'Both devices changed the same entry. Neither version was discarded.')+'</p>'+
+    '<ul>'+paths+'</ul><div class="row">'+
+    '<button onclick="syncDownloadDraft()">'+(tr()?'Yerel ve bulut kopyasını indir':'Download both copies')+'</button>'+
+    '<button class="g" onclick="syncUseCloudVersion()">'+
+      (tr()?'Yerel kopyayı arşivle ve bulutu aç':'Archive local and use cloud')+'</button>'+
+    '<button class="g" onclick="closeModal(\'sync-conflict-dialog\')">'+t('cancel')+'</button></div>');
+}
+async function syncUseCloudVersion(){
+  if(!activeSync)return;
+  try{
+    await activeSync.resolveWithRemote();
+    closeModal('sync-conflict-dialog');
+    toast(tr()?'Yerel sürüm kurtarma arşivine alındı.':'Local version archived for recovery.');
+  }catch(_){syncWarn()}
+}
+function syncNotice(){
+  const root=document.querySelector('.shell main');
+  if(!root)return;
+  root.querySelector('#iydu-sync-notice')?.remove();
+  if(!A?.authUid)return;
+  if(syncStatus==='synced'&&!syncLegacyBackup)return;
+  const card=document.createElement('section');card.id='iydu-sync-notice';
+  card.className='card';card.setAttribute('role','status');
+  const title=document.createElement('strong');
+  const text=document.createElement('p');
+  title.textContent=syncStatus==='conflict'?(tr()?'Eşitleme çakışması':'Sync conflict'):
+    syncStatus==='offline'?(tr()?'Çevrimdışı kayıt':'Offline copy'):
+    syncStatus==='unsafe'?(tr()?'Kaydetme güvenliği uyarısı':'Save safety warning'):
+    syncStatus==='remote-pending'?(tr()?'Başka cihazdaki değişiklik hazır':'Other-device changes available'):
+    syncStatus==='other-pending'?(tr()?'Önceki sekmelerde kaydedilmemiş veri var':'Unsent drafts from other tabs'):
+    syncStatus==='synced'?(tr()?'Eski cihaz kaydı korunuyor':'Old device backup preserved'):
+    (tr()?'Eşitleme bekleniyor':'Sync pending');
+  text.textContent=tr()?'Yerel kayıtlarını silme. Bulut kaydı doğrulanana kadar bu cihazdaki değişiklikler korunur.':
+    'Do not clear browser storage. Changes stay on this device until cloud confirmation.';
+  card.append(title,text);
+  if(syncStatus==='conflict'){
+    const btn=document.createElement('button');btn.type='button';
+    btn.textContent=tr()?'Sürümleri incele':'Review versions';
+    btn.addEventListener('click',syncOpenConflict);card.append(btn);
+  }else if(syncStatus==='other-pending'){
+    const btn=document.createElement('button');btn.type='button';
+    btn.textContent=tr()?'Eski sekme taslaklarını indir':'Download previous tab drafts';
+    btn.addEventListener('click',syncDownloadOrphans);card.append(btn);
+  }else if(syncStatus!=='synced'){
+    const btn=document.createElement('button');btn.type='button';
+    btn.textContent=tr()?'Şimdi eşitle':'Sync now';
+    btn.addEventListener('click',()=>{syncCheck();sbPush()});
+    card.append(btn);
+  }
+  if(syncLegacyBackup){
+    const btn=document.createElement('button');btn.type='button';
+    btn.className='g';btn.textContent=tr()?'Eski cihaz kaydını indir':'Download old device backup';
+    btn.addEventListener('click',syncDownloadLegacy);card.append(btn);
+  }
+  root.prepend(card);
 }
 // The database owns the old/new-user cutoff; do not infer it from a missing
 // browser cache or an absent profile row.
@@ -4845,38 +5072,37 @@ async function sbGoogleQuickResumeAllowed(){
  try{const result=await sb('/rest/v1/rpc/iydu_quick_resume_status',{method:'POST',body:{}});return result?.allowed===true}catch(_){return false}
 }
 async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,animateEntry=false){
-  if(!sbSession()?.access_token){if(sbSession()?.refresh_token&&!await sbRefresh())return;else if(!sbSession()?.access_token)return}
+  if(!sbSession()?.access_token){
+    if(sbSession()?.refresh_token&&!await sbRefresh())return false;
+    if(!sbSession()?.access_token)return false;
+  }
   try{
     const user=await sbCurrentUser();
     if(!user?.id||(expectedUid&&user.id!==expectedUid))return false;
     const session=sbSession();if(!session)return false;
     sbSave({...session,user});
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
+    // A closed account must remain on its reactivation gate, not fall through
+    // to a redundant Google OAuth dialog on remembered Continue.
     if(window.IYAccount&&!await IYAccount.checkAccess(user))return true;
-    const remote=await sbPull();
-    const progressPolicy=await sbProgressPolicy(user.id);
-    if(sbSession()?.user?.id!==user.id)return false;
-    // A slow profile request must not carry a login across the 30-minute boundary.
-    if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
-    const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
-    const meta=user.user_metadata||{};
-    const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
-    bindReportCalendar(a,user,!remote&&!local);
-    applyServerProgressPolicy(a,progressPolicy);
-    a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
-    if(user.app_metadata?.providers?.includes('google')){a.googleConnected=true;if(!a.loginMethod)a.loginMethod='google'}
-    v13ProtectLegacyCollision(a.u,user.id);
-    DB.accounts[a.u]=a;DB.lastUser=a.u;DB.last=a.nick;A=a;
-    view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();
+    // All entry paths, including remembered Google Continue and reload,
+    // MUST initialize the same UID-scoped CAS baseline before rendering.
+    const account=await activateCloudUser({...session,user},'',
+      user.app_metadata?.providers?.includes('google')?'google':'password',
+      {requireRecentGoogle});
+    if(!account)return false;
     if(animateEntry)playWelcomeTransition();
-    if(!remote)await sbPush();return true;
+    return true;
   }catch(e){
-    // Do not auto-login from unverified localStorage contents.
     if(e.status===401)sbClear();
     if(e.message==='V13_LOCAL_USERNAME_COLLISION'){
-      sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki eski yerel hesapla çakışıyor. Eski veri korunuyor. Yerel hesabından JSON yedeği al ve aktarım adımını kullan.':'A cloud username conflicts with a legacy profile on this device. Local data was preserved. Export it and use the migration flow.';
+      sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki eski yerel hesapla çakışıyor. Eski veri korunuyor.':'Cloud username conflicts with a legacy profile on this device.';
+    }else if(e.message==='SYNC_DURABLE_STORAGE_REQUIRED'||e.message==='LOCAL_SYNC_STORAGE_UNAVAILABLE'){
+      msg=tr()?'Bu tarayıcıda güvenilir kayıt alanı yok. Verilerini korumak için site verilerini silmeden normal bir tarayıcı sekmesi kullan.':
+        'This browser cannot persist data safely. Do not clear site data; use a normal browser tab.';
     }
-    if(!A&&!expectedUid){view='login';renderAppOrAuth()}return false;
+    if(!A&&!expectedUid){view='login';renderAppOrAuth()}
+    return false;
   }
 }
 

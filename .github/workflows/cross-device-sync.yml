@@ -1,0 +1,38 @@
+name: Cross-device sync safety
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'cross-device-sync.js'
+      - 'tests/cross-device-sync.test.cjs'
+      - 'package.json'
+      - '.github/workflows/cross-device-sync.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check sync JavaScript syntax
+        run: node --check cross-device-sync.js
+      - name: Check inline application JavaScript syntax
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const html=fs.readFileSync('index.html','utf8');
+          const source=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+          if(!source || !source.includes('syncStart'))process.exit(1);
+          new Function(source);
+          NODE
+      - name: Verify conflict, retry and three-account tests
+        run: node --test tests/cross-device-sync.test.cjs
+      - name: Run all existing regression tests
+        run: npm test
