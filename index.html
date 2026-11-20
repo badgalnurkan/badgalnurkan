@@ -1427,6 +1427,43 @@ body{font-size:1rem!important}
   .mobile-menu[open]{animation:none}
   .nav-shell aside,.nav-shell aside a,.shell main{scroll-behavior:auto;transition:none}
 }
+/* Mobile video reference: selected pill emphasis without replacing swipe navigation. */
+@media(max-width:900px){
+  .nav-shell aside a{
+    position:relative;
+    font-weight:550;
+    transition:background .23s var(--motion-ease),color .23s var(--motion-ease),
+      box-shadow .23s var(--motion-ease),transform .23s var(--motion-spring);
+  }
+  .nav-shell aside a .nav-icon svg{
+    transition:stroke-width .19s var(--motion-ease),transform .25s var(--motion-spring);
+  }
+  .nav-shell aside a::after{
+    content:'';position:absolute;left:27%;right:27%;bottom:3px;
+    height:2px;border-radius:99px;background:currentColor;opacity:.85;
+    transform:scaleX(0);
+    transition:transform .26s var(--motion-spring);
+    pointer-events:none;
+  }
+  .nav-shell aside a.on{
+    font-weight:850;
+    background:var(--acc);color:var(--on-acc,#fff);
+    box-shadow:inset 0 -1px 0 color-mix(in srgb,currentColor 17%,transparent);
+  }
+  .nav-shell aside a.on::after{transform:scaleX(1)}
+  .nav-shell aside a.on .nav-icon svg{stroke-width:2.5;transform:scale(1.08)}
+}
+@media(max-width:900px) and (prefers-reduced-motion:no-preference){
+  .shell main.an{animation:mobileNavPageIn .3s var(--motion-ease) both}
+  @keyframes mobileNavPageIn{
+    from{opacity:.45;transform:translate3d(var(--iydu-nav-dir,0px),0,0)}
+    to{opacity:1;transform:translate3d(0,0,0)}
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .nav-shell aside a::after,.nav-shell aside a .nav-icon svg{transition:none}
+}
+
 /* Welcome entry: 180ms brand, 340ms forward, 240ms reverse, then 840ms greeting. */
 #login-portal.entry-portal{background:var(--bg);pointer-events:auto;animation:entryPortalOut calc(var(--entry-total-ms)*1ms) linear both!important}
 #login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .58s linear .18s both!important}
@@ -1728,6 +1765,13 @@ let pageSwapTimer=0;
 function goTo(v,p,push=true){
   if(typeof taskReorder!=='undefined'&&taskReorder)cancelTaskReorder();
   const same=A&&v==='app'&&view==='app'&&document.getElementById('mn')&&document.querySelector('#nav-aside,aside');
+  // Direction is derived from navigation order; existing left/right swipe
+  // detection remains untouched. Visual motion is disabled when requested.
+  if(same){
+    const from=NAV.findIndex(item=>item[0]===pg),to=NAV.findIndex(item=>item[0]===p);
+    const shift=from<0||to<0||from===to?'0px':to>from?'14px':'-14px';
+    document.getElementById('mn')?.style?.setProperty('--iydu-nav-dir',shift);
+  }
   view=v;pg=p;msg='';selDay=null;
   if(push){try{history.pushState({v,p},'','')}catch(e){}}
   if(same){swapPage();return}
@@ -2202,7 +2246,16 @@ function pressTo(el,fn){
 function navGo(el,v,p){
   if(p!=='rep')reportDetail='';
   /* aninda vurgulanir; kabuk yeniden cizilmez, menu yerinde kalir */
-  if(el){const bar=el.parentElement;if(bar)bar.querySelectorAll('a.on').forEach(a=>a.classList.remove('on'));el.classList.add('on')}
+  if(el){
+    const bar=el.parentElement;
+    if(bar)bar.querySelectorAll('a[data-k]').forEach(a=>{
+      const selected=a===el;
+      a.classList.toggle('on',selected);
+      if(selected)a.setAttribute('aria-current','page');
+      else a.removeAttribute('aria-current');
+    });
+    el.classList.add('on');
+  }
   pressTo(el,()=>goTo(v,p));
 }
 const NAV_ICON_PATHS={
@@ -2561,6 +2614,10 @@ function renderAppOrAuth(){
   else if(view==='login'){
     const rem=(skipRem?null:rememberedUser()),others=Object.keys(DB.accounts).filter(k=>k!==rem);
     if(!loginDat.u&&rem)loginDat.u=rem;
+    if(!loginDat.u&&!skipRem){
+      const previousEmail=String(getItem('iydu.lastConfirmedLoginEmail.v1')||'').trim().toLowerCase();
+      if(emailPattern.test(previousEmail))loginDat.u=previousEmail;
+    }
     const googleRemembered=!!(rem&&DB.accounts[rem].authUid&&DB.accounts[rem].loginMethod==='google');
     const googleEmail=googleRemembered?(DB.accounts[rem].email||DB.accounts[rem].mail||''):'';
     const remCard=rem?`<div class="remember">
@@ -2795,16 +2852,35 @@ async function login(){
   loginBusy(true);
   try{
     if(email){
+      let serverAccepted=false;
       try{
         const j=await sbSignIn(raw,password,email);
+        serverAccepted=true;
+        // Only a confirmed identity is remembered, never a failed guess or password.
+        try{setItem('iydu.lastConfirmedLoginEmail.v1',email)}catch(_){}
         await activateCloudUser(j,raw,'password',{entryTransition});
         return;
       }catch(e){
-        if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
+        // Do not fall back to an unrelated local account when the cloud
+        // credentials were accepted but profile/security activation failed.
+        if(!serverAccepted&&localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
           sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();await entryTransition;goTo('app','home');
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
         loginDat.p='';
+        if(serverAccepted){
+          loginDat.u=email;
+          if(e.code==='DEVICE_ACCOUNT_LIMIT'){
+            msg=tr()
+              ?'Giriş doğrulandı ancak bu cihazın üç hesap sınırına ulaşıldı. Kullanmadığın bir hesabı yalnızca cihazdan unut.'
+              :'Sign-in was accepted, but this device has reached its three-account limit. Forget one account on this device.';
+          }else{
+            msg=tr()
+              ?'E-posta ve şifre kabul edildi ancak hesap verileri yüklenemedi. Hesabın korunuyor; tekrar deneyebilir veya daha sonra giriş yapabilirsin.'
+              :'Sign-in succeeded but your account data could not be loaded. Your account is preserved; retry or sign in later.';
+          }
+          return renderAppOrAuth();
+        }
         if(authErrorMessage(e)==='email-unconfirmed'&&email){
           // Recovery from an interrupted signup needs the OTP, not a link.
           // Supabase explicitly returned email_not_confirmed for this sign-in.
@@ -2894,6 +2970,9 @@ async function verifySignupCode(){
       return;
     }
     if(!pendingSignup||pendingSignup.email!==request.email)return;
+    // A verified signup must preserve its email hint even if browser verification
+    // or profile initialization requires an extra step.
+    try{setItem('iydu.lastConfirmedLoginEmail.v1',request.email)}catch(_){}
     // The one-time token has already been consumed by Auth. Never leave the
     // signup OTP form active while subsequent profile/browser activation runs.
     pendingSignup=null;
