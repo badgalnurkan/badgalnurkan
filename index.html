@@ -4282,6 +4282,9 @@ function confirmForgetKnownProfile(name){
 
 /* oturum kapaninca sayac ve kronometre durur, sonraki kullaniciya gecmez */
 function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,end:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0,noticeFive:false};persistPomodoroState();document.title=TITLE}catch(e){}}
+// Explicit sign-out revokes the Auth session on the server whenever the
+// network is available. The UI clears its local token immediately, even when
+// offline; the server's session-aware RLS keeps sensitive operations guarded.
 function invalidateCloudSession(){
   const session=sbSession();
   if(!session?.access_token)return false;

@@ -15,6 +15,8 @@ on:
       - 'supabase/qa/account-lifecycle-push-assertions.sql'
       - 'package.json'
       - '.github/workflows/cross-device-sync.yml'
+  push:
+    branches: [qa/browser-otp-e2e-20261120]
   workflow_dispatch:
 
 permissions:
@@ -54,7 +56,7 @@ jobs:
 
   qa-network:
     name: QA browser with live QA services
-    if: github.head_ref == 'qa/browser-otp-e2e-20261120' || github.ref_name == 'qa/browser-otp-e2e-20261120'
+    if: github.ref_name == 'qa/browser-otp-e2e-20261120'
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.56.1-noble
