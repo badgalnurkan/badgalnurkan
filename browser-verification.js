@@ -9,11 +9,34 @@ window.IYBrowserGate=(()=>{
   RATE_LIMITED:['Çok sık kod istendi. Yeni kod için biraz bekle.','Too many code requests. Please wait before retrying.'],
   INVALID_CHALLENGE:['Kod yanlış, süresi dolmuş veya daha önce kullanılmış.','Code is incorrect, expired, or already used.'],
   UNAUTHORIZED:['Oturum değişmiş veya sona ermiş. Yeniden giriş yap.','Your session changed or expired. Sign in again.'],
-  SERVER_UNAVAILABLE:['Sunucuya bağlanılamadı. Verilerin korunması için giriş durduruldu.','The server is unavailable. Sign-in was paused to protect your data.']
+  SERVER_UNAVAILABLE:['Sunucuya bağlanılamadı. Verilerin korunması için giriş durduruldu.','The server is unavailable. Sign-in was paused to protect your data.'],
+  SESSION_EXPIRED:['Google oturumunun 30 dakikalık süresi doldu. Lütfen yeniden giriş yap.','Your 30-minute Google session has expired. Please sign in again.']
  };
  function note(code){
   const m=messages[code]||messages.SERVER_UNAVAILABLE;
   return m[tr()?0:1];
+ }
+ function oauthExpiry(){
+  const s=sbSession();
+  if(!s?.access_token||!s.user?.id)return null;
+  try{
+   const part=s.access_token.split('.')[1];
+   if(!part)return null;
+   const b=part.replace(/-/g,'+').replace(/_/g,'/');
+   const jwt=JSON.parse(atob(b.padEnd(Math.ceil(b.length/4)*4,'=')));
+   if(jwt.sub!==s.user.id||!Array.isArray(jwt.amr))return null;
+   const oauth=jwt.amr.find(x=>x&&x.method==='oauth'&&Number.isFinite(x.timestamp));
+   if(!oauth)return null;
+   return oauth.timestamp*1000+30*60*1000;
+  }catch{return null}
+ }
+ function enforceSessionLifetime(){
+  const due=oauthExpiry();
+  if(!due||Date.now()<due)return true;
+  const active=!!A;
+  signOut();
+  if(active)toast(trText('Google oturumunun süresi doldu. Yeniden giriş yap.','Google session expired. Sign in again.'));
+  return false;
  }
  function sessionIdentity(){
   const s=sbSession();
@@ -108,7 +131,10 @@ window.IYBrowserGate=(()=>{
    showMessage(trText('Kod gönderildi. E-postanı kontrol et.','Code sent. Check your email.'));
    document.getElementById('browser-verify-code')?.focus();
    return true;
-  }catch(error){showMessage(note(error.code||error.message));return false}
+  }catch(error){
+    if(error.code==='SESSION_EXPIRED'){signOut();toast(note('SESSION_EXPIRED'));return false}
+    showMessage(note(error.code||error.message));return false
+  }
   finally{setBusy(false)}
  }
  async function check(user){
@@ -118,7 +144,10 @@ window.IYBrowserGate=(()=>{
   let verified=false,failed=false;
   try{
    verified=(await requestApi('status')).verified===true;
-  }catch(error){failed=true}
+  }catch(error){
+   if(error.code==='SESSION_EXPIRED'){signOut();toast(note('SESSION_EXPIRED'));return false}
+   failed=true
+  }
   if(verified){
    dropChallenge(identity.uid,identity.sid);
    pendingUid='';pendingSid='';challengeId='';entered=false;
@@ -153,7 +182,11 @@ window.IYBrowserGate=(()=>{
    await activateCloudUser(active,'',active.user.app_metadata?.providers?.includes('google')?'google':'password');
    entered=false;
    return true;
-  }catch(error){entered=false;showMessage(note(error.code||error.message));return false}
+  }catch(error){
+    entered=false;
+    if(error.code==='SESSION_EXPIRED'){signOut();toast(note('SESSION_EXPIRED'));return false}
+    showMessage(note(error.code||error.message));return false
+  }
   finally{setBusy(false)}
  }
  function isPending(){return !!pendingUid}
@@ -163,5 +196,10 @@ window.IYBrowserGate=(()=>{
   sbClear();
   A=null;view='login';renderAppOrAuth();
  }
- return {check,request,confirm,isPending,signOut};
+ // A suspended tab can exceed the deadline without JS timers firing; check
+ // again when it becomes visible. Backend RLS enforces the same limit.
+ setInterval(()=>{try{enforceSessionLifetime()}catch{}},10000);
+ window.addEventListener('focus',()=>{try{enforceSessionLifetime()}catch{}});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)enforceSessionLifetime()});
+ return {check,request,confirm,isPending,signOut,enforceSessionLifetime,oauthExpiry};
 })();
