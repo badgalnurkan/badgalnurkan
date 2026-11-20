@@ -264,11 +264,17 @@
       const newest = confirmedRemote(await load());
       const archive = 'iydu.sync.archive.v2.' + uid + '.' + tabId + '.' + clock();
       durablePut(archive, { uid, tabId, issue, pending });
+      // The application may be editing an input and unable to display cloud
+      // data yet. Never delete pending drafts or advance the CAS baseline
+      // until the current screen has accepted the selected cloud version.
+      if (onRemote(clone(newest)) === false) {
+        report('remote-pending');
+        throw Error('SYNC_REMOTE_APPLY_DEFERRED');
+      }
       storage.removeItem(key);
       if (storage.getItem(key) !== null) throw Error('SYNC_PENDING_REMOVE_FAILED');
       storage.removeItem(conflictKey);
       base = clone(newest);
-      onRemote(clone(newest));
       report('synced');
       return archive;
     }
