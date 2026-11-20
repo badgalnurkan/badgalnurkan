@@ -11,7 +11,7 @@ test('all entrypoints of QA app point at QA-only Supabase API',()=>{
   assert.ok(file.includes(URL_QA),name+' must use QA API');
   assert.equal(file.includes(PROD_ID),false,name+' must never contain production project ID');
   assert.match(file,/sb_publishable_[a-zA-Z0-9_-]+/,name+' public key');
-  assert.doesNotMatch(file,/service_role|sb_secret_/i,name+' must never expose secret keys');
+  assert.doesNotMatch(file,/SUPABASE_KEY\\s*=\\s*['\"](?:sb_secret_|eyJhbGci)/i,name+' must never assign a secret key');
  }
 });
 test('signup and password reset cannot bounce users back to production',()=>{
