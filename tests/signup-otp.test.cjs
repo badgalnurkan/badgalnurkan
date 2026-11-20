@@ -61,7 +61,8 @@ test('another email cannot be activated with the pending signup code',async()=>{
  const x=fixture({response:{user:{id:'another-account',email:'another@example.invalid',email_confirmed_at:'2026-11-19T12:00:00Z'},access_token:'a',refresh_token:'b'}});
  await x.context.verifySignupCode();
  assert.equal(x.calls.activate.length,0);
- assert.match(x.status.textContent,/invalid or expired/);
+ assert.match(x.status.textContent,/did not match this email/);
+ assert.notEqual(vm.runInContext('pendingSignup',x.context),null);
 });
 test('unconfirmed account cannot enter the app even if an Auth API returns a token',async()=>{
  const x=fixture({response:{user:{id:'one-user',email:'person@example.invalid',email_confirmed_at:null},access_token:'a',refresh_token:'b'}});

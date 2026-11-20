@@ -2865,8 +2865,13 @@ async function verifySignupCode(){
     return;
   }
   try{
-    if(!result?.access_token||!result?.user?.id||!result?.user?.email_confirmed_at||
-       String(result.user.email||'').toLowerCase()!==request.email){
+    if(result?.user?.id&&String(result.user.email||'').toLowerCase()!==request.email){
+      signupOtpMessage(tr()
+        ?'Doğrulama yanıtı kayıt e-postasıyla eşleşmiyor. Farklı hesap etkinleştirilmedi.'
+        :'Verification response did not match this email. No other account was activated.');
+      return;
+    }
+    if(!result?.access_token||!result?.user?.id||!result?.user?.email_confirmed_at){
       // The server response is inconsistent. Never claim the OTP was invalid
       // after a successful HTTP response; never activate an unconfirmed user.
       signupOtpMessage(tr()
