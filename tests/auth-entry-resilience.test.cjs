@@ -32,6 +32,7 @@ function loginFixture(failure){
   renderAppOrAuth:()=>{rendered++},
   signupOtpMessage:text=>{codeStatus=text},
   authErrorMessage:null,
+  setItem:()=>{},
   console
  };
  vm.createContext(context);
@@ -108,4 +109,14 @@ test('server HTTP 429 is explained and retry uses a bounded cooldown',async()=>{
  await x.context.fSend('email');
  assert.equal(x.calls(),2);
  assert.equal(x.resumed.dataset.email,'owner@example.invalid');
+});
+
+test('accepted Supabase credentials plus profile failure are not misreported as invalid password',async()=>{
+ const x=loginFixture(Object.assign(Error('ignored'),{code:'not-used'}));
+ x.context.sbSignIn=async()=>({access_token:'ok',user:{id:'owner-id',email:'owner@example.invalid'}});
+ x.context.activateCloudUser=async()=>{throw Object.assign(Error('RPC missing'),{status:404})};
+ await x.context.login();
+ assert.equal(x.context.view,'login');
+ assert.match(x.context.msg,/Sign-in succeeded but your account data could not be loaded/);
+ assert.doesNotMatch(x.context.msg,/Check email and password/);
 });
