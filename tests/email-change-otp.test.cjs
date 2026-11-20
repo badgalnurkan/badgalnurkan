@@ -121,3 +121,11 @@ test('email-change token rotation rechecks browser gate before showing private a
  f.api.cancel();
  assert.equal(f.api.resume(),false,'Cancelled email change was resurrected');
 });
+
+test('email change template sends copyable OTP instead of a browser redirect',()=>{
+ const template=fs.readFileSync(path.join(__dirname,'../supabase/email-templates/email-change-otp.html'),'utf8');
+ assert.match(template,/\{\{ \.Token \}\}/);
+ assert.match(template,/\{\{ \.NewEmail \}\}/);
+ assert.doesNotMatch(template,/ConfirmationURL|TokenHash|<script/);
+ assert.match(template,/işlem yaptığın tarayıcıya|browser where you started/);
+});
