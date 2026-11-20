@@ -40,7 +40,7 @@ function fixture(){
   IYAccount:{refresh:async()=>log.push(['refresh'])}
  };
  vm.createContext(context);vm.runInContext(source,context);
- return {api:context.window.IYEmailChange,log,nodes,get count(){return requestCount},get user(){return user}};
+ return {api:context.window.IYEmailChange,log,nodes,context,get count(){return requestCount},get user(){return user}};
 }
 test('starting same-browser email change is strictly scoped to owner and distinct addresses',()=>{
  const f=fixture();
@@ -89,4 +89,29 @@ test('closing confirmation panel never performs a data mutation',()=>{
  f.api.cancel();
  assert.equal(f.count,0);
  assert.equal(f.log.filter(x=>x[0]==='close').length,1);
+});
+
+test('email-change token rotation rechecks browser gate before showing private account data',async()=>{
+ const f=fixture();
+ let checks=0;
+ f.context.window.IYBrowserGate={check:async(user)=>{
+  checks++;
+  assert.equal(user.id,UID);
+  return false; // New Auth session still needs its own emailed OTP
+ }};
+ const previousSb=f.context.sb;
+ f.context.sb=async (...args)=>({
+  ...await previousSb(...args),
+  user:{id:UID},
+  access_token:'new-auth-session-token',
+  refresh_token:'new-auth-refresh-token'
+ });
+ assert.equal(f.api.start({uid:UID,oldEmail:OLD,newEmail:NEW}),true);
+ f.nodes.get('email-change-old-code').value='111111';
+ assert.equal(await f.api.verify('old'),true);
+ assert.equal(checks,1,'Newly issued session skipped email browser verification');
+ assert.ok(f.log.some(x=>x[0]==='save'),'Fresh session was not stored for gate');
+ assert.ok(f.log.some(x=>x[0]==='close'),'Email change dialog remained above browser gate');
+ assert.equal(f.log.some(x=>x[0]==='toast'),false,
+  'Email change must not be announced complete before browser verification');
 });
