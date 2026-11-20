@@ -169,3 +169,25 @@ test('page transition movement tracks previous and newly selected menu item',()=
  f.flush();
  f.context.goTo('app','pomo');assert.equal(f.main.navShift.value,'-14px');
 });
+
+test('reference-video navigation is fixed at the bottom on small viewports, not in top menu',()=>{
+  assert.match(html,/\.shell \.nav-shell\{[\s\S]*?position:fixed;[\s\S]*?top:auto;[\s\S]*?bottom:calc\(\.65rem \+ env\(safe-area-inset-bottom,0px\)\)/);
+  assert.match(html,/\.shell \.nav-shell aside\{[\s\S]*?grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
+  assert.match(html,/\.shell \.nav-shell \.mobile-menu-toggle\{display:none\}/);
+  assert.match(html,/\.shell\+footer\{padding-bottom:calc\(6\.8rem \+ env\(safe-area-inset-bottom,0px\)\)\}/);
+});
+test('all six pages remain directly reachable with compact TR/EN labels and accessible full labels',()=>{
+  for(const [page,label] of Object.entries({home:'Ana',pomo:'Odak',todo:'Görevler',pc:'İlerleme',rep:'Rapor',set:'Ayarlar'})){
+    assert.match(html,new RegExp(page+':\\\''+label+'\\\''));
+  }
+  assert.match(html,/aria-label="\$\{esc\(navLabel\(k\)\)\}"/);
+  assert.match(html,/class="nav-label-mobile" aria-hidden="true"/);
+  assert.match(html,/\.shell \.nav-shell aside a\.on\{[\s\S]*?font-weight:850/);
+  assert.match(html,/\.shell \.nav-shell aside a\.on \.nav-icon svg\{stroke-width:2\.65/);
+});
+test('bottom tab bar remains usable with a virtual keyboard or reduced motion',()=>{
+  assert.match(html,/\.shell:has\(main :is\(input,textarea,select\):focus\) \.nav-shell/);
+  assert.match(html,/@media\(max-width:900px\) and \(prefers-reduced-motion:reduce\)/);
+  const f=gestureFixture();f.start();f.move(136,203);f.end(136,203);
+  assert.deepEqual(f.changes,['todo']);
+});

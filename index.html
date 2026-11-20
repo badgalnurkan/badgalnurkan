@@ -1587,6 +1587,116 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 /* Long Pomodoro clocks: keep hours/minutes legible on compact phones and PiP. */
 #pt.pomo-long-clock{font-size:clamp(1.05rem,4.6vw,1.85rem)!important;line-height:1.4;white-space:normal;overflow-wrap:normal}
 #pomo-overlay-time.pomo-long-clock{font-size:clamp(.92rem,3.8vw,1.3rem)!important;line-height:1.3;white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;max-width:100%}
+
+/* Mobile bottom navigation — matches the supplied reference video.
+   Navigation remains six reachable tabs; gestures on <main> are unchanged. */
+.nav-label-mobile{display:none}
+@media(max-width:900px){
+  .shell{padding-bottom:1.25rem}
+  .shell+footer{padding-bottom:calc(6.8rem + env(safe-area-inset-bottom,0px))}
+  .shell .nav-shell{
+    position:fixed;
+    top:auto;
+    bottom:calc(.65rem + env(safe-area-inset-bottom,0px));
+    left:50%;
+    transform:translateX(-50%);
+    z-index:180;
+    display:block;
+    width:min(calc(100vw - 1rem),45rem);
+    margin:0;
+    padding:.35rem;
+    border:1px solid color-mix(in srgb,var(--ln) 70%,transparent);
+    border-radius:24px;
+    background:color-mix(in srgb,var(--card) 94%,transparent);
+    box-shadow:0 12px 38px #00000024,0 1px 2px #00000012;
+    -webkit-backdrop-filter:blur(16px);
+    backdrop-filter:blur(16px);
+  }
+  .shell .nav-shell aside{
+    display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:.12rem;
+    width:100%;
+    max-width:none;
+    padding:0;
+    margin:0;
+    border:0;
+    border-radius:20px;
+    background:transparent;
+    box-shadow:none;
+    overflow:visible!important;
+    scroll-snap-type:none!important;
+    touch-action:manipulation!important;
+    cursor:default;
+  }
+  .shell .nav-shell aside a{
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+    gap:.12rem;
+    min-width:0;
+    width:100%;
+    min-height:54px;
+    padding:.42rem .1rem .34rem;
+    justify-content:center;
+    align-items:center;
+    border-radius:18px;
+    font-size:clamp(.59rem,2.5vw,.72rem)!important;
+    line-height:1.2;
+    letter-spacing:-.015em;
+    font-weight:560;
+    color:var(--mut);
+    background:transparent;
+    box-shadow:none;
+    white-space:nowrap;
+    transform:none!important;
+    touch-action:manipulation!important;
+    transition:background .22s var(--motion-ease),color .22s var(--motion-ease),box-shadow .22s var(--motion-ease);
+  }
+  .shell .nav-shell aside a .nav-icon{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:1.4rem;
+    height:1.4rem;
+    color:inherit;
+  }
+  .shell .nav-shell aside a .nav-icon svg{width:1.35rem;height:1.35rem;stroke-width:1.85;transform:none}
+  .shell .nav-shell aside a .nav-label{display:none}
+  .shell .nav-shell aside a .nav-label-mobile{display:block;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .shell .nav-shell aside a::after{content:none}
+  .shell .nav-shell aside a.on{
+    background:color-mix(in srgb,var(--acc) 18%,var(--card));
+    color:var(--ink);
+    font-weight:850;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 40%,transparent);
+  }
+  .shell .nav-shell aside a.on .nav-icon svg{stroke-width:2.65;transform:scale(1.09)}
+  .shell .nav-shell aside a.press{background:color-mix(in srgb,var(--acc) 25%,var(--card))}
+  .shell .nav-shell .mobile-menu-toggle{display:none}
+  .shell .nav-shell aside .lg{display:none}
+}
+@media(max-width:900px) and (max-width:360px){
+  .shell .nav-shell{padding:.26rem;border-radius:20px}
+  .shell .nav-shell aside a{padding:.36rem 0 .3rem;min-height:52px;font-size:.58rem!important}
+  .shell .nav-shell aside a .nav-icon svg{width:1.25rem;height:1.25rem}
+}
+@media(max-width:900px) and (prefers-reduced-motion:no-preference){
+  .shell .nav-shell aside a.on{animation:mobileTabSelect .22s var(--motion-spring)}
+  @keyframes mobileTabSelect{
+    from{filter:brightness(.97)}
+    to{filter:brightness(1)}
+  }
+}
+@media(max-width:900px){
+  .shell:has(main :is(input,textarea,select):focus) .nav-shell{
+    opacity:0;visibility:hidden;pointer-events:none;
+  }
+}
+@media(max-width:900px) and (prefers-reduced-motion:reduce){
+  .shell .nav-shell aside a,.shell .nav-shell aside a .nav-icon svg{animation:none;transition:none}
+}
+
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -1895,6 +2005,11 @@ const t=(k,lang)=>(STRS[lang||DB.lang]||STRS.en)[k]||STRS.en[k]||k;
 const monthName=mo=>tr()?AY_TR[mo]:AY[mo];
 const dayName=i=>tr()?DN_TR[i]:DAY_NAMES[i];
 const navLabel=k=>tr()?(NAV_TR[k]||k):(NAV_KEYS.find(x=>x[0]===k)||[k,k])[1];
+const NAV_SHORT={
+  tr:{home:'Ana',pomo:'Odak',todo:'Görevler',pc:'İlerleme',rep:'Rapor',set:'Ayarlar'},
+  en:{home:'Home',pomo:'Focus',todo:'Tasks',pc:'Progress',rep:'Reports',set:'Settings'}
+};
+const navShortLabel=k=>NAV_SHORT[DB.lang]?.[k]||navLabel(k);
 const quoteFor=lang=>(lang||DB.lang)==='tr'?Q_TR:Q_EN;
 const getDailyQuoteIn=lang=>{const L=quoteFor(lang),n=new Date(),s=new Date(n.getFullYear(),0,0);return L[Math.floor(((n-s)+((s.getTimezoneOffset()-n.getTimezoneOffset())*60000))/864e5)%L.length]};
 const rqFor=lang=>(lang||DB.lang)==='tr'?RQ_TR:RQ_EN;
@@ -3283,7 +3398,7 @@ function shell(){
   const firstShell=!document.querySelector('.shell aside');
   document.querySelectorAll('body > #mini-cal').forEach(el=>el.remove());
   const oldBackdrop=document.getElementById('mini-backdrop');if(oldBackdrop)oldBackdrop.remove();
-  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')">${navIcon(k)}<span>${navLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')" aria-label="${esc(navLabel(k))}" title="${esc(navLabel(k))}">${navIcon(k)}<span class="nav-label">${navLabel(k)}</span><span class="nav-label-mobile" aria-hidden="true">${navShortLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();setTimeout(checkAppReminders,0);
   requestAnimationFrame(()=>centerNav(true));
