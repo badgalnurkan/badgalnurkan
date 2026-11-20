@@ -319,3 +319,33 @@ test('cloud conflict resolution refuses to discard draft while editor is focused
   assert.ok(storage.getItem(archiveKey));
   assert.equal(second.getBase().journal['2026-11-20'].text, 'cloud note');
 });
+
+test('same-millisecond conflict resolutions never overwrite earlier recovery archives', async () => {
+  const store = memoryStorage(), remote = server({ journal: {} });
+  const app = create({
+    uid: uid(1), tabId: tab(1), storage: store,
+    load: remote.load, cas: remote.cas, now: () => 1700000000000
+  });
+  app.initialize(await remote.load());
+  const other = engine(1, 2, memoryStorage(), remote);
+  other.initialize(await remote.load());
+  app.enqueue({ journal: { '2026-11-19': 'first local' } });
+  other.enqueue({ journal: { '2026-11-19': 'first remote' } });
+  await other.flush();
+  assert.equal(await app.flush(), false);
+  const archiveA = await app.resolveWithRemote();
+  assert.ok(store.getItem(archiveA));
+  const newBase = await remote.load();
+  app.enqueue({ journal: { '2026-11-19': 'first remote',
+    '2026-11-20': 'second local' } });
+  await remote.cas(newBase, { journal: {
+    '2026-11-19': 'first remote', '2026-11-20': 'second remote'
+  } });
+  assert.equal(await app.flush(), false);
+  const archiveB = await app.resolveWithRemote();
+  assert.notEqual(archiveA, archiveB);
+  assert.equal(JSON.parse(store.getItem(archiveA)).pending.local.journal['2026-11-19'],
+    'first local');
+  assert.equal(JSON.parse(store.getItem(archiveB)).pending.local.journal['2026-11-20'],
+    'second local');
+});
