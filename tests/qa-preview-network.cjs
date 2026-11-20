@@ -67,10 +67,10 @@ async function verify() {
     const dismiss = page.locator('#storage-notice button');
     if (await dismiss.isVisible()) await dismiss.click();
     await page.locator('#welcome-continue').click();
-    await page.locator('a[onclick*="forgot"]').click();
+    await page.locator('button[onclick*="forgot"]').click();
     await page.locator('#forgot-reset-submit').waitFor();
     await page.locator('a[onclick*="login"]').click();
-    await page.locator('a[onclick*="setup"]').click();
+    await page.locator('button[onclick*="setup"]').click();
     await page.locator('#register-submit').waitFor();
 
     const observed = await page.evaluate(async host => {
