@@ -23,6 +23,8 @@ test('signup and password reset cannot bounce users back to production',()=>{
 test('QA account deletion uses the same QA API and does not mix prod identity',()=>{
  const html=read('account-close.html'),js=read('account-close.js');
  assert.match(html,/account-close\.js/);
+ assert.ok(html.includes(URL_QA),'QA account-close CSP must allow QA API');
+ assert.equal(html.includes(PROD_ID),false,'QA account-close CSP must not allow production API');
  assert.equal(js.includes(PROD_ID),false);
  assert.ok(js.includes(URL_QA));
 });
