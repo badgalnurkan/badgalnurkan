@@ -218,7 +218,7 @@ test('collapsed mobile icon uses the accent surface and accessible contrast colo
  assert.ok(collapsed,'collapsed menu style exists');
  assert.ok(collapsed.includes('background:var(--acc)'));
  assert.ok(collapsed.includes('border-color:var(--acc)'));
- assert.ok(html.includes('.shell .nav-shell aside a.on{\n    background:transparent!important;color:var(--on-acc)'));
+ assert.match(html,/\.shell \.nav-shell aside a\.on\{\s*background:transparent!important;color:var\(--on-acc\)/);
  assert.match(html,/\.shell \.nav-shell aside a\.on:focus-visible\{outline-color:var\(--on-acc\)\}/);
  assert.match(html,/\.shell \.nav-shell\.is-collapsed aside a:not\(\.on\)\{display:none!important\}/);
 });
