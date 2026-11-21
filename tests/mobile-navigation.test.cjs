@@ -174,7 +174,7 @@ test('reference-video navigation is fixed at the bottom on small viewports, not 
   assert.match(html,/\.shell \.nav-shell\{[\s\S]*?position:fixed;[\s\S]*?top:auto;[\s\S]*?bottom:calc\(\.65rem \+ env\(safe-area-inset-bottom,0px\)\)/);
   assert.match(html,/\.shell \.nav-shell aside\{[\s\S]*?grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
   assert.match(html,/\.shell \.nav-shell \.mobile-menu-toggle\{display:none\}/);
-  assert.match(html,/\.shell\+footer\{padding-bottom:calc\(6\.8rem \+ env\(safe-area-inset-bottom,0px\)\)\}/);
+  assert.match(html,/\.shell\+footer\{padding-bottom:calc\(7\.25rem \+ env\(safe-area-inset-bottom,0px\)\)\}/);
 });
 test('all six pages remain directly reachable with compact TR/EN labels and accessible full labels',()=>{
   for(const [page,label] of Object.entries({home:'Ana',pomo:'Odak',todo:'Görevler',pc:'İlerleme',rep:'Rapor',set:'Ayarlar'})){
