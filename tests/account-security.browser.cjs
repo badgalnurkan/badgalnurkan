@@ -211,7 +211,8 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     await productivity.waitForFunction(()=>pg==='home'&&document.querySelector('#mn')?.getAttribute('aria-label')===navLabel('home'));
     await productivity.locator('#mobile-quick-task').click();
     await productivity.waitForFunction(()=>pg==='todo'&&document.activeElement?.id==='nt');
-    await productivity.evaluate(()=>document.activeElement?.blur());
+    await productivity.evaluate(()=>{document.activeElement?.blur();goTo('app','home')});
+    await productivity.waitForFunction(()=>pg==='home'&&document.querySelector('#mn')?.getAttribute('aria-label')===navLabel('home'));
     console.log('PASS '+engine+': grouped dock, scroll stability and Progress backward navigation');
 
    await productivity.evaluate(()=>{
