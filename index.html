@@ -1590,7 +1590,7 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 
 
 
-/* 21 Nov video dock: left-clustered pages + separate quick-task pencil. */
+/* Bottom navigation uses theme tokens; preserve the six-tab dock and scroll behavior. */
 .nav-label-mobile{display:none}
 @media(max-width:900px){
  .shell{padding-bottom:calc(7.25rem + env(safe-area-inset-bottom,0px))}
@@ -1608,8 +1608,8 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
    position:relative!important;isolation:isolate;flex:0 1 15.6rem;
    display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;
    width:min(69vw,15.6rem);max-width:calc(100% - 3.7rem);min-width:0;
-   padding:.2rem;margin:0;background:#131416;border:1px solid #35363b;
-   border-radius:24px;box-shadow:0 7px 25px #00000052;
+   padding:.2rem;margin:0;background:var(--card);border:1px solid var(--ln);
+   border-radius:24px;box-shadow:0 7px 25px color-mix(in srgb,var(--ink) 22%,transparent);
    overflow:hidden!important;touch-action:manipulation!important;
    overscroll-behavior:contain;scroll-snap-type:none!important;pointer-events:auto;
  }
@@ -1617,15 +1617,15 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
  .shell .nav-shell aside::before{
    content:'';position:absolute;z-index:0;left:calc(.2rem + 1px);top:calc(.2rem + 1px);
    width:calc((100% - .4rem - 2px)/6);height:calc(100% - .4rem - 2px);
-   border-radius:19px;background:#35373e;box-shadow:inset 0 1px 0 #ffffff12;
+   border-radius:19px;background:var(--acc);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--on-acc) 12%,transparent);
    transform:translate3d(var(--nav-indicator-x,0%),0,0);
-   transition:transform .3s var(--motion-spring);pointer-events:none;
+   transition:transform .3s var(--motion-spring),background-color .24s var(--motion-ease);pointer-events:none;
  }
  .shell .nav-shell aside a{
    position:relative;z-index:1;box-sizing:border-box;display:flex;
    flex-direction:column;align-items:center;justify-content:center;gap:0;
    width:100%;min-width:0;min-height:46px;padding:.34rem 0;border-radius:18px;
-   background:transparent!important;box-shadow:none!important;color:#d1d1d6;
+   background:transparent!important;box-shadow:none!important;color:var(--ink);
    font-size:.7rem!important;line-height:1;font-weight:560;white-space:nowrap;
    transform:none!important;touch-action:manipulation!important;
    transition:color .2s var(--motion-ease);-webkit-tap-highlight-color:transparent;
@@ -1641,10 +1641,11 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
  .shell .nav-shell aside a :is(.nav-label,.nav-label-mobile){display:none}
  .shell .nav-shell aside a::after{content:none}
  .shell .nav-shell aside a.on{
-   background:transparent!important;color:#fff;box-shadow:none!important;font-weight:850;
+   background:transparent!important;color:var(--on-acc);box-shadow:none!important;font-weight:850;
  }
  .shell .nav-shell aside a.on .nav-icon svg{stroke-width:2.6;transform:scale(1.1)}
- .shell .nav-shell aside a:focus-visible{outline:2px solid #cee7ff;outline-offset:-3px}
+ .shell .nav-shell aside a:focus-visible{outline:2px solid var(--acc);outline-offset:-3px}
+  .shell .nav-shell aside a.on:focus-visible{outline-color:var(--on-acc)}
  .shell .nav-shell aside a.press{filter:brightness(1.12)}
  .shell .nav-shell .mobile-menu-toggle,.shell .nav-shell aside .lg{display:none}
  .shell main{scroll-margin-bottom:calc(7rem + env(safe-area-inset-bottom,0px))}
@@ -1667,7 +1668,8 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 @media(max-width:900px){
   .shell .nav-shell aside{
     transition:width .28s var(--motion-spring),flex-basis .28s var(--motion-spring),
-      max-width .28s var(--motion-spring),border-radius .28s var(--motion-spring);
+      max-width .28s var(--motion-spring),border-radius .28s var(--motion-spring),
+      background-color .24s var(--motion-ease),border-color .24s var(--motion-ease);
   }
   .shell .nav-shell.is-collapsed aside{
     flex:0 0 52px;
@@ -1676,6 +1678,8 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
     min-width:52px;
     padding:0;
     border-radius:999px;
+    background:var(--acc);
+    border-color:var(--acc);
     grid-template-columns:minmax(0,1fr);
   }
   .shell .nav-shell.is-collapsed aside::before{
@@ -2479,8 +2483,11 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-20-pomodoro-long-duration-enter';
+const SITE_RELEASE='2026-11-21-theme-aware-mobile-navigation';
 const SITE_CHANGES=[
+  {date:'2026-11-21',trTitle:'Temalarla uyumlu mobil menü',enTitle:'Theme-aware mobile navigation',items:[
+  ['Mobil alt menünün zemini, kenarlığı, simgeleri ve aktif bölüm göstergesi seçilen temanın renklerine uyarlanır.','The mobile navigation surface, border, icons and active-page indicator follow the selected theme.'],
+  ['Aşağı kaydırıldığında görünen tek simgeli menü de aynı temayı kullanır; yukarı kaydırma ve altı bölümlü düzen korunur.','The single-icon dock shown on downward scroll uses the same palette; upward expansion and all six sections remain unchanged.']]},
  {date:'2026-11-20',trTitle:'Pomodoro süre ekleme ve uzun sayaç görünümü',enTitle:'Pomodoro duration presets and long timer display',items:[
  ['Odak ve mola süresi alanında Enter tuşuyla süreyi ekleyebilirsin.','Press Enter in the focus and break duration fields to add a preset.'],
  ['60 dakika ve üzerindeki süreler ana sayaçta, odak görünümünde ve pencere içinde pencere modunda saat, dakika ve saniye olarak gösterilir.','Durations of 60 minutes or longer show hours, minutes and seconds in the main timer, focus view and Picture-in-Picture.']]},
