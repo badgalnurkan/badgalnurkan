@@ -3,28 +3,103 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://flcfqwndqfmbritaywfb.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://lvomrcqytfygcmguojcj.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
       ]
     }
   ],
   "redirects": [
-    { "source": "/deneme.html", "destination": "/", "permanent": false },
-    { "source": "/deneme_final.html", "destination": "/", "permanent": false },
-    { "source": "/demo.html", "destination": "/", "permanent": false },
-    { "source": "/patch9.py", "destination": "/", "permanent": false },
-    { "source": "/AGENTS.md", "destination": "/", "permanent": false },
-    { "source": "/VALIDATION.md", "destination": "/", "permanent": false },
-    { "source": "/README.md", "destination": "/", "permanent": false },
-    { "source": "/package.json", "destination": "/", "permanent": false },
-    { "source": "/database/:path*", "destination": "/", "permanent": false },
-    { "source": "/docs/:path*", "destination": "/", "permanent": false },
-    { "source": "/scripts/:path*", "destination": "/", "permanent": false },
-    { "source": "/supabase/:path*", "destination": "/", "permanent": false },
-    { "source": "/tests/:path*", "destination": "/", "permanent": false },
-    { "source": "/.github/:path*", "destination": "/", "permanent": false }
+    {
+      "source": "/deneme.html",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/deneme_final.html",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/demo.html",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/patch9.py",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/AGENTS.md",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/VALIDATION.md",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/README.md",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/package.json",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/database/:path*",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/docs/:path*",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/scripts/:path*",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/supabase/:path*",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/tests/:path*",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/.github/:path*",
+      "destination": "/",
+      "permanent": false
+    }
   ]
 }

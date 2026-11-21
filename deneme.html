@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta name="robots" content="noindex,nofollow,noarchive">
 <meta charset="utf-8">
 <title>Improvin' your day</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -1246,8 +1247,8 @@ async function delAcc(){
   delete DB.accounts[A.u];A=null;DB.last='';DB.lastUser=Object.keys(DB.accounts)[0]||'';save();view='welcome';goTo('welcome','home');
 }
 /* ================= Supabase (bulut hesap + senkron) ================= */
-const SUPABASE_URL='https://flcfqwndqfmbritaywfb.supabase.co';
-const SUPABASE_KEY='sb_publishable_4QTEEc6tSYV2QtNhmeP6Iw_B3sM6dtm';
+const SUPABASE_URL='https://lvomrcqytfygcmguojcj.supabase.co';
+const SUPABASE_KEY='sb_publishable_93htU70YyAzgryKnf18idg_i7sYgbHQ';
 const CLOUD_KEY='b1cloud', SESS_KEY='b1sb';
 const cloud=()=>{try{return localStorage.getItem(CLOUD_KEY)!=='0'}catch(e){return true}};
 const sbSession=()=>{try{return JSON.parse(getItem(SESS_KEY)||'null')}catch(e){return null}};
