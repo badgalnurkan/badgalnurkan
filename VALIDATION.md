@@ -1,3 +1,15 @@
+# 22 Kasım 2026 — Güvenlik başlıkları, yayından kaldırılan dosyalar ve kayıtlı kullanıcı adları (yayın adayı)
+
+- `vercel.json` tüm yanıtlara `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` ve `Permissions-Policy` ekler. CSP kaynakları sitenin kendi dosyaları, Google Fonts, Supabase projesi ve izin verilen veri/blob kaynaklarıyla sınırlar; çerçeveleme ve eklenti nesneleri kapalıdır. `<base>` adresi ve form gönderimleri aynı origin ile sınırlıdır. Mevcut satır içi betik ve `onclick` yapısı nedeniyle `'unsafe-inline'` korunur, `'unsafe-eval'` yoktur.
+- Kökteki eski uygulama kopyaları (`deneme.html`, `deneme_final.html`, `demo.html`), `patch9.py`, Markdown dosyaları, `package.json` ve `database/`, `docs/`, `scripts/`, `supabase/`, `tests/`, `.github/` yolları geçici yönlendirmeyle (307) ana sayfaya gider. Dosyalar depoda kalır; `deneme.html` yerel `npm run test:e2e` için gereklidir.
+- Kayıtlı kullanıcı adları satır içi `onclick` metnine yazılmaz, `data-user` özniteliğinden okunur. Kesme işareti içeren bir ad düğmeyi bozamaz veya kod olarak çalışamaz.
+- Geçmiş özet listesi günlük kayıtlarını arşiv listesiyle aynı tarih ve nesne filtresinden geçirir; bozuk veya `null` kayıt ekranı çökertemez.
+- `tests/security-hardening.test.cjs` başlıkları, yönlendirmeleri, kökteki her HTML dosyasının durumunu ve iki şablon kuralını denetler; `npm test` kapsamına eklendi. Yayın onayı sonrası `SITE_RELEASE` benzersiz `2026-11-22-security-hardening-01` kimliğiyle değiştirildi ve bildirim kutusuna yalnızca uygulanan değişiklikleri anlatan tarihli Türkçe/İngilizce `SITE_CHANGES` kaydı eklendi.
+- Doğrulama: `npm test` 293/293 geçti ve `python scripts/build-preview.py` çalıştı. Windows'ta `core.autocrlf=true` ile CRLF olan çalışma kopyasında `todo-empty-state` testi yanlış hata verdiği için ikisi de LF'ye çevrilmiş geçici bir kopyada çalıştırıldı; `dist/` depoya eklenmedi. `vercel.json` başlıkları ve yönlendirmeleri yerel bir sunucuda taklit edildi. Chromium tabanlı tarayıcıda `review-app.html` ve `index.html` giriş ekranı CSP ihlali olmadan açıldı; betikler, stil dosyası ve yazı tipleri yüklendi. `account-close.html` ile yasal sayfalar dosya içeriğinden kontrol edildi. Yayın bildirimi izole örnek uygulamada oluşturuldu, bildirim kutusundan sürüm ayrıntıları açıldı ve tekrar oluşturma çağrılarında yalnızca bir sürüm bildirimi kaldığı doğrulandı. 632 piksel genişlikte yapısal kontrolde yatay taşma ve CSP ihlali gözlenmedi.
+- Doğrulama sınırı: Başlıklar ve yönlendirmeler gerçek bir Vercel önizlemesinde henüz denenmedi. Ekran görüntüsü alınamadığı için görsel kontrol yapılmadı. Google ile giriş, şifre yenileme ve hesap kapatma gerçek hesap ve e-postayla uçtan uca çalıştırılmadı. Canlı veritabanındaki hesap silme onay metni buradan okunamadı.
+
+---
+
 # 21 Kasım 2026 — Temalara uyumlu mobil menü (inceleme dalı)
 
 - 17 seçilebilir temada mobil alt menü, aktif sekme, seçilmemiş simgeler, odak halkası ve aşağı kaydırmadaki tek simgeli görünüm ortak tema renklerini kullanır. Sabit koyu menü paleti kaldırıldı.
