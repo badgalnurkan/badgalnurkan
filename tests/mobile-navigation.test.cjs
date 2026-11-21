@@ -103,6 +103,7 @@ function transitionFixture(reduced=false){
   document:{getElementById:()=>main,querySelector:selector=>selector==='main'?main:aside},
   window:{scrollY:0,matchMedia:()=>({matches:reduced}),scrollTo(){}},history:{pushState(){}},
   renderPage:()=>renders.push(context.pg),centerNav(){},softPaint(){renders.push('auth')},navLabel:key=>key,
+  resetMobileDockForPage(){context.dockResets=(context.dockResets||0)+1},
  };
  vm.createContext(context);vm.runInContext(section('function uiMotionTime(name,fallback){','const feedbackAnimations=')+section('let pageSwapTimer=0;','/* mobil/tablet: secilen sekme'),context);
  return {context,main,renders,timers,flush:()=>{for(const [id,fn] of [...timers]){timers.delete(id);fn()}}};
@@ -213,13 +214,13 @@ test('bottom navigation keeps accessible full labels, reduced motion and safe ar
  assert.match(html,/prefers-reduced-motion:reduce\)[\s\S]*?aside::before\{transition:none\}/);
 });
 
-test('reference groups six mobile tabs left, with a separate blue right action',()=>{
+test('mobile navigation keeps six original pages but no invented blue pencil',()=>{
  assert.ok(html.includes('width:min(69vw,15.6rem)'));
  assert.ok(html.includes('grid-template-columns:repeat(6,minmax(0,1fr))'));
  assert.ok(html.includes('overflow:hidden!important'));
- assert.ok(html.includes('background:#00b9f4'));
- assert.ok(html.includes('id="mobile-quick-task" class="mobile-quick-task"'));
- assert.ok(html.includes('.nav-label,.nav-label-mobile){display:none}'));
+ assert.doesNotMatch(html,/mobile-quick-task|openQuickTask|quickTaskFocusPending/);
+ assert.ok(html.includes('justify-content:flex-start'));
+ assert.ok(html.includes('aside a:not(.on){display:none!important}'));
 });
 test('moving back from Progress cancels pending animations and resets mobile scroll without smooth movement',()=>{
  const f=transitionFixture();
@@ -233,18 +234,66 @@ test('moving back from Progress cancels pending animations and resets mobile scr
  assert.deepEqual(f.renders,['home']);
  assert.deepEqual(scroll,[[0,0]]);
 });
-test('blue pencil opens existing new-task input without automatically writing data',()=>{
- const calls=[];let focused=0;
- const context={A:{},view:'app',pg:'pc',quickTaskFocusPending:false,
-   navGo:(_el,v,p)=>calls.push([v,p]),
-   document:{getElementById:id=>id==='nt'?{focus(){focused++}}:null}};
+
+test('scroll direction collapses to the active icon, expands on upward movement',()=>{
+ const classes=new Set(),labels=[],handlers={};
+ const selected={setAttribute:(k,v)=>labels.push({key:k,value:v})};
+ const dock={classList:{toggle:(key,on)=>{if(on)classes.add(key);else classes.delete(key)}},
+  querySelector:selector=>selector==='#nav-aside a.on'?selected:null};
+ const context={A:{},view:'app',pg:'pc',window:{scrollY:0,innerWidth:390,
+  addEventListener:(name,fn)=>{handlers[name]=fn}},
+  document:{querySelector:()=>dock},tr:()=>false,navLabel:key=>key};
  vm.createContext(context);
- vm.runInContext(section('function openQuickTask(){','const NAV_ICON_PATHS='),context);
- context.openQuickTask();
- assert.deepEqual(calls,[['app','todo']]);
- assert.equal(context.quickTaskFocusPending,true);
- assert.equal(focused,0);
- context.pg='todo';context.openQuickTask();
- assert.equal(focused,1);
- assert.equal(calls.length,1);
+ vm.runInContext(section('let mobileDockLastY=0;','const NAV_ICON_PATHS='),context);
+ context.window.scrollY=90;handlers.scroll();
+ assert.equal(classes.has('is-collapsed'),true);
+ assert.equal(labels.at(-1).value,'Expand menu: pc');
+ context.window.scrollY=74;handlers.scroll();
+ assert.equal(classes.has('is-collapsed'),false);
+ assert.equal(labels.at(-1).value,'pc');
+});
+test('short scroll jitter does not collapse, returning to top expands',()=>{
+ const classes=new Set(),handlers={};
+ const dock={classList:{toggle:(k,on)=>on?classes.add(k):classes.delete(k)},
+  querySelector:()=>({setAttribute(){}})};
+ const context={A:{},view:'app',pg:'home',window:{scrollY:0,innerWidth:390,
+   addEventListener:(name,fn)=>{handlers[name]=fn}},
+   document:{querySelector:()=>dock},tr:()=>true,navLabel:key=>key};
+ vm.createContext(context);
+ vm.runInContext(section('let mobileDockLastY=0;','const NAV_ICON_PATHS='),context);
+ for(const y of [5,9,11,13,11,14,16,17]){context.window.scrollY=y;handlers.scroll()}
+ assert.equal(classes.has('is-collapsed'),false);
+ context.window.scrollY=75;handlers.scroll();
+ assert.equal(classes.has('is-collapsed'),true);
+ context.window.scrollY=0;handlers.scroll();
+ assert.equal(classes.has('is-collapsed'),false);
+});
+test('desktop never collapses; width changes reset mobile view only once',()=>{
+ const classes=new Set(),handlers={},labels=[];
+ const dock={classList:{toggle:(k,on)=>on?classes.add(k):classes.delete(k)},
+  querySelector:()=>({setAttribute:(k,v)=>labels.push(v)})};
+ const context={A:{},view:'app',pg:'rep',
+   window:{scrollY:0,innerWidth:1000,addEventListener:(n,fn)=>handlers[n]=fn},
+   document:{querySelector:()=>dock},tr:()=>false,navLabel:x=>x};
+ vm.createContext(context);
+ vm.runInContext(section('let mobileDockLastY=0;','const NAV_ICON_PATHS='),context);
+ context.window.scrollY=250;handlers.scroll();
+ assert.equal(classes.size,0);
+ context.window.innerWidth=390;handlers.resize();
+ context.window.scrollY=315;handlers.scroll();
+ assert.equal(classes.has('is-collapsed'),true);
+ context.window.innerWidth=390;handlers.resize();
+ assert.equal(classes.has('is-collapsed'),true,'height-only viewport changes cannot reopen the dock');
+ context.window.innerWidth=400;handlers.resize();
+ assert.equal(classes.has('is-collapsed'),false);
+});
+test('tapping the only visible current icon expands without changing page',()=>{
+ let resets=0,routes=0;
+ const context={view:'app',pg:'pc',
+  document:{querySelector:s=>s==='.nav-shell.is-collapsed'?{}:null},
+  resetMobileDockForPage:()=>{resets++},pressTo:()=>{routes++}};
+ vm.createContext(context);
+ vm.runInContext(section('function navGo(el,v,p){','/* Scroll-sensitive mobile dock:'),context);
+ context.navGo(null,'app','pc');
+ assert.equal(resets,1);assert.equal(routes,0);
 });

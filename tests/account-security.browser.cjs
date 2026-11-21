@@ -160,60 +160,72 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await productivity.locator('#storage-notice button').click();
    await productivity.locator('#storage-notice').waitFor({state:'detached'});
 
-    // Real Chromium/WebKit regression using only synthetic in-browser accounts.
+    // Real browser regression: scroll DOWN keeps only the active page icon,
+    // scroll UP restores all six links. No unrequested action control exists.
     for(const width of [320,375,390,430,768]){
       await productivity.setViewportSize({width,height:844});
-      const bar=await productivity.evaluate(()=>{
-        const nav=document.querySelector('.nav-shell'),aside=document.getElementById('nav-aside');
-        const quick=document.getElementById('mobile-quick-task');
-        const box=node=>node.getBoundingClientRect();
-        return {
-          position:getComputedStyle(nav).position,
-          left:box(aside).left,right:box(aside).right,
-          actionLeft:box(quick).left,actionRight:box(quick).right,
-          bottom:box(nav).bottom,viewport:innerHeight,
-          overflow:document.documentElement.scrollWidth-innerWidth,
-          tabs:aside.querySelectorAll('a[data-k]').length
-        };
+      const layout=await productivity.evaluate(()=>{
+        const bar=document.querySelector('.shell .nav-shell'),aside=document.getElementById('nav-aside');
+        const box=aside.getBoundingClientRect(),dock=bar.getBoundingClientRect();
+        return {position:getComputedStyle(bar).position,
+          tabs:aside.querySelectorAll('a[data-k]').length,
+          pencilAbsent:!document.getElementById('mobile-quick-task'),
+          left:box.left,right:box.right,bottom:dock.bottom,
+          screenWidth:innerWidth,screenHeight:innerHeight,
+          overflow:document.documentElement.scrollWidth-innerWidth};
       });
-      assert.equal(bar.position,'fixed',engine+' fixed mobile bar '+width);
-      assert.equal(bar.tabs,6,engine+' six links grouped '+width);
-      assert.ok(bar.left>=0&&bar.right+4<bar.actionLeft,engine+' left dock grouping '+width);
-      assert.ok(bar.actionRight<=width+1&&bar.bottom<=bar.viewport+1,
-        engine+' fixed bar escapes viewport '+width);
-      assert.ok(bar.overflow<=1,engine+' page overflows horizontally '+width);
+      assert.equal(layout.position,'fixed',engine+' dock position '+width);
+      assert.equal(layout.tabs,6,engine+' all six original sections '+width);
+      assert.equal(layout.pencilAbsent,true,engine+' no unrequested pencil '+width);
+      assert.ok(layout.left>=0&&layout.right<=width+1,engine+' dock horizontally contained '+width);
+      assert.ok(layout.bottom<=layout.screenHeight+1,engine+' dock vertically contained '+width);
+      assert.ok(layout.overflow<=1,engine+' no horizontal body overflow '+width);
     }
     await productivity.setViewportSize({width:390,height:844});
     await productivity.evaluate(()=>{
-      document.getElementById('mn').style.minHeight='150vh';
-      window.scrollTo(0,document.documentElement.scrollHeight);
+      const main=document.getElementById('mn');
+      main.style.minHeight='1600px';
+      window.scrollTo({top:0,behavior:'instant'});
     });
-    const scrolledDock=await productivity.evaluate(()=>{
-      const nav=document.querySelector('.nav-shell').getBoundingClientRect();
-      return {y:window.scrollY,left:nav.left,right:nav.right,bottom:nav.bottom,height:innerHeight};
+    await productivity.waitForFunction(()=>window.scrollY===0);
+    await productivity.evaluate(()=>resetMobileDockForPage());
+    await productivity.evaluate(()=>window.scrollTo({top:260,behavior:'instant'}));
+    await productivity.waitForFunction(()=>window.scrollY>=200);
+    await productivity.waitForFunction(()=>document.querySelector('.nav-shell')?.classList.contains('is-collapsed'));
+    await productivity.waitForFunction(()=>document.getElementById('nav-aside')?.getBoundingClientRect().width<=55);
+    const small=await productivity.evaluate(()=>{
+      const nav=document.querySelector('.nav-shell'),aside=document.getElementById('nav-aside');
+      const shown=[...aside.querySelectorAll('a[data-k]')].filter(a=>getComputedStyle(a).display!=='none');
+      const a=aside.getBoundingClientRect(),b=nav.getBoundingClientRect();
+      return {shown:shown.length,current:shown[0]?.dataset.k,collapsed:nav.classList.contains('is-collapsed'),
+        left:a.left,width:a.width,right:a.right,screenWidth:innerWidth,bottom:b.bottom};
     });
-    assert.ok(scrolledDock.y>0,engine+' scroll fixture must actually scroll');
-    assert.ok(scrolledDock.left>=0&&scrolledDock.right<=391&&scrolledDock.bottom<=scrolledDock.height+1,
-      engine+' floating bottom dock must not overflow on long-page scroll');
+    assert.equal(small.shown,1,engine+' downward scroll shows only current icon');
+    assert.equal(small.current,'home',engine+' sole icon must be current page');
+    assert.ok(small.width<=55&&small.left>=0&&small.right<=small.screenWidth+1,
+      engine+' collapsed circle stays within viewport');
+    await productivity.evaluate(()=>window.scrollTo({top:180,behavior:'instant'}));
+    await productivity.waitForFunction(()=>!document.querySelector('.nav-shell')?.classList.contains('is-collapsed'));
+    const restored=await productivity.evaluate(()=>[...document.querySelectorAll('#nav-aside a[data-k]')]
+      .filter(a=>getComputedStyle(a).display!=='none').length);
+    assert.equal(restored,6,engine+' upward scroll restores all six icons');
+    await productivity.evaluate(()=>window.scrollTo({top:300,behavior:'instant'}));
+    await productivity.waitForFunction(()=>document.querySelector('.nav-shell')?.classList.contains('is-collapsed'));
+    await productivity.locator('#nav-aside a.on').click();
+    await productivity.waitForFunction(()=>!document.querySelector('.nav-shell')?.classList.contains('is-collapsed'));
     await productivity.evaluate(()=>{document.getElementById('mn').style.minHeight='';goTo('app','pc')});
     await productivity.waitForFunction(()=>pg==='pc'&&document.querySelector('#mn')?.getAttribute('aria-label')===navLabel('pc'));
     await productivity.locator('#nav-aside a[data-k="todo"]').click();
     await productivity.waitForFunction(()=>pg==='todo'&&document.querySelector('#mn')?.getAttribute('aria-label')===navLabel('todo'));
-    const backwards=await productivity.evaluate(()=>({
-      direction:document.getElementById('mn').style.getPropertyValue('--iydu-nav-dir'),
-      selected:document.getElementById('nav-aside').style.getPropertyValue('--nav-indicator-x'),
-      pending:document.getElementById('mn').classList.contains('swap')
+    const reverse=await productivity.evaluate(()=>({
+      direction:document.querySelector('#mn').style.getPropertyValue('--iydu-nav-dir'),
+      indicator:document.querySelector('#nav-aside').style.getPropertyValue('--nav-indicator-x')
     }));
-    assert.equal(backwards.direction,'-14px',engine+' Progress->Tasks backwards direction');
-    assert.equal(backwards.selected,'200%',engine+' selected pill returned to Tasks');
-    assert.equal(backwards.pending,false,engine+' last content transition completed');
+    assert.equal(reverse.direction,'-14px',engine+' Progress backwards transition');
+    assert.equal(reverse.indicator,'200%',engine+' Tasks highlight after backwards navigation');
     await productivity.evaluate(()=>goTo('app','home'));
     await productivity.waitForFunction(()=>pg==='home'&&document.querySelector('#mn')?.getAttribute('aria-label')===navLabel('home'));
-    await productivity.locator('#mobile-quick-task').click();
-    await productivity.waitForFunction(()=>pg==='todo'&&document.activeElement?.id==='nt');
-    await productivity.evaluate(()=>{document.activeElement?.blur();goTo('app','home')});
-    await productivity.waitForFunction(()=>pg==='home'&&document.querySelector('#mn')?.getAttribute('aria-label')===navLabel('home'));
-    console.log('PASS '+engine+': grouped dock, scroll stability and Progress backward navigation');
+    console.log('PASS '+engine+': scroll-down collapse, scroll-up expand, no pencil, reverse navigation');
 
    await productivity.evaluate(()=>{
      A.tasks=[{t:'Birinci görev',s:''},{t:'İkinci görev',s:'done'},{t:'Üçüncü görev',s:''}];
