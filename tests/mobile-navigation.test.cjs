@@ -174,7 +174,7 @@ test('reference-video navigation is fixed at the bottom on small viewports, not 
   assert.match(html,/\.shell \.nav-shell\{[\s\S]*?position:fixed;[\s\S]*?top:auto;[\s\S]*?bottom:calc\(\.65rem \+ env\(safe-area-inset-bottom,0px\)\)/);
   assert.match(html,/\.shell \.nav-shell aside\{[\s\S]*?grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
   assert.match(html,/\.shell \.nav-shell \.mobile-menu-toggle\{display:none\}/);
-  assert.match(html,/\.shell\+footer\{padding-bottom:calc\(6\.8rem \+ env\(safe-area-inset-bottom,0px\)\)\}/);
+  assert.match(html,/\.shell\+footer\{padding-bottom:calc\(7\.25rem \+ env\(safe-area-inset-bottom,0px\)\)\}/);
 });
 test('all six pages remain directly reachable with compact TR/EN labels and accessible full labels',()=>{
   for(const [page,label] of Object.entries({home:'Ana',pomo:'Odak',todo:'Görevler',pc:'İlerleme',rep:'Rapor',set:'Ayarlar'})){
@@ -190,4 +190,25 @@ test('bottom tab bar remains usable with a virtual keyboard or reduced motion',(
   assert.match(html,/@media\(max-width:900px\) and \(prefers-reduced-motion:reduce\)/);
   const f=gestureFixture();f.start();f.move(136,203);f.end(136,203);
   assert.deepEqual(f.changes,['todo']);
+});
+
+test('video 21 Nov: active pill is one movable surface inside a dark bottom navigation bar',()=>{
+ assert.match(html,/\.shell \.nav-shell\{[\s\S]*?position:fixed;[\s\S]*?bottom:calc\(\.65rem \+ env\(safe-area-inset-bottom,0px\)\)/);
+ assert.match(html,/background:#111215/);
+ assert.match(html,/\.shell \.nav-shell aside::before\{[\s\S]*?transform:translate3d\(var\(--nav-indicator-x,0%\),0,0\)/);
+ assert.match(html,/transition:transform \.3s var\(--motion-spring\)/);
+ assert.match(html,/grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
+ assert.match(html,/\.shell \.nav-shell aside a\.on\{[\s\S]*?font-weight:850/);
+});
+test('initial render and navigation both advance the sliding indicator without removing swipe controls',()=>{
+ assert.match(html,/style="--nav-indicator-x:\$\{Math\.max\(0,NAV\.findIndex/);
+ assert.match(html,/aside\.style\?\.setProperty\('--nav-indicator-x'/);
+ assert.match(html,/bar\?\.style\?\.setProperty\('--nav-indicator-x'/);
+ assert.match(html,/function pageSwipeDirection\(/);
+ const f=gestureFixture();f.start();f.end(105,201);assert.deepEqual(f.changes,['todo']);
+});
+test('bottom navigation keeps accessible full labels, reduced motion and safe area',()=>{
+ assert.match(html,/aria-label="\$\{esc\(navLabel\(k\)\)\}"/);
+ assert.match(html,/padding-bottom:calc\(7\.25rem \+ env\(safe-area-inset-bottom,0px\)\)/);
+ assert.match(html,/prefers-reduced-motion:reduce\)[\s\S]*?aside::before\{transition:none\}/);
 });
