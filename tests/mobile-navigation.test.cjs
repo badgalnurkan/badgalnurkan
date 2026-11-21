@@ -193,14 +193,36 @@ test('bottom tab bar remains usable with a virtual keyboard or reduced motion',(
   assert.deepEqual(f.changes,['todo']);
 });
 
-test('video 21 Nov: active pill is one movable surface inside a dark bottom navigation bar',()=>{
+test('theme-aware mobile dock retains the sliding active indicator',()=>{
  assert.match(html,/\.shell \.nav-shell\{[\s\S]*?position:fixed;[\s\S]*?bottom:calc\(\.65rem \+ env\(safe-area-inset-bottom,0px\)\)/);
-  assert.ok(html.includes('background:#131416'));
+  assert.match(html,/\.shell \.nav-shell aside\{[\s\S]*?background:var\(--card\);border:1px solid var\(--ln\)/);
+  assert.match(html,/\.shell \.nav-shell aside::before\{[\s\S]*?background:var\(--acc\)/);
  assert.match(html,/\.shell \.nav-shell aside::before\{[\s\S]*?transform:translate3d\(var\(--nav-indicator-x,0%\),0,0\)/);
  assert.match(html,/transition:transform \.3s var\(--motion-spring\)/);
  assert.match(html,/grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
  assert.match(html,/\.shell \.nav-shell aside a\.on\{[\s\S]*?font-weight:850/);
 });
+test('all selectable themes supply a palette to the same mobile dock',()=>{
+ const names=[...source.match(/const THEMES=\[([^\]]+)\]/)[1].matchAll(/"([^"]+)"/g)].map(m=>m[1]);
+ assert.equal(names.length,17);
+ for(const name of names)assert.ok(html.includes(':root[data-t='+name+']{'),'theme variables missing: '+name);
+ const dock=html.split('/* Bottom navigation uses theme tokens; preserve the six-tab dock and scroll behavior. */')[1]?.split('@media(max-width:360px)')[0];
+ assert.ok(dock,'mobile dock rules exist');
+ for(const token of ['background:var(--card)','border:1px solid var(--ln)','background:var(--acc)','color:var(--ink)','color:var(--on-acc)']){
+  assert.ok(dock.includes(token),'missing theme token: '+token);
+ }
+ assert.doesNotMatch(dock,/(?:background|border(?:-color)?|color|outline):#[0-9a-f]{3,8}/i);
+});
+test('collapsed mobile icon uses the accent surface and accessible contrast color',()=>{
+ const collapsed=html.match(/\.shell \.nav-shell\.is-collapsed aside\{[\s\S]*?\n  \}/)?.[0];
+ assert.ok(collapsed,'collapsed menu style exists');
+ assert.ok(collapsed.includes('background:var(--acc)'));
+ assert.ok(collapsed.includes('border-color:var(--acc)'));
+ assert.match(html,/\.shell \.nav-shell aside a\.on\{\s*background:transparent!important;color:var\(--on-acc\)/);
+ assert.match(html,/\.shell \.nav-shell aside a\.on:focus-visible\{outline-color:var\(--on-acc\)\}/);
+ assert.match(html,/\.shell \.nav-shell\.is-collapsed aside a:not\(\.on\)\{display:none!important\}/);
+});
+
 test('initial render and navigation both advance the sliding indicator without removing swipe controls',()=>{
  assert.match(html,/style="--nav-indicator-x:\$\{Math\.max\(0,NAV\.findIndex/);
  assert.match(html,/aside\.style\?\.setProperty\('--nav-indicator-x'/);
