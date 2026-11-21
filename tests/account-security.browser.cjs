@@ -192,6 +192,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     await productivity.evaluate(()=>window.scrollTo({top:260,behavior:'instant'}));
     await productivity.waitForFunction(()=>window.scrollY>=200);
     await productivity.waitForFunction(()=>document.querySelector('.nav-shell')?.classList.contains('is-collapsed'));
+    await productivity.waitForFunction(()=>document.getElementById('nav-aside')?.getBoundingClientRect().width<=55);
     const small=await productivity.evaluate(()=>{
       const nav=document.querySelector('.nav-shell'),aside=document.getElementById('nav-aside');
       const shown=[...aside.querySelectorAll('a[data-k]')].filter(a=>getComputedStyle(a).display!=='none');
