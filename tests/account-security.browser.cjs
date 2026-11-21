@@ -185,10 +185,12 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     await productivity.evaluate(()=>{
       const main=document.getElementById('mn');
       main.style.minHeight='1600px';
-      window.scrollTo(0,0);
-      resetMobileDockForPage();
+      window.scrollTo({top:0,behavior:'instant'});
     });
-    await productivity.evaluate(()=>window.scrollTo(0,260));
+    await productivity.waitForFunction(()=>window.scrollY===0);
+    await productivity.evaluate(()=>resetMobileDockForPage());
+    await productivity.evaluate(()=>window.scrollTo({top:260,behavior:'instant'}));
+    await productivity.waitForFunction(()=>window.scrollY>=200);
     await productivity.waitForFunction(()=>document.querySelector('.nav-shell')?.classList.contains('is-collapsed'));
     const small=await productivity.evaluate(()=>{
       const nav=document.querySelector('.nav-shell'),aside=document.getElementById('nav-aside');
@@ -201,12 +203,12 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     assert.equal(small.current,'home',engine+' sole icon must be current page');
     assert.ok(small.width<=55&&small.left>=0&&small.right<=small.screenWidth+1,
       engine+' collapsed circle stays within viewport');
-    await productivity.evaluate(()=>window.scrollTo(0,220));
+    await productivity.evaluate(()=>window.scrollTo({top:180,behavior:'instant'}));
     await productivity.waitForFunction(()=>!document.querySelector('.nav-shell')?.classList.contains('is-collapsed'));
     const restored=await productivity.evaluate(()=>[...document.querySelectorAll('#nav-aside a[data-k]')]
       .filter(a=>getComputedStyle(a).display!=='none').length);
     assert.equal(restored,6,engine+' upward scroll restores all six icons');
-    await productivity.evaluate(()=>window.scrollTo(0,280));
+    await productivity.evaluate(()=>window.scrollTo({top:300,behavior:'instant'}));
     await productivity.waitForFunction(()=>document.querySelector('.nav-shell')?.classList.contains('is-collapsed'));
     await productivity.locator('#nav-aside a.on').click();
     await productivity.waitForFunction(()=>!document.querySelector('.nav-shell')?.classList.contains('is-collapsed'));
