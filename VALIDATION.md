@@ -1,3 +1,12 @@
+# 21 Kasım 2026 — Temalara uyumlu mobil menü (inceleme dalı)
+
+- 17 seçilebilir temada mobil alt menü, aktif sekme, seçilmemiş simgeler, odak halkası ve aşağı kaydırmadaki tek simgeli görünüm ortak tema renklerini kullanır. Sabit koyu menü paleti kaldırıldı.
+- Altı sekmeli solda toplanmış düzen, aşağı/yukarı kaydırma davranışı, aktif gösterge animasyonu, yatay gezinme ve masaüstü menüsü değiştirilmedi.
+- `tests/mobile-navigation.test.cjs` dosyasına tema değişkenleri, açık/koyu renk uyumu ve daraltılmış menü için regresyon kontrolleri eklendi.
+- Doğrulama sınırı: Değişiklik önce PR önizlemesine alınır. CI ve tarayıcı testleri tamamlanmadan canlıda yayımlandığı ya da kusursuz çalıştığı iddia edilmez.
+
+---
+
 # 18 Kasım 2026 · Şifre yenileme, görev planlama, rapor takvimi ve Pomodoro
 
 Şifre yenileme isteği tarayıcıya bağlı bir PKCE doğrulayıcısı üretir. Posta başka tarayıcıda açılırsa tek kullanımlık kod ilk tarayıcıda kullanılabilir. Oturum açma, kapanış onayı ve şifre yenileme ayrı akışlardır. Hesap e-postasının teslim kanalı, Edge hizmetinin salt okunur durum yanıtında görülebilir. İşlem başlıkları için Resend gönderici bilgileri gerekir. Gerçek kullanıcı postaları test amacıyla gönderilmez.
