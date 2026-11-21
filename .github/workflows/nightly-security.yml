@@ -1,0 +1,91 @@
+name: Nightly read-only quality and security checks
+
+on:
+  schedule:
+    # Europe/Istanbul is UTC+3 year-round.
+    # 01:00-06:00 TRT = previous day 22:00-23:00 and current day 00:00-03:00 UTC.
+    - cron: '0 22,23,0,1,2,3 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/nightly-security.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-readonly-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Unit tests, static checks, and production health
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -type f \( -name '*.js' -o -name '*.cjs' -o -name '*.mjs' \) \
+            -not -path './.git/*' -print0 |
+            while IFS= read -r -d '' file; do node --check "$file"; done
+
+      - name: Run existing regression tests
+        run: npm test
+
+      - name: Build isolated static preview
+        run: python3 scripts/build-preview.py
+
+      - name: Inspect committed files for private-key headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git grep -n -E -- '-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----' -- ':!tests/**'; then
+            echo "::error::Possible private key material committed to repository"
+            exit 1
+          fi
+          echo "PASS: No private-key PEM headers found (not a comprehensive secret scan)"
+
+      - name: Check dependency audit applicability
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+            npm audit --omit=dev --audit-level=high
+          else
+            echo "::notice::No npm lockfile; npm audit skipped. This is not a dependency vulnerability clearance."
+          fi
+
+      - name: Check public production endpoints (GET only)
+        shell: bash
+        run: |
+          node <<'NODE'
+          const urls = [
+            'https://badgalnurkan.com/',
+            'https://www.badgalnurkan.com/'
+          ];
+          (async () => {
+            for (const url of urls) {
+              const response = await fetch(url, {
+                redirect: 'follow',
+                signal: AbortSignal.timeout(15000),
+                headers: { 'user-agent': 'IYD-readonly-nightly-healthcheck/1.0' }
+              });
+              if (!response.ok) throw new Error(url + ': HTTP ' + response.status);
+              const body = await response.text();
+              if (!body.toLowerCase().includes('<html')) throw new Error(url + ': expected HTML response');
+              console.log('PASS:', url, 'HTTP', response.status);
+            }
+          })().catch(error => { console.error(error); process.exitCode = 1; });
+          NODE
