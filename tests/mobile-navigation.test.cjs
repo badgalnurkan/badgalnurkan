@@ -227,10 +227,10 @@ test('moving back from Progress cancels pending animations and resets mobile scr
  const scroll=[];f.context.window.scrollTo=(...args)=>scroll.push(args);
  f.context.goTo('app','todo');
  assert.equal(f.main.navShift.value,'-14px');
- f.context.goTo('app','pomo');
+ f.context.goTo('app','home');
  assert.equal(f.timers.size,1);
  f.flush();
- assert.deepEqual(f.renders,['pomo']);
+ assert.deepEqual(f.renders,['home']);
  assert.deepEqual(scroll,[[0,0]]);
 });
 test('blue pencil opens existing new-task input without automatically writing data',()=>{
