@@ -1589,145 +1589,92 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 #pomo-overlay-time.pomo-long-clock{font-size:clamp(.92rem,3.8vw,1.3rem)!important;line-height:1.3;white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;max-width:100%}
 
 
-/* Bottom navigation, refined against the 21 Nov mobile reference video.
-   The six original destinations and horizontal page swipes remain intact. */
-.nav-label-mobile{display:none}
+
+/* 21 Nov video dock: left-clustered pages + separate quick-task pencil. */
+.nav-label-mobile,.mobile-quick-task{display:none}
 @media(max-width:900px){
-  .shell{padding-bottom:1.25rem}
-  .shell+footer{padding-bottom:calc(7.25rem + env(safe-area-inset-bottom,0px))}
-  .shell .nav-shell{
-    position:fixed;
-    top:auto;
-    bottom:calc(.65rem + env(safe-area-inset-bottom,0px));
-    left:50%;
-    transform:translateX(-50%);
-    z-index:180;
-    display:block;
-    width:min(calc(100vw - 1rem),42rem);
-    margin:0;
-    padding:.35rem;
-    border:1px solid #313238;
-    border-radius:25px;
-    background:#111215;
-    color:#f7f7fa;
-    box-shadow:0 10px 30px #00000048,0 2px 6px #00000018;
-    -webkit-backdrop-filter:blur(14px);
-    backdrop-filter:blur(14px);
-  }
-  .shell .nav-shell aside{
-    position:relative!important;
-    isolation:isolate;
-    display:grid;
-    grid-template-columns:repeat(6,minmax(0,1fr));
-    gap:0;
-    width:100%;
-    max-width:none;
-    padding:0;
-    margin:0;
-    border:0;
-    border-radius:21px;
-    background:transparent;
-    box-shadow:none;
-    overflow:visible!important;
-    scroll-snap-type:none!important;
-    touch-action:manipulation!important;
-    cursor:default;
-  }
-  /* One selection surface moves between slots; the tab itself stays still. */
-  .shell .nav-shell aside::before{
-    content:'';
-    position:absolute;
-    z-index:0;
-    left:0;
-    top:2px;
-    width:calc(100% / 6);
-    height:calc(100% - 4px);
-    border-radius:19px;
-    background:#35373d;
-    box-shadow:inset 0 1px 0 #ffffff14;
-    transform:translate3d(var(--nav-indicator-x,0%),0,0);
-    transition:transform .3s var(--motion-spring);
-    pointer-events:none;
-  }
-  .shell .nav-shell aside a{
-    position:relative;
-    z-index:1;
-    box-sizing:border-box;
-    display:flex;
-    flex-direction:column;
-    gap:.16rem;
-    min-width:0;
-    width:100%;
-    min-height:54px;
-    padding:.38rem .06rem .32rem;
-    justify-content:center;
-    align-items:center;
-    border-radius:19px;
-    font-size:clamp(.59rem,2.45vw,.72rem)!important;
-    line-height:1.2;
-    letter-spacing:-.018em;
-    font-weight:560;
-    color:#d0d0d6;
-    background:transparent!important;
-    box-shadow:none!important;
-    white-space:nowrap;
-    transform:none!important;
-    touch-action:manipulation!important;
-    transition:color .2s var(--motion-ease),font-weight .2s var(--motion-ease);
-    -webkit-tap-highlight-color:transparent;
-  }
-  .shell .nav-shell aside a .nav-icon{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:1.4rem;
-    height:1.4rem;
-    color:inherit;
-  }
-  .shell .nav-shell aside a .nav-icon svg{
-    width:1.35rem;height:1.35rem;stroke-width:1.85;
-    transform:none;transition:transform .25s var(--motion-spring),stroke-width .18s;
-  }
-  .shell .nav-shell aside a .nav-label{display:none}
-  .shell .nav-shell aside a .nav-label-mobile{
-    display:block;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    max-width:100%;
-  }
-  .shell .nav-shell aside a::after{content:none}
-  .shell .nav-shell aside a.on{
-    background:transparent!important;
-    color:#fff;
-    font-weight:850;
-    box-shadow:none!important;
-  }
-  .shell .nav-shell aside a.on .nav-icon svg{stroke-width:2.65;transform:scale(1.1)}
-  .shell .nav-shell aside a:focus-visible{
-    outline:2px solid #c2deff;
-    outline-offset:-2px;
-  }
-  .shell .nav-shell aside a.press{filter:brightness(1.15)}
-  .shell .nav-shell .mobile-menu-toggle{display:none}
-  .shell .nav-shell aside .lg{display:none}
-  .shell main{scroll-margin-bottom:calc(7.25rem + env(safe-area-inset-bottom,0px))}
+ .shell{padding-bottom:calc(7.25rem + env(safe-area-inset-bottom,0px))}
+ .shell+footer{padding-bottom:calc(2rem + env(safe-area-inset-bottom,0px))}
+ .shell .nav-shell{
+   position:fixed;top:auto;bottom:calc(.65rem + env(safe-area-inset-bottom,0px));
+   left:50%;transform:translate3d(-50%,0,0);z-index:180;
+   display:flex;align-items:center;justify-content:space-between;
+   gap:.6rem;width:min(calc(100vw - 1rem),26rem);max-width:calc(100vw - 1rem);
+   min-width:0;margin:0;padding:0;background:transparent;border:0;border-radius:0;
+   box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;
+   overflow:visible;pointer-events:none;isolation:isolate;
+ }
+ .shell .nav-shell aside{
+   position:relative!important;isolation:isolate;flex:0 1 15.6rem;
+   display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;
+   width:min(69vw,15.6rem);max-width:calc(100% - 3.7rem);min-width:0;
+   padding:.2rem;margin:0;background:#131416;border:1px solid #35363b;
+   border-radius:24px;box-shadow:0 7px 25px #00000052;
+   overflow:hidden!important;touch-action:manipulation!important;
+   overscroll-behavior:contain;scroll-snap-type:none!important;pointer-events:auto;
+ }
+ .shell .nav-shell aside.intro{animation:none}
+ .shell .nav-shell aside::before{
+   content:'';position:absolute;z-index:0;left:calc(.2rem + 1px);top:calc(.2rem + 1px);
+   width:calc((100% - .4rem - 2px)/6);height:calc(100% - .4rem - 2px);
+   border-radius:19px;background:#35373e;box-shadow:inset 0 1px 0 #ffffff12;
+   transform:translate3d(var(--nav-indicator-x,0%),0,0);
+   transition:transform .3s var(--motion-spring);pointer-events:none;
+ }
+ .shell .nav-shell aside a{
+   position:relative;z-index:1;box-sizing:border-box;display:flex;
+   flex-direction:column;align-items:center;justify-content:center;gap:0;
+   width:100%;min-width:0;min-height:46px;padding:.34rem 0;border-radius:18px;
+   background:transparent!important;box-shadow:none!important;color:#d1d1d6;
+   font-size:.7rem!important;line-height:1;font-weight:560;white-space:nowrap;
+   transform:none!important;touch-action:manipulation!important;
+   transition:color .2s var(--motion-ease);-webkit-tap-highlight-color:transparent;
+ }
+ .shell .nav-shell aside a .nav-icon{
+   display:inline-flex;align-items:center;justify-content:center;
+   width:1.5rem;height:1.5rem;color:inherit;
+ }
+ .shell .nav-shell aside a .nav-icon svg{
+   width:1.38rem;height:1.38rem;stroke-width:1.85;transform:none;
+   transition:stroke-width .18s ease,transform .24s var(--motion-spring);
+ }
+ .shell .nav-shell aside a :is(.nav-label,.nav-label-mobile){display:none}
+ .shell .nav-shell aside a::after{content:none}
+ .shell .nav-shell aside a.on{
+   background:transparent!important;color:#fff;box-shadow:none!important;font-weight:850;
+ }
+ .shell .nav-shell aside a.on .nav-icon svg{stroke-width:2.6;transform:scale(1.1)}
+ .shell .nav-shell aside a:focus-visible{outline:2px solid #cee7ff;outline-offset:-3px}
+ .shell .nav-shell aside a.press{filter:brightness(1.12)}
+ .shell .nav-shell .mobile-menu-toggle,.shell .nav-shell aside .lg{display:none}
+ .shell .nav-shell .mobile-quick-task{
+   position:relative;display:grid;place-items:center;flex:0 0 50px;
+   width:50px;height:50px;min-height:50px;margin:0;padding:0;border:0;border-radius:50%;
+   background:#00b9f4;color:#071723;box-shadow:0 6px 20px #00000040;
+   pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+   transition:filter .18s ease,transform .18s ease;
+ }
+ .shell .nav-shell .mobile-quick-task svg{
+   width:1.55rem;height:1.55rem;fill:none;stroke:currentColor;
+   stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;
+ }
+ .shell .nav-shell .mobile-quick-task:active{transform:scale(.94)}
+ .shell .nav-shell .mobile-quick-task:focus-visible{outline:3px solid #fff;outline-offset:3px}
+ .shell main{scroll-margin-bottom:calc(7rem + env(safe-area-inset-bottom,0px))}
+ .shell:has(main :is(input,textarea,select):focus) .nav-shell{
+   opacity:0;visibility:hidden;pointer-events:none;
+ }
 }
 @media(max-width:360px){
-  .shell .nav-shell{padding:.25rem;border-radius:21px}
-  .shell .nav-shell aside a{padding:.34rem 0 .29rem;min-height:52px;font-size:.57rem!important}
-  .shell .nav-shell aside a .nav-icon svg{width:1.25rem;height:1.25rem}
-}
-@media(max-width:900px) and (prefers-reduced-motion:no-preference){
-  main#mn.an{animation:mobileNavPageIn .3s var(--motion-ease) both}
-}
-@media(max-width:900px){
-  .shell:has(main :is(input,textarea,select):focus) .nav-shell{
-    opacity:0;visibility:hidden;pointer-events:none;
-  }
+ .shell .nav-shell aside{width:min(70vw,14.2rem);border-radius:21px}
+ .shell .nav-shell aside a{min-height:44px;padding:.3rem 0}
+ .shell .nav-shell aside a .nav-icon svg{width:1.15rem;height:1.15rem}
+ .shell .nav-shell .mobile-quick-task{flex-basis:44px;width:44px;height:44px;min-height:44px}
 }
 @media(max-width:900px) and (prefers-reduced-motion:reduce){
-  .shell .nav-shell aside::before{transition:none}
-  .shell .nav-shell aside a,.shell .nav-shell aside a .nav-icon svg{transition:none;animation:none}
+ .shell .nav-shell aside::before{transition:none}
+ .shell .nav-shell aside a,.shell .nav-shell aside a .nav-icon svg,
+ .shell .nav-shell .mobile-quick-task{animation:none;transition:none}
 }
 
 </style>
@@ -1871,8 +1818,10 @@ function softPaint(){
   },uiMotionTime('--motion-page-out-ms',160));
 }
 let pageSwapTimer=0;
+let quickTaskFocusPending=false;
 function goTo(v,p,push=true){
   if(typeof taskReorder!=='undefined'&&taskReorder)cancelTaskReorder();
+  if(v!=='app'||p!=='todo')quickTaskFocusPending=false;
   const same=A&&v==='app'&&view==='app'&&document.getElementById('mn')&&document.querySelector('#nav-aside,aside');
   // Direction is derived from navigation order; existing left/right swipe
   // detection remains untouched. Visual motion is disabled when requested.
@@ -1888,24 +1837,40 @@ function goTo(v,p,push=true){
 }
 /* menu gecisi: header ve menu yerinde kalir, yalnizca sayfa icerigi yumusakca degisir */
 function swapPage(){
-  const aside=document.querySelector('aside');
-  if(aside){aside.style?.setProperty('--nav-indicator-x',Math.max(0,NAV.findIndex(([key])=>key===pg))*100+'%');aside.querySelectorAll('a[data-k]').forEach(a=>{const on=a.dataset.k===pg;a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')})}
+  const aside=document.querySelector('#nav-aside');
+  if(aside){
+    aside.style?.setProperty('--nav-indicator-x',Math.max(0,NAV.findIndex(([key])=>key===pg))*100+'%');
+    aside.querySelectorAll('a[data-k]').forEach(a=>{
+      const on=a.dataset.k===pg;
+      a.classList.toggle('on',on);
+      if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+    });
+  }
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
-  const y=window.scrollY,main=document.querySelector('main');
-  const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const main=document.getElementById('mn');
+  const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  // The latest tap/swipe wins; stale timers must not block reverse navigation.
+  clearTimeout(pageSwapTimer);pageSwapTimer=0;
   const finish=()=>{
     pageSwapTimer=0;
     if(view!=='app'||!main?.isConnected)return;
     renderPage();
     main.setAttribute('aria-label',navLabel(pg));
-    if(main)main.classList.remove('swap');
-    if(pg!=='pomo'&&y>0){try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){window.scrollTo(0,0)}}
+    main.classList.remove('swap');
+    if(pg!=='pomo'&&window.scrollY>0){
+      if(innerWidth<=900)window.scrollTo(0,0);
+      else try{window.scrollTo({top:0,behavior:'smooth'})}catch(_){window.scrollTo(0,0)}
+    }
+    if(quickTaskFocusPending){
+      quickTaskFocusPending=false;
+      if(pg==='todo')document.getElementById('nt')?.focus?.();
+    }
     centerNav();
   };
   if(main&&!reduced){
-    if(pageSwapTimer)return;
-    main.classList.remove('an');main.classList.add('swap');pageSwapTimer=setTimeout(finish,65);
-  }else{clearTimeout(pageSwapTimer);finish()}
+    main.classList.remove('an');main.classList.add('swap');
+    pageSwapTimer=setTimeout(finish,65);
+  }else{finish()}
 }
 /* mobil/tablet: secilen sekme yatay menude ortalanir, sayfa ziplamaz */
 function centerNav(immediate=false){
@@ -2372,6 +2337,16 @@ function navGo(el,v,p){
     bar?.style?.setProperty('--nav-indicator-x',Math.max(0,NAV.findIndex(([key])=>key===p))*100+'%');
   }
   pressTo(el,()=>goTo(v,p));
+}
+// Quick compose uses the existing new-task form; no automatic data writes.
+function openQuickTask(){
+  if(!A||view!=='app')return;
+  if(pg==='todo'){
+    const input=document.getElementById('nt');
+    if(input){input.focus();return}
+  }
+  quickTaskFocusPending=true;
+  navGo(null,'app','todo');
 }
 const NAV_ICON_PATHS={
   home:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/>',
@@ -3432,7 +3407,7 @@ function shell(){
   const firstShell=!document.querySelector('.shell aside');
   document.querySelectorAll('body > #mini-cal').forEach(el=>el.remove());
   const oldBackdrop=document.getElementById('mini-backdrop');if(oldBackdrop)oldBackdrop.remove();
-  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" style="--nav-indicator-x:${Math.max(0,NAV.findIndex(([k])=>k===pg))*100}%" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')" aria-label="${esc(navLabel(k))}" title="${esc(navLabel(k))}">${navIcon(k)}<span class="nav-label">${navLabel(k)}</span><span class="nav-label-mobile" aria-hidden="true">${navShortLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" style="--nav-indicator-x:${Math.max(0,NAV.findIndex(([k])=>k===pg))*100}%" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')" aria-label="${esc(navLabel(k))}" title="${esc(navLabel(k))}">${navIcon(k)}<span class="nav-label">${navLabel(k)}</span><span class="nav-label-mobile" aria-hidden="true">${navShortLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-quick-task" class="mobile-quick-task" onclick="openQuickTask()" aria-label="${tr()?'Yeni görev ekle':'Add a new task'}" title="${tr()?'Yeni görev ekle':'Add a new task'}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20l4.8-1.1L20 7.7 16.3 4 5.1 15.2 4 20Z"/><path d="m14.5 5.8 3.7 3.7"/></svg></button><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
   renderPage();setTimeout(checkAppReminders,0);
   requestAnimationFrame(()=>centerNav(true));
