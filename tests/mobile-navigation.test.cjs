@@ -173,8 +173,8 @@ test('page transition movement tracks previous and newly selected menu item',()=
 test('reference-video navigation is fixed at the bottom on small viewports, not in top menu',()=>{
   assert.match(html,/\.shell \.nav-shell\{[\s\S]*?position:fixed;[\s\S]*?top:auto;[\s\S]*?bottom:calc\(\.65rem \+ env\(safe-area-inset-bottom,0px\)\)/);
   assert.match(html,/\.shell \.nav-shell aside\{[\s\S]*?grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
-  assert.match(html,/\.shell \.nav-shell \.mobile-menu-toggle\{display:none\}/);
-  assert.match(html,/\.shell\+footer\{padding-bottom:calc\(7\.25rem \+ env\(safe-area-inset-bottom,0px\)\)\}/);
+  assert.ok(html.includes('.shell .nav-shell .mobile-menu-toggle,.shell .nav-shell aside .lg{display:none}'));
+  assert.ok(html.includes('.shell{padding-bottom:calc(7.25rem + env(safe-area-inset-bottom,0px))}'));
 });
 test('all six pages remain directly reachable with compact TR/EN labels and accessible full labels',()=>{
   for(const [page,label] of Object.entries({home:'Ana',pomo:'Odak',todo:'Görevler',pc:'İlerleme',rep:'Rapor',set:'Ayarlar'})){
@@ -183,7 +183,7 @@ test('all six pages remain directly reachable with compact TR/EN labels and acce
   assert.match(html,/aria-label="\$\{esc\(navLabel\(k\)\)\}"/);
   assert.match(html,/class="nav-label-mobile" aria-hidden="true"/);
   assert.match(html,/\.shell \.nav-shell aside a\.on\{[\s\S]*?font-weight:850/);
-  assert.match(html,/\.shell \.nav-shell aside a\.on \.nav-icon svg\{stroke-width:2\.65/);
+  assert.ok(html.includes('stroke-width:2.6;transform:scale(1.1)'));
 });
 test('bottom tab bar remains usable with a virtual keyboard or reduced motion',()=>{
   assert.match(html,/\.shell:has\(main :is\(input,textarea,select\):focus\) \.nav-shell/);
@@ -194,7 +194,7 @@ test('bottom tab bar remains usable with a virtual keyboard or reduced motion',(
 
 test('video 21 Nov: active pill is one movable surface inside a dark bottom navigation bar',()=>{
  assert.match(html,/\.shell \.nav-shell\{[\s\S]*?position:fixed;[\s\S]*?bottom:calc\(\.65rem \+ env\(safe-area-inset-bottom,0px\)\)/);
- assert.match(html,/background:#111215/);
+  assert.ok(html.includes('background:#131416'));
  assert.match(html,/\.shell \.nav-shell aside::before\{[\s\S]*?transform:translate3d\(var\(--nav-indicator-x,0%\),0,0\)/);
  assert.match(html,/transition:transform \.3s var\(--motion-spring\)/);
  assert.match(html,/grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
@@ -211,4 +211,40 @@ test('bottom navigation keeps accessible full labels, reduced motion and safe ar
  assert.match(html,/aria-label="\$\{esc\(navLabel\(k\)\)\}"/);
  assert.match(html,/padding-bottom:calc\(7\.25rem \+ env\(safe-area-inset-bottom,0px\)\)/);
  assert.match(html,/prefers-reduced-motion:reduce\)[\s\S]*?aside::before\{transition:none\}/);
+});
+
+test('reference groups six mobile tabs left, with a separate blue right action',()=>{
+ assert.ok(html.includes('width:min(69vw,15.6rem)'));
+ assert.ok(html.includes('grid-template-columns:repeat(6,minmax(0,1fr))'));
+ assert.ok(html.includes('overflow:hidden!important'));
+ assert.ok(html.includes('background:#00b9f4'));
+ assert.ok(html.includes('id="mobile-quick-task" class="mobile-quick-task"'));
+ assert.ok(html.includes('.nav-label,.nav-label-mobile){display:none}'));
+});
+test('moving back from Progress cancels pending animations and resets mobile scroll without smooth movement',()=>{
+ const f=transitionFixture();
+ f.context.pg='pc';f.context.innerWidth=390;f.context.window.scrollY=320;
+ const scroll=[];f.context.window.scrollTo=(...args)=>scroll.push(args);
+ f.context.goTo('app','todo');
+ assert.equal(f.main.navShift.value,'-14px');
+ f.context.goTo('app','pomo');
+ assert.equal(f.timers.size,1);
+ f.flush();
+ assert.deepEqual(f.renders,['pomo']);
+ assert.deepEqual(scroll,[[0,0]]);
+});
+test('blue pencil opens existing new-task input without automatically writing data',()=>{
+ const calls=[];let focused=0;
+ const context={A:{},view:'app',pg:'pc',quickTaskFocusPending:false,
+   navGo:(_el,v,p)=>calls.push([v,p]),
+   document:{getElementById:id=>id==='nt'?{focus(){focused++}}:null}};
+ vm.createContext(context);
+ vm.runInContext(section('function openQuickTask(){','const NAV_ICON_PATHS='),context);
+ context.openQuickTask();
+ assert.deepEqual(calls,[['app','todo']]);
+ assert.equal(context.quickTaskFocusPending,true);
+ assert.equal(focused,0);
+ context.pg='todo';context.openQuickTask();
+ assert.equal(focused,1);
+ assert.equal(calls.length,1);
 });
