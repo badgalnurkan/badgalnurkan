@@ -103,6 +103,7 @@ function transitionFixture(reduced=false){
   document:{getElementById:()=>main,querySelector:selector=>selector==='main'?main:aside},
   window:{scrollY:0,matchMedia:()=>({matches:reduced}),scrollTo(){}},history:{pushState(){}},
   renderPage:()=>renders.push(context.pg),centerNav(){},softPaint(){renders.push('auth')},navLabel:key=>key,
+  resetMobileDockForPage(){context.dockResets=(context.dockResets||0)+1},
  };
  vm.createContext(context);vm.runInContext(section('function uiMotionTime(name,fallback){','const feedbackAnimations=')+section('let pageSwapTimer=0;','/* mobil/tablet: secilen sekme'),context);
  return {context,main,renders,timers,flush:()=>{for(const [id,fn] of [...timers]){timers.delete(id);fn()}}};
