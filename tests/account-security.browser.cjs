@@ -184,6 +184,10 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
       assert.ok(layout.overflow<=1,engine+' no horizontal body overflow '+width);
     }
     await productivity.setViewportSize({width:390,height:844});
+    // WebKit can deliver the final resize after the next scroll command.
+    // Let that reset settle before measuring scroll-driven collapse.
+    await productivity.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await productivity.waitForFunction(()=>mobileDockLastWidth===390);
     await productivity.evaluate(()=>{
       const main=document.getElementById('mn');
       main.style.minHeight='1600px';

@@ -109,7 +109,32 @@ BEGIN
    'ab100000-0000-4000-8000-000000000003'::uuid,
    '{"id":"ab200000-0000-4000-8000-000000000003","hash":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"}'::jsonb);
  IF result->>'error'<>'INVALID_CHALLENGE' THEN RAISE EXCEPTION 'Fifth failure did not lock OTP'; END IF;
+ -- A third independent account gets only its own recipient, and an expired
+ -- candidate must remain unusable even with the correct secret hash.
+ result:=public.iydu_browser_service('request',
+  'ab000000-0000-4000-8000-000000000013'::uuid,
+  'ab100000-0000-4000-8000-000000000004'::uuid,
+  '{"id":"ab200000-0000-4000-8000-000000000004","hash":"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}'::jsonb);
+ IF result->>'email'<>'otp-third@example.invalid' THEN RAISE EXCEPTION 'Third account recipient mismatch'; END IF;
+ PERFORM public.iydu_browser_service('activate_delivery',
+  'ab000000-0000-4000-8000-000000000013'::uuid,
+  'ab100000-0000-4000-8000-000000000004'::uuid,
+  '{"id":"ab200000-0000-4000-8000-000000000004"}'::jsonb);
 END $service$;
+RESET ROLE;
+ UPDATE iydu_private.browser_session_challenges SET expires_at=statement_timestamp()-interval '1 second'
+ WHERE id='ab200000-0000-4000-8000-000000000004';
+SET LOCAL ROLE service_role;
+SELECT set_config('request.jwt.claims','{"role":"service_role"}',true);
+DO $expiry$
+DECLARE result jsonb;
+BEGIN
+ result:=public.iydu_browser_service('confirm',
+  'ab000000-0000-4000-8000-000000000013'::uuid,
+  'ab100000-0000-4000-8000-000000000004'::uuid,
+  '{"id":"ab200000-0000-4000-8000-000000000004","hash":"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}'::jsonb);
+ IF result->>'error'<>'INVALID_CHALLENGE' THEN RAISE EXCEPTION 'Expired third-account code accepted'; END IF;
+END $expiry$;
 RESET ROLE;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.role','authenticated',true);
