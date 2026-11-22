@@ -1,6 +1,7 @@
 // Read-only local review: no real credentials, emails, or production writes.
 const { chromium, webkit, firefox }=require('playwright');
 const verifyRecovery=require('./recovery-browser.browser.cjs');
+const verifyLoginEmail=require('./login-email-gate.browser.cjs');
 const {spawn}=require('node:child_process'),assert=require('node:assert/strict');
 (async()=>{
  const server=spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
@@ -9,10 +10,11 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
   for(let n=0;n<50;n++){try{if((await fetch('http://127.0.0.1:4173')).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
   const suite=process.env.IYD_BROWSER_SUITE;
   const uiEngines=[['chromium',chromium],['webkit',webkit]];
-  const engines=suite==='firefox'?[['firefox',firefox]]:suite==='ui'?uiEngines:[...uiEngines,['firefox',firefox]];
+  const engines=suite==='chromium'?[['chromium',chromium]]:suite==='firefox'?[['firefox',firefox]]:suite==='ui'?uiEngines:[...uiEngines,['firefox',firefox]];
   for(const [engine,type] of engines){
-   browser=await type.launch();
+   browser=await type.launch(engine==='chromium'&&process.env.IYD_CHROMIUM_EXECUTABLE?{executablePath:process.env.IYD_CHROMIUM_EXECUTABLE}:{});
    await verifyRecovery(browser,engine);
+   await verifyLoginEmail(browser,engine);
    if(engine==='firefox'){await browser.close();continue}
    for(const width of [320,375,390,430,768,1440]){
     const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:2});
@@ -182,6 +184,10 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
       assert.ok(layout.overflow<=1,engine+' no horizontal body overflow '+width);
     }
     await productivity.setViewportSize({width:390,height:844});
+    // WebKit can deliver the final resize after the next scroll command.
+    // Let that reset settle before measuring scroll-driven collapse.
+    await productivity.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await productivity.waitForFunction(()=>mobileDockLastWidth===390);
     await productivity.evaluate(()=>{
       const main=document.getElementById('mn');
       main.style.minHeight='1600px';
@@ -336,7 +342,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await productivity.close();
    console.log('PASS '+engine+': task edit, keyboard and pointer reorder, future countdown and mobile report widths');
    const page=await browser.newPage({viewport:{width:390,height:844}});
-   const session={user:{id:'fixture-user',email:record.email},access_token:'fixture-access-token',refresh_token:'fixture-refresh-token'};
+   const session={user:{id:'fixture-user',email:record.email},access_token:'fixture.'+Buffer.from(JSON.stringify({sub:'fixture-user',session_id:'ab100000-0000-4000-8000-000000000001'})).toString('base64url')+'.signature',refresh_token:'fixture-refresh-token'};
    const db={accounts:{[record.u]:record},lastUser:record.u,last:record.nick,lang:'tr',beige:false};
    await page.addInitScript(({db,session})=>{localStorage.setItem('b1',JSON.stringify(db));localStorage.setItem('b1sb',JSON.stringify(session));localStorage.setItem('iydu.storage-notice.v1','test')},{db,session});
    const actions=[],requests=[];let closed=false,hasPassword=false;
@@ -355,6 +361,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
      assert.equal(route.request().postDataJSON().code_challenge_method,'s256');assert.match(route.request().postDataJSON().code_challenge,/^[a-zA-Z0-9_-]{43}$/);
      data={};
     }
+    else if(url.endsWith('/functions/v1/browser-verification'))data={ok:true,verified:true};
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:hasPassword,password_required:false,server_time:'2026-11-17T00:00:00Z'};
     else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];

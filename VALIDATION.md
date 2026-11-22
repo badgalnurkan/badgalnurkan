@@ -201,3 +201,17 @@ Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sın
 - Signup and resend both use `https://badgalnurkan.com/` callback. A successful GoTrue signup response without a session is not proof of an email being delivered; UI offers a route to sign-in for existing accounts and preserves the existing resend cooldown.
 - Supabase Auth mail and custom Edge Function Resend mail are different routes. No Edge Function, RLS, SMTP secret or production user data is modified by this source-only release.
 - Tests: `npm test`, `python scripts/build-preview.py` and CI browser suites. Real inbox delivery is a separate external acceptance check; it cannot be guaranteed by successful HTTP responses alone.
+
+
+## 22 November 2026 — per-account login email verification
+
+- Repaired malformed signup confirmation HTML in both Supabase dashboards. Actual signup-code and password-recovery messages reached the owner-controlled test inbox from both environments. HTTP acceptance was checked separately from inbox arrival.
+- Added a session-bound six-digit login gate for all authenticated users. Recipients come from the server account; there is no email allowlist in the feature. Cloudflare QA Access remains separate.
+- Existing production profiles are preserved. The database foundation starts disabled in production. Account lifecycle, password-age restrictions, legacy save RPC and current production sync are preserved; no CAS rollout is included. Current OAuth lifetime policy is preserved per environment.
+- Node regressions: 313 passed. QA SQL with rolled-back synthetic users passed: pre-code Data API/RPC denial, wrong code, replay, five-failure lockout, user/session isolation and deactivated-account denial. QA live Edge checks returned 401 for missing/forged tokens and 403 for an untrusted Origin.
+- The local browser runtime cannot launch because OS socket creation is denied. Chromium/WebKit/Firefox checks run in GitHub CI, including the new mobile/desktop OTP journey. CI and production activation results must be appended before claiming the feature is live.
+- Actual new-login email delivery and code acceptance are a separate acceptance check; earlier signup/reset deliveries do not prove the custom login transport.
+
+- CI on `0200288c28bcf73030b83265a62c36d12110f496` passed Node/report checks, Chromium + WebKit UI and Firefox recovery/login verification. All three engines exercised the new login gate at 320px and 1440px, wrong code, resend throttling and Enter submission. A pre-existing WebKit viewport/scroll race was stabilized by awaiting the final resize before the scroll assertion; production navigation code was not changed.
+- The third-account QA test also checked the server-owned recipient and rejection of an expired code. All synthetic rows rolled back.
+- Production preparation preserved nine profiles with identical aggregate fingerprint before/after. Enforcement remains disabled until frontend publication. Live Edge health reported `mailReady:true`; missing/forged credentials returned 401 and a foreign Origin returned 403. Provider/DB failures now produce only redacted event names and status codes in server logs, never email addresses, codes, bearer tokens or keys.
