@@ -22,3 +22,5 @@ jobs:
         run: npm test
       - name: Run QA concurrency and browser-boundary tests
         run: node --test tests/qa-sync-safety.test.cjs
+      - name: Run isolated concurrent-user protocol simulations
+        run: node --test tests/qa-concurrency-model.test.cjs
