@@ -3049,7 +3049,7 @@ async function login(){
       sbClear();A=norm(localAcc);A.accountOrigin='local';restorePomodoroState();applyTheme();save();await entryTransition;goTo('app','home');
       toast(tr()?'Bu yalnızca yerel eski hesap. Diğer cihazlarda e-posta ile bulut hesabına giriş yapmalısın.':'Legacy local account only.');return;
     }
-    msg=tr()?'Başka cihazda kayıtlıysan kullanıcı adı yerine e-posta adresinle giriş yap.':'Sign in with email on a new device.';
+    msg=tr()?'Bu tarayıcı kullanıcı adının e-posta eşleşmesini bilmiyor. Şimdilik kayıtlı e-postanla giriş yap; kullanıcı adıyla cihazlar arası giriş ayrıca güvenli sunucu doğrulaması gerektiriyor.':'This browser cannot resolve that username to an email. Sign in with your account email for now; cross-browser username login requires separate secure server verification.';
     renderAppOrAuth();
   }finally{loginBusy(false)}
 }
@@ -5187,18 +5187,56 @@ async function sbCurrentUser(){
   try{return await sb('/auth/v1/user')}
   catch(e){if(e.status===401&&await sbRefresh())return sb('/auth/v1/user');throw e}
 }
+// Cloud data must never be overwritten from a stale tab or another user's session.
+// A successful pull establishes the expected JSON snapshot for compare-and-swap.
+const cloudSyncState={uid:'',expected:null,blocked:false,pushing:false,queued:false,warned:false};
+function cloudSyncWarning(){
+  if(cloudSyncState.warned)return;
+  cloudSyncState.warned=true;
+  toast(tr()
+    ?'Bulut kaydı doğrulanamadı. Başka bir cihazdaki değişiklikler korunuyor. Bu tarayıcıdaki verileri silme; verilerini dışa aktar ve yeniden eşitlemeden önce kontrol et.'
+    :'Cloud save was not confirmed. Changes made on another device remain protected. Do not clear this browser; export your data and review before syncing again.');
+}
 async function sbPush(){
-  const session=sbSession();
-  if(!A?.authUid||!session?.user?.id||A.authUid!==session.user.id)return false;
+  const session=sbSession(),uid=session?.user?.id||'';
+  if(!A?.authUid||!uid||A.authUid!==uid)return false;
+  if(cloudSyncState.uid!==uid||cloudSyncState.expected===null){
+    cloudSyncWarning();return false;
+  }
+  if(cloudSyncState.blocked)return false;
+  if(cloudSyncState.pushing){cloudSyncState.queued=true;return true}
+  cloudSyncState.pushing=true;
   const sanitized=JSON.parse(JSON.stringify(A));sanitized.pw='';delete sanitized.salt;
+  const expected=JSON.parse(JSON.stringify(cloudSyncState.expected));
+  const body={p_expected_data:expected,p_data:sanitized};
+  let saved=false;
   try{
-    await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true;
-  }catch(e){
-    if(e.status===401&&await sbRefresh()){
-      const current=sbSession();if(current?.user?.id!==A.authUid)return false;
-      try{await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true}catch(_){return false}
+    let accepted;
+    try{
+      accepted=await sb('/rest/v1/rpc/iydu_save_cas',{method:'POST',body});
+    }catch(error){
+      if(error.status!==401||!await sbRefresh()||sbSession()?.user?.id!==uid)throw error;
+      accepted=await sb('/rest/v1/rpc/iydu_save_cas',{method:'POST',body});
     }
+    if(accepted!==true){cloudSyncState.blocked=true;cloudSyncWarning();return false}
+    if(cloudSyncState.uid!==uid||sbSession()?.user?.id!==uid||A?.authUid!==uid){
+      cloudSyncState.blocked=true;return false;
+    }
+    cloudSyncState.expected=JSON.parse(JSON.stringify(sanitized));
+    saved=true;return true;
+  }catch(error){
+    // The outcome of a network timeout may be unknown. Never retry a full
+    // document blindly; the user can review and reconcile the local copy.
+    cloudSyncState.blocked=true;
+    cloudSyncWarning();
     return false;
+  }finally{
+    cloudSyncState.pushing=false;
+    if(cloudSyncState.queued&&saved&&!cloudSyncState.blocked&&A?.authUid===uid){
+      cloudSyncState.queued=false;
+      const latest=JSON.parse(JSON.stringify(A));latest.pw='';delete latest.salt;
+      if(JSON.stringify(latest)!==JSON.stringify(sanitized))schedulePush();
+    }else cloudSyncState.queued=false;
   }
 }
 async function sbPull(){
@@ -5208,6 +5246,11 @@ async function sbPull(){
   catch(e){if(e.status===401&&await sbRefresh())rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}});else throw e}
   const row=Array.isArray(rows)?rows[0]:rows;
   if(row?.data&&(!row.data||typeof row.data!=='object'||Array.isArray(row.data)))throw new Error('Invalid cloud data');
+  if(sbSession()?.user?.id!==session.user.id)throw new Error('Session changed during cloud read');
+  cloudSyncState.uid=session.user.id;
+  cloudSyncState.expected=JSON.parse(JSON.stringify(row?.data||{}));
+  cloudSyncState.blocked=false;
+  cloudSyncState.warned=false;
   return row?.data&&Object.keys(row.data).length?row.data:null;
 }
 // The database owns the old/new-user cutoff; do not infer it from a missing

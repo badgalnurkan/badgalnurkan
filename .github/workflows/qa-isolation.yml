@@ -20,3 +20,5 @@ jobs:
         run: node --check account-close.js
       - name: Run existing application regression suite
         run: npm test
+      - name: Run QA concurrency and browser-boundary tests
+        run: node --test tests/qa-sync-safety.test.cjs

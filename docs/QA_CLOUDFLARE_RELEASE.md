@@ -18,3 +18,6 @@ QA Edge Function `account-security` version 7 was redeployed with `https://qa.ba
 
 ## Deployment segregation verification
 The production Vercel project should ignore `qa-cloudflare` branch pushes via its Ignored Build Step (exit 0 to skip, exit 1 to build). This documentation-only commit is a safe trigger for verifying that guard. A successful command submission does not by itself prove that Vercel skipped the build. Do not treat QA preview deployments under the production project as production releases.
+
+## QA synchronization safeguard (2026-11-22)
+The QA UI now uses the existing database `iydu_save_cas` RPC with the exact data read from `iydu_load` as an expected snapshot. No last-writer-wins fallback is permitted. Conflicts or uncertain network outcomes stop cloud writes and warn the user; server data is not overwritten silently. This remains **QA-only** pending real multi-session tests. The existing QA database has some older Auth identities without `user_data` or username reservations; those accounts may fail safely rather than silently initialize. They require a separately designed, authenticated, idempotent initialization flow. Username-only cross-browser sign-in is still blocked until a server-mediated, rate-limited authentication flow is implemented. Do not merge this QA branch into main.
