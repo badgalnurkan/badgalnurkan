@@ -1,5 +1,5 @@
 // Pure request handler: no browser identity, email address or user_id is trusted.
-export const ALLOWED_ORIGINS = ['https://badgalnurkan.com','https://www.badgalnurkan.com','https://badgalnurkan.vercel.app'];
+export const ALLOWED_ORIGINS = ['https://badgalnurkan.com','https://www.badgalnurkan.com','https://badgalnurkan.vercel.app','https://qa.badgalnurkan.com'];
 export const REQUESTS = ['request_deactivate','request_delete','request_reactivate'];
 export async function digest(value,cryptoImpl=crypto){
  const bytes=await cryptoImpl.subtle.digest('SHA-256',new TextEncoder().encode(value));
