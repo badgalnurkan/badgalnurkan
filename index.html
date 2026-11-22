@@ -5253,7 +5253,12 @@ async function sbPull(){
   try{rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}})}
   catch(e){if(e.status===401&&await sbRefresh())rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}});else throw e}
   const row=Array.isArray(rows)?rows[0]:rows;
-  if(row?.data&&(!row.data||typeof row.data!=='object'||Array.isArray(row.data)))throw new Error('Invalid cloud data');
+  const profile=row?.data;
+  if(profile!=null&&(typeof profile!=='object'||Array.isArray(profile)))throw new Error('Invalid cloud data');
+  // The server row is scoped by the authenticated UID, but a mismatched
+  // embedded identity must never be normalized into the signed-in account.
+  if(profile?.authUid!=null&&profile.authUid!==session.user.id)
+    throw new Error('CLOUD_PROFILE_IDENTITY_MISMATCH');
   if(sbSession()?.user?.id!==session.user.id)throw new Error('Session changed during cloud read');
   if(cloudSyncState.uid===session.user.id&&cloudSyncState.blocked)
     throw new Error('CLOUD_SYNC_RECONCILIATION_REQUIRED');
