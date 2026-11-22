@@ -18,3 +18,5 @@ jobs:
         run: node --test tests/qa-isolation.test.cjs
       - name: Check standalone account-close JavaScript syntax
         run: node --check account-close.js
+      - name: Run existing application regression suite
+        run: npm test
