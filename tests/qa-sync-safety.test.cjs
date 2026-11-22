@@ -112,7 +112,7 @@ test('a conflict cannot be silently reset by another cloud pull',async()=>{
  assert.equal(f.requests.filter(x=>x.path.includes('iydu_load')).length,1);
 });
 test('no-op save does not send a duplicate write',async()=>{
- const f=fixture();
+ const f=fixture({server:{authUid:'qa-user-1',u:'alpha',tasks:['start']}});
  await f.ctx.sbPull();
  f.ctx.A.tasks=['start'];
  assert.equal(await f.ctx.sbPush(),true);
