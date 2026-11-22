@@ -2,6 +2,8 @@ name: Cloudflare QA isolation
 on:
   push:
     branches: [qa-cloudflare]
+  pull_request:
+    branches: [qa-cloudflare]
   workflow_dispatch:
 permissions:
   contents: read
@@ -28,3 +30,5 @@ jobs:
         run: node --test tests/qa-browser-verification-origin.test.cjs
       - name: Verify QA CAS database contract
         run: node --test tests/qa-cas-db-contract.test.cjs
+      - name: Verify safe local preview
+        run: npm run test:local
