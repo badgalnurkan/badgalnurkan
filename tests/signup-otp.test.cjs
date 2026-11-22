@@ -22,9 +22,9 @@ function fixture(options={}){
   sb:async(path,opt)=>{
    calls.auth.push({path,body:opt.body});
    if(path==='/auth/v1/verify'&&options.error)throw Object.assign(Error('invalid OTP'),options.error===true?{}:options.error);
-   if(path==='/auth/v1/resend'&&options.resendError)throw Object.assign(Error('resend denied'),options.resendError);
+   if(path.startsWith('/auth/v1/resend?')&&options.resendError)throw Object.assign(Error('resend denied'),options.resendError);
    if(path==='/auth/v1/verify'&&options.verifyPromise)return options.verifyPromise;
-   if(path==='/auth/v1/resend'&&options.resendPromise)return options.resendPromise;
+   if(path.startsWith('/auth/v1/resend?')&&options.resendPromise)return options.resendPromise;
    return options.response??{
     user:{id:'one-user',email:'person@example.invalid',email_confirmed_at:'2026-11-19T12:00:00Z'},
     access_token:'token',refresh_token:'refresh'
@@ -80,7 +80,9 @@ test('unconfirmed account cannot enter the app even if an Auth API returns a tok
 test('re-request uses signup-only Auth resend endpoint',async()=>{
  const x=fixture();
  await x.context.resendSignupCode();
- assert.equal(x.calls.auth[0].path,'/auth/v1/resend');
+ const resendUrl=new URL(x.calls.auth[0].path,'https://qa.supabase.invalid');
+ assert.equal(resendUrl.pathname,'/auth/v1/resend');
+ assert.equal(resendUrl.searchParams.get('redirect_to'),'https://qa.badgalnurkan.com/');
  assert.deepEqual(JSON.parse(JSON.stringify(x.calls.auth[0].body)),{email:'person@example.invalid',type:'signup'});
  assert.equal(x.calls.activate.length,0);
 });
@@ -121,6 +123,14 @@ test('successful resend has a cooldown and warns about older delivered emails',a
  await x.context.resendSignupCode();
  assert.equal(x.calls.auth.length,1);
  assert.match(x.status.textContent,/avoid requesting codes repeatedly/i);
+});
+test('resend preserves the QA callback boundary and never uses a production fallback',async()=>{
+ const x=fixture();
+ await x.context.resendSignupCode();
+ const resendUrl=new URL(x.calls.auth[0].path,'https://qa.supabase.invalid');
+ assert.equal(resendUrl.origin,'https://qa.supabase.invalid');
+ assert.equal(resendUrl.searchParams.get('redirect_to'),'https://qa.badgalnurkan.com/');
+ assert.notEqual(resendUrl.searchParams.get('redirect_to'),'https://badgalnurkan.com/');
 });
 test('rate-limited resend keeps existing signup active and warns correctly',async()=>{
  const x=fixture({resendError:{status:429,code:'over_email_send_rate_limit'}});

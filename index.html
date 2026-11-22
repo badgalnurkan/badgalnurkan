@@ -3174,7 +3174,7 @@ async function resendSignupCode(){
   if(resend)resend.disabled=true;
   if(submit)submit.disabled=true;
   try{
-    await sb('/auth/v1/resend',{method:'POST',body:{type:'signup',email:request.email}});
+    await sb('/auth/v1/resend?redirect_to='+encodeURIComponent('https://qa.badgalnurkan.com/'),{method:'POST',body:{type:'signup',email:request.email}});
     if(pendingSignup!==request)return;
     request.nextResendAt=Date.now()+60000;
     request.requestedAt=Date.now();
