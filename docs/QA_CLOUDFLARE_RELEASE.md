@@ -15,3 +15,6 @@ This **QA-only** branch is based on main commit `50bd5611d49b15755e303c076605ac2
 
 ## QA account reactivation CORS fix (2026-11-22)
 QA Edge Function `account-security` version 7 was redeployed with `https://qa.badgalnurkan.com` in `ALLOWED_ORIGINS` to resolve OPTIONS 403 for account reactivation. QA's sender readiness is a separate dependency: `MAIL_NOT_CONFIGURED` must not be bypassed. The repository handler also accepts this QA origin for regression coverage. Never merge this QA-only origin into production without review.
+
+## Deployment segregation verification
+The production Vercel project should ignore `qa-cloudflare` branch pushes via its Ignored Build Step (exit 0 to skip, exit 1 to build). This documentation-only commit is a safe trigger for verifying that guard. A successful command submission does not by itself prove that Vercel skipped the build. Do not treat QA preview deployments under the production project as production releases.
