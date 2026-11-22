@@ -232,5 +232,9 @@ Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sın
 - Password sign-in, signup, password reset and signup-code resend carry one-use CAPTCHA proof through Supabase's gotrue_meta_security.captcha_token. Email login verification remains intact.
 - Native Google OAuth is handled by Supabase's OAuth provider, which does not enforce this CAPTCHA route; the existing email session gate remains applicable.
 - Token expiration, replaced form callbacks, one-use consumption, supported-route scope and compact layout selection covered by Node tests: 318 passed.
-- Browser suites use an explicitly mocked provider and synthetic Auth requests, not real CAPTCHA solutions. CI results pending.
-- Production deployment, server CAPTCHA enforcement and actual user challenge completion still pending at preparation time.
+- Chromium, WebKit and Firefox suites passed in PR #58. Browser suites use an explicitly mocked provider and synthetic Auth requests, not real CAPTCHA solutions.
+- Production Vercel deployment dpl_FUVquFbcJkRVN8hZn5h8uiMU8fat is READY at feature commit 70a151a53db4d5a0783336e60aa4787fed1e2b89. Exact source checks passed on root and www domains.
+- Live Cloudflare SDK loaded and automatically completed verification on password sign-in, signup and password reset screens. No CAPTCHA was manually solved.
+- After owner enabled production Auth protection, a tokenless password sign-in probe was rejected with captcha_failed / no captcha_token found. This confirms server enforcement; a complete real password-plus-CAPTCHA-plus-email-code sign-in was not performed in this release check.
+- An initial protection probe exposed the disabled production setting and created an unconfirmed example.invalid test identity. That exact test identity was deleted by ID and email; existing user records were not modified. No remaining probe account.
+- Public key supports the two configured custom domains; Vercel preview and other hostnames require separate widget hostname configuration before real CAPTCHA use.
