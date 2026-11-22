@@ -1708,6 +1708,7 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 
 <script src="/account-security.js"></script>
 <script src="/recovery-browser.js"></script>
+<script src="/browser-verification.js"></script>
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
@@ -2483,8 +2484,11 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-22-prod-auth-code-routing-02';
+const SITE_RELEASE='2026-11-22-account-login-email-code-03';
 const SITE_CHANGES=[
+  {date:'2026-11-22',trTitle:'E-posta ile güvenli giriş',enTitle:'Email sign-in verification',items:[
+  ['Yeni girişlerde hesabının kendi e-posta adresine gelen altı haneli kodla oturumunu doğrulayabilirsin.','Verify a new sign-in with the six-digit code sent to your own account email.'],
+  ['Doğrulama tamamlanmadan günlüklerin ve görevlerin yüklenmez.','Your journals and tasks stay protected until sign-in verification is complete.']]},
   {date:'2026-11-22',trTitle:'Doğrulama kodu ve hesap güvenliği',enTitle:'Verification codes and account safety',items:[
   ['Kayıt ve yeniden kod isteği aynı doğrulama dönüş adresini kullanır; onaylanan istek e-posta teslimi olarak gösterilmez.','Signup and resend share the same verification callback; accepted requests are not labeled as delivered emails.'],
   ['Kodu ulaşmayanlar giriş ekranına dönebilir; sunucunun e-posta gönderim reddi açıkça gösterilir.','People without a received code can return to sign-in; email sending rejections are shown clearly.'],
@@ -2969,6 +2973,8 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
   const meta=j.user.user_metadata||{};
   if(window.IYAccount&&!await IYAccount.checkAccess(j.user))return;
+  if(!window.IYBrowserGate)throw new Error('LOGIN_VERIFICATION_UNAVAILABLE');
+  if(!await IYBrowserGate.check(j.user,{preferredName,method,options}))return;
   const fromCloud=await sbPull(); // may throw, never replace cloud data with empty after a failure
   const progressPolicy=await sbProgressPolicy(uid);
   if(sbSession()?.user?.id!==uid)throw new Error('Authenticated identity changed during activation');

@@ -201,3 +201,13 @@ Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sın
 - Signup and resend both use `https://badgalnurkan.com/` callback. A successful GoTrue signup response without a session is not proof of an email being delivered; UI offers a route to sign-in for existing accounts and preserves the existing resend cooldown.
 - Supabase Auth mail and custom Edge Function Resend mail are different routes. No Edge Function, RLS, SMTP secret or production user data is modified by this source-only release.
 - Tests: `npm test`, `python scripts/build-preview.py` and CI browser suites. Real inbox delivery is a separate external acceptance check; it cannot be guaranteed by successful HTTP responses alone.
+
+
+## 22 November 2026 — per-account login email verification
+
+- Repaired malformed signup confirmation HTML in both Supabase dashboards. Actual signup-code and password-recovery messages reached the owner-controlled test inbox from both environments. HTTP acceptance was checked separately from inbox arrival.
+- Added a session-bound six-digit login gate for all authenticated users. Recipients come from the server account; there is no email allowlist in the feature. Cloudflare QA Access remains separate.
+- Existing production profiles are preserved. The database foundation starts disabled in production. Account lifecycle, password-age restrictions, legacy save RPC and current production sync are preserved; no CAS rollout is included. Current OAuth lifetime policy is preserved per environment.
+- Node regressions: 313 passed. QA SQL with rolled-back synthetic users passed: pre-code Data API/RPC denial, wrong code, replay, five-failure lockout, user/session isolation and deactivated-account denial. QA live Edge checks returned 401 for missing/forged tokens and 403 for an untrusted Origin.
+- The local browser runtime cannot launch because OS socket creation is denied. Chromium/WebKit/Firefox checks run in GitHub CI, including the new mobile/desktop OTP journey. CI and production activation results must be appended before claiming the feature is live.
+- Actual new-login email delivery and code acceptance are a separate acceptance check; earlier signup/reset deliveries do not prove the custom login transport.
