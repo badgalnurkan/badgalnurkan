@@ -108,12 +108,15 @@ test('unverified browser gets a code; one verified session can enter',async()=>{
 test('failed Resend delivery cancels the challenge and does not approve',async()=>{
  const {createHandler}=await import(uri);
  const f=fixture({mailFailure:true});
- const handler=createHandler({env,fetchImpl:f.fetchImpl,webCrypto:fakeCrypto});
+ const events=[];
+ const handler=createHandler({env,fetchImpl:f.fetchImpl,webCrypto:fakeCrypto,logger:event=>events.push(event)});
  const sent=await handler(request('request'));
  assert.equal(sent.status,502);
  assert.deepEqual(await sent.json(),{code:'MAIL_SEND_FAILED'});
  assert.equal(f.counts.cancels,1);
  assert.equal(f.counts.verified,false);
+ assert.deepEqual(events,[{event:'LOGIN_CODE_EMAIL_REJECTED',status:503}]);
+ assert.doesNotMatch(JSON.stringify(events),/123456|owner@example|mock-mail-only/);
 });
 test('a token for another Auth identity cannot approve this user',async()=>{
  const {createHandler}=await import(uri);

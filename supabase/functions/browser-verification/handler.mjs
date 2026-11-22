@@ -46,7 +46,7 @@ function jwtClaims(token){
   return parsed&&typeof parsed==='object'?parsed:null;
  }catch{return null}
 }
-export function createHandler({env,fetchImpl=fetch,webCrypto=crypto,clock=()=>Date.now(),allowedOrigins=ORIGINS}){
+export function createHandler({env,fetchImpl=fetch,webCrypto=crypto,clock=()=>Date.now(),allowedOrigins=ORIGINS,logger=event=>console.warn(JSON.stringify(event))}){
  const get=name=>env(name)||'';
  const base=get('SUPABASE_URL');
  const key=publicKey(get,'SUPABASE_PUBLISHABLE_KEYS','SUPABASE_ANON_KEY');
@@ -95,7 +95,7 @@ export function createHandler({env,fetchImpl=fetch,webCrypto=crypto,clock=()=>Da
      body:JSON.stringify({p_action:method,p_uid:uid,p_sid:sid,p_fields:{...fields,using_oauth:usingOAuth}}),
      signal:AbortSignal.timeout(10000)
     });
-    if(!response.ok)throw Error('SERVER_UNAVAILABLE');
+    if(!response.ok){logger({event:'LOGIN_CODE_DATABASE_REJECTED',status:response.status});throw Error('SERVER_UNAVAILABLE')}
     return response.json();
    }
    if(action==='status'){
@@ -130,7 +130,8 @@ export function createHandler({env,fetchImpl=fetch,webCrypto=crypto,clock=()=>Da
      });
      const accepted=await email.json().catch(()=>null);
      sent=email.ok&&typeof accepted?.id==='string'&&accepted.id.length>0;
-    }catch{}
+     if(!sent)logger({event:'LOGIN_CODE_EMAIL_REJECTED',status:email.status});
+    }catch{logger({event:'LOGIN_CODE_EMAIL_UNAVAILABLE'})}
     if(!sent){
      // Cancel only the unsent candidate. The previous delivered challenge
      // stays usable until its original expiry/attempt limit.
