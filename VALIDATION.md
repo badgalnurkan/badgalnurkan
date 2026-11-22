@@ -193,3 +193,11 @@ Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sın
 
 - Final release: 190 tests passed. Chromium/WebKit: date field at six widths, remembered home reveal, verified email UI, code deactivation, deletion Other/No/Yes passed. Main CI confirmed https://badgalnurkan.com serves SITE_RELEASE 2026-11-17-account-security-domain and account-security.js/.css plus cookies.html. Vercel deployment succeeded.
 - Migration filenames and statements now match the database's actual migration history, including the existing 30-minute quick-resume migration. This avoids reapplying existing DDL in a later CLI push. This is a source-history correction with no live schema change.
+
+
+## 22 November 2026 — production-safe verification request fixes
+
+- Existing authenticated production profiles: read-only audit found 7 profiles with matching embedded `authUid`, 0 mismatches before adding fail-closed identity checks.
+- Signup and resend both use `https://badgalnurkan.com/` callback. A successful GoTrue signup response without a session is not proof of an email being delivered; UI offers a route to sign-in for existing accounts and preserves the existing resend cooldown.
+- Supabase Auth mail and custom Edge Function Resend mail are different routes. No Edge Function, RLS, SMTP secret or production user data is modified by this source-only release.
+- Tests: `npm test`, `python scripts/build-preview.py` and CI browser suites. Real inbox delivery is a separate external acceptance check; it cannot be guaranteed by successful HTTP responses alone.

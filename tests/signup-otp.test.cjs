@@ -22,9 +22,9 @@ function fixture(options={}){
   sb:async(path,opt)=>{
    calls.auth.push({path,body:opt.body});
    if(path==='/auth/v1/verify'&&options.error)throw Object.assign(Error('invalid OTP'),options.error===true?{}:options.error);
-   if(path==='/auth/v1/resend'&&options.resendError)throw Object.assign(Error('resend denied'),options.resendError);
+   if(path.startsWith('/auth/v1/resend?')&&options.resendError)throw Object.assign(Error('resend denied'),options.resendError);
    if(path==='/auth/v1/verify'&&options.verifyPromise)return options.verifyPromise;
-   if(path==='/auth/v1/resend'&&options.resendPromise)return options.resendPromise;
+   if(path.startsWith('/auth/v1/resend?')&&options.resendPromise)return options.resendPromise;
    return options.response??{
     user:{id:'one-user',email:'person@example.invalid',email_confirmed_at:'2026-11-19T12:00:00Z'},
     access_token:'token',refresh_token:'refresh'
@@ -80,7 +80,9 @@ test('unconfirmed account cannot enter the app even if an Auth API returns a tok
 test('re-request uses signup-only Auth resend endpoint',async()=>{
  const x=fixture();
  await x.context.resendSignupCode();
- assert.equal(x.calls.auth[0].path,'/auth/v1/resend');
+ const requested=new URL(x.calls.auth[0].path,'https://app.invalid');
+ assert.equal(requested.pathname,'/auth/v1/resend');
+ assert.equal(requested.searchParams.get('redirect_to'),'https://badgalnurkan.com/');
  assert.deepEqual(JSON.parse(JSON.stringify(x.calls.auth[0].body)),{email:'person@example.invalid',type:'signup'});
  assert.equal(x.calls.activate.length,0);
 });
@@ -117,7 +119,7 @@ test('successful resend has a cooldown and warns about older delivered emails',a
  const x=fixture();
  await x.context.resendSignupCode();
  assert.equal(x.calls.auth.length,1);
- assert.match(x.status.textContent,/older email codes may no longer work/i);
+ assert.match(x.status.textContent,/email delivery is not confirmed/i);
  await x.context.resendSignupCode();
  assert.equal(x.calls.auth.length,1);
  assert.match(x.status.textContent,/avoid requesting codes repeatedly/i);
@@ -196,4 +198,39 @@ test('resend in flight locks verify and repeated resend requests',async()=>{
  await first;
  assert.equal(x.submit.disabled,false);
  assert.equal(x.resend.disabled,false);
+});
+
+test('successful but non-session signup cannot be presented as verified mail delivery',()=>{
+ assert.match(html,/Your request was accepted, but email delivery has not been confirmed/);
+ assert.match(html,/Kod isteğin alındı, ancak e-posta teslimi henüz doğrulanmadı/);
+ assert.match(html,/id="signup-code-signin"/);
+});
+
+test('existing-account fallback returns to sign-in without requesting another code',()=>{
+ const x=fixture();x.context.signupOtpFinishWithSignIn('person@example.invalid','Sign in instead');
+ assert.equal(x.context.view,'login');
+ assert.equal(x.context.loginDat.u,'person@example.invalid');
+ assert.equal(x.context.msg,'Sign in instead');
+ assert.equal(x.calls.auth.length,0);
+ assert.equal(vm.runInContext('pendingSignup',x.context),null);
+});
+
+test('email provider rejection is not shown as delivered OTP',async()=>{
+ const x=fixture({resendError:{code:'email_address_not_authorized',status:403}});
+ await x.context.resendSignupCode();
+ assert.match(x.status.textContent,/provider rejected sending to this address/i);
+ assert.equal(x.calls.auth.length,1);
+ assert.notEqual(vm.runInContext('pendingSignup',x.context),null);
+});
+
+test('cloud reads reject an identity belonging to a different account',async()=>{
+ const source=code.slice(code.indexOf('async function sbPull(){'),code.indexOf('// The database owns the old/new-user cutoff;',code.indexOf('async function sbPull(){')));
+ assert.ok(source.includes('CLOUD_PROFILE_IDENTITY_MISMATCH'));
+ const context={
+  sbSession:()=>({user:{id:'owner-1'}}),
+  sb:async()=>[{data:{authUid:'owner-2',u:'other'}}],
+  sbRefresh:async()=>false,Error
+ };
+ vm.createContext(context);vm.runInContext(source,context);
+ await assert.rejects(context.sbPull(),/CLOUD_PROFILE_IDENTITY_MISMATCH/);
 });
