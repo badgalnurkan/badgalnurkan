@@ -1,6 +1,7 @@
 'use strict';
 const {test,before,after}=require('node:test');
 const assert=require('node:assert/strict');
+const http=require('node:http');
 const {createPreviewServer}=require('../scripts/local-preview.cjs');
 let server,base;
 before(async()=>{
@@ -43,6 +44,14 @@ test('GET and HEAD work but write requests do not',async()=>{
  assert.equal(post.headers.get('allow'),'GET, HEAD');
 });
 test('unrecognized host is rejected to reduce DNS rebinding exposure',async()=>{
- const response=await fetch(base+'/',{headers:{Host:'untrusted.example.invalid'}});
- assert.equal(response.status,403);
+ // fetch/undici replaces Host with the URL authority. Use a raw Node
+ // HTTP request to verify what the server receives over the wire.
+ const status=await new Promise((resolve,reject)=>{
+  const request=http.get(base+'/',{headers:{host:'untrusted.example.invalid'}},response=>{
+   response.resume();
+   response.on('end',()=>resolve(response.statusCode));
+  });
+  request.on('error',reject);
+ });
+ assert.equal(status,403);
 });
