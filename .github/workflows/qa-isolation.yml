@@ -26,3 +26,5 @@ jobs:
         run: node --test tests/qa-concurrency-model.test.cjs
       - name: Test QA browser verification origins
         run: node --test tests/qa-browser-verification-origin.test.cjs
+      - name: Verify QA CAS database contract
+        run: node --test tests/qa-cas-db-contract.test.cjs

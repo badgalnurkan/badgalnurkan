@@ -80,3 +80,41 @@ test('new browser username confusion message is explicit, not a false device dia
  assert.match(script,/cross-browser username login requires separate secure server verification/);
  assert.doesNotMatch(script,/Sign in with email on a new device\./);
 });
+
+
+test('simultaneous saves wait for confirmation of both changes, not a queued success',async()=>{
+ let release;
+ const gate=new Promise(resolve=>{release=resolve});
+ const f=fixture({defer:gate});
+ await f.ctx.sbPull();
+ f.ctx.A.tasks.push('first-edit');
+ const first=f.ctx.sbPush();
+ f.ctx.A.tasks.push('second-edit');
+ let secondResolved=false;
+ const second=f.ctx.sbPush().then(result=>{secondResolved=true;return result});
+ await Promise.resolve();
+ assert.equal(secondResolved,false,'second save cannot claim success while the first is waiting');
+ release();
+ assert.equal(await first,true);
+ assert.equal(await second,true);
+ assert.equal(secondResolved,true);
+ assert.deepEqual(f.readServer().tasks,['start','first-edit','second-edit']);
+ assert.equal(f.requests.filter(x=>x.path.includes('iydu_save_cas')).length,2);
+});
+test('a conflict cannot be silently reset by another cloud pull',async()=>{
+ const f=fixture();
+ await f.ctx.sbPull();
+ f.overwriteServer({u:'alpha',tasks:['remote-edit']});
+ f.ctx.A.tasks.push('local-edit');
+ assert.equal(await f.ctx.sbPush(),false);
+ await assert.rejects(f.ctx.sbPull(),/CLOUD_SYNC_RECONCILIATION_REQUIRED/);
+ assert.deepEqual(f.readServer().tasks,['remote-edit']);
+ assert.equal(f.requests.filter(x=>x.path.includes('iydu_load')).length,1);
+});
+test('no-op save does not send a duplicate write',async()=>{
+ const f=fixture();
+ await f.ctx.sbPull();
+ f.ctx.A.tasks=['start'];
+ assert.equal(await f.ctx.sbPush(),true);
+ assert.equal(f.requests.filter(x=>x.path.includes('iydu_save_cas')).length,0);
+});

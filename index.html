@@ -5189,7 +5189,9 @@ async function sbCurrentUser(){
 }
 // Cloud data must never be overwritten from a stale tab or another user's session.
 // A successful pull establishes the expected JSON snapshot for compare-and-swap.
-const cloudSyncState={uid:'',expected:null,blocked:false,pushing:false,queued:false,warned:false};
+// Keep the last server snapshot until a CAS write is confirmed.
+// Never treat a queued request as a successful save.
+const cloudSyncState={uid:'',expected:null,blocked:false,inFlight:null,warned:false};
 function cloudSyncWarning(){
   if(cloudSyncState.warned)return;
   cloudSyncState.warned=true;
@@ -5204,49 +5206,57 @@ async function sbPush(){
     cloudSyncWarning();return false;
   }
   if(cloudSyncState.blocked)return false;
-  if(cloudSyncState.pushing){cloudSyncState.queued=true;return true}
-  cloudSyncState.pushing=true;
+  if(cloudSyncState.inFlight){
+    // The caller must wait for the preceding write AND its own latest state.
+    if(!await cloudSyncState.inFlight)return false;
+    return sbPush();
+  }
   const sanitized=JSON.parse(JSON.stringify(A));sanitized.pw='';delete sanitized.salt;
   const expected=JSON.parse(JSON.stringify(cloudSyncState.expected));
+  if(JSON.stringify(sanitized)===JSON.stringify(expected))return true;
   const body={p_expected_data:expected,p_data:sanitized};
-  let saved=false;
-  try{
-    let accepted;
+  const write=(async()=>{
     try{
-      accepted=await sb('/rest/v1/rpc/iydu_save_cas',{method:'POST',body});
+      let accepted;
+      try{
+        accepted=await sb('/rest/v1/rpc/iydu_save_cas',{method:'POST',body});
+      }catch(error){
+        if(error.status!==401||!await sbRefresh()||sbSession()?.user?.id!==uid)throw error;
+        accepted=await sb('/rest/v1/rpc/iydu_save_cas',{method:'POST',body});
+      }
+      if(accepted!==true){
+        if(cloudSyncState.uid===uid){cloudSyncState.blocked=true;cloudSyncWarning()}
+        return false;
+      }
+      if(cloudSyncState.uid!==uid||sbSession()?.user?.id!==uid||A?.authUid!==uid)return false;
+      cloudSyncState.expected=JSON.parse(JSON.stringify(sanitized));
+      return true;
     }catch(error){
-      if(error.status!==401||!await sbRefresh()||sbSession()?.user?.id!==uid)throw error;
-      accepted=await sb('/rest/v1/rpc/iydu_save_cas',{method:'POST',body});
+      // A timeout may hide a successful commit. Never blindly repeat the write.
+      if(cloudSyncState.uid===uid){cloudSyncState.blocked=true;cloudSyncWarning()}
+      return false;
     }
-    if(accepted!==true){cloudSyncState.blocked=true;cloudSyncWarning();return false}
-    if(cloudSyncState.uid!==uid||sbSession()?.user?.id!==uid||A?.authUid!==uid){
-      cloudSyncState.blocked=true;return false;
-    }
-    cloudSyncState.expected=JSON.parse(JSON.stringify(sanitized));
-    saved=true;return true;
-  }catch(error){
-    // The outcome of a network timeout may be unknown. Never retry a full
-    // document blindly; the user can review and reconcile the local copy.
-    cloudSyncState.blocked=true;
-    cloudSyncWarning();
-    return false;
-  }finally{
-    cloudSyncState.pushing=false;
-    if(cloudSyncState.queued&&saved&&!cloudSyncState.blocked&&A?.authUid===uid){
-      cloudSyncState.queued=false;
-      const latest=JSON.parse(JSON.stringify(A));latest.pw='';delete latest.salt;
-      if(JSON.stringify(latest)!==JSON.stringify(sanitized))schedulePush();
-    }else cloudSyncState.queued=false;
-  }
+  })();
+  cloudSyncState.inFlight=write;
+  try{return await write}
+  finally{if(cloudSyncState.inFlight===write)cloudSyncState.inFlight=null}
 }
 async function sbPull(){
   const session=sbSession();if(!session?.user?.id)throw new Error('Not authenticated');
+  if(cloudSyncState.uid===session.user.id){
+    // A stale local document must not be made writable merely by reloading.
+    if(cloudSyncState.blocked)throw new Error('CLOUD_SYNC_RECONCILIATION_REQUIRED');
+    if(cloudSyncState.inFlight&&!await cloudSyncState.inFlight)
+      throw new Error('CLOUD_SYNC_RECONCILIATION_REQUIRED');
+  }
   let rows;
   try{rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}})}
   catch(e){if(e.status===401&&await sbRefresh())rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}});else throw e}
   const row=Array.isArray(rows)?rows[0]:rows;
   if(row?.data&&(!row.data||typeof row.data!=='object'||Array.isArray(row.data)))throw new Error('Invalid cloud data');
   if(sbSession()?.user?.id!==session.user.id)throw new Error('Session changed during cloud read');
+  if(cloudSyncState.uid===session.user.id&&cloudSyncState.blocked)
+    throw new Error('CLOUD_SYNC_RECONCILIATION_REQUIRED');
   cloudSyncState.uid=session.user.id;
   cloudSyncState.expected=JSON.parse(JSON.stringify(row?.data||{}));
   cloudSyncState.blocked=false;
