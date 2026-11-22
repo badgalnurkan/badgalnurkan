@@ -1,8 +1,10 @@
 // Read-only local review: no real credentials, emails, or production writes.
 const { chromium, webkit, firefox }=require('playwright');
 const verifyRecovery=require('./recovery-browser.browser.cjs');
+const {mockSupabaseOrigin}=require('./mock-supabase-origin.cjs');
 const {spawn}=require('node:child_process'),assert=require('node:assert/strict');
 (async()=>{
+ const mockedBackend=mockSupabaseOrigin();
  const server=spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
  let browser;
  try{
@@ -117,7 +119,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     localStorage.setItem('iydu.storage-notice.v1','test');
    });
    const accountRequests=[];
-   await recoveryContext.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
+   await recoveryContext.route(mockedBackend+'/**',async route=>{
     const endpoint=new URL(route.request().url()).pathname;
     accountRequests.push(endpoint);
     if(endpoint==='/rest/v1/rpc/iydu_account_status'){
@@ -340,7 +342,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const db={accounts:{[record.u]:record},lastUser:record.u,last:record.nick,lang:'tr',beige:false};
    await page.addInitScript(({db,session})=>{localStorage.setItem('b1',JSON.stringify(db));localStorage.setItem('b1sb',JSON.stringify(session));localStorage.setItem('iydu.storage-notice.v1','test')},{db,session});
    const actions=[],requests=[];let closed=false,hasPassword=false;
-   await page.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
+   await page.route(mockedBackend+'/**',async route=>{
     const url=route.request().url();requests.push(url);
     let data=null;
     if(url.endsWith('grant_type=password')){assert.equal(route.request().postDataJSON().email,record.email);data=session}
@@ -411,7 +413,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const removal=await browser.newPage({viewport:{width:390,height:844}});
    await removal.addInitScript(()=>localStorage.setItem('iydu.storage-notice.v1','test'));
    const deletionCalls=[];
-   await removal.route('https://flcfqwndqfmbritaywfb.supabase.co/functions/v1/account-security',async route=>{
+   await removal.route(mockedBackend+'/functions/v1/account-security',async route=>{
     const body=route.request().postDataJSON();deletionCalls.push(body);
     await route.fulfill({status:200,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({ok:true,user_id:'fixture-user',state:'pending_delete',delete_after:'2026-12-17T00:00:00Z'})});
    });
@@ -433,7 +435,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
 
    const standalone=await browser.newPage({viewport:{width:375,height:844}});
    const posted=[];
-   await standalone.route('https://flcfqwndqfmbritaywfb.supabase.co/functions/v1/account-security',async route=>{
+   await standalone.route(mockedBackend+'/functions/v1/account-security',async route=>{
      posted.push(route.request().postDataJSON());
      await route.fulfill({status:200,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({ok:true,state:'pending_delete',delete_after:'2027-01-18T00:00:00Z'})});
    });
