@@ -8,8 +8,15 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(script, 'inline application script must exist');
-const todo = script.match(/P\.todo=\(\)=>\{[\s\S]*?\n\};\nfunction vibrateTask\(\)/)?.[0]?.replace(/\nfunction vibrateTask\(\)$/, '');
+const todoPattern = /P\.todo=\(\)=>\{[\s\S]*?\r?\n\};\r?\nfunction vibrateTask\(\)/;
+const todo = script.match(todoPattern)?.[0]?.replace(/\r?\nfunction vibrateTask\(\)$/, '');
 assert.ok(todo, 'todo render function must be found');
+
+
+test('todo render extraction works with both LF and Windows CRLF line endings', () => {
+  assert.match(script, todoPattern);
+  assert.match(script.replace(/\r?\n/g, '\r\n'), todoPattern);
+});
 
 function renderTodo(tasks, { archived = false, lang = 'tr' } = {}) {
   const output = [];
