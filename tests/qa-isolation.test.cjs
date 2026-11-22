@@ -16,3 +16,19 @@ test('QA CSP and security redirects remain scoped correctly',()=>{
   const blocked=['/deneme.html','/deneme_final.html','/demo.html','/supabase/:path*','/tests/:path*'];
   for(const path of blocked)assert.ok(c.redirects.some(x=>x.source===path&&x.destination==='/'));
 });
+
+test('QA signup, verification resend and email changes redirect only to QA',()=>{
+  const html=fs.readFileSync('index.html','utf8');
+  const qaTarget="encodeURIComponent('https://qa.badgalnurkan.com/')";
+  const endpoints=[
+    "/auth/v1/signup?redirect_to=",
+    "/auth/v1/resend?redirect_to=",
+    "/auth/v1/user?redirect_to="
+  ];
+  for(const endpoint of endpoints){
+    const line=html.split('\\n').find(l=>l.includes(endpoint));
+    assert.ok(line,endpoint+' missing');
+    assert.ok(line.includes(qaTarget),endpoint+' must return to QA');
+  }
+  assert.equal(html.includes("encodeURIComponent('https://badgalnurkan.com/')"),false);
+});
