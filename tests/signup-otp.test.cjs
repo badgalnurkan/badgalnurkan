@@ -197,3 +197,28 @@ test('resend in flight locks verify and repeated resend requests',async()=>{
  assert.equal(x.submit.disabled,false);
  assert.equal(x.resend.disabled,false);
 });
+
+test('signup verification UI never promises delivery for a non-session signup response',()=>{
+ assert.match(html,/Your request was accepted, but email delivery has not been confirmed/);
+ assert.match(html,/Kod isteğin alındı; e-posta teslimi henüz doğrulanmadı/);
+ assert.match(html,/id="signup-code-signin"/);
+ assert.match(html,/signupOtpFinishWithSignIn\(pendingSignup.email/);
+});
+
+test('signup code screen can return safely to sign-in without another email request',()=>{
+ const x=fixture();
+ x.context.signupOtpFinishWithSignIn('person@example.invalid','An existing account can sign in');
+ assert.equal(x.context.view,'login');
+ assert.equal(x.context.loginDat.u,'person@example.invalid');
+ assert.equal(x.context.msg,'An existing account can sign in');
+ assert.equal(x.calls.auth.length,0);
+ assert.equal(vm.runInContext('pendingSignup',x.context),null);
+});
+
+test('resend email authorization errors explain QA mail configuration instead of blaming a code',async()=>{
+ const x=fixture({resendError:{status:403,code:'email_address_not_authorized'}});
+ await x.context.resendSignupCode();
+ assert.equal(x.calls.auth.length,1);
+ assert.match(x.status.textContent,/project administrator needs to check Supabase Auth SMTP settings/i);
+ assert.notEqual(vm.runInContext('pendingSignup',x.context),null);
+});
