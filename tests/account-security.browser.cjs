@@ -13,6 +13,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
   const engines=suite==='chromium'?[['chromium',chromium]]:suite==='firefox'?[['firefox',firefox]]:suite==='ui'?uiEngines:[...uiEngines,['firefox',firefox]];
   for(const [engine,type] of engines){
    browser=await type.launch(engine==='chromium'&&process.env.IYD_CHROMIUM_EXECUTABLE?{executablePath:process.env.IYD_CHROMIUM_EXECUTABLE}:{});
+   await require('./turnstile-provider.browser.cjs')(browser);
    await verifyRecovery(browser,engine);
    await verifyLoginEmail(browser,engine);
    if(engine==='firefox'){await browser.close();continue}

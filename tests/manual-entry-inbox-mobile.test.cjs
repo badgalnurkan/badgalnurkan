@@ -11,6 +11,7 @@ function extract(from,to){
 test('remembered Google entry offers a separate manual Sign in route',()=>{
  const context={rememberedSignInBusy:false,t:()=> 'Sign in'};
  vm.createContext(context);
+ vm.runInContext("function captchaErrorText(err){\n  if(!/captcha/i.test(String(err?.code||'')+' '+String(err?.message||'')))return '';\n  return tr()?'Robot doğrulaması tamamlanamadı. Kutucuğu kontrol edip yeniden dene.':'Security verification failed. Check the verification box and try again.';\n}\n",context);
  vm.runInContext(extract('function manualSignInButton(remembered){','function welcomeScreen(){')+'this.button=manualSignInButton;',context);
  assert.match(context.button(true),/welcome-manual-signin/);
  assert.match(context.button(true),/manualSignInFromWelcome\(\)/);
@@ -39,6 +40,7 @@ test('greeting starts at valid manual auth submissions, without bypassing valida
   loginBusy:()=>{},sbSignIn:async()=>{throw Error('invalid login credentials')},authErrorMessage:()=> 'credentials',
   renderAppOrAuth:()=>{context.renders++},renders:0,goTo:()=>{context.navigations++},navigations:0};
  vm.createContext(context);
+ vm.runInContext("function captchaErrorText(err){\n  if(!/captcha/i.test(String(err?.code||'')+' '+String(err?.message||'')))return '';\n  return tr()?'Robot doğrulaması tamamlanamadı. Kutucuğu kontrol edip yeniden dene.':'Security verification failed. Check the verification box and try again.';\n}\n",context);
  vm.runInContext(signIn+'this.run=login;',context);
  const pending=context.run();
  assert.equal(context.entries,1,'animation should begin before server authentication finishes');
@@ -57,6 +59,7 @@ function inboxFixture(reduced=false){
   document:{getElementById:id=>id==='notification-clear'?button:id==='notification-list'?list:null,querySelectorAll:()=>[]},
   setTimeout:(cb,delay)=>{timers.push({cb,delay})},dismissTopNotification:()=>{},openModal:()=>{}};
  vm.createContext(context);
+ vm.runInContext("function captchaErrorText(err){\n  if(!/captcha/i.test(String(err?.code||'')+' '+String(err?.message||'')))return '';\n  return tr()?'Robot doğrulaması tamamlanamadı. Kutucuğu kontrol edip yeniden dene.':'Security verification failed. Check the verification box and try again.';\n}\n",context);
  vm.runInContext(extract('function notificationClearButton(){','function setNotificationPreference(key,enabled){')+'this.clear=clearNotifications;this.buttonHTML=notificationClearButton;',context);
  return {context,button,list,names,timers};
 }

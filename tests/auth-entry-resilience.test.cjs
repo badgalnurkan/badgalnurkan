@@ -36,6 +36,7 @@ function loginFixture(failure){
   console
  };
  vm.createContext(context);
+ vm.runInContext("function captchaErrorText(err){\n  if(!/captcha/i.test(String(err?.code||'')+' '+String(err?.message||'')))return '';\n  return tr()?'Robot doğrulaması tamamlanamadı. Kutucuğu kontrol edip yeniden dene.':'Security verification failed. Check the verification box and try again.';\n}\n",context);
  vm.runInContext('let pendingSignup=null;',context);
  vm.runInContext(authErrorSource,context);
  vm.runInContext(loginSource,context);
@@ -75,6 +76,7 @@ function recoveryFixture(sender){
   sbRecover:async(email)=>{calls++;return sender(email)}
  };
  vm.createContext(context);
+ vm.runInContext("function captchaErrorText(err){\n  if(!/captcha/i.test(String(err?.code||'')+' '+String(err?.message||'')))return '';\n  return tr()?'Robot doğrulaması tamamlanamadı. Kutucuğu kontrol edip yeniden dene.':'Security verification failed. Check the verification box and try again.';\n}\n",context);
  vm.runInContext(recoverySource,context);
  return {context,submit,feedback,emailField,resumed,calls:()=>calls,advance:ms=>{now+=ms}};
 }

@@ -40,6 +40,7 @@ function fixture(options={}){
   sbSession:()=>session
  };
  vm.createContext(context);
+ vm.runInContext("function captchaErrorText(err){\n  if(!/captcha/i.test(String(err?.code||'')+' '+String(err?.message||'')))return '';\n  return tr()?'Robot doğrulaması tamamlanamadı. Kutucuğu kontrol edip yeniden dene.':'Security verification failed. Check the verification box and try again.';\n}\n",context);
  vm.runInContext(code.slice(a,b),context);
  vm.runInContext("pendingSignup={email:'person@example.invalid',username:'user_one',nick:'User One'}",context);
  return {context,status,input,submit,resend,calls};
@@ -231,6 +232,7 @@ test('cloud reads reject an identity belonging to a different account',async()=>
   sb:async()=>[{data:{authUid:'owner-2',u:'other'}}],
   sbRefresh:async()=>false,Error
  };
- vm.createContext(context);vm.runInContext(source,context);
+ vm.createContext(context);
+ vm.runInContext("function captchaErrorText(err){\n  if(!/captcha/i.test(String(err?.code||'')+' '+String(err?.message||'')))return '';\n  return tr()?'Robot doğrulaması tamamlanamadı. Kutucuğu kontrol edip yeniden dene.':'Security verification failed. Check the verification box and try again.';\n}\n",context);vm.runInContext(source,context);
  await assert.rejects(context.sbPull(),/CLOUD_PROFILE_IDENTITY_MISMATCH/);
 });

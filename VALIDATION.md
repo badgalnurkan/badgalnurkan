@@ -224,3 +224,13 @@ Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sın
 - Production enforcement is enabled. Already-open Auth sessions retained their current access; new sessions must verify their own account email. No Cloudflare policy or email allowlist was changed. Nine production profiles remained present, and the preparation/activation steps did not change their aggregate content fingerprint.
 - Real production acceptance completed: Google sign-in opened the six-digit login gate, the custom login email from security@badgalnurkan.com arrived in the owner-controlled Gmail inbox, and a securely entered received code opened the authenticated home page. The backend recorded the matching verified session and consumed challenge. No usable code, password, bearer token or private inbox content is included here.
 - Signup and password-recovery emails were independently received from production and QA earlier in this session. Only one real Google-plus-login-code journey is claimed; password sign-in and additional account/session cases are covered by isolated database and mocked three-engine tests. Physical iOS/Android and every external mail provider have not been tested.
+
+
+## 22 November 2026 — Turnstile authentication forms
+
+- Public widget key supplied by site owner; secret belongs only in Supabase Auth protection. No secret stored in source.
+- Password sign-in, signup, password reset and signup-code resend carry one-use CAPTCHA proof through Supabase's gotrue_meta_security.captcha_token. Email login verification remains intact.
+- Native Google OAuth is handled by Supabase's OAuth provider, which does not enforce this CAPTCHA route; the existing email session gate remains applicable.
+- Token expiration, replaced form callbacks, one-use consumption, supported-route scope and compact layout selection covered by Node tests: 318 passed.
+- Browser suites use an explicitly mocked provider and synthetic Auth requests, not real CAPTCHA solutions. CI results pending.
+- Production deployment, server CAPTCHA enforcement and actual user challenge completion still pending at preparation time.

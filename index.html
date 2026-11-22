@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="iydu-turnstile-site-key" content="0x4AAAAAAGNcaOmeD1FdPn72">
 <title>Improvin' your day</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f6eee3">
@@ -1709,6 +1710,7 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 <script src="/account-security.js"></script>
 <script src="/recovery-browser.js"></script>
 <script src="/browser-verification.js"></script>
+<script src="/turnstile-auth.js"></script>
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
@@ -2484,8 +2486,11 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-22-account-login-email-code-03';
+const SITE_RELEASE='2026-11-22-turnstile-auth-01';
 const SITE_CHANGES=[
+  {date:'2026-11-22',trTitle:'Cloudflare robot kontrolü',enTitle:'Cloudflare security verification',items:[
+  ['E-posta ve şifreyle giriş, kayıt, şifre sıfırlama ve yeniden kod isteme ekranlarına Turnstile kontrolü eklendi.','Turnstile verification added to password sign-in, signup, password reset and code resend.'],
+  ['Giriş sonrası e-posta kodu doğrulaması korunur.','Email code verification after sign-in is preserved.']]},
   {date:'2026-11-22',trTitle:'E-posta ile güvenli giriş',enTitle:'Email sign-in verification',items:[
   ['Yeni girişlerde hesabının kendi e-posta adresine gelen altı haneli kodla oturumunu doğrulayabilirsin.','Verify a new sign-in with the six-digit code sent to your own account email.'],
   ['Doğrulama tamamlanmadan günlüklerin ve görevlerin yüklenmez.','Your journals and tasks stay protected until sign-in verification is complete.']]},
@@ -2803,15 +2808,16 @@ function renderAppOrAuth(){
       ${googleRemembered?`<button type="button" class="g s remember-manual" data-user="${esc(rem)}" onclick="useAccount(this.dataset.user)">${tr()?'Kullanıcı adı ve şifreyle giriş yap':'Sign in with username and password'}</button>`:``}
     </div>`:``;
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button data-user="${esc(k)}" onclick="useAccount(this.dataset.user)">@${esc(k)}</button>`).join('')}</div></div>`:'';
-    h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Google ile kayıtlı olsan da kendi uygulama şifrenle giriş yapabilirsin. Henüz şifren yoksa e-postanı doğrulayarak oluşturabilirsin.':'You can sign in with your own app password, even if you registered with Google. If you have not set one, create one after verifying your email.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}"><div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" data-user="${esc(rem||'')}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':'signInWithGoogle()'}">${googleRemembered?(tr()?esc(DB.accounts[rem].email||DB.accounts[rem].mail)+' ile devam et':'Continue with '+esc(DB.accounts[rem].email||DB.accounts[rem].mail)):(tr()?'Google ile devam et':'Continue with Google')}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
+    h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Google ile kayıtlı olsan da kendi uygulama şifrenle giriş yapabilirsin. Henüz şifren yoksa e-postanı doğrulayarak oluşturabilirsin.':'You can sign in with your own app password, even if you registered with Google. If you have not set one, create one after verifying your email.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('login'):''}<div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" data-user="${esc(rem||'')}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':'signInWithGoogle()'}">${googleRemembered?(tr()?esc(DB.accounts[rem].email||DB.accounts[rem].mail)+' ile devam et':'Continue with '+esc(DB.accounts[rem].email||DB.accounts[rem].mail)):(tr()?'Google ile devam et':'Continue with Google')}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
-  else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+box(`<h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p><div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+box(`<h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p>${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('signup'):''}<div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   else if(view==='signup-code'){
     if(!pendingSignup){view='setup';renderAppOrAuth();return}
-    h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${tr()?'E-posta doğrulama kodu':'Email verification code'}</h2>${m()}<p class="mut">${tr()?'Kod isteğin alındı, ancak e-posta teslimi henüz doğrulanmadı. Bu e-postayla zaten bir hesabın varsa yeni kod gelmeyebilir. Giriş yapmayı veya şifreni sıfırlamayı deneyebilirsin.':'Your request was accepted, but email delivery has not been confirmed. If you already have an account with this email, a new code may not arrive. Try signing in or resetting your password.'}</p><p><strong>${esc(pendingSignup.email)}</strong></p><label for="signup-code-input">${tr()?'6 haneli kod':'Six-digit code'}</label><input id="signup-code-input" inputmode="numeric" type="text" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();verifySignupCode()}"><div class="row"><button type="button" id="signup-code-submit" onclick="verifySignupCode()">${tr()?'Kodu doğrula':'Verify code'}</button><button class="g" type="button" id="signup-code-resend" onclick="resendSignupCode()">${tr()?'Yeni kod iste':'Resend code'}</button></div><button class="g s" type="button" id="signup-code-signin" onclick="signupOtpFinishWithSignIn(pendingSignup.email,tr()?'Mevcut hesabın varsa giriş yapabilir veya şifreni sıfırlayabilirsin.':'If you already have an account, sign in or reset your password.')">${tr()?'Giriş ekranına geç':'Go to sign in'}</button><button class="g s" type="button" onclick="pendingSignup=null;goTo('setup','home')">${tr()?'Geri dön':'Back'}</button><p id="signup-code-status" role="status" aria-live="polite"></p>`);
+    h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${tr()?'E-posta doğrulama kodu':'Email verification code'}</h2>${m()}<p class="mut">${tr()?'Kod isteğin alındı, ancak e-posta teslimi henüz doğrulanmadı. Bu e-postayla zaten bir hesabın varsa yeni kod gelmeyebilir. Giriş yapmayı veya şifreni sıfırlamayı deneyebilirsin.':'Your request was accepted, but email delivery has not been confirmed. If you already have an account with this email, a new code may not arrive. Try signing in or resetting your password.'}</p><p><strong>${esc(pendingSignup.email)}</strong></p><label for="signup-code-input">${tr()?'6 haneli kod':'Six-digit code'}</label><input id="signup-code-input" inputmode="numeric" type="text" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();verifySignupCode()}">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('resend'):''}<div class="row"><button type="button" id="signup-code-submit" onclick="verifySignupCode()">${tr()?'Kodu doğrula':'Verify code'}</button><button class="g" type="button" id="signup-code-resend" onclick="resendSignupCode()">${tr()?'Yeni kod iste':'Resend code'}</button></div><button class="g s" type="button" id="signup-code-signin" onclick="signupOtpFinishWithSignIn(pendingSignup.email,tr()?'Mevcut hesabın varsa giriş yapabilir veya şifreni sıfırlayabilirsin.':'If you already have an account, sign in or reset your password.')">${tr()?'Giriş ekranına geç':'Go to sign in'}</button><button class="g s" type="button" onclick="pendingSignup=null;goTo('setup','home')">${tr()?'Geri dön':'Back'}</button><p id="signup-code-status" role="status" aria-live="polite"></p>`);
   }
-  else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email"><div class="row"><button id="forgot-reset-submit" type="button" onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button><button class="g" type="button" onclick="IYRecovery.resume(document.getElementById('u').value)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('recovery'):''}<div class="row"><button id="forgot-reset-submit" type="button" onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button><button class="g" type="button" onclick="IYRecovery.resume(document.getElementById('u').value)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
   $('#app').innerHTML=h;ensureReleaseNotification();
+  if(typeof IYTurnstile!=='undefined')IYTurnstile.mount();
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
 }
 
@@ -2955,6 +2961,10 @@ function checkEmailHint(){
   const el=$('#email-hint');if(!el)return;
   el.innerHTML=match?`<p class="mut">${tr()?'Bu e-posta bu cihazda kayıtlı. Kayıt tuşuna basarsan giriş ekranına yönlendirilirsin.':'This email is saved on this device. Registration will redirect to sign in.'}</p>`:'';
 }
+function captchaErrorText(err){
+  if(!/captcha/i.test(String(err?.code||'')+' '+String(err?.message||'')))return '';
+  return tr()?'Robot doğrulaması tamamlanamadı. Kutucuğu kontrol edip yeniden dene.':'Security verification failed. Check the verification box and try again.';
+}
 function authErrorMessage(err){
   if(err&&(/already registered|already exists|user_already_exists/i.test(err.message||'')||err.code==='user_already_exists'))return 'already-email';
   if(err&&(/duplicate key|unique|iydu_usernames|username/i.test(err.message||'')))return 'username';
@@ -3002,6 +3012,7 @@ async function login(){
   const password=String($('#p')?.value||loginDat.p||'');
   if(!raw){msg=tr()?'E-posta veya kullanıcı adını gir.':'Enter email or username.';return renderAppOrAuth()}
   if(!password){msg=tr()?'Şifreni gir.':'Enter your password.';return renderAppOrAuth()}
+  if(typeof IYTurnstile!=='undefined'&&!IYTurnstile.ready())return;
   const localKey=findUser(raw);
   const matchingMail=Object.values(DB.accounts).find(a=>String(a.email||a.mail||'').toLowerCase()===raw.toLowerCase());
   const localAcc=localKey?DB.accounts[localKey]:matchingMail;
@@ -3025,6 +3036,9 @@ async function login(){
           sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();await entryTransition;goTo('app','home');
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
+        if(e.code==='CAPTCHA_CANCELLED')return;
+        const captchaMessage=captchaErrorText(e);
+        if(captchaMessage){msg=captchaMessage;return renderAppOrAuth()}
         loginDat.p='';
         if(serverAccepted){
           loginDat.u=email;
@@ -3177,6 +3191,7 @@ async function resendSignupCode(){
       :'Avoid requesting codes repeatedly. Try again in '+remaining+' seconds and check for the delayed first email.');
     return;
   }
+  if(typeof IYTurnstile!=='undefined'&&!IYTurnstile.ready())return;
   signupOtpBusy=true;
   const resend=document.getElementById('signup-code-resend');
   const submit=document.getElementById('signup-code-submit');
@@ -3193,7 +3208,9 @@ async function resendSignupCode(){
       ?'Yeni kod isteği kabul edildi; e-posta teslimi henüz doğrulanmadı. Önceki kod çalışmayabilir. Kod gelmezse mevcut hesabınla giriş yapmayı dene.'
       :'Your new code request was accepted, but email delivery is not confirmed. Older codes may no longer work. If no code arrives, try signing in.');
   }catch(error){
+    if(error.code==='CAPTCHA_CANCELLED')return;
     if(pendingSignup!==request)return;
+    if(captchaErrorText(error)){signupOtpMessage(captchaErrorText(error));return}
     if(error?.status===429||error?.code==='over_email_send_rate_limit'){
       request.nextResendAt=Date.now()+30000;
       signupOtpMessage(tr()
@@ -3240,6 +3257,7 @@ async function setup(){
   if(msg){renderAppOrAuth();if(msg===t('usernameTaken'))debounceNameCheck();return}
   if(Object.values(DB.accounts).some(a=>String(a.email||a.mail||'').toLowerCase()===e)){goExistingEmail(e);return}
   if(deviceAccountCount()>=MAX_DEVICE_ACCOUNTS){msg=tr()?'Bu cihazda en fazla 3 hesap saklanabilir. Önce mevcut bulut hesaplarından birini bu cihazda unut.':'This device can remember at most 3 accounts. Forget an unused cloud profile on this device first.';renderAppOrAuth();return}
+  if(typeof IYTurnstile!=='undefined'&&!IYTurnstile.ready())return;
   loginBusy(true);
   try{
     const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:u}});
@@ -3262,6 +3280,8 @@ async function setup(){
     formDat={u:'',n:'',b:'',e:'',t:'',p:''};
     toast(tr()?'Hesabın oluşturuldu. E-posta durumunu Ayarlar’dan kontrol edebilirsin.':'Your account is ready. Check your email status in Settings.');
   }catch(err){
+    if(err.code==='CAPTCHA_CANCELLED')return;
+    if(captchaErrorText(err)){msg=captchaErrorText(err);renderAppOrAuth();return}
     const cause=authErrorMessage(err);
     if(cause==='already-email'){goExistingEmail(e);return}
     if(cause==='username'){msg=t('usernameTaken');renderAppOrAuth();debounceNameCheck();return}
@@ -3286,6 +3306,7 @@ async function fSend(k){
     inform(tr()?'Yeni bağlantı istemeden önce biraz bekle. Önceki e-postanı da kontrol edebilirsin.':'Please wait before requesting another link. You can check your previous email.');
     return;
   }
+  if(typeof IYTurnstile!=='undefined'&&!IYTurnstile.ready())return;
   recoveryMailBusy=true;
   const button=document.getElementById('forgot-reset-submit');
   if(button)button.disabled=true;
@@ -3298,6 +3319,8 @@ async function fSend(k){
       feedback.querySelector('button').dataset.email=email;
     }
   }catch(error){
+    if(error.code==='CAPTCHA_CANCELLED')return;
+    if(captchaErrorText(error)){inform(captchaErrorText(error));return}
     if(error?.status===429||error?.code==='over_email_send_rate_limit'){
       recoveryMailRetryAfter=Date.now()+60000;
       inform(tr()?'Çok fazla sıfırlama isteği gönderildi. En az bir dakika bekleyip tekrar dene.':'Too many reset requests. Wait at least one minute before trying again.');
@@ -5174,9 +5197,10 @@ async function sb(path,opt={}){
   const headers={'apikey':SUPABASE_KEY,'Content-Type':'application/json',...(opt.headers||{})};
   const isLogin=/^\/auth\/v1\/(signup|token|recover|resend|verify)/.test(path);
   if(!isLogin&&session?.access_token)headers['Authorization']='Bearer '+session.access_token;
+  const requestBody=typeof IYTurnstile!=='undefined'?await IYTurnstile.protect(path,opt.method||'GET',opt.body):opt.body;
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);
   try{
-    const response=await fetch(SUPABASE_URL+path,{method:opt.method||'GET',headers,body:opt.body===undefined?undefined:JSON.stringify(opt.body),signal:controller.signal,cache:'no-store'});
+    const response=await fetch(SUPABASE_URL+path,{method:opt.method||'GET',headers,body:requestBody===undefined?undefined:JSON.stringify(requestBody),signal:controller.signal,cache:'no-store'});
     let data=null;try{data=await response.json()}catch(_){data=null}
     if(!response.ok){const err=new Error(String(data?.msg||data?.message||data?.error_description||data?.error||'HTTP '+response.status));err.status=response.status;err.code=data?.code;throw err}
     return data;
