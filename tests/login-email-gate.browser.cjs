@@ -12,7 +12,7 @@ module.exports=async(browser,engine)=>{
   await page.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
    const req=route.request(),url=new URL(req.url());let data,status=200;
    if(req.method()==='OPTIONS')return route.fulfill({status:204,headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'POST,OPTIONS'}});
-   if(url.pathname==='/auth/v1/token')data=session;
+   if(url.pathname==='/auth/v1/token'){assert.match(req.postDataJSON().gotrue_meta_security?.captcha_token||'',/^ci-/, 'password sign-in carries CAPTCHA proof');data=session;}
    else if(url.pathname==='/auth/v1/user')data=user;
    else if(url.pathname.endsWith('/iydu_account_status'))data={user_id:user.id,email:user.email,email_verified:true,state:'active',password_required:false};
    else if(url.pathname.endsWith('/browser-verification')){
