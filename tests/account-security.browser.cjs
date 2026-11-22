@@ -342,6 +342,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const db={accounts:{[record.u]:record},lastUser:record.u,last:record.nick,lang:'tr',beige:false};
    await page.addInitScript(({db,session})=>{localStorage.setItem('b1',JSON.stringify(db));localStorage.setItem('b1sb',JSON.stringify(session));localStorage.setItem('iydu.storage-notice.v1','test')},{db,session});
    const actions=[],requests=[];let closed=false,hasPassword=false;
+   let cloudProfile=JSON.parse(JSON.stringify(record));
    await page.route(mockedBackend+'/**',async route=>{
     const url=route.request().url();requests.push(url);
     let data=null;
@@ -359,7 +360,14 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     }
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:hasPassword,password_required:false,server_time:'2026-11-17T00:00:00Z'};
-    else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
+    else if(url.endsWith('/rpc/iydu_load'))data=[{data:cloudProfile}];
+    else if(url.endsWith('/rpc/iydu_save_cas')){
+     const {p_expected_data,p_data}=route.request().postDataJSON();
+     assert.equal(p_data.authUid,session.user.id,'CAS may only write the signed-in identity');
+     assert.equal(p_data.u,record.u,'CAS may not switch username');
+     data=JSON.stringify(p_expected_data)===JSON.stringify(cloudProfile);
+     if(data)cloudProfile=JSON.parse(JSON.stringify(p_data));
+    }
     else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
     else if(url.endsWith('/rpc/iydu_save'))data=null;
     else if(url.endsWith('/functions/v1/account-security')){
