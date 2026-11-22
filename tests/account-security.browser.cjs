@@ -1,8 +1,10 @@
 // Read-only local review: no real credentials, emails, or production writes.
 const { chromium, webkit, firefox }=require('playwright');
 const verifyRecovery=require('./recovery-browser.browser.cjs');
+const {mockSupabaseOrigin}=require('./mock-supabase-origin.cjs');
 const {spawn}=require('node:child_process'),assert=require('node:assert/strict');
 (async()=>{
+ const mockedBackend=mockSupabaseOrigin();
  const server=spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
  let browser;
  try{
@@ -117,7 +119,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     localStorage.setItem('iydu.storage-notice.v1','test');
    });
    const accountRequests=[];
-   await recoveryContext.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
+   await recoveryContext.route(mockedBackend+'/**',async route=>{
     const endpoint=new URL(route.request().url()).pathname;
     accountRequests.push(endpoint);
     if(endpoint==='/rest/v1/rpc/iydu_account_status'){
@@ -340,7 +342,8 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const db={accounts:{[record.u]:record},lastUser:record.u,last:record.nick,lang:'tr',beige:false};
    await page.addInitScript(({db,session})=>{localStorage.setItem('b1',JSON.stringify(db));localStorage.setItem('b1sb',JSON.stringify(session));localStorage.setItem('iydu.storage-notice.v1','test')},{db,session});
    const actions=[],requests=[];let closed=false,hasPassword=false;
-   await page.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
+   let cloudProfile=JSON.parse(JSON.stringify(record));
+   await page.route(mockedBackend+'/**',async route=>{
     const url=route.request().url();requests.push(url);
     let data=null;
     if(url.endsWith('grant_type=password')){assert.equal(route.request().postDataJSON().email,record.email);data=session}
@@ -357,7 +360,14 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     }
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:hasPassword,password_required:false,server_time:'2026-11-17T00:00:00Z'};
-    else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
+    else if(url.endsWith('/rpc/iydu_load'))data=[{data:cloudProfile}];
+    else if(url.endsWith('/rpc/iydu_save_cas')){
+     const {p_expected_data,p_data}=route.request().postDataJSON();
+     assert.equal(p_data.authUid,session.user.id,'CAS may only write the signed-in identity');
+     assert.equal(p_data.u,record.u,'CAS may not switch username');
+     data=JSON.stringify(p_expected_data)===JSON.stringify(cloudProfile);
+     if(data)cloudProfile=JSON.parse(JSON.stringify(p_data));
+    }
     else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
     else if(url.endsWith('/rpc/iydu_save'))data=null;
     else if(url.endsWith('/functions/v1/account-security')){
@@ -411,7 +421,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const removal=await browser.newPage({viewport:{width:390,height:844}});
    await removal.addInitScript(()=>localStorage.setItem('iydu.storage-notice.v1','test'));
    const deletionCalls=[];
-   await removal.route('https://flcfqwndqfmbritaywfb.supabase.co/functions/v1/account-security',async route=>{
+   await removal.route(mockedBackend+'/functions/v1/account-security',async route=>{
     const body=route.request().postDataJSON();deletionCalls.push(body);
     await route.fulfill({status:200,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({ok:true,user_id:'fixture-user',state:'pending_delete',delete_after:'2026-12-17T00:00:00Z'})});
    });
@@ -433,7 +443,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
 
    const standalone=await browser.newPage({viewport:{width:375,height:844}});
    const posted=[];
-   await standalone.route('https://flcfqwndqfmbritaywfb.supabase.co/functions/v1/account-security',async route=>{
+   await standalone.route(mockedBackend+'/functions/v1/account-security',async route=>{
      posted.push(route.request().postDataJSON());
      await route.fulfill({status:200,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({ok:true,state:'pending_delete',delete_after:'2027-01-18T00:00:00Z'})});
    });

@@ -22,9 +22,9 @@ function fixture(options={}){
   sb:async(path,opt)=>{
    calls.auth.push({path,body:opt.body});
    if(path==='/auth/v1/verify'&&options.error)throw Object.assign(Error('invalid OTP'),options.error===true?{}:options.error);
-   if(path==='/auth/v1/resend'&&options.resendError)throw Object.assign(Error('resend denied'),options.resendError);
+   if(path.startsWith('/auth/v1/resend?')&&options.resendError)throw Object.assign(Error('resend denied'),options.resendError);
    if(path==='/auth/v1/verify'&&options.verifyPromise)return options.verifyPromise;
-   if(path==='/auth/v1/resend'&&options.resendPromise)return options.resendPromise;
+   if(path.startsWith('/auth/v1/resend?')&&options.resendPromise)return options.resendPromise;
    return options.response??{
     user:{id:'one-user',email:'person@example.invalid',email_confirmed_at:'2026-11-19T12:00:00Z'},
     access_token:'token',refresh_token:'refresh'
@@ -80,7 +80,9 @@ test('unconfirmed account cannot enter the app even if an Auth API returns a tok
 test('re-request uses signup-only Auth resend endpoint',async()=>{
  const x=fixture();
  await x.context.resendSignupCode();
- assert.equal(x.calls.auth[0].path,'/auth/v1/resend');
+ const resendUrl=new URL(x.calls.auth[0].path,'https://qa.supabase.invalid');
+ assert.equal(resendUrl.pathname,'/auth/v1/resend');
+ assert.equal(resendUrl.searchParams.get('redirect_to'),'https://qa.badgalnurkan.com/');
  assert.deepEqual(JSON.parse(JSON.stringify(x.calls.auth[0].body)),{email:'person@example.invalid',type:'signup'});
  assert.equal(x.calls.activate.length,0);
 });
@@ -121,6 +123,14 @@ test('successful resend has a cooldown and warns about older delivered emails',a
  await x.context.resendSignupCode();
  assert.equal(x.calls.auth.length,1);
  assert.match(x.status.textContent,/avoid requesting codes repeatedly/i);
+});
+test('resend preserves the QA callback boundary and never uses a production fallback',async()=>{
+ const x=fixture();
+ await x.context.resendSignupCode();
+ const resendUrl=new URL(x.calls.auth[0].path,'https://qa.supabase.invalid');
+ assert.equal(resendUrl.origin,'https://qa.supabase.invalid');
+ assert.equal(resendUrl.searchParams.get('redirect_to'),'https://qa.badgalnurkan.com/');
+ assert.notEqual(resendUrl.searchParams.get('redirect_to'),'https://badgalnurkan.com/');
 });
 test('rate-limited resend keeps existing signup active and warns correctly',async()=>{
  const x=fixture({resendError:{status:429,code:'over_email_send_rate_limit'}});
@@ -196,4 +206,29 @@ test('resend in flight locks verify and repeated resend requests',async()=>{
  await first;
  assert.equal(x.submit.disabled,false);
  assert.equal(x.resend.disabled,false);
+});
+
+test('signup verification UI never promises delivery for a non-session signup response',()=>{
+ assert.match(html,/Your request was accepted, but email delivery has not been confirmed/);
+ assert.match(html,/Kod isteğin alındı; e-posta teslimi henüz doğrulanmadı/);
+ assert.match(html,/id="signup-code-signin"/);
+ assert.match(html,/signupOtpFinishWithSignIn\(pendingSignup.email/);
+});
+
+test('signup code screen can return safely to sign-in without another email request',()=>{
+ const x=fixture();
+ x.context.signupOtpFinishWithSignIn('person@example.invalid','An existing account can sign in');
+ assert.equal(x.context.view,'login');
+ assert.equal(x.context.loginDat.u,'person@example.invalid');
+ assert.equal(x.context.msg,'An existing account can sign in');
+ assert.equal(x.calls.auth.length,0);
+ assert.equal(vm.runInContext('pendingSignup',x.context),null);
+});
+
+test('resend email authorization errors explain QA mail configuration instead of blaming a code',async()=>{
+ const x=fixture({resendError:{status:403,code:'email_address_not_authorized'}});
+ await x.context.resendSignupCode();
+ assert.equal(x.calls.auth.length,1);
+ assert.match(x.status.textContent,/project administrator needs to check Supabase Auth SMTP settings/i);
+ assert.notEqual(vm.runInContext('pendingSignup',x.context),null);
 });

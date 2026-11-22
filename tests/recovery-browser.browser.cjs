@@ -1,10 +1,12 @@
 'use strict';
 const assert = require('node:assert/strict');
 const { createHash, randomUUID } = require('node:crypto');
+const {mockSupabaseOrigin}=require('./mock-supabase-origin.cjs');
 
 // Distinct Playwright contexts model an email client opening in another browser.
 module.exports = async function verifyRecovery(browser, engine) {
   const origin = 'http://127.0.0.1:4173';
+  const mockedBackend = mockSupabaseOrigin();
   const address = 'reset-owner@example.invalid';
   for (const external of [false, true]) {
     const original = await browser.newContext();
@@ -14,7 +16,7 @@ module.exports = async function verifyRecovery(browser, engine) {
     try {
       for (const context of [original, other]) {
         await context.addInitScript(() => localStorage.setItem('iydu.storage-notice.v1', 'test'));
-        await context.route('https://flcfqwndqfmbritaywfb.supabase.co/**', async route => {
+        await context.route(mockedBackend+'/**', async route => {
           const request = route.request(), url = new URL(request.url());
           if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: {'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'POST,OPTIONS'} });
           const body = request.postDataJSON();

@@ -76,6 +76,22 @@ test('different authenticated identity is not allowed to write',async()=>{
  assert.equal(await f.ctx.sbPush(),false);
  assert.equal(f.requests.length,1);
 });
+test('a cloud profile from a different account identity is never accepted or re-saved',async()=>{
+ const f=fixture({server:{u:'alpha',authUid:'some-other-account',tasks:['foreign-data']}});
+ await assert.rejects(f.ctx.sbPull(),/CLOUD_PROFILE_IDENTITY_MISMATCH/);
+ assert.equal(f.ctx.A.authUid,'qa-user-1');
+ assert.equal(await f.ctx.sbPush(),false,'failed pull must not authorize any write');
+ assert.equal(f.requests.length,1,'no write must follow a mismatched cloud identity');
+ assert.deepEqual(f.readServer().tasks,['foreign-data']);
+});
+
+test('a malformed cloud profile must fail closed instead of becoming an empty account',async()=>{
+ const f=fixture({server:'corrupted-profile'});
+ await assert.rejects(f.ctx.sbPull(),/Invalid cloud data/);
+ assert.equal(await f.ctx.sbPush(),false);
+ assert.equal(f.requests.length,1);
+});
+
 test('new browser username confusion message is explicit, not a false device diagnosis',()=>{
  assert.match(script,/cross-browser username login requires separate secure server verification/);
  assert.doesNotMatch(script,/Sign in with email on a new device\./);
