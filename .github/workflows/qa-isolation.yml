@@ -24,3 +24,5 @@ jobs:
         run: node --test tests/qa-sync-safety.test.cjs
       - name: Run isolated concurrent-user protocol simulations
         run: node --test tests/qa-concurrency-model.test.cjs
+      - name: Test QA browser verification origins
+        run: node --test tests/qa-browser-verification-origin.test.cjs
