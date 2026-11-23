@@ -326,7 +326,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    assert.ok(await monthly.locator('textarea').count()>0,engine+' incomplete report remains editable');
    for(const field of await monthly.locator('textarea').all())await field.fill('Kasım yanıtım');
    await monthly.locator('.report-send').click();
-   await productivity.locator('.report-planning-overview').waitFor({state:'detached'});
+   await productivity.locator('.report-submitted').waitFor();
    assert.equal(await productivity.locator('.report-planning-overview textarea').count(),0);
    await productivity.evaluate(()=>showReportDetail('month'));
    assert.equal(await productivity.locator('textarea[id^="report-"]').count(),0);
