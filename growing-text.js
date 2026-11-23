@@ -16,22 +16,36 @@ function fitTextFields(root = document) {
   });
 }
 
+function keepLastLineVisible(field) {
+  if (field !== document.activeElement || field.selectionEnd !== field.value.length) return;
+  const viewport = window.visualViewport;
+  const screenBottom = viewport ? Math.min(innerHeight, viewport.offsetTop + viewport.height) : innerHeight;
+  const dialog = field.closest('[role="dialog"] .card');
+  if (dialog) {
+    const bottom = Math.min(dialog.getBoundingClientRect().bottom, screenBottom) - 8;
+    const distance = Math.ceil(field.getBoundingClientRect().bottom - bottom);
+    if (distance > 0) dialog.scrollTop += distance;
+  }
+  const distance = Math.ceil(field.getBoundingClientRect().bottom - screenBottom + 8);
+  if (distance > 0) window.scrollBy(0, distance);
+}
+
+let followTextFrame = 0;
+function followWriting(field) {
+  cancelAnimationFrame(followTextFrame);
+  keepLastLineVisible(field);
+  // WebKit also scrolls the insertion point after dispatching the input event.
+  followTextFrame = requestAnimationFrame(() => keepLastLineVisible(field));
+}
+
 document.addEventListener('input', event => {
   const field = event.target;
   if (!(field instanceof HTMLTextAreaElement)) return;
-  const previousHeight = field.offsetHeight;
   fitTextField(field);
-  if (field !== document.activeElement || event.isComposing ||
-      field.selectionEnd !== field.value.length || field.offsetHeight <= previousHeight) return;
-
-  // Keep the last line above the keyboard or the bottom edge of an open dialog.
-  const viewport = window.visualViewport;
-  const screenBottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
-  const dialog = field.closest('[role="dialog"] .card');
-  const visibleBottom = dialog ? Math.min(dialog.getBoundingClientRect().bottom, screenBottom) : screenBottom;
-  if (field.getBoundingClientRect().bottom > visibleBottom) {
-    field.scrollIntoView({block: 'end', inline: 'nearest', behavior: 'instant'});
-  }
+  if (!event.isComposing) followWriting(field);
+});
+document.addEventListener('compositionend', event => {
+  if (event.target instanceof HTMLTextAreaElement) followWriting(event.target);
 });
 
 document.addEventListener('focusin', event => {

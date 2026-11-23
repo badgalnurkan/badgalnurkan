@@ -214,6 +214,11 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     assert.equal(small.current,'home',engine+' sole icon must be current page');
     assert.ok(small.width<=55&&small.left>=0&&small.right<=small.screenWidth+1,
       engine+' collapsed circle stays within viewport');
+    await productivity.evaluate(()=>window.scrollTo({top:document.scrollingElement.scrollHeight,behavior:'instant'}));
+    await productivity.waitForFunction(()=>Math.abs(scrollY-(document.scrollingElement.scrollHeight-innerHeight))<3);
+    await productivity.evaluate(()=>window.scrollBy({top:-4,behavior:'instant'}));
+    await productivity.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    assert.equal(await productivity.locator('.nav-shell').evaluate(el=>el.classList.contains('is-collapsed')),true,engine+' the menu stays collapsed at the foot of the page');
     await productivity.evaluate(()=>window.scrollTo({top:180,behavior:'instant'}));
     await productivity.waitForFunction(()=>!document.querySelector('.nav-shell')?.classList.contains('is-collapsed'));
     const restored=await productivity.evaluate(()=>[...document.querySelectorAll('#nav-aside a[data-k]')]

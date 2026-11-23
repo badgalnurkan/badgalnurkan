@@ -34,7 +34,8 @@ module.exports=async function verifyGrowingText(browser,engine){
       }
       const journal=page.locator('#journal-input');
       await write(journal,long);
-      assert.ok(await journal.evaluate(el=>el.getBoundingClientRect().bottom<=innerHeight+2),'last journal line stays visible');
+      const line=await journal.evaluate(el=>({bottom:el.getBoundingClientRect().bottom,height:innerHeight,viewport:visualViewport?.height,scroll:scrollY,caret:el.selectionEnd,length:el.value.length}));
+      assert.ok(line.bottom<=line.height+2,engine+' last journal line stays visible '+JSON.stringify(line));
       await journal.evaluate(el=>el.setSelectionRange(5,5));await page.keyboard.insertText('Z');
       assert.equal(await journal.evaluate(el=>el.selectionStart),6,'editing in the middle keeps the caret');
       await journal.fill('Kısa');

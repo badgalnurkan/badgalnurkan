@@ -4011,9 +4011,9 @@ function dayTaskRow(task){
 function openDay(k,fromReport=false,noteOnly=false){
   if(fromReport&&!annualReportOpen()){P.rep();return}
   closeMiniCal();
-  if(k<today()&&!A.fog&&!fromReport){toast(tr()?'Geçmiş günü açmak için Önceki günler görünümünü etkinleştir.':'Turn Fog past days on to open past dates.');return}
+  if(k<today()&&!A.fog&&!fromReport&&!noteOnly){toast(tr()?'Geçmiş günü açmak için Önceki günler görünümünü etkinleştir.':'Turn Fog past days on to open past dates.');return}
   selDay=k;
-  const its=items(k),note=(A.future&&A.future[k])||'',future=k>today();
+  const its=noteOnly?[]:items(k),note=(A.future&&A.future[k])||'',future=k>today();
   const tasks=its.length?its.map(dayTaskRow).join(''):'<p class="mut">'+t('noRecords')+'</p>';
   openModal('day-modal',`<h2>${fmt(k)}${future?' · '+t('futureNotes'):''}</h2>${noteOnly?'':fromReport?`<div data-annual-tasks>${tasks}</div>`:tasks}
 <div style="margin-top:1rem"><h3>${t('yourNote')}</h3>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<textarea id="dn" rows="3" maxlength="500" placeholder="${t('notePlaceholder')}">${esc(note)}</textarea><div class="row" style="justify-content:flex-end"><button class="g" onclick="closeModal('day-modal')">${t('cancel')}</button><button onclick="saveNote('${k}')">${t('save')}</button></div></div>`);
@@ -4153,11 +4153,16 @@ function reportLockedNotice(){return `<p class="report-lock-note" role="status">
 function reportGroupLocked(scope,k){
   return !!(reportQuestionLocks(scope)[k]||(scope==='plan'&&reportQuestionLocks('review')[k]));
 }
+const pendingReportEdits=new WeakMap();
 function submitPeriodReport(kind,key,quiet=false){
   const day=istanbulDayKey();
   if(!['week','month'].includes(kind)||!reportQuestionsOpen(kind,day))return false;
   const period=reportWindow(kind,day).period;
-  if(period.key!==key)return false;
+  if(period.key!==key||!lockReportAnswers(period,quiet))return false;
+  pendingReportEdits.delete(A);save();P.rep();return true;
+}
+function lockReportAnswers(period,quiet){
+  const key=period.key;
   const groups=[['review',key],['plan',key],['plan',period.nk]];
   const pending=groups.filter(([scope,k])=>!reportGroupLocked(scope,k));
   if(!pending.length)return false;
@@ -4178,14 +4183,34 @@ function submitPeriodReport(kind,key,quiet=false){
   if(pending.some(([scope,k])=>scope==='plan'&&k===period.nk)){
     (A.reportPlanLinks||={})[key]=period.nk;
   }
-  save();P.rep();return true;
+  return true;
+}
+function finishPendingReport(leaving=false){
+  const edit=A&&pendingReportEdits.get(A);
+  if(!edit||(!leaving&&edit.day===istanbulDayKey()))return false;
+  pendingReportEdits.delete(A);
+  // Only finalize answers already entered by this account while the recorded period was open.
+  const period=reportWindow(edit.kind,edit.day).period;
+  if(period.key!==edit.key||!reportQuestionsOpen(edit.kind,edit.day)||!lockReportAnswers(period,true))return false;
+  save();return true;
 }
 function currentReportForm(control){
  const form=control.closest('.period-questionnaire');
  return !!A&&!!form?.isConnected&&form.dataset.reportOwner===String(A.authUid||A.u||'');
 }
 const qb=(k,arr,ro,scope,formPeriod)=>arr.map((x,i)=>`<label for="report-${scope}-${k}-${i}">${esc(reportQuestionForPeriod(x,k,scope))}</label><div class="qa"><textarea id="report-${scope}-${k}-${i}" rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="if(currentReportForm(this))qa('${k}',${i},this,'${scope}','${formPeriod}')" ${!ro?`onchange="if(currentReportForm(this))submitPeriodReport('${formPeriod.length===7?'month':'week'}','${formPeriod}',true)"`:''}>${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="if(currentReportForm(this))delQ('${k}',${i},'${scope}','${formPeriod}')">${t('delete')}</button>`}</div><div class="qcap mut">${String(x.a||'').length}/400</div>`).join('');
-function qa(k,i,el,scope='review',formPeriod){if(!canAnswerReport(k,scope,istanbulDayKey(),formPeriod)||reportGroupLocked(scope,k))return;const question=reportQuestionStore(scope)[k]?.[i];if(!question)return;const previous=question.a;question.a=el.value.slice(0,400);if(question.a.trim()&&question.a!==previous)recordActivity();else save();const counter=el.parentElement?.nextElementSibling;if(counter)counter.textContent=question.a.length+'/400'}
+function qa(k,i,el,scope='review',formPeriod){
+ const day=istanbulDayKey();
+ if(!canAnswerReport(k,scope,day,formPeriod)||reportGroupLocked(scope,k))return;
+ const question=reportQuestionStore(scope)[k]?.[i];
+ if(!question)return;
+ const previous=question.a;question.a=el.value.slice(0,400);
+ const kind=k.length===7?'month':'week';
+ pendingReportEdits.set(A,{kind,day,key:formPeriod||reportWindow(kind,day).period.key});
+ if(question.a.trim()&&question.a!==previous)recordActivity();else save();
+ const counter=el.parentElement?.nextElementSibling;
+ if(counter)counter.textContent=question.a.length+'/400';
+}
 function delQ(k,i,scope='review',formPeriod){if(!canAnswerReport(k,scope,istanbulDayKey(),formPeriod)||reportGroupLocked(scope,k))return;const questions=reportQuestionStore(scope)[k];if(!Array.isArray(questions)||!questions[i])return;questions.splice(i,1);save();P.rep()}
 function addRandQ(k,scope='review',formPeriod){if(!canAnswerReport(k,scope,istanbulDayKey(),formPeriod)||reportGroupLocked(scope,k))return;const kind=k.length===7?'month':'week',R=scope==='plan'?(tr()?PLAN_RQ_TR[kind]:PLAN_RQ_EN[kind]):rqFor();(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(R[Math.floor(Math.random()*R.length)]));save();P.rep()}
 function addQ(k,scope='review'){if(!canAnswerReport(k,scope)||reportGroupLocked(scope,k))return;const e=$('#nq-'+k),v=String(e?.value||'').trim().slice(0,150);if(v){(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(v,true));save();P.rep()}}
@@ -4371,6 +4396,7 @@ function reportPlanningOverview(){
   return forms.length?`<section class="card report-planning-overview">${forms.join('')}</section>`:'';
 }
 P.rep=()=>{
+ finishPendingReport();
  reportRenderedDay=istanbulDayKey();
  if(reportRenderedDay.slice(5)!=='12-31'){
    const annualTasks=document.querySelector('#day-modal [data-annual-tasks]');
@@ -4384,6 +4410,10 @@ P.rep=()=>{
  M(reportSummaryCard('week')+reportSummaryCard('month')+reportPlanningOverview()+annualReportCard()+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'}${annualAnswersOpen()?'':' 🔒'}</button></div></section>`);
 };
 
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden&&finishPendingReport(true)&&view==='app'&&pg==='rep')P.rep();
+});
+window.addEventListener('pagehide',()=>finishPendingReport(true));
 let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};
 function logFocusSegment(endedAt,startedAt,completed=false,paused=[],expected=0){
   if(!completed||!A||!Number.isFinite(endedAt)||!Number.isFinite(startedAt)||endedAt<startedAt)return;

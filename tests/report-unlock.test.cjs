@@ -157,3 +157,17 @@ test('journal-only and focus-only summaries describe records for that user and m
  c.A.journal={};c.A.focusHistory=[{at:Date.parse('2026-11-30T18:00:00Z'),seconds:1000,completed:true},{at:Date.parse('2026-11-30T21:00:00Z'),seconds:1000,completed:true}];
  assert.match(c.reportSummaryCard('month'),/1 completed focus session/);assert.doesNotMatch(c.reportSummaryCard('month'),/journal entry/);
 });
+
+test('midnight archives a completed last field before blur, keeps incomplete drafts and isolates accounts',()=>{
+ const c=active(),key='2026-11',next='2026-12';
+ c.current='2026-11-30';c.periodReportForm('month',key,next);
+ const one=c.A;
+ for(const group of [one.qs[key],one.planningQs[key],one.planningQs[next]])for(const q of group)q.a='Done';
+ c.qa(key,2,{value:'My last sentence'},'review',key);
+ assert.equal(one.ql[key],undefined);
+ c.A=fixture().context.A;c.current='2026-12-01';assert.equal(c.finishPendingReport(true),false);
+ c.A=one;assert.equal(c.finishPendingReport(),true);assert.equal(one.ql[key],1);
+ assert.equal(one.qs[key][2].a,'My last sentence');assert.equal(c.finishPendingReport(),false);
+ const d=active();d.current='2026-11-30';d.periodReportForm('month',key,next);d.qa(key,0,{value:'My draft'},'review',key);
+ d.current='2026-12-01';assert.equal(d.finishPendingReport(),false);assert.equal(d.A.ql[key],undefined);assert.equal(d.A.qs[key][0].a,'My draft');
+});
