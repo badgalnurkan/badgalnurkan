@@ -64,5 +64,5 @@ test('journal lists render only date-keyed entry objects', () => {
   const lists = html.split('Object.entries(A.journal||{})').length - 1;
   const filtered = html.split("Object.entries(A.journal||{}).filter(([k,v])=>/^\\d{4}-\\d{2}-\\d{2}$/.test(k)&&v&&typeof v==='object')").length - 1;
   assert.ok(lists >= 2);
-  assert.equal(filtered, lists);
+  assert.equal(filtered, 2, 'both rendered journal lists validate keys and entry objects');
 });

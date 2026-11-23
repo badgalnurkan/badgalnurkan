@@ -101,7 +101,7 @@ export function createHandler({env,fetchImpl=fetch,webCrypto=crypto,clock=()=>Da
    if(action==='status'){
     const answer=await serviceRpc('status');
     if(answer?.error)return reply({code:answer.error},answer.error==='UNAUTHORIZED'?401:403);
-    return reply({ok:true,verified:answer?.verified===true});
+    return reply({ok:true,verified:answer?.verified===true,expiresAt:answer?.expires_at||null});
    }
    if(action==='request'){
     if(!transportReady)return reply({code:'MAIL_NOT_CONFIGURED'},503);

@@ -100,7 +100,7 @@ window.IYBrowserGate=(()=>{
   const at={...id,...context,generation:++generation};
   pending=at;challenge='';busy=false;
   let verified=false,failed=false;
-  try{verified=(await api(at,'status')).verified===true}catch{failed=true}
+  try{const result=await api(at,'status');verified=result.verified===true;if(verified)window.IYQuickSession?.remember(sbSession(),result.expiresAt)}catch{failed=true}
   if(!current(at))return false;
   if(verified){forget(at);pending=null;return true}
   challenge=remembered(at);display(user);
@@ -123,6 +123,7 @@ window.IYBrowserGate=(()=>{
   finally{if(pending===at||!pending)lock(false)}
  }
  function signOut(){
+  window.IYQuickSession?.forget(sbSession()?.user?.id);
   if(pending)forget(pending);
   pending=null;challenge='';generation++;lock(false);closeModal('browser-verify-gate');
   if(typeof invalidateCloudSession==='function')invalidateCloudSession();

@@ -88,7 +88,7 @@ test('unverified browser gets a code; one verified session can enter',async()=>{
  const fixtureState=fixture();
  const handler=createHandler({env,fetchImpl:fixtureState.fetchImpl,webCrypto:fakeCrypto});
  const initial=await handler(request('status'));
- assert.deepEqual(await initial.json(),{ok:true,verified:false});
+ assert.deepEqual(await initial.json(),{ok:true,verified:false,expiresAt:null});
  const sent=await handler(request('request'));
  assert.equal(sent.status,200);
  const body=await sent.json();
@@ -100,7 +100,7 @@ test('unverified browser gets a code; one verified session can enter',async()=>{
  const correct=await handler(request('confirm',jwt(),{id:CID,code:'123456'}));
  assert.equal(correct.status,200);
  assert.deepEqual(await correct.json(),{ok:true,verified:true});
- assert.deepEqual(await (await handler(request('status'))).json(),{ok:true,verified:true});
+ assert.deepEqual(await (await handler(request('status'))).json(),{ok:true,verified:true,expiresAt:null});
  const replay=await handler(request('confirm',jwt(),{id:CID,code:'123456'}));
  assert.equal(replay.status,400);
  assert.deepEqual(fixtureState.counts,{verified:true,requests:1,emails:1,cancels:0,attempts:3});
