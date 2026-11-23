@@ -370,6 +370,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     else if(url.endsWith('/functions/v1/browser-verification'))data={ok:true,verified:true};
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:hasPassword,password_required:false,server_time:'2026-11-17T00:00:00Z'};
+    else if(url.endsWith('/functions/v1/browser-verification'))data={ok:true,verified:true,expiresAt:new Date(Date.now()+3600000).toISOString()};
     else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
     else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
     else if(url.endsWith('/rpc/iydu_save'))data=null;
