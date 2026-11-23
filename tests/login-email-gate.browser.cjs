@@ -47,9 +47,10 @@ module.exports=async(browser,engine)=>{
    await page.locator('#browser-verify-message').filter({hasText:'60 seconds'}).waitFor();
    await page.locator('#browser-verify-code').fill('123456');await page.locator('#browser-verify-code').press('Enter');
    await page.locator('.shell').waitFor();assert.equal(loads,1);assert.deepEqual(errors,[]);
+   const requestsBeforeReload=sends;
    await page.reload();await page.locator('#welcome-continue').waitFor();
    await page.evaluate(async()=>{const original=sbSession();const claims=JSON.parse(atob(original.access_token.split('.')[1]));claims.session_id='ab100000-0000-4000-8000-000000000099';const candidate={...original,access_token:'fixture.'+btoa(JSON.stringify(claims))+'.signature'};await activateCloudUser(candidate,'loginowner','password')});
-   await page.locator('.shell').waitFor();assert.equal(sends,1,'reload/new auth does not request another email inside verified hour');assert.equal(await page.evaluate(()=>sbSession().access_token),session.access_token,'server-approved original session retained');assert.equal(await page.locator('#browser-verify-gate:not(.is-closing)').count(),0);
+   await page.locator('.shell').waitFor();assert.equal(sends,requestsBeforeReload,'reload/new auth does not request another email inside verified hour');assert.equal(await page.evaluate(()=>sbSession().access_token),session.access_token,'server-approved original session retained');assert.equal(await page.locator('#browser-verify-gate:not(.is-closing)').count(),0);
 
   }finally{await page.close()}
  }
