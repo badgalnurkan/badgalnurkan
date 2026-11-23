@@ -348,7 +348,13 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await productivity.evaluate(()=>showReportDetail('summary'));
    await productivity.locator('button[onclick*="2026-12-30"]').waitFor();
    assert.equal(await productivity.locator('button[onclick*="2025-12-31"]').count(),0);
+   await productivity.locator('button[onclick*="2026-12-30"]').click();
+   await productivity.locator('#day-modal [data-annual-tasks]').waitFor();
+   await productivity.locator('#day-modal #dn').fill('Takvim notu taslağım');
    await changeDay('2027-01-02');
+   assert.equal(await productivity.locator('#day-modal [data-annual-tasks]').count(),0,engine+' the open annual drill-down locks too');
+   assert.equal(await productivity.locator('#day-modal #dn').inputValue(),'Takvim notu taslağım',engine+' independent note draft is retained');
+   await productivity.evaluate(()=>closeModal('day-modal'));await productivity.locator('#day-modal').waitFor({state:'detached'});
    assert.equal(await productivity.locator('button[onclick*="2026-12-30"]').count(),0,engine+' open annual detail locks at midnight');
    assert.equal(await productivity.locator('time[datetime="2028-01-01"]').count(),1);
    await productivity.evaluate(()=>showReportDetail('month-previous'));

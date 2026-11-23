@@ -3924,11 +3924,13 @@ function dayTaskRow(task){
  return `<div class="task day-task ${status}" data-task-status="${status}"><span>${esc(task.t)}</span><b>${symbol} ${label}</b></div>`;
 }
 function openDay(k,fromReport=false){
+  if(fromReport&&!annualReportOpen()){P.rep();return}
   closeMiniCal();
   if(k<today()&&!A.fog&&!fromReport){toast(tr()?'Geçmiş günü açmak için Önceki günler görünümünü etkinleştir.':'Turn Fog past days on to open past dates.');return}
   selDay=k;
   const its=items(k),note=(A.future&&A.future[k])||'',future=k>today();
-  openModal('day-modal',`<h2>${fmt(k)}${future?' · '+t('futureNotes'):''}</h2>${its.length?its.map(dayTaskRow).join(''):'<p class="mut">'+t('noRecords')+'</p>'}
+  const tasks=its.length?its.map(dayTaskRow).join(''):'<p class="mut">'+t('noRecords')+'</p>';
+  openModal('day-modal',`<h2>${fmt(k)}${future?' · '+t('futureNotes'):''}</h2>${fromReport?`<div data-annual-tasks>${tasks}</div>`:tasks}
 <div style="margin-top:1rem"><h3>${t('yourNote')}</h3>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<textarea id="dn" rows="3" maxlength="500" placeholder="${t('notePlaceholder')}">${esc(note)}</textarea><div class="row" style="justify-content:flex-end"><button class="g" onclick="closeModal('day-modal')">${t('cancel')}</button><button onclick="saveNote('${k}')">${t('save')}</button></div></div>`);
 }
 function saveNote(k){
@@ -4270,6 +4272,14 @@ function reportPlanningOverview(){
 }
 P.rep=()=>{
  reportRenderedDay=istanbulDayKey();
+ if(reportRenderedDay.slice(5)!=='01-01'){
+   const annualTasks=document.querySelector('#day-modal [data-annual-tasks]');
+   if(annualTasks){
+     annualTasks.remove();
+     const note=document.querySelector('#day-modal #dn');
+     if(!note||note.value===note.defaultValue)closeModal('day-modal');
+   }
+ }
  if(reportDetail){M(reportDetailView());return}
  M(reportSummaryCard('week')+reportSummaryCard('month')+reportPlanningOverview()+annualReportCard()+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'} 🔒</button></div></section>`);
 };

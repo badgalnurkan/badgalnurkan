@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict');
 
 module.exports=async function verifyGrowingText(browser,engine){
-  const page=await browser.newPage();
+  const page=await browser.newPage({reducedMotion:'reduce'});
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   // Every account interaction in this scenario is confined to the isolated preview.
@@ -22,6 +22,7 @@ module.exports=async function verifyGrowingText(browser,engine){
   const note='Geleceğe bir satır\n'.repeat(18)+'son';
   try{
     for(const width of [320,768,1440]){
+      console.log(engine+' writing fields at '+width+' px');
       await page.setViewportSize({width,height:800});
       await page.goto('http://127.0.0.1:4173/review-app.html?page=home&lang=tr');
       if(width===320){
@@ -45,7 +46,9 @@ module.exports=async function verifyGrowingText(browser,engine){
       await field.press('Enter');
       const stored=page.locator('#tl .task').last();
       assert.equal(await stored.locator('.task-label').textContent(),task);
-      await stored.getByRole('button',{name:'Düzenle'}).click();
+      const edit=stored.getByRole('button',{name:'Düzenle'});
+      await edit.evaluate(button=>button.scrollIntoView({block:'center',behavior:'instant'}));
+      await edit.click();
       await fits(page.locator('#task-edit-text'));
       assert.equal(await page.locator('#task-edit-text').inputValue(),task);
       await page.locator('#task-edit-text').press('Escape');
@@ -66,6 +69,12 @@ module.exports=async function verifyGrowingText(browser,engine){
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),engine+' no horizontal overflow at '+width);
     }
     assert.deepEqual(errors,[]);
+  }catch(error){
+    console.error(engine+' writing scenario',await page.evaluate(()=>({
+      width:innerWidth,page:pg,focused:document.activeElement?.outerHTML?.slice(0,140),
+      dialogs:[...document.querySelectorAll('[role="dialog"]')].map(el=>el.id)
+    })),errors);
+    throw error;
   }finally{await page.close()}
   console.log('PASS '+engine+': existing and new multi-line entries fit at 320, 768 and 1440 px; text, caret and task ordering retained');
 };
