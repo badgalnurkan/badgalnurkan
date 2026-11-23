@@ -17,7 +17,7 @@ module.exports=async(browser,engine)=>{
    else if(url.pathname.endsWith('/iydu_account_status'))data={user_id:user.id,email:user.email,email_verified:true,state:'active',password_required:false};
    else if(url.pathname.endsWith('/browser-verification')){
     const body=req.postDataJSON();assert.equal(body.email,undefined,'client cannot choose mail recipient');
-    if(body.action==='status')data={ok:true,verified};
+    if(body.action==='status')data={ok:true,verified:verified&&req.headers().authorization==='Bearer '+session.access_token,expiresAt:new Date(Date.now()+3600000).toISOString()};
     else if(body.action==='request'){
      if(++sends>1){status=429;data={code:'RATE_LIMITED'}}
      else data={ok:true,id:'ab200000-0000-4000-8000-000000000001',expiresIn:600};
@@ -25,6 +25,7 @@ module.exports=async(browser,engine)=>{
      if(body.code==='123456'){verified=true;data={ok:true,verified:true}}
      else{status=400;data={code:'INVALID_CHALLENGE'}}
     }
+   }else if(url.pathname.endsWith('/iydu_quick_resume_status')){assert.equal(req.headers().authorization,'Bearer '+session.access_token);data={allowed:verified};
    }else if(url.pathname.endsWith('/iydu_load')){
     assert.equal(verified,true,'no profile call before email proof');loads++;
     data=[{data:{u:'loginowner',nick:'Login owner',authUid:user.id,email:user.email}}];
@@ -46,6 +47,10 @@ module.exports=async(browser,engine)=>{
    await page.locator('#browser-verify-message').filter({hasText:'60 seconds'}).waitFor();
    await page.locator('#browser-verify-code').fill('123456');await page.locator('#browser-verify-code').press('Enter');
    await page.locator('.shell').waitFor();assert.equal(loads,1);assert.deepEqual(errors,[]);
+   await page.reload();await page.locator('#welcome-continue').waitFor();
+   await page.evaluate(async()=>{const original=sbSession();const claims=JSON.parse(atob(original.access_token.split('.')[1]));claims.session_id='ab100000-0000-4000-8000-000000000099';const candidate={...original,access_token:'fixture.'+btoa(JSON.stringify(claims))+'.signature'};await activateCloudUser(candidate,'loginowner','password')});
+   await page.locator('.shell').waitFor();assert.equal(sends,1,'reload/new auth does not request another email inside verified hour');assert.equal(await page.evaluate(()=>sbSession().access_token),session.access_token,'server-approved original session retained');assert.equal(await page.locator('#browser-verify-gate:not(.is-closing)').count(),0);
+
   }finally{await page.close()}
  }
  console.log('PASS '+engine+': per-account login code, denied pre-code data, wrong code, resend limit, Enter and mobile layout');
