@@ -69,12 +69,25 @@ window.IYBrowserGate=(()=>{
  async function enter(at){
   if(!current(at))return false;
   const session=sbSession();
-  forget(at);pending=null;challenge='';generation++;
-  closeModal('browser-verify-gate');
+  forget(at);challenge='';
+  status(text('Giriş onaylandı. Hesabın açılıyor…','Sign-in confirmed. Opening your account…'));
   try{
-   await activateCloudUser(session,at.preferredName,at.method,at.options);
+   if(at.onVerified){
+    // Refresh the quick-switch deadline from the server while the verified profile loads.
+    const proof=api(at,'status').then(result=>{
+     if(result.verified===true&&current(at))window.IYQuickSession?.remember(sbSession(),result.expiresAt);
+    }).catch(()=>{});
+    await Promise.all([at.onVerified(true,()=>current(at)),proof]);
+    if(!current(at))return false;
+    pending=null;generation++;
+   }else{
+    pending=null;generation++;closeModal('browser-verify-gate');
+    await activateCloudUser(session,at.preferredName,at.method,{...at.options,greet:true,codeApproved:true});
+   }
    return true;
   }catch{
+   if(pending&&pending!==at||identity()?.sid!==at.sid)return false;
+   pending=null;generation++;closeModal('browser-verify-gate');
    A=null;view='login';pg='home';loginDat={u:session.user.email||'',p:''};
    msg=text('Kod doğrulandı ancak hesap verileri yüklenemedi. Yeniden giriş yapabilirsin.','The code was verified, but account data could not be loaded. You can sign in again.');
    renderAppOrAuth();return false;
@@ -114,7 +127,7 @@ window.IYBrowserGate=(()=>{
   const code=String(document.getElementById('browser-verify-code')?.value||'').trim();
   if(!/^\d{6}$/.test(code)){status(text('6 haneli kodu yaz.','Enter the six-digit code.'));return false}
   if(!challenge){status(text('Önce yeni kod iste.','Request a code first.'));return false}
-  lock(true);
+  lock(true);status(text('Onaylanıyor…','Verifying…'));
   try{
    const result=await api(at,'confirm',{id:challenge,code});
    if(result.verified!==true)throw Error('SERVER_UNAVAILABLE');

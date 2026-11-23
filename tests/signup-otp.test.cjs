@@ -59,7 +59,7 @@ test('verified six-digit signup code activates precisely its email owner',async(
  assert.deepEqual(JSON.parse(JSON.stringify(x.calls.auth[0].body)),{email:'person@example.invalid',token:'123456',type:'email'});
  assert.equal(x.calls.activate.length,1);
  assert.equal(x.calls.activate[0][1],'user_one');
- assert.equal(x.calls.welcome,1);
+ assert.equal(x.calls.activate[0][3].greet,true);assert.equal(x.calls.activate[0][3].codeApproved,true);
  assert.equal(vm.runInContext('pendingSignup',x.context),null);
 });
 test('another email cannot be activated with the pending signup code',async()=>{

@@ -1640,7 +1640,10 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
    width:1.38rem;height:1.38rem;stroke-width:1.85;transform:none;
    transition:stroke-width .18s ease,transform .24s var(--motion-spring);
  }
- .shell .nav-shell aside a :is(.nav-label,.nav-label-mobile){display:none}
+ .shell .nav-shell aside a .nav-label{display:none}
+ .shell .nav-shell aside a .nav-label-mobile{display:block;font-size:clamp(.65rem,2.65vw,.76rem);line-height:1.2;margin-top:.14rem}
+ .shell .nav-shell.is-collapsed aside a .nav-label-mobile{display:none}
+ .shell .nav-shell:not(.is-collapsed) aside{flex:1 1 auto;width:100%;max-width:100%}
  .shell .nav-shell aside a::after{content:none}
  .shell .nav-shell aside a.on{
    background:transparent!important;color:var(--on-acc);box-shadow:none!important;font-weight:850;
@@ -1701,6 +1704,20 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
   .shell .nav-shell aside{transition:none}
 }
 
+
+.login-wrap.auth-recovery{width:min(100%,32rem);margin:auto;padding:clamp(.85rem,3vw,1.5rem)}
+.login-wrap.auth-recovery .center{min-height:0;padding:0}
+.login-wrap.auth-recovery .box{width:100%;max-width:28rem;margin-inline:auto}
+.login-wrap.auth-register .signup-field-error{font-weight:750;color:var(--no);margin:.15rem 0 .6rem;font-size:.91rem}
+.signup-field-error:empty{display:none}
+#signup-form [aria-invalid="true"]{border-color:var(--no);border-width:2px}
+#signup-form .signup-terms{display:flex;align-items:center;justify-content:center;gap:.7rem;margin:.8rem auto .3rem;max-width:29rem}
+#signup-form .signup-terms label{margin:0;cursor:pointer}
+#signup-terms{appearance:none;flex:0 0 1.5rem;width:1.5rem;height:1.5rem;min-height:0;padding:0;margin:0;display:grid;place-content:center;border-radius:50%;cursor:pointer}
+#signup-terms:checked{background:var(--acc);border-color:var(--acc)}
+#signup-terms:checked::after{content:'';width:.65rem;height:.32rem;border:solid var(--on-acc);border-width:0 0 2px 2px;transform:translateY(-.08rem) rotate(-45deg)}
+.entry-confirmed{display:block;font:600 .85rem/1.4 system-ui;margin-top:.45rem}
+.signup-docs{text-align:center;margin:.3rem 0 .8rem}
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -1847,6 +1864,7 @@ function softPaint(){
 }
 let pageSwapTimer=0;
 function goTo(v,p,push=true){
+  if(v==='setup'&&view!=='setup')formDat.ack=false;
   if(typeof taskReorder!=='undefined'&&taskReorder)cancelTaskReorder();
   if(v==='app'&&p!==pg)resetMobileDockForPage();
   const same=A&&v==='app'&&view==='app'&&document.getElementById('mn')&&document.querySelector('#nav-aside,aside');
@@ -2371,6 +2389,11 @@ let mobileDockLastY=0;
 let mobileDockTravel=0;
 let mobileDockDirection=0;
 let mobileDockLastWidth=window.innerWidth;
+function mobileDockPosition(){
+  const page=document.scrollingElement;
+  const bottom=page?Math.max(0,page.scrollHeight-page.clientHeight):Infinity;
+  return {y:Math.max(0,Math.min(window.scrollY||0,bottom)),bottom};
+}
 function setMobileDockCollapsed(collapsed){
   if(!A||view!=='app'||window.innerWidth>900)return;
   const dock=document.querySelector('.shell .nav-shell');
@@ -2382,13 +2405,13 @@ function setMobileDockCollapsed(collapsed){
     next?(tr()?'Menüyü aç: ':'Expand menu: ')+navLabel(pg):navLabel(pg));
 }
 function resetMobileDockForPage(){
-  mobileDockLastY=Math.max(0,window.scrollY||0);
+  mobileDockLastY=mobileDockPosition().y;
   mobileDockTravel=0;
   mobileDockDirection=0;
   setMobileDockCollapsed(false);
 }
 function handleMobileDockScroll(){
-  const y=Math.max(0,window.scrollY||0);
+  const {y,bottom}=mobileDockPosition();
   const delta=y-mobileDockLastY;
   mobileDockLastY=y;
   if(!A||view!=='app'||window.innerWidth>900||
@@ -2399,6 +2422,8 @@ function handleMobileDockScroll(){
     setMobileDockCollapsed(false);
     return;
   }
+  // Rubber-band scrolling and a resizing address bar can move the viewport at the bottom.
+  if(y>=bottom-2&&bottom>50){setMobileDockCollapsed(true);mobileDockTravel=0;return}
   if(Math.abs(delta)<.5)return;
   const direction=delta>0?1:-1;
   if(mobileDockDirection!==direction){
@@ -2406,7 +2431,7 @@ function handleMobileDockScroll(){
     mobileDockTravel=0;
   }
   mobileDockTravel+=Math.abs(delta);
-  if(mobileDockTravel >= (direction>0?22:13)){
+  if(mobileDockTravel >= (direction>0?30:26)){
     if(direction<0 || y>50)setMobileDockCollapsed(direction>0);
     mobileDockTravel=0;
   }
@@ -2489,12 +2514,12 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-23-calendar-months-text-fields-03';
+const SITE_RELEASE='2026-11-23-period-end-entry-and-writing-04';
 const SITE_CHANGES=[
- {date:'2026-11-23',trTitle:'Aylık rapor ve uzun metin alanları',enTitle:'Monthly reports and long text',items:[
-  ['Her ayın ilk günü, önceki aydaki etkinliğinle aylık rapor açılır. Tüm cevapları tamamladığında kapanır. Sonraki rapor bir sonraki ayın ilk günü açılır.','On the first of each month, activity in the preceding month unlocks its report. Completing the answers closes it until the first of the next month.'],
-  ['Yıllık özet 1 Ocak boyunca önceki takvim yılının kayıtlarını gösterir.','On January 1 the annual summary shows records from the preceding calendar year.'],
-  ['Görev, günlük, not, proje, profil açıklaması ve rapor alanları yazdıkça büyür.','Task, journal, note, project, bio and report fields expand as you type.']]},
+ {date:'2026-11-23',trTitle:'Dönem raporları, kayıt ve yazma alanları',enTitle:'Period reports, signup and text fields',items:[
+  ['Haftalık rapor pazar, aylık rapor ayın son günü, yıllık özet 31 Aralık günü açılır. Gün bittiğinde kapanır.','Weekly reports open on Sundays, monthly reports on the last calendar day, and the annual summary on December 31. Each closes at midnight.'],
+  ['Uzun metin alanları yazdıkça büyür. Günlük sınırı 2000 karakterdir. Geleceğe notlar kendi düzenleyicisinde açılır.','Long text fields expand as you type. Journals allow 2,000 characters and future notes have a note-only editor.'],
+  ['Kayıtta alan uyarıları ve belge onayı, giriş kodunda doğrulama durumu, mobil menüde açılır etiketler eklendi.','Signup shows field errors and document acknowledgement, the sign-in code shows verification progress, and the mobile menu restores its labels on upward scroll.']]},
  {date:'2026-11-23',trTitle:'Yenileme sonrası giriş düzeltmesi',enTitle:'Sign-in after refresh',items:[['Bir saat içindeki yeniden girişte aynı hesaba ait doğrulanmış oturum sunucudan kontrol edilerek yeniden kullanılır.','Reentry within one hour reuses the same account’s verified session after server validation.']]},
   {date:'2026-11-23',trTitle:'Rapor takvimi ve hızlı geçiş',enTitle:'Report calendar and quick switch',items:[
   ['Görev yazma alanları metinle birlikte büyür.','Task editors grow as you type.'],
@@ -2840,12 +2865,32 @@ function renderAppOrAuth(){
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button data-user="${esc(k)}" onclick="useAccount(this.dataset.user)">@${esc(k)}</button>`).join('')}</div></div>`:'';
     h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Google ile kayıtlı olsan da kendi uygulama şifrenle giriş yapabilirsin. Henüz şifren yoksa e-postanı doğrulayarak oluşturabilirsin.':'You can sign in with your own app password, even if you registered with Google. If you have not set one, create one after verifying your email.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('login'):''}<div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" data-user="${esc(rem||'')}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':'signInWithGoogle()'}">${googleRemembered?(tr()?esc(DB.accounts[rem].email||DB.accounts[rem].mail)+' ile devam et':'Continue with '+esc(DB.accounts[rem].email||DB.accounts[rem].mail)):(tr()?'Google ile devam et':'Continue with Google')}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
-  else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+box(`<h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}<label>${t('username')} (3-20)</label><input id="u" maxlength="20" autocomplete="username" autocapitalize="none" value="${esc(formDat.u)}" oninput="this.value=this.value.replace(/[^${USERNAME_ALLOWED}]/g,'');formDat.u=this.value;debounceNameCheck()"><div id="name-hint" aria-live="polite"></div><label>${t('displayName')}</label><input id="n" maxlength="30" value="${esc(formDat.n)}" oninput="formDat.n=this.value"><label>${t('bio')}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea><label>${t('email')}</label><input id="e" type="email" autocomplete="email" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()" onkeydown="if(event.key==='Enter'){event.preventDefault();setup()}"><div id="email-hint" aria-live="polite"></div><label>${t('password')} (min 8)</label><input id="p" type="password" autocomplete="new-password" oninput="formDat.p=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();$('#p2').focus()}"><label>${tr()?'Şifreyi doğrula':'Confirm password'}</label><input id="p2" type="password" autocomplete="new-password" minlength="8" oninput="formDat.p2=this.value" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();setup()}"><p class="legal-intro">${tr()?'Hesap açmadan önce kişisel verilerin nasıl işlendiğini okuyabilirsin. Bu bir açık rıza kutusu değildir.':'Before signing up, review how your data is handled. This is not a consent checkbox.'} <span class="legal-inline"><a href="privacy.html">${tr()?'Gizlilik':'Privacy'}</a> · <a href="kvkk.html">KVKK</a> · <a href="terms.html">${tr()?'Koşullar':'Terms'}</a></span></p>${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('signup'):''}<div class="row"><button id="register-submit" onclick="setup()">${t('create')}</button><button class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+box(`
+    <h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}
+    <form id="signup-form" novalidate onsubmit="event.preventDefault();setup()" oninput="updateSignupField(event)">
+      <label for="u">${t('username')} (3–20)</label>
+      <input id="u" maxlength="20" required autocomplete="username" autocapitalize="none" aria-describedby="error-u name-hint" value="${esc(formDat.u)}" oninput="formDat.u=this.value;debounceNameCheck()">
+      ${signupErrorSlot('u')}<div id="name-hint" aria-live="polite"></div>
+      <label for="n">${t('displayName')}</label>
+      <textarea id="n" rows="1" maxlength="30" required aria-describedby="error-n" oninput="formDat.n=this.value">${esc(formDat.n)}</textarea>${signupErrorSlot('n')}
+      <label for="b">${t('bio')} · ${tr()?'isteğe bağlı':'optional'}</label><textarea id="b" rows="2" maxlength="160" oninput="formDat.b=this.value">${esc(formDat.b)}</textarea>
+      <label for="e">${t('email')}</label><input id="e" type="email" required autocomplete="email" aria-describedby="error-e email-hint" value="${esc(formDat.e)}" oninput="formDat.e=this.value;checkEmailHint()">
+      ${signupErrorSlot('e')}<div id="email-hint" aria-live="polite"></div>
+      <label for="p">${t('password')} (min 8)</label>
+      <input id="p" type="password" required minlength="8" autocomplete="new-password" aria-describedby="error-p" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event)">
+      ${signupErrorSlot('p')}<label for="p2">${tr()?'Şifreyi doğrula':'Confirm password'}</label>
+      <input id="p2" type="password" required minlength="8" autocomplete="new-password" aria-describedby="error-p2" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event)">
+      ${signupErrorSlot('p2')}
+      <div class="signup-terms"><input id="signup-terms" type="checkbox" required aria-describedby="error-signup-terms" ${formDat.ack?'checked':''} onchange="formDat.ack=this.checked">
+      <label for="signup-terms">${tr()?'KVKK aydınlatma metnini ve gizlilik politikasını okudum. Kullanım koşullarını kabul ediyorum.':'I have read the KVKK notice and privacy policy and accept the terms of use.'}</label></div>
+      <p class="legal-inline signup-docs"><a href="kvkk.html" target="_blank" rel="noopener">KVKK</a> · <a href="privacy.html" target="_blank" rel="noopener">${tr()?'Gizlilik':'Privacy'}</a> · <a href="terms.html" target="_blank" rel="noopener">${tr()?'Koşullar':'Terms'}</a></p>${signupErrorSlot('signup-terms')}
+      ${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('signup'):''}<div class="row"><button id="register-submit" type="submit">${t('create')}</button><button type="button" class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div>
+    </form><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`)+'</div>';
   else if(view==='signup-code'){
     if(!pendingSignup){view='setup';renderAppOrAuth();return}
     h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${tr()?'E-posta doğrulama kodu':'Email verification code'}</h2>${m()}<p class="mut">${tr()?'Kod isteğin alındı, ancak e-posta teslimi henüz doğrulanmadı. Bu e-postayla zaten bir hesabın varsa yeni kod gelmeyebilir. Giriş yapmayı veya şifreni sıfırlamayı deneyebilirsin.':'Your request was accepted, but email delivery has not been confirmed. If you already have an account with this email, a new code may not arrive. Try signing in or resetting your password.'}</p><p><strong>${esc(pendingSignup.email)}</strong></p><label for="signup-code-input">${tr()?'6 haneli kod':'Six-digit code'}</label><input id="signup-code-input" inputmode="numeric" type="text" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();verifySignupCode()}">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('resend'):''}<div class="row"><button type="button" id="signup-code-submit" onclick="verifySignupCode()">${tr()?'Kodu doğrula':'Verify code'}</button><button class="g" type="button" id="signup-code-resend" onclick="resendSignupCode()">${tr()?'Yeni kod iste':'Resend code'}</button></div><button class="g s" type="button" id="signup-code-signin" onclick="signupOtpFinishWithSignIn(pendingSignup.email,tr()?'Mevcut hesabın varsa giriş yapabilir veya şifreni sıfırlayabilirsin.':'If you already have an account, sign in or reset your password.')">${tr()?'Giriş ekranına geç':'Go to sign in'}</button><button class="g s" type="button" onclick="pendingSignup=null;goTo('setup','home')">${tr()?'Geri dön':'Back'}</button><p id="signup-code-status" role="status" aria-live="polite"></p>`);
   }
-  else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('recovery'):''}<div class="row"><button id="forgot-reset-submit" type="button" onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button><button class="g" type="button" onclick="IYRecovery.resume(document.getElementById('u').value)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
+  else if(view==='forgot')h=`<div class="login-wrap auth-standard auth-recovery"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns()}</div></div>`+box(`<h2 class="auth-signin-title">${t('forgot')}</h2>${m()}<label for="u">${t('email')}</label><input id="u" type="email" autocomplete="email">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('recovery'):''}<div class="row"><button id="forgot-reset-submit" type="button" onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button><button class="g" type="button" onclick="IYRecovery.resume(document.getElementById('u').value)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`)+'</div>';
   $('#app').innerHTML=h;fitTextFields($('#app'));ensureReleaseNotification();
   if(typeof IYTurnstile!=='undefined')IYTurnstile.mount();
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
@@ -2887,15 +2932,15 @@ function continueFromWelcome(){
  Promise.resolve().then(()=>{welcomeEntryBusy=false});
 }
 /* Normal Continue opens the form; auth submission starts the greeting. */
-function playWelcomeTransition(cb){
+function playWelcomeTransition(cb,codeApproved=false){
   if(document.getElementById('login-portal'))return;
   const reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
-  if(reduced){if(cb)cb();return}
+  if(reduced){if(codeApproved)toast(tr()?'Giriş onaylandı.':'Sign-in confirmed.');if(cb)cb();return}
   document.getElementById('login-portal')?.remove();
   const root=document.createElement('div');
   root.id='login-portal';root.className='entry-portal';
   root.setAttribute('role','status');root.setAttribute('aria-live','polite');root.setAttribute('aria-atomic','true');
-  root.innerHTML=`<div class="portal-disc" aria-hidden="true"></div><div class="portal-brand" aria-hidden="true"><span class="portal-title">Improvin' your day.</span><span class="portal-ring"></span></div><p class="portal-greeting">${esc(greetText())}</p>`;
+  root.innerHTML=`<div class="portal-disc" aria-hidden="true"></div><div class="portal-brand" aria-hidden="true"><span class="portal-title">Improvin' your day.</span><span class="portal-ring"></span></div><p class="portal-greeting">${esc(greetText())}${codeApproved?`<small class="entry-confirmed">${tr()?'Giriş onaylandı.':'Sign-in confirmed.'}</small>`:''}</p>`;
   document.body.appendChild(root);
   let cleaned=false,fallback=0;
   const cleanup=()=>{if(cleaned)return;cleaned=true;clearTimeout(fallback);root.remove();if(cb)cb()};
@@ -2993,7 +3038,8 @@ function checkEmailHint(){
   const email=String(formDat.e||'').toLowerCase().trim();
   const match=Object.values(DB.accounts).some(a=>String(a.mail||a.email||'').toLowerCase()===email);
   const el=$('#email-hint');if(!el)return;
-  el.innerHTML=match?`<p class="mut">${tr()?'Bu e-posta bu cihazda kayıtlı. Kayıt tuşuna basarsan giriş ekranına yönlendirilirsin.':'This email is saved on this device. Registration will redirect to sign in.'}</p>`:'';
+  el.innerHTML=email&&match?`<button class="g s" type="button" onclick="goExistingEmail(formDat.e)">${tr()?'Giriş ekranına geç':'Go to sign in'}</button>`:'';
+
 }
 function captchaErrorText(err){
   if(!/captcha/i.test(String(err?.code||'')+' '+String(err?.message||'')))return '';
@@ -3016,13 +3062,16 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   const uid=j&&j.user&&j.user.id;
   if(!uid||!j.access_token)throw new Error('Missing authenticated session');
   sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});
-  const meta=j.user.user_metadata||{};
   if(window.IYAccount&&!await IYAccount.checkAccess(j.user))return;
   if(!window.IYBrowserGate)throw new Error('LOGIN_VERIFICATION_UNAVAILABLE');
-  if(!await IYBrowserGate.check(j.user,{preferredName,method,options}))return;
-  const fromCloud=await sbPull(); // may throw, never replace cloud data with empty after a failure
-  const progressPolicy=await sbProgressPolicy(uid);
-  if(sbSession()?.user?.id!==uid)throw new Error('Authenticated identity changed during activation');
+  const finish=(codeApproved=false,stillCurrent=null)=>finishCloudEntry(j,preferredName,method,options,codeApproved,stillCurrent);
+  if(!await IYBrowserGate.check(j.user,{preferredName,method,options,onVerified:finish}))return;
+  return finish();
+}
+async function finishCloudEntry(j,preferredName,method,options,codeApproved,stillCurrent){
+  const uid=j.user.id,meta=j.user.user_metadata||{};
+  const [fromCloud,progressPolicy]=await Promise.all([sbPull(),sbProgressPolicy(uid)]);
+  if(sbSession()?.user?.id!==uid||(stillCurrent&&!stillCurrent()))throw new Error('Authenticated identity changed during activation');
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
   if(!fromLocal&&deviceAccountCount()>=MAX_DEVICE_ACCOUNTS){sbClear();throw Object.assign(Error('DEVICE_ACCOUNT_LIMIT'),{code:'DEVICE_ACCOUNT_LIMIT'})}
   const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
@@ -3036,8 +3085,9 @@ async function activateCloudUser(j,preferredName='',method='password',options={}
   v13ProtectLegacyCollision(a.u,uid,options.allowLegacyReplacement===true);
   DB.accounts[a.u]=a;DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
   restorePomodoroState();applyTheme();save();loginDat={u:'',p:''};
-  if(options.entryTransition)await options.entryTransition;
+  if(codeApproved)closeModal('browser-verify-gate');
   goTo('app','home');
+  if(options.greet||codeApproved)playWelcomeTransition(undefined,codeApproved||options.codeApproved);
   if(!fromCloud)await sbPush();
   return a;
 }
@@ -3052,7 +3102,6 @@ async function login(){
   const matchingMail=Object.values(DB.accounts).find(a=>String(a.email||a.mail||'').toLowerCase()===raw.toLowerCase());
   const localAcc=localKey?DB.accounts[localKey]:matchingMail;
   const email=raw.includes('@')?raw.toLowerCase():localAcc&&String(localAcc.email||localAcc.mail||'').toLowerCase();
-  const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
   loginBusy(true);
   try{
     if(email){
@@ -3062,13 +3111,13 @@ async function login(){
         serverAccepted=true;
         // Only a confirmed identity is remembered, never a failed guess or password.
         try{setItem('iydu.lastConfirmedLoginEmail.v1',email)}catch(_){}
-        await activateCloudUser(j,raw,'password',{entryTransition});
+        await activateCloudUser(j,raw,'password',{greet:true});
         return;
       }catch(e){
         // Do not fall back to an unrelated local account when the cloud
         // credentials were accepted but profile/security activation failed.
         if(!serverAccepted&&localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
-          sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();await entryTransition;goTo('app','home');
+          sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home');playWelcomeTransition();
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
         if(e.code==='CAPTCHA_CANCELLED')return;
@@ -3104,7 +3153,7 @@ async function login(){
       }
     }
     if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
-      sbClear();A=norm(localAcc);A.accountOrigin='local';restorePomodoroState();applyTheme();save();await entryTransition;goTo('app','home');
+      sbClear();A=norm(localAcc);A.accountOrigin='local';restorePomodoroState();applyTheme();save();goTo('app','home');playWelcomeTransition();
       toast(tr()?'Bu yalnızca yerel eski hesap. Diğer cihazlarda e-posta ile bulut hesabına giriş yapmalısın.':'Legacy local account only.');return;
     }
     msg=tr()?'Başka cihazda kayıtlıysan kullanıcı adı yerine e-posta adresinle giriş yap.':'Sign in with email on a new device.';
@@ -3151,6 +3200,7 @@ async function verifySignupCode(){
   const resend=document.getElementById('signup-code-resend');
   if(submit)submit.disabled=true;
   if(resend)resend.disabled=true;
+  signupOtpMessage(tr()?'Onaylanıyor…':'Verifying…');
   let result;
   try{
     result=await sb('/auth/v1/verify',{method:'POST',body:{email:request.email,token:code,type:'email'}});
@@ -3177,13 +3227,13 @@ async function verifySignupCode(){
       return;
     }
     if(!pendingSignup||pendingSignup.email!==request.email)return;
+    signupOtpMessage(tr()?'E-posta onaylandı. Hesabın açılıyor…':'Email verified. Opening your account…');
     // The one-time token has already been consumed by Auth. Never leave the
     // signup OTP form active while subsequent profile/browser activation runs.
     pendingSignup=null;
     formDat={u:'',n:'',b:'',e:'',t:'',p:'',p2:''};
-    const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
     try{
-      const account=await activateCloudUser(result,request.username,'password',{entryTransition});
+      const account=await activateCloudUser(result,request.username,'password',{greet:true,codeApproved:true});
       if(!account){
         // A separate browser gate or account recovery UI may take over.
         if(window.IYBrowserGate?.isPending?.()||view!=='signup-code')return;
@@ -3278,25 +3328,58 @@ function deviceAccountCount(){
 function isKnownDeviceCloudUser(uid){
   return !!uid&&Object.values(DB.accounts||{}).some(account=>account?.authUid===uid);
 }
+function signupErrorSlot(id){
+  return `<p id="error-${id}" class="signup-field-error" aria-live="polite"></p>`;
+}
+function signupErrors(u,n,e,p,p2,ack){
+  const say=(a,b)=>tr()?a:b;
+  const known=e&&Object.values(DB.accounts).some(a=>String(a.email||a.mail||'').toLowerCase()===e);
+  const personal=[n,e.split('@')[0]].map(x=>x.trim().toLowerCase()).filter(x=>x.length>=4);
+  let password=pwOk(p,u);
+  if(p.length>=8&&(personal.some(x=>p.toLowerCase().includes(x))||/(?:19|20)\d{2}[-./]?(?:0[1-9]|1[0-2])[-./]?(?:0[1-9]|[12]\d|3[01])|(?:0[1-9]|[12]\d|3[01])[-./]?(?:0[1-9]|1[0-2])[-./]?(?:19|20)\d{2}/.test(p)))
+    password=say('Şifrende doğum tarihi, adın veya e-postan gibi kişisel bilgiler kullanma.','Keep your birth date, name and email out of your password.');
+  return {
+    u:!u?say('Kullanıcı adı boş bırakılamaz.','Enter a username.'):!userRe.test(u)?t('usernameRules'):findUser(u)?t('usernameTaken'):'',
+    n:n?'':t('displayRequired'),
+    e:!emailPattern.test(e)?say('Geçerli bir e-posta adresi gir.','Enter a valid email address.'):known?say('Bu e-posta bu cihazda kayıtlı. Giriş ekranından devam edebilirsin.','This email is saved on this device. Continue from sign-in.'):'',
+    p:password,p2:!p2?say('Şifreni tekrar gir.','Enter your password again.'):p!==p2?say('Şifreler eşleşmiyor.','Passwords do not match.'):'',
+    'signup-terms':ack?'':say('Devam etmek için metinleri okuyup kutuyu işaretle.','Read the documents and check the box to continue.')
+  };
+}
+function showSignupError(id,message){
+  const field=document.getElementById(id),error=document.getElementById('error-'+id);
+  if(!field||!error)return;
+  error.textContent=message;
+  if(message)field.setAttribute('aria-invalid','true');else field.removeAttribute('aria-invalid');
+}
+function focusSignupError(id){
+  const field=document.getElementById(id);
+  if(!field)return;
+  field.focus({preventScroll:true});
+  field.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+}
+function updateSignupField(event){
+  const form=event.currentTarget;
+  if(!form.querySelector('[aria-invalid="true"]'))return;
+  const errors=signupErrors(form.elements.u.value.trim(),form.elements.n.value.trim(),form.elements.e.value.trim().toLowerCase(),form.elements.p.value,form.elements.p2.value,form.elements['signup-terms'].checked);
+  for(const field of form.querySelectorAll('[aria-invalid="true"]'))showSignupError(field.id,errors[field.id]||'');
+}
 async function setup(){
   if(authBusy)return;
   const u=String($('#u')?.value||'').trim(),n=String($('#n')?.value||'').trim();
   const e=String($('#e')?.value||'').trim().toLowerCase(),p=String($('#p')?.value||''),p2=String($('#p2')?.value||'');
-  formDat={u,n,b:String($('#b')?.value||'').slice(0,160),e,t:'',p:'',p2:''};
-  if(!userRe.test(u))msg=t('usernameRules');
-  else if(!n)msg=t('displayRequired');
-  else if(findUser(u))msg=t('usernameTaken');
-  else if(!emailPattern.test(e))msg=t('emailInvalid');
-  else if(p!==p2)msg=tr()?'Şifreler eşleşmiyor.':'Passwords do not match.';
-  else msg=pwOk(p,u);
-  if(msg){renderAppOrAuth();if(msg===t('usernameTaken'))debounceNameCheck();return}
-  if(Object.values(DB.accounts).some(a=>String(a.email||a.mail||'').toLowerCase()===e)){goExistingEmail(e);return}
+  const ack=$('#signup-terms')?.checked===true;
+  formDat={u,n,b:String($('#b')?.value||'').slice(0,160),e,t:'',p:'',p2:'',ack};
+  const errors=signupErrors(u,n,e,p,p2,ack);
+  for(const [id,message] of Object.entries(errors))showSignupError(id,message);
+  const invalid=Object.keys(errors).find(id=>errors[id]);
+  if(invalid){focusSignupError(invalid);return}
   if(deviceAccountCount()>=MAX_DEVICE_ACCOUNTS){msg=tr()?'Bu cihazda en fazla 3 hesap saklanabilir. Önce mevcut bulut hesaplarından birini bu cihazda unut.':'This device can remember at most 3 accounts. Forget an unused cloud profile on this device first.';renderAppOrAuth();return}
   if(typeof IYTurnstile!=='undefined'&&!IYTurnstile.ready())return;
   loginBusy(true);
   try{
     const available=await sb('/rest/v1/rpc/iydu_username_available',{method:'POST',body:{p_username:u}});
-    if(available!==true){msg=t('usernameTaken');renderAppOrAuth();debounceNameCheck();return}
+    if(available!==true){showSignupError('u',t('usernameTaken'));focusSignupError('u');debounceNameCheck();return}
     const j=await sbSignUp(u,p,n,e);
     if(!j||!j.access_token){
       pendingSignup={email:e,username:u,nick:n,requestedAt:Date.now(),nextResendAt:Date.now()+60000};
@@ -3310,16 +3393,18 @@ async function setup(){
       view='signup-code';msg=tr()?'E-posta doğrulaması tamamlanmadan giriş yapılamaz.':'Email verification must be completed before signing in.';
       renderAppOrAuth();return;
     }
-    const entryTransition=new Promise(resolve=>playWelcomeTransition(resolve));
-    await activateCloudUser(j,u,'password',{entryTransition});
+    await activateCloudUser(j,u,'password',{greet:true});
     formDat={u:'',n:'',b:'',e:'',t:'',p:''};
-    toast(tr()?'Hesabın oluşturuldu. E-posta durumunu Ayarlar’dan kontrol edebilirsin.':'Your account is ready. Check your email status in Settings.');
+    if(A?.authUid===j.user.id)toast(tr()?'Hesabın oluşturuldu. E-posta durumunu Ayarlar’dan kontrol edebilirsin.':'Your account is ready. Check your email status in Settings.');
   }catch(err){
     if(err.code==='CAPTCHA_CANCELLED')return;
     if(captchaErrorText(err)){msg=captchaErrorText(err);renderAppOrAuth();return}
     const cause=authErrorMessage(err);
-    if(cause==='already-email'){goExistingEmail(e);return}
-    if(cause==='username'){msg=t('usernameTaken');renderAppOrAuth();debounceNameCheck();return}
+    if(cause==='already-email'){
+      showSignupError('e',tr()?'Bu e-posta zaten kayıtlı. Giriş ekranından devam et.':'This email is already registered. Continue from sign-in.');
+      $('#email-hint').innerHTML=`<button class="g s" type="button" onclick="goExistingEmail(formDat.e)">${t('login')}</button>`;focusSignupError('e');return;
+    }
+    if(cause==='username'){showSignupError('u',t('usernameTaken'));focusSignupError('u');debounceNameCheck();return}
     msg=(tr()?'Bulut kaydı tamamlanamadı. Ağ veya Supabase ayarlarını kontrol et.':'Could not register. Check network and Supabase configuration.');
     if(err.name==='AbortError')msg=tr()?'İstek zaman aşımına uğradı.':'Request timed out.';
     renderAppOrAuth();
@@ -3509,7 +3594,7 @@ function profilePasswordMarkup(){
 }
 function openProfile(){
   if(!A)return;
-  openModal('profile-modal',`<h2>${tr()?'Profilim':'My profile'}</h2><p class="profile-email"><strong>${t('email')}:</strong> ${A.authUid?'<button class="g s profile-email-link" type="button" onclick="openEmailSecuritySettings()">'+IYAccount.emailMarkup()+'</button>':esc(A.email||(tr()?'E-posta belirtilmemiş':'Email not available'))}</p>${profilePasswordLink()}<div class="profile-fields"><label for="prof-u">${t('username')}</label><input id="prof-u" maxlength="20" autocapitalize="none" autocomplete="off" value="${esc(A.u)}" oninput="profileUsernameHint(this.value,'profile-name-hint')"><div id="profile-name-hint" aria-live="polite"></div><label for="prof-n">${t('displayName')}</label><input id="prof-n" maxlength="30" value="${esc(A.nick||'')}"><label for="prof-b">${t('bio')}</label><textarea id="prof-b" rows="3" maxlength="160">${esc(A.bio||'')}</textarea></div><div class="row"><button onclick="saveProfile()">${t('save')}</button><button class="g" onclick="closeModal('profile-modal')">${t('cancel')}</button></div>${profilePasswordMarkup()}<div class="profile-logout"><button class="danger-logout" onclick="closeModal('profile-modal');setTimeout(confirmLogout,240)">${t('logout')}</button></div>`);
+  openModal('profile-modal',`<h2>${tr()?'Profilim':'My profile'}</h2><p class="profile-email"><strong>${t('email')}:</strong> ${A.authUid?'<button class="g s profile-email-link" type="button" onclick="openEmailSecuritySettings()">'+IYAccount.emailMarkup()+'</button>':esc(A.email||(tr()?'E-posta belirtilmemiş':'Email not available'))}</p>${profilePasswordLink()}<div class="profile-fields"><label for="prof-u">${t('username')}</label><input id="prof-u" maxlength="20" autocapitalize="none" autocomplete="off" value="${esc(A.u)}" oninput="profileUsernameHint(this.value,'profile-name-hint')"><div id="profile-name-hint" aria-live="polite"></div><label for="prof-n">${t('displayName')}</label><textarea id="prof-n" rows="1" maxlength="30">${esc(A.nick||'')}</textarea><label for="prof-b">${t('bio')}</label><textarea id="prof-b" rows="3" maxlength="160">${esc(A.bio||'')}</textarea></div><div class="row"><button onclick="saveProfile()">${t('save')}</button><button class="g" onclick="closeModal('profile-modal')">${t('cancel')}</button></div>${profilePasswordMarkup()}<div class="profile-logout"><button class="danger-logout" onclick="closeModal('profile-modal');setTimeout(confirmLogout,240)">${t('logout')}</button></div>`);
 }
 async function saveProfile(){
   if(!A)return;
@@ -3623,10 +3708,10 @@ P.home=()=>{
   }).join('');
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
   <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
-  <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="1000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/1000</span></div></div>
+  <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="2000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/2000</span></div></div>
   <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
 };
-function updateJournalCounter(el){const e=document.getElementById('journal-counter');if(e)e.textContent=String(el?.value?.length||0)+'/1000'}
+function updateJournalCounter(el){const e=document.getElementById('journal-counter');if(e)e.textContent=String(el?.value?.length||0)+'/2000'}
 function saveJournal(){
   const input=document.getElementById('journal-input');
   const text=String(input?.value||'').trim();
@@ -3634,7 +3719,7 @@ function saveJournal(){
   if(!A.journal||typeof A.journal!=='object')A.journal={};
   const previous=String(A.journal[today()]?.text||'');
   const combined=previous?previous+'\n\n'+text:text;
-  if(combined.length>1000){toast(tr()?'Bugünün günlüğü 1000 karakter sınırına ulaştı. Eski kaydı Raporlar’dan düzenle.':'Today’s journal has reached its 1000-character limit. Edit the existing entry in Reports.');return}
+  if(combined.length>2000){toast(tr()?'Bugünün günlüğü 2000 karakter sınırına ulaştı. Eski kaydı Raporlar’dan düzenle.':'Today’s journal has reached its 2000-character limit. Edit the existing entry in Reports.');return}
   A.journal[today()]={text:combined,updatedAt:Date.now()};
   recordActivity();
   if(input)input.value='';
@@ -3651,14 +3736,14 @@ function journalEntryStamp(entry){
 function openJournalEntry(key,edit=false){
   const entry=A.journal?.[key];if(!entry)return;
   const stamp=journalEntryStamp(entry);
-  const body=edit?`<textarea id="journal-edit" rows="7" maxlength="1000" oninput="updateJournalEditCounter(this)">${esc(entry.text||'')}</textarea><small id="journal-edit-count" class="mut">${String(entry.text||'').length}/1000</small>`:
+  const body=edit?`<textarea id="journal-edit" rows="7" maxlength="2000" oninput="updateJournalEditCounter(this)">${esc(entry.text||'')}</textarea><small id="journal-edit-count" class="mut">${String(entry.text||'').length}/2000</small>`:
     `<div class="note" style="white-space:pre-wrap">${esc(entry.text||'')}</div>`;
   openModal('journal-modal',`<h2>${tr()?'Günlüğüm':'Daily journal'}</h2><p class="mut">${stamp}</p>${body}<div class="row">${edit?`<button onclick="saveJournalEdit('${key}')">${t('save')}</button>`:`<button onclick="closeModal('journal-modal');openJournalEntry('${key}',true)">${t('editNote')}</button>`}<button class="g d" onclick="confirmDeleteJournal('${key}')">${t('delete')}</button><button class="g" onclick="closeModal('journal-modal')">${t('cancel')}</button></div>`);
 }
-function updateJournalEditCounter(el){const e=document.getElementById('journal-edit-count');if(e)e.textContent=String(el.value.length)+'/1000'}
+function updateJournalEditCounter(el){const e=document.getElementById('journal-edit-count');if(e)e.textContent=String(el.value.length)+'/2000'}
 function saveJournalEdit(key){
   if(!A?.journal?.[key])return;
-  const value=String(document.getElementById('journal-edit')?.value||'').trim().slice(0,1000);
+  const value=String(document.getElementById('journal-edit')?.value||'').trim().slice(0,2000);
   if(!value){toast(tr()?'Boş günlüğü silmek için Sil seçeneğini kullan.':'Use Delete to remove an empty journal.');return}
   A.journal[key]={text:value,updatedAt:Date.now()};recordActivity();closeModal('journal-modal');if(pg==='rep')P.rep();else if(pg==='home')P.home();toast(t('saved'));
 }
@@ -3695,7 +3780,7 @@ function fixTodoData(){
   if(!A.hist||typeof A.hist!=='object')A.hist={};
 }
 P.todo=()=>{
-  try{fixTodoData()}catch(e){A.tasks=[];A.backlog=[]}
+  fixTodoData();
   if(archiveFinishedTasks())save();
   const next=addD(today(),1);
   const sortedTaskEntries=sortTaskLists();
@@ -3923,14 +4008,14 @@ function dayTaskRow(task){
  const status=taskStatus(task),symbol=status==='done'?'✓':status==='miss'?'✕':'○',label=t(status==='done'?'done':status==='miss'?'notDone':'notYetDone');
  return `<div class="task day-task ${status}" data-task-status="${status}"><span>${esc(task.t)}</span><b>${symbol} ${label}</b></div>`;
 }
-function openDay(k,fromReport=false){
+function openDay(k,fromReport=false,noteOnly=false){
   if(fromReport&&!annualReportOpen()){P.rep();return}
   closeMiniCal();
   if(k<today()&&!A.fog&&!fromReport){toast(tr()?'Geçmiş günü açmak için Önceki günler görünümünü etkinleştir.':'Turn Fog past days on to open past dates.');return}
   selDay=k;
   const its=items(k),note=(A.future&&A.future[k])||'',future=k>today();
   const tasks=its.length?its.map(dayTaskRow).join(''):'<p class="mut">'+t('noRecords')+'</p>';
-  openModal('day-modal',`<h2>${fmt(k)}${future?' · '+t('futureNotes'):''}</h2>${fromReport?`<div data-annual-tasks>${tasks}</div>`:tasks}
+  openModal('day-modal',`<h2>${fmt(k)}${future?' · '+t('futureNotes'):''}</h2>${noteOnly?'':fromReport?`<div data-annual-tasks>${tasks}</div>`:tasks}
 <div style="margin-top:1rem"><h3>${t('yourNote')}</h3>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<textarea id="dn" rows="3" maxlength="500" placeholder="${t('notePlaceholder')}">${esc(note)}</textarea><div class="row" style="justify-content:flex-end"><button class="g" onclick="closeModal('day-modal')">${t('cancel')}</button><button onclick="saveNote('${k}')">${t('save')}</button></div></div>`);
 }
 function saveNote(k){
@@ -3966,7 +4051,7 @@ P.pc=()=>{
     c+=`<button class="dot ${cls} ${k==today()?'td':''}" title="${fmt(k)}${dp!==null?' — %'+dp:''}" onmouseenter="fadeDot(this,1)" onmouseleave="fadeDot(this,0)" ${k<today()&&!A.fog?'disabled aria-disabled="true"':''} onclick="openDay('${k}')"><span>${d}</span><em class="dpct">${dp!==null?'%'+dp:'&nbsp;'}</em></button>`;
   }
   const monthKey=`${y}-${pad(mo+1)}`;
-  const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}<small class="note-countdown">${futureNoteCountdown(k)}</small></b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
+  const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}<small class="note-countdown">${futureNoteCountdown(k)}</small></b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}',false,true)">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
   M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
 };
 function newNote(){
@@ -3975,7 +4060,7 @@ function newNote(){
     toast(tr()?'Geçerli bir tarih seç.':'Pick a valid date.');return;
   }
   const draft=String($('#fn-text')?.value||'').slice(0,500);
-  openDay(d);
+  openDay(d,false,true);
   // Reuse the existing confirmation/save path to avoid unintended overwrites.
   const editor=$('#dn');if(editor&&draft){editor.value=draft;fitTextField(editor)}
 }
@@ -4014,23 +4099,14 @@ function reportQuestionStore(scope='review'){
   return A.planningQs;
 }
 function reportWindow(kind,day=istanbulDayKey()){
- const current=calendarReportPeriod(kind,day);
- if(kind==='week')return {period:current,opens:current.b,closes:addD(current.b,1),next:addD(current.b,7)};
- const period=calendarReportPeriod('month',current.pb);
- const next=current.nk+'-01';
- return {period,opens:current.a,closes:next,next};
+ const period=calendarReportPeriod(kind,day);
+ const next=calendarReportPeriod(kind,addD(period.b,1));
+ return {period,opens:period.b,closes:addD(period.b,1),next:next.b};
 }
 function reportPeriodEligible(period,day=istanbulDayKey()){
  if(!A)return false;
- const monthly=period.key.length===7;
- const {since}=reportAvailability(monthly?'month':'week',day);
- if(monthly){
-   const first=since>period.a?since:period.a;
-   return first<=period.b&&reportHasActivity(first,period.b);
- }
- const joined=Date.parse(A.reportJoinedAt||'');
- if(period.a<since||(Number.isFinite(joined)&&joined>Date.parse(period.a+'T00:00:00+03:00')))return false;
- return reportHasActivity(period.a,period.b);
+ const kind=period.key.length===7?'month':'week';
+ return period.b>=reportAvailability(kind,day).unlock&&reportHasActivity(period.a,period.b);
 }
 function reportHasActivity(a,b){
  const inRange=day=>/^\d{4}-\d{2}-\d{2}$/.test(day)&&day>=a&&day<=b;
@@ -4095,9 +4171,16 @@ function submitPeriodReport(kind,key,quiet=false){
   }
   if(!groups.some(([scope,k])=>reportQuestionStore(scope)[k]?.length))return false;
   for(const [scope,k] of pending)reportQuestionLocks(scope)[k]=1;
+  if(pending.some(([scope,k])=>scope==='plan'&&k===period.nk)){
+    (A.reportPlanLinks||={})[key]=period.nk;
+  }
   save();P.rep();return true;
 }
-const qb=(k,arr,ro,scope,formPeriod)=>arr.map((x,i)=>`<label for="report-${scope}-${k}-${i}">${esc(reportQuestionForPeriod(x,k,scope))}</label><div class="qa"><textarea id="report-${scope}-${k}-${i}" rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this,'${scope}','${formPeriod}')" ${!ro&&formPeriod.length===7?`onchange="submitPeriodReport('month','${formPeriod}',true)"`:''}>${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i},'${scope}','${formPeriod}')">${t('delete')}</button>`}</div><div class="qcap mut">${String(x.a||'').length}/400</div>`).join('');
+function currentReportForm(control){
+ const form=control.closest('.period-questionnaire');
+ return !!A&&!!form?.isConnected&&form.dataset.reportOwner===String(A.authUid||A.u||'');
+}
+const qb=(k,arr,ro,scope,formPeriod)=>arr.map((x,i)=>`<label for="report-${scope}-${k}-${i}">${esc(reportQuestionForPeriod(x,k,scope))}</label><div class="qa"><textarea id="report-${scope}-${k}-${i}" rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="if(currentReportForm(this))qa('${k}',${i},this,'${scope}','${formPeriod}')" ${!ro?`onchange="if(currentReportForm(this))submitPeriodReport('${formPeriod.length===7?'month':'week'}','${formPeriod}',true)"`:''}>${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="if(currentReportForm(this))delQ('${k}',${i},'${scope}','${formPeriod}')">${t('delete')}</button>`}</div><div class="qcap mut">${String(x.a||'').length}/400</div>`).join('');
 function qa(k,i,el,scope='review',formPeriod){if(!canAnswerReport(k,scope,istanbulDayKey(),formPeriod)||reportGroupLocked(scope,k))return;const question=reportQuestionStore(scope)[k]?.[i];if(!question)return;const previous=question.a;question.a=el.value.slice(0,400);if(question.a.trim()&&question.a!==previous)recordActivity();else save();const counter=el.parentElement?.nextElementSibling;if(counter)counter.textContent=question.a.length+'/400'}
 function delQ(k,i,scope='review',formPeriod){if(!canAnswerReport(k,scope,istanbulDayKey(),formPeriod)||reportGroupLocked(scope,k))return;const questions=reportQuestionStore(scope)[k];if(!Array.isArray(questions)||!questions[i])return;questions.splice(i,1);save();P.rep()}
 function addRandQ(k,scope='review',formPeriod){if(!canAnswerReport(k,scope,istanbulDayKey(),formPeriod)||reportGroupLocked(scope,k))return;const kind=k.length===7?'month':'week',R=scope==='plan'?(tr()?PLAN_RQ_TR[kind]:PLAN_RQ_EN[kind]):rqFor();(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(R[Math.floor(Math.random()*R.length)]));save();P.rep()}
@@ -4115,7 +4198,7 @@ function pendingReportCard(title,start,available){
     <div class="bar"><i style="width:${Math.min(100,elapsed/total*100)}%"></i></div></div>`;
 }
 function answerArchiveUnlocked(now,periodKey){
- return /^\d{4}-01-01$/.test(now)&&/^\d{4}-\d{2}(?:-\d{2})?$/.test(periodKey)&&Number(now.slice(0,4))-1===Number(periodKey.slice(0,4));
+ return /^\d{4}-12-31$/.test(now)&&/^\d{4}-\d{2}(?:-\d{2})?$/.test(periodKey)&&now.slice(0,4)===periodKey.slice(0,4);
 }
 function periodReportForm(kind,key,next){
   const weekly=kind==='week';
@@ -4123,7 +4206,7 @@ function periodReportForm(kind,key,next){
   const groups=[
     ['review',key,tr()?'Dönem değerlendirmen':'Your period review'],
     ['plan',key,tr()?'Bu dönem için yaptığın planlar':'Your earlier plans for this period'],
-    ['plan',next,tr()?(weekly?'Gelecek hafta':'Bu ayın planı'):(weekly?'Next week':'Plans for this month')]
+    ['plan',next,tr()?(weekly?'Gelecek hafta':'Gelecek ay'):(weekly?'Next week':'Next month')]
   ];
   if(A.ql?.[key]){
     const opens=reportWindow(kind).next;
@@ -4134,10 +4217,10 @@ function periodReportForm(kind,key,next){
     const records=reportQuestionStore(scope);
     if(!Array.isArray(records[k]))records[k]=periodDefaultQuestions(kind,k,scope);
     const locked=reportGroupLocked(scope,k);
-    const body=locked?reportLockedNotice():qb(k,records[k],false,scope,key)+`<button type="button" class="g s" onclick="addRandQ('${k}','${scope}','${key}')">${t('randomQuestion')}</button>`;
+    const body=locked?reportLockedNotice():qb(k,records[k],false,scope,key)+`<button type="button" class="g s" onclick="if(currentReportForm(this))addRandQ('${k}','${scope}','${key}')">${t('randomQuestion')}</button>`;
     return `<section class="${scope==='plan'?'report-plan-period':'report-review-period'}" id="report-group-${scope}-${k}"><h3>${title}</h3>${body}</section>`;
   }).join('');
-  return `<section class="period-questionnaire" data-period="${key}"><h2>${heading}</h2><p class="mut">${weekly?(tr()?'Yanıtlarını düzenleyebilirsin. Gönderdiğinde bu dönem kapanır.':'You can edit your answers until you submit this period.'):(tr()?'Son cevabını yazıp alandan çıktığında aylık rapor kilitlenir.':'The monthly report locks when you finish the last answer and leave its field.')}</p>${fields}<button class="report-send" type="button" onclick="submitPeriodReport('${kind}','${key}')">${tr()?'Gönder':'Submit'}</button></section>`;
+  return `<section class="period-questionnaire" data-period="${key}" data-report-owner="${esc(A.authUid||A.u||'')}"><h2>${heading}</h2><p class="mut">${tr()?'Son cevabını yazıp alandan çıktığında yanıtların arşive kaydedilir ve bu rapor kilitlenir.':'Finish the last answer and leave its field to archive your answers and lock this report.'}</p>${fields}<button class="report-send" type="button" onclick="if(currentReportForm(this))submitPeriodReport('${kind}','${key}')">${tr()?'Gönder':'Submit'}</button></section>`;
 }
 /* ---- gecmis raporlar: kisa ozet (haftalik / aylik) ---- */
 function briefRow(label,val,sub){
@@ -4168,8 +4251,8 @@ let reportDetail='';
 function showReportDetail(key){if(!['summary','summary-older','journals','answers','answers-older','week','month','week-previous','month-previous'].includes(key))return;reportDetail=key;P.rep();window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'})}
 function reportBack(){reportDetail='';P.rep()}
 function archivePeriodList(keys,day,section){
-  const previousYear=Number(day.slice(0,4))-1;
-  const older=keys.filter(key=>/^\d{4}-\d{2}(?:-\d{2})?$/.test(key)&&Number(key.slice(0,4))<previousYear);
+  const archiveYear=Number(day.slice(0,4));
+  const older=keys.filter(key=>/^\d{4}-\d{2}(?:-\d{2})?$/.test(key)&&Number(key.slice(0,4))<archiveYear);
   const showOlder=reportDetail===section+'-older';
   const periods=showOlder?older:keys.filter(key=>answerArchiveUnlocked(day,key));
   const link=!showOlder&&older.length?`<button class="g s" onclick="showReportDetail('${section}-older')">${tr()?'Daha eski yıllar':'Earlier years'}</button>`:'';
@@ -4183,19 +4266,23 @@ function reportDetailView(){
     return header+`<div class="card"><div class="journal-grid">${entries.map(([k,v])=>`<article class="note-tile"><b>${journalEntryStamp(v)}</b><p>${esc(v.text||'')}</p><button class="g s" onclick="openJournalEntry('${k}')">${tr()?'Görüntüle / düzenle':'View / edit'}</button></article>`).join('')||`<p class="mut">${tr()?'Henüz günlük yok.':'No journal entries yet.'}</p>`}</div></div>`;
   }
   const day=istanbulDayKey();
-  if(!annualReportOpen(day))return header+annualReportCard();
   if(reportDetail.startsWith('answers')){
+    if(!annualAnswersOpen(day))return header+annualReportCard();
     const keys=[...new Set([...Object.keys(A.ql||{}),...Object.keys(A.planningLocks||{})])].filter(k=>A.ql?.[k]||A.planningLocks?.[k]);
     const {periods,link}=archivePeriodList(keys,day,'answers');
     const rows=periods.map(k=>{
       const qs=A.ql?.[k]&&Array.isArray(A.qs[k])?A.qs[k]:[];
       const plans=(A.planningLocks?.[k]||A.ql?.[k])&&Array.isArray(A.planningQs?.[k])?A.planningQs[k]:[];
+      const next=A.reportPlanLinks?.[k];
+      const following=A.ql?.[k]&&next?.slice(0,4)!==k.slice(0,4)&&A.planningLocks?.[next]&&Array.isArray(A.planningQs?.[next])?A.planningQs[next]:[];
       const renderQuestion=q=>`<div><b>${esc(reportQuestionText(q))}</b><p>${esc(q.a||'')}</p></div>`;
-      return `<article class="note-tile"><b>${esc(k)}</b>${plans.length?`<h3>${tr()?'Dönem başındaki planların':'Plans made before this period'}</h3>${plans.map(renderQuestion).join('')}<h3>${tr()?'Dönem değerlendirmen':'Your period review'}</h3>`:''}${qs.map(renderQuestion).join('')}</article>`;
+      return `<article class="note-tile"><b>${esc(k)}</b>${plans.length?`<h3>${tr()?'Dönem başındaki planların':'Plans made before this period'}</h3>${plans.map(renderQuestion).join('')}<h3>${tr()?'Dönem değerlendirmen':'Your period review'}</h3>`:''}${qs.map(renderQuestion).join('')}${following.length?`<h3>${tr()?'Sonraki dönem için planın':'Your plan for the next period'} · ${esc(next)}</h3>${following.map(renderQuestion).join('')}`:''}</article>`;
     });
     return header+`<div class="card">${link}<div class="note-grid">${rows.join('')||`<p class="mut">${tr()?'Henüz kilitli yanıt bulunmuyor.':'No locked answers yet.'}</p>`}</div></div>`;
   }
+  if(!annualReportOpen(day))return header+annualReportCard();
   const days=Object.keys(A.hist||{}).filter(k=>k.length===10&&Array.isArray(A.hist[k]));
+  if(A.day===day&&items(day).length&&!days.includes(day))days.push(day);
   const {periods,link}=archivePeriodList(days,day,'summary');
   const groups=new Map();for(const day of periods){const month=day.slice(0,7);if(!groups.has(month))groups.set(month,[]);groups.get(month).push(day)}
   const cards=[...groups].map(([month,days])=>{
@@ -4209,10 +4296,8 @@ function reportAvailability(kind,td=istanbulDayKey()){
  const joined=Date.parse(A?.reportJoinedAt||'');
  const saved=dates[0]||td,joinedDay=Number.isFinite(joined)?istanbulDayKey(new Date(joined)):saved;
  const since=joinedDay>saved?joinedDay:saved;
- const period=calendarReportPeriod(kind,since);
- if(kind==='month')return {since,unlock:period.nk+'-01'};
- const partial=period.a<since||(Number.isFinite(joined)&&joined>Date.parse(period.a+'T00:00:00+03:00'));
- return {since,unlock:partial?addD(period.b,7):period.b};
+ const signupPeriod=calendarReportPeriod(kind,since);
+ return {since,unlock:calendarReportPeriod(kind,addD(signupPeriod.b,1)).b};
 }
 function calendarReportPeriod(kind,day){
  if(kind==='week'){const a=mon(day);return{a,b:addD(a,6),pa:addD(a,-7),pb:addD(a,-1),key:a,nk:addD(a,7)}}
@@ -4225,10 +4310,8 @@ function reportSummaryCard(kind){
  if(!open){
   const next=unlock>td?unlock:window.opens>td?window.opens:window.next;
   const reason=submitted?(tr()?'Bu dönemin yanıtları gönderildi.':'Your answers for this period were submitted.')
-    :!reportPeriodEligible(period,td)?(kind==='month'
-      ?(tr()?'Önceki ayda hesaba eklenmiş bir görev, günlük veya tamamlanmış odak oturumu gerekir.':'A task, journal entry or completed focus session in the preceding month is required.')
-      :(tr()?'Tamamını geçirdiğin ve görev, günlük veya odak kaydı bulunan bir hafta gerekli.':'A full week since joining with a task, journal or focus record is required.')):'';
-  return `<section class="report-period-block${submitted?' report-submitted':''}">${pendingReportCard(title,kind==='month'?window.opens:since,next)}${reason?'<p class="mut">'+reason+'</p>':''}</section>`;
+    :!reportPeriodEligible(period,td)?(tr()?'Rapor, kayıt olduğun dönemi izleyen dönemden itibaren, o dönemde görev, günlük veya tamamlanmış odak kaydın varsa açılır.':'From the period after signup, reports open for periods with a task, journal entry or completed focus session.'):'';
+  return `<section class="report-period-block${submitted?' report-submitted':''}">${pendingReportCard(title,period.a>since?period.a:since,next)}${reason?'<p class="mut">'+reason+'</p>':''}</section>`;
  }
  const summary=st(period.a,period.b);
  return `<section class="card report-summary"><h2>${title}</h2><p class="mut">${fmt(period.a)} – ${fmt(period.b)}</p><p>${summary.d}/${summary.t} ${t('tasksDone')} · %${summary.p}</p><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Soruları yanıtla':'Answer questions'} →</button></section>`;
@@ -4249,18 +4332,24 @@ function periodReportDetail(kind,previous=false){
  return header+periodTaskBreakdown(period.a,period.b)+`<section class="card">${periodReportForm(kind,period.key,period.nk)}</section>`;
 }
 function annualReportOpen(day=istanbulDayKey()){
- const year=Number(day.slice(0,4))-1,a=year+'-01-01',b=year+'-12-31';
+ const a=day.slice(0,4)+'-01-01',b=day.slice(0,4)+'-12-31';
  const joined=Date.parse(A?.reportJoinedAt||'');
- return day.slice(5)==='01-01'&&!!A&&reportAvailability('month',day).since<=a&&(!Number.isFinite(joined)||joined<=Date.parse(a+'T00:00:00+03:00'))&&reportHasActivity(a,b);
+ return day===b&&!!A&&reportAvailability('month',day).since<=a&&(!Number.isFinite(joined)||joined<=Date.parse(a+'T00:00:00+03:00'))&&reportHasActivity(a,b);
+}
+function annualAnswersOpen(day=istanbulDayKey()){
+ if(!A||day.slice(5)!=='12-31')return false;
+ return annualReportOpen(day)||Object.keys(A.ql||{}).some(key=>A.ql[key]&&answerArchiveUnlocked(day,key));
 }
 function annualReportCard(){
  const day=istanbulDayKey(),year=Number(day.slice(0,4)),title=tr()?'Yıllık özet':'Annual summary';
  if(!annualReportOpen(day)){
-   const next=(year+1)+'-01-01';
-   return `<section class="card"><h2>🔒 ${title}</h2><p class="mut">${tr()?'Sonraki yıllık özet':'Next annual summary'} · <time datetime="${next}">${reportDateLabel(next)}</time>. ${tr()?'Tamamını geçirdiğin önceki takvim yılında görev, günlük veya odak kaydın varsa açılır.':'Opens if you spent the full preceding calendar year here and recorded a task, journal entry or focus session.'}</p></section>`;
+   const since=reportAvailability('month',day).since,joined=Date.parse(A?.reportJoinedAt||'');
+   const firstYear=Number(since.slice(0,4))+(since.slice(5)!=='01-01'||Number.isFinite(joined)&&joined>Date.parse(since.slice(0,4)+'-01-01T00:00:00+03:00')?1:0);
+   const next=Math.max(firstYear,day.slice(5)==='12-31'?year+1:year)+'-12-31';
+   return `<section class="card"><h2>🔒 ${title}</h2><p class="mut">${tr()?'Sonraki yıllık özet':'Next annual summary'} · <time datetime="${next}">${reportDateLabel(next)}</time>. ${tr()?'Tam bir takvim yılında en az bir görev, günlük veya tamamlanmış odak kaydı gerekir.':'Opens for a full calendar year with a task, journal entry or completed focus session.'}</p></section>`;
  }
- const result=st((year-1)+'-01-01',(year-1)+'-12-31');
- return `<section class="card"><h2>${title} · ${year-1}</h2><p>${result.d}/${result.t} ${t('tasksDone')} · %${result.p}</p><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıtlarını incele':'Review your answers'}</button></section>`;
+ const result=st(year+'-01-01',year+'-12-31');
+ return `<section class="card"><h2>${title} · ${year}</h2><p>${result.d}/${result.t} ${t('tasksDone')} · %${result.p}</p><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıtlarını incele':'Review your answers'}</button></section>`;
 }
 function reportPlanningOverview(){
   const day=istanbulDayKey();
@@ -4272,7 +4361,7 @@ function reportPlanningOverview(){
 }
 P.rep=()=>{
  reportRenderedDay=istanbulDayKey();
- if(reportRenderedDay.slice(5)!=='01-01'){
+ if(reportRenderedDay.slice(5)!=='12-31'){
    const annualTasks=document.querySelector('#day-modal [data-annual-tasks]');
    if(annualTasks){
      annualTasks.remove();
@@ -4281,7 +4370,7 @@ P.rep=()=>{
    }
  }
  if(reportDetail){M(reportDetailView());return}
- M(reportSummaryCard('week')+reportSummaryCard('month')+reportPlanningOverview()+annualReportCard()+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'} 🔒</button></div></section>`);
+ M(reportSummaryCard('week')+reportSummaryCard('month')+reportPlanningOverview()+annualReportCard()+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'}${annualAnswersOpen()?'':' 🔒'}</button></div></section>`);
 };
 
 let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};
@@ -4683,7 +4772,7 @@ P.set=()=>{
       (cloud?'<button class="g s" data-user="'+esc(u)+'" onclick="forgetKnownProfile(this.dataset.user)">'+(tr()?'Bu cihazda unut':'Forget on device')+'</button>':'')+
       '</span>';
   }).join('');
-  M(`${m()}<div class="card"><h2>${t('account')}</h2><p class="mut">${tr()?'Üstteki yuvarlak profil düğmesinden de düzenleyebilirsin.':'You can also edit your profile in the top-right account menu.'}</p><label>${t('username')}</label><div class="row"><input id="su" value="${esc(A.u)}" maxlength="20" oninput="profileUsernameHint(this.value,'settings-name-hint')"><div id="settings-name-hint" aria-live="polite" style="flex-basis:100%"></div><button onclick="chg('u')">${t('change')}</button></div><label>${t('displayName')}</label><div class="row"><input id="sn" value="${esc(A.nick||'')}" maxlength="30"><button onclick="chg('n')">${t('change')}</button></div><label>${t('bio')}</label><textarea id="sb" maxlength="160" rows="3" onchange="A.bio=this.value.slice(0,160);save()">${esc(A.bio||'')}</textarea><p class="mut">${t('email')}: <b>${A.authUid?IYAccount.emailMarkup():esc(A.email||'')}</b></p>${profilePasswordLink()}</div>
+  M(`${m()}<div class="card"><h2>${t('account')}</h2><p class="mut">${tr()?'Üstteki yuvarlak profil düğmesinden de düzenleyebilirsin.':'You can also edit your profile in the top-right account menu.'}</p><label>${t('username')}</label><div class="row"><input id="su" value="${esc(A.u)}" maxlength="20" oninput="profileUsernameHint(this.value,'settings-name-hint')"><div id="settings-name-hint" aria-live="polite" style="flex-basis:100%"></div><button onclick="chg('u')">${t('change')}</button></div><label>${t('displayName')}</label><div class="row"><textarea id="sn" rows="1" maxlength="30">${esc(A.nick||'')}</textarea><button onclick="chg('n')">${t('change')}</button></div><label>${t('bio')}</label><textarea id="sb" maxlength="160" rows="3" onchange="A.bio=this.value.slice(0,160);save()">${esc(A.bio||'')}</textarea><p class="mut">${t('email')}: <b>${A.authUid?IYAccount.emailMarkup():esc(A.email||'')}</b></p>${profilePasswordLink()}</div>
   <div class="card settings-theme"><h2>${t('theme')}</h2>${themePick(false,false)}</div>
   <div class="card"><h2>${t('lang')}</h2><div class="langbar" style="justify-content:flex-start">${langBtns()}</div></div>
   ${!A.authUid?`<div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>`:''}
@@ -5238,7 +5327,7 @@ async function bootstrapCloudAuth(){
        if(recovery&&window.IYAccount){sbSave({...identity,at:Date.now()});await IYAccount.recovery(user);return}
        if(await v13FinishMigration(identity))return;
        const callbackMethod=!frag.get('type')&&user.app_metadata?.providers?.includes('google')?'google':'password';
-       await activateCloudUser(identity,'',callbackMethod);
+       await activateCloudUser(identity,'',callbackMethod,{greet:true});
        if(recovery){openPasswordRecoveryModal();return}
        return;
     }catch(err){sbClear();msg=tr()?'Giriş bağlantısı doğrulanamadı. Lütfen tekrar dene.':'The sign-in link could not be verified. Try again.';view='login';renderAppOrAuth();return}
@@ -5273,7 +5362,7 @@ async function sb(path,opt={}){
   }finally{clearTimeout(timer)}
 }
 async function sbSignUp(username,password,nick,email){
-  return sb('/auth/v1/signup?redirect_to='+encodeURIComponent('https://badgalnurkan.com/'),{method:'POST',body:{email,password,data:{username,nick}}});
+  return sb('/auth/v1/signup?redirect_to='+encodeURIComponent('https://badgalnurkan.com/'),{method:'POST',body:{email,password,data:{username,nick,terms_version:'2026-11-23',terms_acknowledged_at:new Date().toISOString()}}});
 }
 async function sbSignIn(_username,password,email){
   return sb('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password}});

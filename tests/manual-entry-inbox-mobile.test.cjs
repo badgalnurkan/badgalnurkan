@@ -29,22 +29,20 @@ test('remembered Google entry offers a separate manual Sign in route',()=>{
 test('greeting starts at valid manual auth submissions, without bypassing validation',async()=>{
  const signIn=extract('async function login(){','async function setup(){');
  const signUp=extract('async function setup(){','/* gercek sifre sifirlama');
- assert.match(signIn,/if\(!password\)[\s\S]*?const entryTransition=new Promise\(resolve=>playWelcomeTransition\(resolve\)\)/);
- assert.match(signIn,/activateCloudUser\(j,raw,'password',\{entryTransition\}\)/);
- assert.match(signUp,/if\(msg\)\{[\s\S]*?const entryTransition=new Promise\(resolve=>playWelcomeTransition\(resolve\)\)/);
- assert.match(signUp,/activateCloudUser\(j,u,'password',\{entryTransition\}\)/);
- assert.match(extract('async function activateCloudUser(','async function login(){'),/if\(options.entryTransition\)await options.entryTransition;\s*goTo\('app','home'\)/);
- let complete;
+ assert.ok(signIn.includes("activateCloudUser(j,raw,'password',{greet:true})"));
+ assert.ok(signUp.includes("activateCloudUser(j,u,'password',{greet:true})"));
+ const activation=extract('async function activateCloudUser(','async function login(){');
+ assert.ok(activation.indexOf("goTo('app','home')")<activation.indexOf('playWelcomeTransition('));
+
  const context={authBusy:false,loginDat:{u:'',p:''},DB:{accounts:{}},tr:()=>true,findUser:()=>null,
-  $:id=>({value:id==='#u'?'person@example.com':'wrong-password'}),playWelcomeTransition:cb=>{context.entries++;complete=cb},entries:0,
+  $:id=>({value:id==='#u'?'person@example.com':'wrong-password'}),playWelcomeTransition:()=>{context.entries++},entries:0,
   loginBusy:()=>{},sbSignIn:async()=>{throw Error('invalid login credentials')},authErrorMessage:()=> 'credentials',
   renderAppOrAuth:()=>{context.renders++},renders:0,goTo:()=>{context.navigations++},navigations:0};
  vm.createContext(context);
  vm.runInContext("function captchaErrorText(err){\n  if(!/captcha/i.test(String(err?.code||'')+' '+String(err?.message||'')))return '';\n  return tr()?'Robot doğrulaması tamamlanamadı. Kutucuğu kontrol edip yeniden dene.':'Security verification failed. Check the verification box and try again.';\n}\n",context);
  vm.runInContext(signIn+'this.run=login;',context);
  const pending=context.run();
- assert.equal(context.entries,1,'animation should begin before server authentication finishes');
- complete();
+ assert.equal(context.entries,0,'greeting waits for successful entry');
  await pending;
  assert.equal(context.navigations,0,'rejected credentials must not enter the app');
  assert.ok(context.renders>=1);

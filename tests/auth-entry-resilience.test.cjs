@@ -122,3 +122,25 @@ test('accepted Supabase credentials plus profile failure are not misreported as 
  assert.match(x.context.msg,/Sign-in succeeded but your account data could not be loaded/);
  assert.doesNotMatch(x.context.msg,/Check email and password/);
 });
+
+test('registration gives required field errors, preserves optional bio and checks terms and personal passwords',()=>{
+ const c={tr:()=>true,t:x=>x,userRe:/^[a-z0-9_.-]{3,20}$/i,emailPattern:/^[^@\s]+@[^@\s]+\.[^@\s]+$/,findUser:()=>null,DB:{accounts:{sample:{email:'registered@example.invalid'}}}};
+ vm.runInNewContext(slice('function pwOk(p,u){','function mon(d){')+slice('function signupErrors(','function showSignupError('),c);
+ const missing=c.signupErrors('','','','','',false);
+ for(const key of ['u','n','e','p','p2','signup-terms'])assert.ok(missing[key],key);
+ assert.equal(missing.b,undefined);
+ const validate=(email,p,confirm=p,ack=true)=>c.signupErrors('sample','Deniz',email,p,confirm,ack);
+ assert.match(validate('registered@example.invalid','Blue-Mint-70!').e,/kayıtlı/);
+ assert.match(validate('owner@example.invalid','Deniz-A!375').p,/kişisel/);
+ assert.match(validate('owner@example.invalid','K!29.07.2005').p,/doğum tarihi/);
+ assert.ok(validate('owner@example.invalid','Blue-Mint-70!','wrong').p2);
+ assert.ok(Object.values(validate('owner@example.invalid','Blue-Mint-70!')).every(value=>!value));
+});
+
+test('journal appends up to 2000 characters and preserves a full or legacy entry when another save would overflow',()=>{
+ const input={value:'b'.repeat(997)},owner={journal:{day:{text:'a'.repeat(1001)}}};
+ const c={document:{getElementById:()=>input},A:owner,today:()=>'day',recordActivity(){},P:{home(){}},toast(){},tr:()=>true,t:x=>x,updateJournalCounter(){}};
+ vm.runInNewContext(slice('function saveJournal(){','function journalDate('),c);
+ c.saveJournal();assert.equal(owner.journal.day.text.length,2000);
+ const before=JSON.stringify(owner);input.value='extra';c.saveJournal();assert.equal(JSON.stringify(owner),before);assert.equal(input.value,'extra');
+});

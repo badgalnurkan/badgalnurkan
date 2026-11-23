@@ -256,8 +256,8 @@ A newly authenticated session now reuses an earlier same-account session only af
 
 PR #60 merged as 3ada04cde1aac7bbd0be343f0bc18bb6ad83e9ac; production deployment dpl_H7ynwSHsZe96KAK6owz6FyPy2phf READY. The user's exact browser session was not operated.
 
-## 23 Kasım 2026 · Aylık rapor döngüsü ve uzun metin
+## 23 Kasım 2026 · Dönem sonları, yazma alanları ve giriş
 
-Aylık rapor Türkiye saatinde ayın ilk günü önceki ayın etkinliğiyle açılır. Kayıt ayında hesabına görev, günlük veya tamamlanmış odak kaydı ekleyen kullanıcı bir sonraki ay katılabilir. Tamamlanmamış cevaplar ayın son günü boyunca düzenlenebilir. Son alan onaylandığında veya Gönder seçildiğinde mevcut dönem kilidi kaydedilir. Yıllık görünüm 1 Ocak boyunca önceki takvim yılını gösterir. Mevcut eski yanıtlar ve geçmiş görevler aynı gün arşivin “Daha eski yıllar” düğmesinden okunabilir.
+Haftalık sorular pazar günü, aylık sorular takvim ayının son günü, yıllık özet 31 Aralık günü Türkiye saatiyle açılır. Raporlar gece yarısında kapanır. Haftalık ve aylık sorular tamamlanıp son alandan çıkıldığında veya Gönder seçildiğinde yanıtlar kilitlenir. Yeni hesap önce kayıt dönemini izleyen haftanın veya ayın etkinliğine göre değerlendirilir. Tam yıllık özet için tam bir etkin yıl gerekir. İlk yıl içinde gönderilmiş yanıtlar da 31 Aralık'ta o hesabın arşivinden okunabilir.
 
-316 birim testi ve statik önizleme derlemesi geçti. Kontroller 2027 ve 2028'in bütün aylarını, 1 Ocak ve 2 Ocak Türkiye saati sınırlarını, eski cevapların ve görevlerin korunmasını ve eski bir formun yeni döneme yazamamasını kapsar. Tarayıcı senaryoları örnek hesaplarla çalışır. Bu sürümde veritabanı geçişi veya gerçek kullanıcılar üzerinde veri düzenleme işlemi yoktur.
+319 birim testi ve önizleme derlemesi geçti. Takvim testleri 12 ayı, artık yılları, 2100'ü, pazar-pazartesi ve yıl dönümlerini, taslakları, eski kilitleri, hesap değişimini ve etkinlik olmamasını kapsar. Diğer senaryolar 2000 karakterlik günlüğü, kayıt formunu, e-posta kodunu, menünün sayfa sonundaki davranışını ve uzun metinleri kontrol eder. Tarayıcı senaryolarında örnek hesaplar ve taklit kimlik/e-posta yanıtları kullanılır. Bu değişiklik için veri tabanı geçişi yapılmadı.

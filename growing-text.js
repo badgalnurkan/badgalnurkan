@@ -4,11 +4,16 @@ function fitTextField(field) {
   if (!field.clientWidth) return;
   field.style.height = 'auto';
   const border = field.offsetHeight - field.clientHeight;
-  field.style.height = (field.scrollHeight + border) + 'px';
+  field.style.height = (field.scrollHeight + border + 1) + 'px';
 }
 
 function fitTextFields(root = document) {
-  root.querySelectorAll('textarea').forEach(fitTextField);
+  const fields = root.querySelectorAll('textarea');
+  fields.forEach(fitTextField);
+  // Dialogs and responsive rows can acquire their final width on the next layout.
+  if (fields.length) requestAnimationFrame(() => {
+    fields.forEach(field => { if (field.isConnected) fitTextField(field); });
+  });
 }
 
 document.addEventListener('input', event => {

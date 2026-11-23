@@ -22,7 +22,7 @@ function fixture(){
  const f=context.f;
  const render=(kind='week',key=kind==='week'?'2026-11-23':'2026-11',next=kind==='week'?'2026-11-30':'2026-12')=>{
   const period=context.calendarReportPeriod(kind,key.length===7?key+'-01':key);
-  context.current=kind==='month'?period.nk+'-01':period.b;
+  context.current=period.b;
   return context.periodReportForm(kind,key,next);
  };
  return {context,f,render};
@@ -116,7 +116,7 @@ test('year-end answer archive translates both groups and respects existing locks
  context.A.planningQs['2026-11']=[{q:f.plans.month[0],qid:'plan.month:0',a:'Private plan'}];
  context.A.ql['2026-11']=1;
  assert.equal(f.reportDetailView().includes('Private plan'),false);
- context.current='2027-01-01';context.DB.lang='tr';const archive=f.reportDetailView();
+ context.current='2026-12-31';context.DB.lang='tr';const archive=f.reportDetailView();
  assert.ok(archive.includes(f.reportQuestionText(context.A.qs['2026-11'][0],'tr')));
  assert.ok(archive.includes(f.banks['plan.month'].tr[0]));
  assert.ok(archive.includes('Private review'));assert.ok(archive.includes('Private plan'));
@@ -141,9 +141,9 @@ test('incomplete and whitespace-only answers never lock other groups',()=>{
  context.A.planningQs[next][3].a='Answer';assert.equal(f.submitPeriodReport('month',key),true);
  assert.doesNotMatch(render('month'),/<textarea|report-send/);
 });
-test('future plans unlock after their own year; partial reviews do not leak into their archive entry',()=>{
+test('submitting in December archives its next-period plan without publishing next year’s review draft',()=>{
  const {context,f,render}=fixture();render('month','2026-12','2027-01');context.A.planningQs['2027-01'].forEach(q=>q.a='Private future plan');for(const rows of [context.A.qs['2026-12'],context.A.planningQs['2026-12']])rows.forEach(q=>q.a='Done');assert.equal(f.submitPeriodReport('month','2026-12'),true);context.A.qs['2027-01']=[{q:'Partial review',a:'Keep draft private'}];
- context.current='2027-12-31';assert.equal(f.reportDetailView().includes('Private future plan'),false);context.current='2028-01-01';const result=f.reportDetailView();assert.ok(result.includes('Private future plan'));assert.equal(result.includes('Keep draft private'),false);
+ context.current='2027-01-01';assert.equal(f.reportDetailView().includes('Private future plan'),false);context.current='2026-12-31';const result=f.reportDetailView();assert.ok(result.includes('Private future plan'));assert.equal(result.includes('Keep draft private'),false);
 });
 
 test('planning wording follows the target period across rollover without modifying stored questions',()=>{

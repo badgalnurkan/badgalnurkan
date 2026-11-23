@@ -17,6 +17,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await require('./turnstile-provider.browser.cjs')(browser);
    await verifyRecovery(browser,engine);
    await verifyLoginEmail(browser,engine);
+   await require('./signup-fields.browser.cjs')(browser,engine);
    await verifyGrowingText(browser,engine);
    if(engine==='firefox'){await browser.close();continue}
    for(const width of [320,375,390,430,768,1440]){
@@ -173,14 +174,14 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
         const bar=document.querySelector('.shell .nav-shell'),aside=document.getElementById('nav-aside');
         const box=aside.getBoundingClientRect(),dock=bar.getBoundingClientRect();
         return {position:getComputedStyle(bar).position,
-          tabs:aside.querySelectorAll('a[data-k]').length,
+          tabs:aside.querySelectorAll('a[data-k]').length,labels:[...aside.querySelectorAll('.nav-label-mobile')].filter(el=>getComputedStyle(el).display!=='none').length,
           pencilAbsent:!document.getElementById('mobile-quick-task'),
           left:box.left,right:box.right,bottom:dock.bottom,
           screenWidth:innerWidth,screenHeight:innerHeight,
           overflow:document.documentElement.scrollWidth-innerWidth};
       });
       assert.equal(layout.position,'fixed',engine+' dock position '+width);
-      assert.equal(layout.tabs,6,engine+' all six original sections '+width);
+      assert.equal(layout.tabs,6,engine+' all six original sections '+width);assert.equal(layout.labels,6,engine+' labels are visible when expanded '+width);
       assert.equal(layout.pencilAbsent,true,engine+' no unrequested pencil '+width);
       assert.ok(layout.left>=0&&layout.right<=width+1,engine+' dock horizontally contained '+width);
       assert.ok(layout.bottom<=layout.screenHeight+1,engine+' dock vertically contained '+width);
@@ -318,47 +319,37 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const changeDay=async value=>{
     await productivity.evaluate(date=>{const url=new URL(location.href);url.searchParams.set('date',date);history.replaceState(history.state,'',url);updateIstanbulClock()},value);
    };
+   const weekly=productivity.locator('.period-questionnaire[data-period="2026-11-23"]');
+   for(const field of await weekly.locator('textarea').all())await field.fill('Haftalık yanıtım');
+   await weekly.locator('textarea').last().press('Tab');await weekly.waitFor({state:'detached'});
+   assert.equal(await productivity.evaluate(()=>A.ql['2026-11-23']),1);
    await changeDay('2026-11-30');
-   assert.equal(await productivity.locator('.period-questionnaire').count(),0,'Monday closes weekly reports');
-   await changeDay('2026-12-01');
-   await productivity.locator('#report-group-plan-2026-12').waitFor();
-   assert.equal(await productivity.locator('#report-group-plan-2026-11-23').count(),0,engine+' weekly form closed');
-   const monthly=productivity.locator('.period-questionnaire');
+   const monthly=productivity.locator('.period-questionnaire[data-period="2026-11"]');
+   await monthly.waitFor();assert.equal(await weekly.count(),0,'Monday closes weekly reports');
    await monthly.locator('.report-send').click();
-   assert.ok(await monthly.locator('textarea').count()>0,engine+' incomplete report remains editable');
-   const review=monthly.locator('textarea').first(),longAnswer='Kasım yanıtım\n'.repeat(18);
-   await review.fill(longAnswer);
-   assert.ok(await review.evaluate(el=>el.clientHeight>=el.scrollHeight-1),engine+' long report answer fits');
-   await changeDay('2026-12-02');
-   assert.equal(await review.inputValue(),longAnswer,engine+' open monthly draft survives the first midnight');
-   await changeDay('2026-12-31');
-   assert.equal(await review.inputValue(),longAnswer,engine+' unfinished report stays open through the last day');
-   const answers=monthly.locator('textarea');
-   for(const field of await answers.all())await field.fill('Kasım yanıtım');
-   assert.ok(await answers.last().isVisible(),'the last answer remains editable while typing');
-   await answers.last().press('Tab');
-   await productivity.locator('.report-submitted').waitFor();
-   assert.equal(await productivity.locator('.report-planning-overview textarea').count(),0);
-   assert.equal(await productivity.locator('.report-submitted time').getAttribute('datetime'),'2027-01-01');
-   await productivity.evaluate(()=>showReportDetail('month'));
-   assert.equal(await productivity.locator('textarea[id^="report-"]').count(),0);
-   await productivity.evaluate(()=>{reportBack();A.hist['2026-12-30']=[{t:'December task',done:true}];A.hist['2025-12-31']=[{t:'Older task',done:true}]});
-   await changeDay('2027-01-01');
-   assert.equal(await monthly.getAttribute('data-period'),'2026-12');
+   assert.ok(await monthly.locator('textarea').count()>0,engine+' incomplete report stays editable');
+   const longAnswer='Kasım yanıtım\n'.repeat(18),review=monthly.locator('textarea').first();
+   await review.fill(longAnswer);assert.ok(await review.evaluate(el=>el.clientHeight>=el.scrollHeight-1),engine+' long report answer fits');
+   const fields=monthly.locator('textarea');
+   for(const field of await fields.all())await field.fill('Kasım yanıtım');
+   await fields.last().press('Tab');await monthly.waitFor({state:'detached'});
+   assert.equal(await productivity.locator('.report-submitted time').getAttribute('datetime'),'2026-12-31');
+   await changeDay('2026-12-01');assert.equal(await productivity.locator('.period-questionnaire').count(),0);
+   await productivity.evaluate(()=>{A.hist['2026-12-30']=[{t:'December task',done:true}];A.hist['2025-12-31']=[{t:'Older task',done:true}]});
+   await changeDay('2026-12-31');await productivity.locator('.period-questionnaire[data-period="2026-12"]').waitFor();
+   await productivity.evaluate(()=>showReportDetail('answers'));await productivity.getByText('Haftalık yanıtım',{exact:true}).first().waitFor();
    await productivity.evaluate(()=>showReportDetail('summary'));
    await productivity.locator('button[onclick*="2026-12-30"]').waitFor();
    assert.equal(await productivity.locator('button[onclick*="2025-12-31"]').count(),0);
    await productivity.locator('button[onclick*="2026-12-30"]').click();
    await productivity.locator('#day-modal [data-annual-tasks]').waitFor();
    await productivity.locator('#day-modal #dn').fill('Takvim notu taslağım');
-   await changeDay('2027-01-02');
-   assert.equal(await productivity.locator('#day-modal [data-annual-tasks]').count(),0,engine+' the open annual drill-down locks too');
+   await changeDay('2027-01-01');
+   assert.equal(await productivity.locator('#day-modal [data-annual-tasks]').count(),0,engine+' annual detail locks at midnight');
    assert.equal(await productivity.locator('#day-modal #dn').inputValue(),'Takvim notu taslağım',engine+' independent note draft is retained');
    await productivity.evaluate(()=>closeModal('day-modal'));await productivity.locator('#day-modal').waitFor({state:'detached'});
-   assert.equal(await productivity.locator('button[onclick*="2026-12-30"]').count(),0,engine+' open annual detail locks at midnight');
-   assert.equal(await productivity.locator('time[datetime="2028-01-01"]').count(),1);
-   await productivity.evaluate(()=>showReportDetail('month-previous'));
-   assert.equal(await productivity.locator('textarea[id^="report-"]').count(),0,engine+' previous month stays read-only');
+   assert.equal(await productivity.locator('time[datetime="2027-12-31"]').count(),1);
+   await productivity.evaluate(()=>showReportDetail('month-previous'));assert.equal(await productivity.locator('.period-questionnaire').count(),0);
    await productivity.goto('http://127.0.0.1:4173/review-app.html?page=pomo&lang=en&date=2026-11-18');
    await productivity.evaluate(()=>{A.focusHistory=Array.from({length:6},(_,i)=>({at:new Date(2026,i===5?9:10,i===5?31:18-i,12).getTime(),seconds:(i+1)*60,completed:true}));P.pomo()});
    const analysis=productivity.locator('.focus-history'),more=analysis.locator('summary'),dateRows=analysis.locator('.focus-day:visible');

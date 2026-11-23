@@ -7,8 +7,11 @@ module.exports=async function verifyGrowingText(browser,engine){
   page.on('pageerror',error=>errors.push(error.message));
   // Every account interaction in this scenario is confined to the isolated preview.
   await page.route(/^https?:\/\/(?!127\.0\.0\.1:4173(?:\/|$))/,route=>route.abort());
-  const fits=async field=>assert.ok(await field.evaluate(el=>
-    el.clientHeight>=el.scrollHeight-1&&el.clientWidth>=el.scrollWidth-1),engine+' text should fit '+await field.getAttribute('id'));
+  const fits=async field=>{
+    await field.evaluate(()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done))));
+    const size=await field.evaluate(el=>({id:el.id,h:el.clientHeight,sh:el.scrollHeight,w:el.clientWidth,sw:el.scrollWidth}));
+    assert.ok(size.h>=size.sh-1&&size.w>=size.sw-1,engine+' '+JSON.stringify(size));
+  };
   const write=async(field,value)=>{
     await field.fill('');
     const initial=await field.evaluate(el=>el.clientHeight);
@@ -62,6 +65,7 @@ module.exports=async function verifyGrowingText(browser,engine){
       await write(page.locator('#fn-text'),note);
       await page.locator('#fnd').fill(await page.evaluate(()=>addD(today(),3)));
       await page.locator('.future-note-compose button').click();
+      assert.equal(await page.locator('#day-modal .day-task').count(),0);assert.equal(await page.locator('#day-modal').getByText('Kayıt yok',{exact:true}).count(),0);
       await fits(page.locator('#dn'));assert.equal(await page.locator('#dn').inputValue(),note);
       await page.evaluate(()=>closeModal('day-modal'));await page.locator('#day-modal').waitFor({state:'detached'});
       await page.evaluate(()=>openProfile());await write(page.locator('#prof-b'),'Benim\nhakkımda\nuzun\nbir\naçıklama');
