@@ -252,4 +252,6 @@ Browser tests use synthetic account and mail responses. A real three-account ses
 
 
 ## Refresh email reentry follow-up
-A newly authenticated session now reuses an earlier same-account session only after the server quick-resume RPC approves its original email-proof deadline. Cache timestamps alone never authorize reuse. Explicit logout/forget removes the cached proof. Node and cross-browser checks pending.
+A newly authenticated session now reuses an earlier same-account session only after the server quick-resume RPC approves its original email-proof deadline. Cache timestamps alone never authorize reuse. Explicit logout/forget removes the cached proof. 310 Node checks passed. Final-head Chromium, WebKit and Firefox regression checks passed, including email proof, page reload, a new same-account authentication result, and no increase in mail requests. Provider/Auth responses in these browser checks are synthetic. Server permission and original one-hour deadline remain authoritative; no database or Edge changes in this follow-up.
+
+PR #60 merged as 3ada04cde1aac7bbd0be343f0bc18bb6ad83e9ac; production deployment dpl_H7ynwSHsZe96KAK6owz6FyPy2phf READY. The user's exact browser session was not operated.
