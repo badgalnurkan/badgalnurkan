@@ -2488,8 +2488,9 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-23-report-windows-quick-switch-01';
+const SITE_RELEASE='2026-11-23-refresh-email-reentry-02';
 const SITE_CHANGES=[
+ {date:'2026-11-23',trTitle:'Yenileme sonrası giriş düzeltmesi',enTitle:'Sign-in after refresh',items:[['Bir saat içindeki yeniden girişte aynı hesaba ait doğrulanmış oturum sunucudan kontrol edilerek yeniden kullanılır.','Reentry within one hour reuses the same account’s verified session after server validation.']]},
   {date:'2026-11-23',trTitle:'Rapor takvimi ve hızlı geçiş',enTitle:'Report calendar and quick switch',items:[
   ['Görev yazma alanları metinle birlikte büyür.','Task editors grow as you type.'],
   ['Haftalık rapor pazar, önceki ayın raporu ayın 1’i, yıllık özet 1 Ocak günü açılır; uygun dönem ve etkinlik kaydı gerekir.','Weekly reports open Sunday, previous-month reports on the first, and annual summaries on January 1; a full period with activity is required.'],
@@ -3002,6 +3003,7 @@ function goExistingEmail(email){
   softPaint();
 }
 async function activateCloudUser(j,preferredName='',method='password',options={}){
+  if(window.IYQuickSession)j=await IYQuickSession.reuseVerified(j);
   const uid=j&&j.user&&j.user.id;
   if(!uid||!j.access_token)throw new Error('Missing authenticated session');
   sbSave({access_token:j.access_token,refresh_token:j.refresh_token,user:j.user,at:Date.now()});

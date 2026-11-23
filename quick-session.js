@@ -14,6 +14,21 @@ window.IYQuickSession=(()=>{
  function update(session){const records=read(),entry=records[session?.user?.id];if(entry&&sid(entry.session)===sid(session)){entry.session=session;write(records)}}
  function forget(uid){const records=read();delete records[uid];write(records)}
  function has(uid){return !!read()[uid]?.session?.access_token}
+ async function reuseVerified(candidate){
+  const uid=candidate?.user?.id,entry=uid?read()[uid]:null;
+  const current=typeof sbSession==='function'?sbSession():null;
+  const previous=entry?.expiresAt>Date.now()?entry.session:current?.user?.id===uid?current:null;
+  if(!uid||previous?.user?.id!==uid||!previous?.access_token||!sid(previous)||sid(previous)===sid(candidate))return candidate;
+  try{
+   const response=await fetch(SUPABASE_URL+'/rest/v1/rpc/iydu_quick_resume_status',{
+    method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+previous.access_token,'Content-Type':'application/json'},
+    body:'{}',signal:AbortSignal.timeout(10000),cache:'no-store'
+   });
+   const result=await response.json();
+   if(response.ok&&result?.allowed===true)return previous;
+  }catch{}
+  return candidate;
+ }
  async function resume(name){
   const account=DB.accounts?.[name],entry=account?.authUid?read()[account.authUid]:null;
   if(!entry)return false;
@@ -34,5 +49,5 @@ window.IYQuickSession=(()=>{
    forget(account.authUid);sbClear();A=null;loginDat={u:account.email||account.u,p:''};view='login';msg=tr()?'Hızlı geçiş tamamlanamadı. Yeniden giriş yap.':'Quick switch could not complete. Sign in again.';renderAppOrAuth();return true;
   }finally{busy=false}
  }
- return {remember,update,forget,has,resume};
+ return {remember,update,forget,has,resume,reuseVerified};
 })();
