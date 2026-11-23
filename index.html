@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#f6eee3">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Fraunces:wght@500;600;700&family=Homemade+Apple&family=Libre+Baskerville:wght@400;700&family=Patrick+Hand&family=Nunito:wght@400;600;700&family=UnifrakturCook:wght@700&display=swap">
 <style>
+.task-compose{resize:none;overflow:hidden;min-height:2.9rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.row>.task-compose{flex:1 1 12rem;min-width:0;width:auto}.tomorrow-plan-add>.task-compose{min-width:0}
 :root{--bg:#FFFAFA;--card:#ffffff;--ink:#542A0C;--mut:#835C3B;--acc:#800000;--acc2:#FDD7E4;--ok:#387C44;--no:#C71585;--ln:#ebd8d4;--sh:0 12px 32px #542A0C13;--on-acc:#fff;--okbg:#eaf4ed;--fs:'Fraunces',Georgia,'Times New Roman',serif;--okbg:#e6f1e6}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px);font-size:clamp(16px,.35vw + 11px,24px);overflow-y:scroll}
@@ -1711,6 +1712,7 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 <script src="/recovery-browser.js"></script>
 <script src="/browser-verification.js"></script>
 <script src="/turnstile-auth.js"></script>
+<script src="/quick-session.js"></script>
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
@@ -2046,12 +2048,12 @@ const LETTERS='a-zA-ZçÇğĞıİöÖşŞüÜ';
 // Usernames: letters, digits, underscore, dot and hyphen. Keep quotes and @ out of inline handlers and email detection.
 const USERNAME_ALLOWED='a-zA-Z0-9çÇğĞıİöÖşŞüÜ_.-';
 const userRe=new RegExp('^['+USERNAME_ALLOWED+']{3,20}$');
-function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today(),reportCalendarRule:'full-period-v1',progressPolicy:'activity-7d-v1'})}
+function newAcc(u,n,b,pw,em,ph){return norm({u,nick:n,bio:b,pw,email:em,phone:ph,theme:sysTheme(),reportStart:today(),reportJoinedAt:new Date().toISOString(),reportCalendarRule:'full-period-v1',progressPolicy:'activity-7d-v1'})}
 function bindReportCalendar(account,user,newProfile=false){
   const created=Date.parse(user?.created_at||'');
   if(!Number.isFinite(created))return;
   const date=istanbulDayKey(new Date(created));
-  if(newProfile||!account.reportStart||date<account.reportStart)account.reportStart=date;
+  account.reportStart=date;account.reportJoinedAt=new Date(created).toISOString();
   // The full-period rule first shipped in PR 8. Earlier profiles keep their legacy schedule.
   const release=Date.parse('2026-11-15T01:16:11Z');
   if(created<release&&account.reportCalendarRule==='full-period-v1')delete account.reportCalendarRule;
@@ -2486,8 +2488,13 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-22-turnstile-auth-01';
+const SITE_RELEASE='2026-11-23-report-windows-quick-switch-01';
 const SITE_CHANGES=[
+  {date:'2026-11-23',trTitle:'Rapor takvimi ve hızlı geçiş',enTitle:'Report calendar and quick switch',items:[
+  ['Görev yazma alanları metinle birlikte büyür.','Task editors grow as you type.'],
+  ['Haftalık rapor pazar, önceki ayın raporu ayın 1’i, yıllık özet 1 Ocak günü açılır; uygun dönem ve etkinlik kaydı gerekir.','Weekly reports open Sunday, previous-month reports on the first, and annual summaries on January 1; a full period with activity is required.'],
+  ['E-posta doğrulaması aynı sekmede hesap başına bir saatlik hızlı geçiş sağlar.','Email verification enables one hour of quick switching per account in the same tab.'],
+  ['Süresi dolan hatırlatmalar ve geleceğe bırakılan notlar kaldırılır; projeler ve günlükler korunur.','Expired reminders and future notes are removed; projects and journals are preserved.']]},
   {date:'2026-11-22',trTitle:'Cloudflare robot kontrolü',enTitle:'Cloudflare security verification',items:[
   ['E-posta ve şifreyle giriş, kayıt, şifre sıfırlama ve yeniden kod isteme ekranlarına Turnstile kontrolü eklendi.','Turnstile verification added to password sign-in, signup, password reset and code resend.'],
   ['Giriş sonrası e-posta kodu doğrulaması korunur.','Email code verification after sign-in is preserved.']]},
@@ -2721,6 +2728,21 @@ function projectReminderTime(project){
  if(project.reminderEnabled===false)return NaN;
  return Date.parse(project.reminderAt||(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(project.d)?project.d+'T09:00:00+03:00':''));
 }
+function expireTimedRecords(now=Date.now()){
+ if(!A)return false;
+ let changed=false;const day=istanbulDayKey(new Date(now));
+ for(const [key,value] of Object.entries(A.future||{})){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(key))continue;
+  const meta=A.futureMeta?.[key]||{},created=Number(meta.createdAt),wasFuture=meta.expireAfterDay===key||(Number.isFinite(created)&&created>0&&istanbulDayKey(new Date(created))<key);
+  if(key<day&&wasFuture){delete A.future[key];if(A.futureMeta)delete A.futureMeta[key];changed=true}
+  else if(key>=day&&meta.expireAfterDay!==key){(A.futureMeta||={})[key]={...meta,expireAfterDay:key};changed=true}
+ }
+ for(const project of A.projects||[]){
+  const due=projectReminderTime(project);
+  if(Number.isFinite(due)&&due<=now){project.reminderEnabled=false;delete project.reminderAt;changed=true}
+ }
+ if(changed)save();return changed;
+}
 function checkAppReminders(now=Date.now()){
  if(!A||view!=='app'||document.visibilityState!=='visible')return;
  const owner=ensureNoticeState();ensureReleaseNotification();
@@ -2730,6 +2752,7 @@ function checkAppReminders(now=Date.now()){
    addNotification('project:'+projectId(project)+':'+due,'project',{name:project.n});
   }
  }
+ const expired=expireTimedRecords(now);if(expired&&['home','pc'].includes(pg))renderPage();
  if(owner.notificationPrefs.tasks!==false){
   const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Istanbul',hour:'2-digit',hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(now));
   const get=type=>parts.find(p=>p.type===type).value,hour=Number(get('hour')),slot=[9,14,19].filter(h=>hour>=h).pop();
@@ -2758,6 +2781,7 @@ let rememberedSignInBusy=false;
 async function continueWithRememberedGoogle(username=DB.lastUser){
  if(rememberedSignInBusy||welcomeEntryBusy)return;
  const account=rememberedGoogleAccount(username);if(!account){continueFromWelcome();return}
+ if(window.IYQuickSession&&await IYQuickSession.resume(username))return;
  rememberedSignInBusy=true;welcomeEntryBusy=true;
  const button=document.getElementById('welcome-continue');if(button){button.disabled=true;button.setAttribute('aria-busy','true')}
  try{
@@ -2772,7 +2796,7 @@ function manualSignInButton(remembered){
 function welcomeScreen(){
  const remembered=rememberedGoogleAccount(),email=remembered?.email||remembered?.mail||'';
  return `<div class="welcome-screen welcome-refresh"><div class="welcome-top"><div class="brand-badge">badgalnurkan<span>made with a little intention.</span></div><div class="welcome-preferences"><div class="langbar">${langBtns(true)}</div><div id="theme-anchor">${themePick(true,false)}</div>${notificationButton()}</div></div>
- <div class="welcome-hero"><div class="welcome-copy"><p class="welcome-eyebrow">${welcomeDisplayName()}</p><h1>Improvin’<br><em>your day.</em></h1><p class="welcome-lead">${tr()?'Her gün, kendin için küçük bir adım.':'A little step for yourself, every day.'}</p><p class="welcome-description">${tr()?'Gününü planla. Odaklanmak için alan aç. Küçük ilerlemelerinin birikmesini izle.':'Plan your day. Make room to focus. Watch your small steps add up.'}</p><div class="welcome-cta"><button id="welcome-continue" ${rememberedSignInBusy?'disabled aria-busy="true"':''} aria-describedby="welcome-signin-hint" onclick="${remembered?'continueWithRememberedGoogle()':'continueFromWelcome()'}">${remembered?(tr()?esc(email)+' ile devam et':'Continue with '+esc(email)):(tr()?'Devam':'Continue')} <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path d="M5 19 19 5M6 5h13v13" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button>${manualSignInButton(remembered)}<button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><p id="welcome-signin-hint" class="welcome-footnote">${remembered?(tr()?'Hızlı dönüş, son Google girişinden itibaren 30 dakika geçerlidir. Sonrasında Google hesap seçimi yeniden açılır.':'Quick return is available for 30 minutes after Google sign-in. After that, Google account selection opens again.'):(tr()?'Kendi ritminde, her gün biraz daha.':'At your own pace, a little more each day.')}</p></div>
+ <div class="welcome-hero"><div class="welcome-copy"><p class="welcome-eyebrow">${welcomeDisplayName()}</p><h1>Improvin’<br><em>your day.</em></h1><p class="welcome-lead">${tr()?'Her gün, kendin için küçük bir adım.':'A little step for yourself, every day.'}</p><p class="welcome-description">${tr()?'Gününü planla. Odaklanmak için alan aç. Küçük ilerlemelerinin birikmesini izle.':'Plan your day. Make room to focus. Watch your small steps add up.'}</p><div class="welcome-cta"><button id="welcome-continue" ${rememberedSignInBusy?'disabled aria-busy="true"':''} aria-describedby="welcome-signin-hint" onclick="${remembered?'continueWithRememberedGoogle()':'continueFromWelcome()'}">${remembered?(tr()?esc(email)+' ile devam et':'Continue with '+esc(email)):(tr()?'Devam':'Continue')} <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path d="M5 19 19 5M6 5h13v13" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button>${manualSignInButton(remembered)}<button class="g" onclick="openGuideModal()">${t('howItWorks')}</button></div><p id="welcome-signin-hint" class="welcome-footnote">${remembered?(tr()?'Hızlı dönüş, son e-posta doğrulamasından itibaren 1 saat geçerlidir. Sonrasında yeniden e-posta kodu istenir.':'Quick return is available for one hour after email verification. After that, a new email code is required.'):(tr()?'Kendi ritminde, her gün biraz daha.':'At your own pace, a little more each day.')}</p></div>
  <div class="welcome-art" aria-hidden="true"><span class="orbit-label orbit-top">${tr()?'KÜÇÜK ADIMLAR':'SMALL STEPS'}</span><div class="day-orbit"><span class="orbit-point"></span><div class="day-disc"><span>${tr()?'bugün':'today'}</span><strong>${tr()?'sana<br>ait.':'is<br>yours.'}</strong><span class="day-spark">✳︎</span></div></div><div class="welcome-ritual"><span>01 ${tr()?'Planla':'Plan'}</span><span>02 ${tr()?'Odaklan':'Focus'}</span><span>03 ${tr()?'İlerle':'Grow'}</span></div><span class="orbit-label orbit-bottom">${tr()?'BİR GÜN, BİR ADIM.':'ONE DAY, ONE STEP.'}</span></div></div>
  <div class="welcome-footer-bar"><div>© 2026 nurkancanbulat</div><a class="welcome-contact" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=nurkancanbulat89%40gmail.com" target="_blank" rel="noopener noreferrer">${t('contact')} ↗</a><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">TikTok</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">Instagram</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">X</a></div></div></div>`;
 }
@@ -2886,7 +2910,7 @@ function openModal(id,html){
   d.addEventListener('click',e=>{if(e.target===d)closeModal(id)});
   const title=d.querySelector('h2');if(title){title.id=id+'-title';d.setAttribute('aria-labelledby',title.id)}
   d.tabIndex=-1;d.addEventListener('keydown',event=>{if(event.key!=='Tab')return;const controls=[...d.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),textarea:not([readonly]),select,summary,[tabindex="0"]')].filter(el=>el.getClientRects().length),first=controls[0],last=controls[controls.length-1];if(!first){event.preventDefault();d.focus();return}if(event.shiftKey&&(document.activeElement===first||!d.contains(document.activeElement))){event.preventDefault();last.focus()}else if(!event.shiftKey&&(document.activeElement===last||!d.contains(document.activeElement))){event.preventDefault();first.focus()}});
-  document.body.appendChild(d);requestAnimationFrame(()=>{if(d.isConnected)(d.querySelector('button:not([disabled]),input:not([disabled])')||d).focus({preventScroll:true})});
+  document.body.appendChild(d);resizeTaskInputs(d);requestAnimationFrame(()=>{if(d.isConnected)(d.querySelector('button:not([disabled]),input:not([disabled])')||d).focus({preventScroll:true})});
 }
 function closeModal(id){
   const el=document.getElementById(id);
@@ -2913,7 +2937,7 @@ function rememberedUser(){
   const byNick=list.find(k=>DB.accounts[k].nick===DB.last);
   return byNick||list[0];
 }
-function useAccount(u){loginDat={u,p:''};view='login';msg='';renderAppOrAuth();const pe=$('#p');if(pe)pe.focus()}
+async function useAccount(u){if(window.IYQuickSession&&await IYQuickSession.resume(u))return;loginDat={u,p:''};view='login';msg='';renderAppOrAuth();const pe=$('#p');if(pe)pe.focus()}
 let skipRem=false;
 function otherUser(){
   /* "not you?": hatirlanan hesabi gizle, bos giris formu goster */
@@ -3574,10 +3598,15 @@ function renderPage(){
   }
 }
 
-setInterval(()=>{if(A&&A.day!==today())shell()},60000);
+let reportRenderedDay='';
+setInterval(()=>{if(A&&A.day!==today())shell();if(A&&view==='app'&&pg==='rep'&&reportRenderedDay!==istanbulDayKey())P.rep()},1000);
 
-const P={};const M=h=>{const main=$('#mn');if(main){main.innerHTML=h;if(!main.classList.contains('an'))motionReveal(main)}};
+function resizeTaskInput(el){if(!el)return;el.style.height='auto';const border=el.offsetHeight-el.clientHeight;el.style.height=(el.scrollHeight+Math.max(0,border))+'px'}
+function resizeTaskInputs(root){root.querySelectorAll('.task-compose').forEach(resizeTaskInput)}
+window.addEventListener('resize',()=>resizeTaskInputs(document));
+const P={};const M=h=>{const main=$('#mn');if(main){main.innerHTML=h;resizeTaskInputs(main);if(!main.classList.contains('an'))motionReveal(main)}};
 P.home=()=>{
+  expireTimedRecords();
   const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length;
   const j=A.journal?.[today()]?.text||'';
   const pr=(A.projects||[]).map((p,i)=>{
@@ -3671,8 +3700,8 @@ P.todo=()=>{
     ?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.')
     :t('addTask');
   const todayTasksMarkup=renderedTodayTasks||`<p class="mut">${esc(emptyTodayText)}</p>`;
-  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><input id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'){event.preventDefault();addT()}"><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
-  <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><input id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'){event.preventDefault();addTomorrowPlan()}"><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" oninput="resizeTaskInput(this)" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
+  <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><textarea rows="1" class="task-compose" oninput="resizeTaskInput(this)" id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addTomorrowPlan()}"></textarea><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
 function vibrateTask(){try{if(navigator.vibrate)navigator.vibrate(12)}catch(_){}}
@@ -3808,7 +3837,7 @@ function finishTaskReorder(event){
 function editTask(index){
   const task=A?.tasks?.[index];if(!task)return;
   taskEditContext={owner:A,task};
-  openModal('task-edit-modal',`<h2>${tr()?'Görevi düzenle':'Edit task'}</h2><label for="task-edit-text">${tr()?'Görev':'Task'}</label><input id="task-edit-text" maxlength="120" value="${esc(task.t)}" onkeydown="if(event.key==='Enter'){event.preventDefault();saveTaskEdit()}"><div class="row"><button onclick="saveTaskEdit()">${t('save')}</button><button class="g" onclick="closeModal('task-edit-modal')">${t('cancel')}</button></div>`);
+  openModal('task-edit-modal',`<h2>${tr()?'Görevi düzenle':'Edit task'}</h2><label for="task-edit-text">${tr()?'Görev':'Task'}</label><textarea id="task-edit-text" class="task-compose" rows="1" maxlength="120" oninput="resizeTaskInput(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveTaskEdit()}">${esc(task.t)}</textarea><div class="row"><button onclick="saveTaskEdit()">${t('save')}</button><button class="g" onclick="closeModal('task-edit-modal')">${t('cancel')}</button></div>`);
   document.getElementById('task-edit-text')?.focus();
 }
 function saveTaskEdit(){
@@ -3901,7 +3930,7 @@ function saveNote(k){
   const previous=String(A.future[k]||''),meta=A.futureMeta[k]||{},now=Date.now();
   if(v){
     A.future[k]=v;
-    A.futureMeta[k]={createdAt:meta.createdAt||now,editedAt:previous&&previous!==v?now:(meta.editedAt||null)};
+    A.futureMeta[k]={...meta,createdAt:meta.createdAt||now,editedAt:previous&&previous!==v?now:(meta.editedAt||null),...(k>istanbulDayKey()?{expireAfterDay:k}:{})};
     if(previous!==v)recordActivity();else save();
   }else{delete A.future[k];delete A.futureMeta[k];save()}
   closeModal('day-modal');toast(t('noteSaved'));if(pg==='pc')P.pc();else renderPage();
@@ -3911,6 +3940,7 @@ function futureNoteCountdown(key){
   return remaining>0?(tr()?`${remaining} gün kaldı`:`${remaining} ${remaining===1?'day':'days'} left`):remaining===0?(tr()?'Bugün':'Today'):(tr()?`${-remaining} gün önce`:`${-remaining} ${remaining===-1?'day':'days'} ago`);
 }
 P.pc=()=>{
+  expireTimedRecords();
   const n=new Date(),mn=(2026-n.getFullYear())*12+10-n.getMonth();
   if(calOff<mn)calOff=mn;
   const base=new Date(n.getFullYear(),n.getMonth()+calOff,1),y=base.getFullYear(),mo=base.getMonth(),days=new Date(y,mo+1,0).getDate();
@@ -3973,14 +4003,35 @@ function reportQuestionStore(scope='review'){
   if(!A.planningQs||typeof A.planningQs!=='object'||Array.isArray(A.planningQs))A.planningQs={};
   return A.planningQs;
 }
+function reportWindow(kind,day=istanbulDayKey()){
+ const current=calendarReportPeriod(kind,day);
+ if(kind==='week')return {period:current,opens:current.b,next:addD(current.b,7)};
+ const period=calendarReportPeriod('month',addD(current.a,-1));
+ return {period,opens:current.a,next:current.nk+'-01'};
+}
+function reportPeriodEligible(period){
+ if(!A)return false;
+ const since=reportAvailability(period.key.length===7?'month':'week').since;
+ if(period.a<since)return false;
+ const joined=Date.parse(A.reportJoinedAt||'');
+ if(Number.isFinite(joined)&&joined>Date.parse(period.a+'T00:00:00+03:00'))return false;
+ return reportHasActivity(period.a,period.b);
+}
+function reportHasActivity(a,b){
+ const inRange=day=>/^\d{4}-\d{2}-\d{2}$/.test(day)&&day>=a&&day<=b;
+ if(Object.entries(A.hist||{}).some(([day,tasks])=>inRange(day)&&Array.isArray(tasks)&&tasks.some(task=>String(task?.t||'').trim())))return true;
+ if(inRange(A.day||'')&&(A.tasks||[]).some(task=>String(task?.t||'').trim()))return true;
+ if(Object.entries(A.journal||{}).some(([day,entry])=>inRange(day)&&String(entry?.text||'').trim()))return true;
+ return (A.focusHistory||[]).some(record=>record?.completed===true&&record.seconds>0&&Number.isFinite(record.at)&&inRange(istanbulDayKey(new Date(record.at))));
+}
 function reportQuestionsOpen(kind,day=istanbulDayKey()){
- const period=calendarReportPeriod(kind,day);
- return day===period.b&&day>=reportAvailability(kind,day).unlock;
+ const window=reportWindow(kind,day);
+ return day===window.opens&&reportPeriodEligible(window.period);
 }
 function canAnswerReport(key,scope='review',day=istanbulDayKey()){
  const kind=/^\d{4}-\d{2}$/.test(key)?'month':/^\d{4}-\d{2}-\d{2}$/.test(key)?'week':null;
  if(!kind||!reportQuestionsOpen(kind,day))return false;
- const period=calendarReportPeriod(kind,day);
+ const period=reportWindow(kind,day).period;
  return key===period.key||(scope==='plan'&&key===period.nk);
 }
 function reportQuestionForPeriod(question,key,scope='review'){
@@ -4005,7 +4056,7 @@ function reportGroupLocked(scope,k){
 function submitPeriodReport(kind,key){
   const day=istanbulDayKey();
   if(!['week','month'].includes(kind)||!reportQuestionsOpen(kind,day))return false;
-  const period=calendarReportPeriod(kind,day);
+  const period=reportWindow(kind,day).period;
   if(period.key!==key)return false;
   const groups=[['review',key],['plan',key],['plan',period.nk]];
   const pending=groups.filter(([scope,k])=>!reportGroupLocked(scope,k));
@@ -4083,7 +4134,7 @@ function pendingReportCard(title,start,available){
     <p class="mut">${t('opensOn')} ${fmt(available)} — ${left} ${t('daysLeft')}</p>
     <div class="bar"><i style="width:${Math.min(100,elapsed/total*100)}%"></i></div></div>`;
 }
-function answerArchiveUnlocked(now,periodKey){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}(?:-\d{2})?$/.test(String(periodKey))&&Number(now.slice(0,4))>Number(periodKey.slice(0,4))}
+function answerArchiveUnlocked(now,periodKey){return now.slice(5)==='01-01'&& /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}(?:-\d{2})?$/.test(String(periodKey))&&Number(now.slice(0,4))>Number(periodKey.slice(0,4))}
 function repCard(title,per,a,b,pa,pb,key,nk,defs){
   const td=istanbulDayKey();
   if(!reportPeriodEnded(td,b)){
@@ -4154,6 +4205,7 @@ function reportDetailView(){
     return header+`<div class="card"><div class="journal-grid">${entries.map(([k,v])=>`<article class="note-tile"><b>${journalEntryStamp(v)}</b><p>${esc(v.text||'')}</p><button class="g s" onclick="openJournalEntry('${k}')">${tr()?'Görüntüle / düzenle':'View / edit'}</button></article>`).join('')||`<p class="mut">${tr()?'Henüz günlük yok.':'No journal entries yet.'}</p>`}</div></div>`;
   }
   if(reportDetail==='answers'){
+    if(!annualReportOpen())return header+annualReportCard();
     const keys=[...new Set([...Object.keys(A.ql||{}),...Object.keys(A.planningLocks||{})])].filter(k=>/^\d{4}-(\d{2}(-\d{2})?)$/.test(k)).sort().reverse();
     const rows=keys.filter(k=>A.ql?.[k]||A.planningLocks?.[k]).map(k=>{
       const year=Number(k.slice(0,4)),locked=!answerArchiveUnlocked(istanbulDayKey(),k),qs=A.ql?.[k]&&Array.isArray(A.qs[k])?A.qs[k]:[];
@@ -4163,6 +4215,7 @@ function reportDetailView(){
     });
     return header+`<div class="card"><div class="note-grid">${rows.join('')||`<p class="mut">${tr()?'Henüz kilitli yanıt bulunmuyor.':'No locked answers yet.'}</p>`}</div></div>`;
   }
+  if(!annualReportOpen())return header+annualReportCard();
   const byDay=Object.keys(A.hist||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&Array.isArray(A.hist[k])).sort().reverse();
   const groups=new Map();for(const day of byDay){const month=day.slice(0,7);if(!groups.has(month))groups.set(month,[]);groups.get(month).push(day)}
   const cards=[...groups].map(([month,days])=>{
@@ -4172,10 +4225,13 @@ function reportDetailView(){
   return header+`<div class="card"><button class="g s" onclick="showReportDetail('answers')">${tr()?'🔒 Yıl sonu yanıt arşivi':'🔒 Year-end answer archive'}</button><p class="mut">${tr()?'Yanıtlar kilitlendikten sonra yıl bitene kadar gizli kalır.':'Locked answers stay hidden until the year ends.'}</p></div>${cards||`<div class="card"><p class="mut">${tr()?'Henüz geçmiş kayıt yok.':'No past records yet.'}</p></div>`}`;
 }
 function reportAvailability(kind,td=today()){
- const full=A?.reportCalendarRule==='full-period-v1';
  const dates=[A?.reportStart,A?.pctFrom].filter(v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v)));
- const since=full?(dates[0]||td):(dates.sort()[0]||td);
- return {since,unlock:reportInitialUnlockDate(kind,since,full)};
+ const since=dates[0]||td;
+ let start=calendarReportPeriod(kind,since).a;
+ const joined=Date.parse(A?.reportJoinedAt||'');
+ if(start<since||(Number.isFinite(joined)&&joined>Date.parse(start+'T00:00:00+03:00')))start=kind==='week'?addD(start,7):calendarReportPeriod('month',start).nk+'-01';
+ const full=calendarReportPeriod(kind,start);
+ return {since,unlock:kind==='week'?full.b:full.nk+'-01'};
 }
 function calendarReportPeriod(kind,day){
  if(kind==='week'){const a=mon(day);return{a,b:addD(a,6),pa:addD(a,-7),pb:addD(a,-1),key:a,nk:addD(a,7)}}
@@ -4183,12 +4239,15 @@ function calendarReportPeriod(kind,day){
  throw new RangeError('Invalid report period');
 }
 function reportSummaryCard(kind,lastCompleted){
- const td=istanbulDayKey(),current=calendarReportPeriod(kind,td),{since,unlock}=reportAvailability(kind,td),title=t(kind==='week'?'weeklyReport':'monthlyReport');
- const prior=current.pb>=unlock?`<button class="g report-previous" onclick="showReportDetail('${kind}-previous')">${tr()?(kind==='week'?'Önceki hafta raporu':'Önceki ay raporu'):(kind==='week'?'Previous week report':'Previous month report')} <small>${fmt(current.pa)} – ${fmt(current.pb)}</small> →</button>`:'';
- const opens=unlock>current.b?unlock:current.b;
- if(td<opens)return `<section class="report-period-block">${pendingReportCard(title,opens>current.b?since:current.a,opens)}${prior}</section>`;
- const summary=st(current.a,current.b),previous=st(current.pa,current.pb),change=summary.p-previous.p;
- return `<section class="card report-summary"><div class="row report-heading"><div><p class="report-kicker">${tr()?'DÖNEM ÖZETİ':'PERIOD SUMMARY'}</p><h2>${title}</h2><p class="mut">${fmt(current.a)} – ${fmt(current.b)}</p></div><span class="report-percent">${summary.p}<small>%</small></span></div><div class="report-stats"><div><strong>${summary.d}</strong><span>${tr()?'Tamamlanan':'Completed'}</span></div><div><strong>${summary.t-summary.d}</strong><span>${tr()?'Tamamlanmayan':'Unfinished'}</span></div><div><strong>${change>0?'+':''}${change}</strong><span>${tr()?'Önceki döneme göre puan':'Points vs previous period'}</span></div></div><div class="bar"><i style="width:${summary.p}%"></i></div><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Daha fazlası':'More details'} <span aria-hidden="true">↗</span></button>${prior}</section>`;
+ const td=istanbulDayKey(),window=reportWindow(kind,td),period=window.period,{since,unlock}=reportAvailability(kind,td),title=t(kind==='week'?'weeklyReport':'monthlyReport');
+ const submitted=!!A.ql?.[period.key],open=reportQuestionsOpen(kind,td)&&!submitted;
+ if(!open){
+  const next=unlock>td?unlock:window.opens>td?window.opens:window.next;
+  const reason=submitted?(tr()?'Bu dönemin yanıtları gönderildi.':'Your answers for this period were submitted.'):!reportPeriodEligible(period)?(tr()?'Tamamını geçirdiğin ve görev, günlük veya odak kaydı bulunan bir dönem gerekli.':'A full period since joining with a task, journal or focus record is required.'):'';
+  return '<section class="report-period-block">'+pendingReportCard(title,since,next)+(reason?'<p class="mut">'+reason+'</p>':'')+'</section>';
+ }
+ const summary=st(period.a,period.b);
+ return `<section class="card report-summary"><h2>${title}</h2><p class="mut">${fmt(period.a)} – ${fmt(period.b)}</p><p>${summary.d}/${summary.t} ${t('tasksDone')} · %${summary.p}</p><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Soruları yanıtla':'Answer questions'} →</button></section>`;
 }
 function periodTaskBreakdown(a,b){
  const days=[];for(let day=a;day<=b;day=addD(day,1)){
@@ -4200,23 +4259,35 @@ function periodTaskBreakdown(a,b){
  return `<section class="card"><h2>${tr()?'Gün gün görevlerin':'Your tasks, day by day'}</h2><p class="mut">${tr()?'Tamamlanmayanlar, yapılmadı olarak işaretlenen ve tamamlanmadan kalan görevleri içerir. Kayıt olmayan günler listelenmez.':'Unfinished includes tasks marked not done and tasks left incomplete. Days without records are omitted.'}</p>${days.reverse().join('')||`<p class="mut">${tr()?'Bu dönemde kayıtlı görev yok.':'No tasks recorded for this period.'}</p>`}</section>`;
 }
 function periodReportDetail(kind,previous=false){
- const td=istanbulDayKey(),active=calendarReportPeriod(kind,td),period=previous?calendarReportPeriod(kind,addD(active.a,-1)):active,{since,unlock}=reportAvailability(kind),title=t(kind==='week'?'weeklyReport':'monthlyReport');
- const header=`<div class="card"><div class="row report-heading"><h2>${title} · ${tr()?'Ayrıntılar':'Details'}</h2><button class="g s" onclick="reportBack()">← ${t('back')}</button></div></div>`;
- if(td<unlock||period.b<unlock)return header+pendingReportCard(title,since,unlock);
- return header+periodTaskBreakdown(period.a,td<period.b?td:period.b)+repCard(title,tr()?(kind==='week'?'hafta':'ay'):kind,period.a,period.b,period.pa,period.pb,period.key,period.nk,defQ(kind));
+ const td=istanbulDayKey(),window=reportWindow(kind,td),period=window.period,title=t(kind==='week'?'weeklyReport':'monthlyReport');
+ const header=`<div class="card"><div class="row report-heading"><h2>${title}</h2><button class="g s" onclick="reportBack()">← ${t('back')}</button></div></div>`;
+ if(previous||!reportQuestionsOpen(kind,td)||A.ql?.[period.key])return header+reportSummaryCard(kind);
+ return header+periodTaskBreakdown(period.a,period.b)+`<section class="card">${periodReportForm(kind,period.key,period.nk)}</section>`;
+}
+function annualReportOpen(day=istanbulDayKey()){
+ const year=Number(day.slice(0,4))-1,a=year+'-01-01',b=year+'-12-31';
+ const joined=Date.parse(A?.reportJoinedAt||'');
+ return day.slice(5)==='01-01'&&!!A&&reportAvailability('month',day).since<=a&&(!Number.isFinite(joined)||joined<=Date.parse(a+'T00:00:00+03:00'))&&reportHasActivity(a,b);
+}
+function annualReportCard(){
+ const day=istanbulDayKey(),year=Number(day.slice(0,4)),title=tr()?'Yıllık özet':'Annual summary';
+ if(!annualReportOpen(day))return `<section class="card"><h2>🔒 ${title}</h2><p class="mut">${tr()?'1 Ocak günü, tamamını geçirdiğin ve kayıtlarının bulunduğu önceki yıl için açılır.':'Opens on January 1 for a full preceding year with your activity records.'}</p></section>`;
+ const result=st((year-1)+'-01-01',(year-1)+'-12-31');
+ return `<section class="card"><h2>${title} · ${year-1}</h2><p>${result.d}/${result.t} ${t('tasksDone')} · %${result.p}</p><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıtlarını incele':'Review your answers'}</button></section>`;
 }
 function reportPlanningOverview(){
   const day=istanbulDayKey();
   const forms=['week','month'].filter(kind=>reportQuestionsOpen(kind,day)).map(kind=>{
-    const period=calendarReportPeriod(kind,day);
+    const period=reportWindow(kind,day).period;
     return periodReportForm(kind,period.key,period.nk);
   });
   return forms.length?`<section class="card report-planning-overview">${forms.join('')}</section>`:'';
 }
 P.rep=()=>{
+ reportRenderedDay=istanbulDayKey();
  if(reportDetail){M(reportDetailView());return}
  const td=istanbulDayKey(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
- M(reportSummaryCard('week',w)+reportSummaryCard('month',m)+reportPlanningOverview()+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'} 🔒</button></div></section>`);
+ M(reportSummaryCard('week',w)+reportSummaryCard('month',m)+reportPlanningOverview()+annualReportCard()+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'} 🔒</button></div></section>`);
 };
 
 let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};
@@ -4631,7 +4702,7 @@ P.set=()=>{
   <div class="card"><h2>${tr()?'Oturum':'Session'}</h2><p class="mut">${tr()?'Hesabından güvenli şekilde çıkış yap.':'Sign out of your account.'}</p><button class="danger-logout" onclick="confirmLogout()">${t('logout')}</button></div>`);
 };
 
-function switchAcc(u){if(!A||!DB.accounts[u]||A.u===u)return;stopTimers();A=null;sbClear();loginDat={u,p:''};goTo('login','home')}
+async function switchAcc(u){if(!A||!DB.accounts[u]||A.u===u)return;if(window.IYQuickSession&&await IYQuickSession.resume(u))return;stopTimers();A=null;sbClear();loginDat={u,p:''};goTo('login','home')}
 function forgetKnownProfile(name){
   const other=DB.accounts?.[name];
   if(!A||!other?.authUid||other.authUid===A.authUid)return false;
@@ -4644,6 +4715,7 @@ function forgetKnownProfile(name){
 function confirmForgetKnownProfile(name){
   const other=DB.accounts?.[name];
   if(!A||!other?.authUid||other.authUid===A.authUid)return false;
+  window.IYQuickSession?.forget(other.authUid);
   delete DB.accounts[name];
   if(DB.lastUser===name)DB.lastUser=A.u;
   save();closeModal('forget-profile-modal');P.set();
@@ -4653,7 +4725,7 @@ function confirmForgetKnownProfile(name){
 
 /* oturum kapaninca sayac ve kronometre durur, sonraki kullaniciya gecmez */
 function stopTimers(){try{clearInterval(pm.iv);clearInterval(pm.swI);pm={...pm,run:0,end:0,iv:0,sw:0,swI:0,swT:0,ph:'w',left:pm.w*60,n:0,lg:0,noticeFive:false};persistPomodoroState();document.title=TITLE}catch(e){}}
-function goLogin(){pendingDeleteUid=null;stopTimers();sbClear();A=null;loginDat={u:'',p:''};goTo('login','home')}
+function goLogin(){window.IYQuickSession?.forget(sbSession()?.user?.id);pendingDeleteUid=null;stopTimers();sbClear();A=null;loginDat={u:'',p:''};goTo('login','home')}
 async function chg(k){
   const v=String($(k==='u'?'#su':'#sn')?.value||'').trim();if(!v)return;
   if(k==='u'){
@@ -4794,7 +4866,7 @@ function confirmReset(){
   clearInterval(pm.iv);clearInterval(pm.swI);
   const anchor=reportAvailability('week',istanbulDayKey()).since;
   const fresh=newAcc(safe.u,safe.nick,safe.bio,safe.pw,safe.email,safe.phone);
-  fresh.reportStart=anchor;
+  fresh.reportStart=anchor;fresh.reportJoinedAt=A.reportJoinedAt;
   for(const key of ['qs','ql','planningQs','planningLocks'])if(A[key])fresh[key]=A[key];
   if(A.reportCalendarRule)fresh.reportCalendarRule=A.reportCalendarRule;else delete fresh.reportCalendarRule;
   for(const key of ['salt','pwAt','notificationPrefs','taskOrder'])if(A[key]!==undefined)fresh[key]=A[key];
@@ -5190,7 +5262,7 @@ async function bootstrapCloudAuth(){
 }
 
 const sbSession=()=>{try{return JSON.parse(getItem(SESS_KEY)||'null')}catch(e){return null}};
-function sbSave(session){if(session&&session.user&&session.access_token)setItem(SESS_KEY,JSON.stringify(session))}
+function sbSave(session){if(session&&session.user&&session.access_token){setItem(SESS_KEY,JSON.stringify(session));window.IYQuickSession?.update(session)}}
 function sbClear(){setItem(SESS_KEY,'')}
 async function sb(path,opt={}){
   const session=sbSession();
@@ -5275,6 +5347,7 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     if(!user?.id||(expectedUid&&user.id!==expectedUid))return false;
     const session=sbSession();if(!session)return false;
     sbSave({...session,user});
+    if(window.IYBrowserGate&&!await IYBrowserGate.check(user,{preferredName:user.user_metadata?.username||'',method:user.app_metadata?.providers?.includes('google')?'google':'password'}))return true;
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     if(window.IYAccount&&!await IYAccount.checkAccess(user))return true;
     const remote=await sbPull();

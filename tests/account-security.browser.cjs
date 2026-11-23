@@ -246,6 +246,8 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    assert.equal(await productivity.evaluate(()=>A.tasks[0].s),'done',engine+' reorder must keep status');
    await productivity.locator('#tl .task').nth(1).getByRole('button',{name:'Düzenle'}).click();
    await productivity.locator('#task-edit-text').fill('Güncellenmiş görev');
+   for(const width of [320,768,1440]){await productivity.setViewportSize({width,height:900});const field=productivity.locator('#task-edit-text');await field.fill('Uzun görev metni '.repeat(7));assert.ok(await field.evaluate(el=>el.clientHeight>=el.scrollHeight-1),'task editor text is fully visible');}
+   await productivity.locator('#task-edit-text').fill('Güncellenmiş görev');
    await productivity.locator('#task-edit-modal').getByRole('button',{name:'Kaydet'}).click();
    assert.equal(await productivity.evaluate(()=>A.tasks[1].t),'Güncellenmiş görev',engine+' task editing');
    await productivity.locator('#task-edit-modal').waitFor({state:'detached'});
@@ -307,6 +309,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     }
    }
    await productivity.goto('http://127.0.0.1:4173/review-app.html?page=rep&lang=tr&date=2026-11-29');
+   await productivity.evaluate(()=>{A.reportStart='2026-01-01';A.reportJoinedAt='2026-01-01T00:00:00+03:00';A.hist['2026-11-25']=[{t:'Test task',done:true}];P.rep()});
    assert.equal(await productivity.locator('.report-plan-period').count(),2,engine+' only weekly plan groups on Sunday');
    assert.equal(await productivity.locator('#report-group-plan-2026-12').count(),0);
    const draft=productivity.locator('.report-plan-period textarea').first();await draft.fill('Pazar taslağı');
@@ -314,6 +317,8 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     await productivity.evaluate(date=>{const url=new URL(location.href);url.searchParams.set('date',date);history.replaceState(history.state,'',url);updateIstanbulClock()},value);
    };
    await changeDay('2026-11-30');
+   assert.equal(await productivity.locator('.period-questionnaire').count(),0,'Monday closes weekly reports');
+   await changeDay('2026-12-01');
    await productivity.locator('#report-group-plan-2026-12').waitFor();
    assert.equal(await productivity.locator('#report-group-plan-2026-11-23').count(),0,engine+' weekly form closed');
    const monthly=productivity.locator('.period-questionnaire');
@@ -326,7 +331,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await productivity.evaluate(()=>showReportDetail('month'));
    assert.equal(await productivity.locator('textarea[id^="report-"]').count(),0);
    await productivity.evaluate(()=>reportBack());
-   await changeDay('2026-12-01');assert.equal(await productivity.locator('.report-planning-overview').count(),0);
+   await changeDay('2026-12-02');assert.equal(await productivity.locator('.report-planning-overview').count(),0);
    await productivity.evaluate(()=>showReportDetail('month-previous'));
    assert.equal(await productivity.locator('textarea[id^="report-"]').count(),0,engine+' previous month is read-only statistics');
    await productivity.goto('http://127.0.0.1:4173/review-app.html?page=pomo&lang=en&date=2026-11-18');
@@ -365,6 +370,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     else if(url.endsWith('/functions/v1/browser-verification'))data={ok:true,verified:true};
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:hasPassword,password_required:false,server_time:'2026-11-17T00:00:00Z'};
+    else if(url.endsWith('/functions/v1/browser-verification'))data={ok:true,verified:true,expiresAt:new Date(Date.now()+3600000).toISOString()};
     else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
     else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
     else if(url.endsWith('/rpc/iydu_save'))data=null;

@@ -238,3 +238,10 @@ Gerçek Google hesabıyla uçtan uca giriş ve fiziksel iOS/Android cihazı sın
 - After owner enabled production Auth protection, a tokenless password sign-in probe was rejected with captcha_failed / no captcha_token found. This confirms server enforcement; a complete real password-plus-CAPTCHA-plus-email-code sign-in was not performed in this release check.
 - An initial protection probe exposed the disabled production setting and created an unconfirmed example.invalid test identity. That exact test identity was deleted by ID and email; existing user records were not modified. No remaining probe account.
 - Public key supports the two configured custom domains; Vercel preview and other hostnames require separate widget hostname configuration before real CAPTCHA use.
+
+
+## 23 November 2026 — report windows, task editing and quick switching
+
+Prepared changes: growing task textareas, Istanbul-day weekly/monthly/yearly report windows with full-period and task/journal/completed-focus eligibility; tab-scoped three-account quick-switch cache; server-clock hour after email proof; expired reminder disabling and future-intent note expiry. Historical calendar notes and journals remain intact. No bulk cleanup of real user profiles.
+
+307 Node checks passed; static preview built. Cross-browser CI, QA SQL assertions and production deployment pending. Hourly reentry does not forcibly terminate an ongoing authenticated app session; new entry/switch requires fresh email proof after expiry. Closing the tab clears the additional quick-switch cache.
