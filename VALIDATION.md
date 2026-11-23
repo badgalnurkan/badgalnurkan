@@ -255,3 +255,9 @@ Browser tests use synthetic account and mail responses. A real three-account ses
 A newly authenticated session now reuses an earlier same-account session only after the server quick-resume RPC approves its original email-proof deadline. Cache timestamps alone never authorize reuse. Explicit logout/forget removes the cached proof. 310 Node checks passed. Final-head Chromium, WebKit and Firefox regression checks passed, including email proof, page reload, a new same-account authentication result, and no increase in mail requests. Provider/Auth responses in these browser checks are synthetic. Server permission and original one-hour deadline remain authoritative; no database or Edge changes in this follow-up.
 
 PR #60 merged as 3ada04cde1aac7bbd0be343f0bc18bb6ad83e9ac; production deployment dpl_H7ynwSHsZe96KAK6owz6FyPy2phf READY. The user's exact browser session was not operated.
+
+## 23 Kasım 2026 · Dönem sonları, yazma alanları ve giriş
+
+Haftalık sorular pazar günü, aylık sorular takvim ayının son günü, yıllık özet 31 Aralık günü Türkiye saatiyle açılır. Raporlar gece yarısında kapanır. Haftalık ve aylık sorular tamamlanıp son alandan çıkıldığında veya Gönder seçildiğinde yanıtlar kilitlenir. Yeni hesap önce kayıt dönemini izleyen haftanın veya ayın etkinliğine göre değerlendirilir. Tam yıllık özet için tam bir etkin yıl gerekir. İlk yıl içinde gönderilmiş yanıtlar da 31 Aralık'ta o hesabın arşivinden okunabilir.
+
+321 birim testi ve önizleme derlemesi geçti. Takvim testleri 12 ayı, artık yılları, 2100'ü, pazar-pazartesi ve yıl dönümlerini, taslakları, eski kilitleri, hesap değişimini ve etkinlik olmamasını kapsar. Diğer senaryolar 2000 karakterlik günlüğü, kayıt formunu, e-posta kodunu, menünün sayfa sonundaki davranışını ve uzun metinleri kontrol eder. Tarayıcı senaryolarında örnek hesaplar ve taklit kimlik/e-posta yanıtları kullanılır. Bu değişiklik için veri tabanı geçişi yapılmadı.

@@ -43,7 +43,7 @@ window.IYQuickSession=(()=>{
    const user=await sbCurrentUser();
    if(user?.id!==account.authUid)throw Error('ACCOUNT_IDENTITY_MISMATCH');
    sbSave({...sbSession(),user});
-   await activateCloudUser(sbSession(),account.u,account.loginMethod||'password');
+   await activateCloudUser(sbSession(),account.u,account.loginMethod||'password',{greet:true});
    return true;
   }catch{
    forget(account.authUid);sbClear();A=null;loginDat={u:account.email||account.u,p:''};view='login';msg=tr()?'Hızlı geçiş tamamlanamadı. Yeniden giriş yap.':'Quick switch could not complete. Sign in again.';renderAppOrAuth();return true;

@@ -15,7 +15,7 @@ h2{font-size:1.25rem;color:#741f36}p{line-height:1.65}small,.muted{color:#6a5960
 .brand{font-family:Georgia,serif;letter-spacing:.04em;color:#741f36;font-size:1.1rem}
 label{display:block;font-weight:600;margin:1rem 0 .4rem}
 select,textarea{display:block;width:100%;border:1px solid #c9b9bd;background:#fff;color:inherit;font:inherit;border-radius:10px;padding:12px}
-textarea{min-height:106px;resize:vertical}select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #a35e79;outline-offset:3px}
+textarea{min-height:106px;resize:none;overflow:hidden;overflow-wrap:anywhere;scroll-margin-block-end:1rem}select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #a35e79;outline-offset:3px}
 .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
 button,.back{background:#741f36;color:#fff;border:0;border-radius:12px;padding:12px 18px;font:inherit;font-weight:600;cursor:pointer}
 button.secondary,.back{background:#f4e7e9;color:#741f36}
@@ -25,6 +25,7 @@ button:disabled{opacity:.55;cursor:wait}
 [hidden]{display:none!important}
 @media(max-width:370px){.actions>*{width:100%;text-align:center}}
 </style>
+<script src="/growing-text.js" defer></script>
 <script src="/account-close.js" defer></script>
 </head>
 <body>

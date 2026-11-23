@@ -270,7 +270,7 @@ test('scroll direction collapses to the active icon, expands on upward movement'
  context.window.scrollY=90;handlers.scroll();
  assert.equal(classes.has('is-collapsed'),true);
  assert.equal(labels.at(-1).value,'Expand menu: pc');
- context.window.scrollY=74;handlers.scroll();
+ context.window.scrollY=60;handlers.scroll();
  assert.equal(classes.has('is-collapsed'),false);
  assert.equal(labels.at(-1).value,'pc');
 });
@@ -318,4 +318,14 @@ test('tapping the only visible current icon expands without changing page',()=>{
  vm.runInContext(section('function navGo(el,v,p){','/* Scroll-sensitive mobile dock:'),context);
  context.navGo(null,'app','pc');
  assert.equal(resets,1);assert.equal(routes,0);
+});
+
+test('the bottom bounce keeps the dock collapsed until a real upward movement',()=>{
+ const classes=new Set(),handlers={};
+ const dock={classList:{toggle:(k,on)=>on?classes.add(k):classes.delete(k)},querySelector:()=>null};
+ const context={A:{},view:'app',pg:'home',window:{scrollY:0,innerWidth:390,addEventListener:(k,fn)=>handlers[k]=fn},
+  document:{querySelector:()=>dock,scrollingElement:{scrollHeight:1400,clientHeight:800}}};
+ vm.runInNewContext(section('let mobileDockLastY=0;','const NAV_ICON_PATHS='),context);
+ for(const y of [80,580,600,640,600,595]){context.window.scrollY=y;handlers.scroll();assert.equal(classes.has('is-collapsed'),true)}
+ context.window.scrollY=552;handlers.scroll();assert.equal(classes.has('is-collapsed'),false);
 });

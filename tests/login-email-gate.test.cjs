@@ -18,7 +18,7 @@ function fixture(options={}){
   A:null,DB:{accounts:{},lang:'en'},view:'login',pg:'home',msg:'',loginDat:{},
   SUPABASE_URL:'https://test.invalid',SUPABASE_KEY:'public-test-key',
   tr:()=>false,esc:s=>s,renderAppOrAuth(){},openModal(){},closeModal(){},
-  document:{getElementById:id=>elements[id]||null,querySelectorAll:()=>buttons},
+  playWelcomeTransition(){},document:{getElementById:id=>elements[id]||null,querySelectorAll:()=>buttons},
   sessionStorage:{getItem:k=>stored.get(k)||null,setItem:(k,v)=>stored.set(k,v),removeItem:k=>stored.delete(k)},
   sbSession:()=>session,sbSave:s=>{session=s},sbClear:()=>{session=null},sbRefresh:async()=>false,
   fetch:async(_url,config)=>{

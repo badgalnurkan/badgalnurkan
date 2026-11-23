@@ -7,7 +7,8 @@ module.exports=async(browser,engine)=>{
   const user={id:'ab000000-0000-4000-8000-000000000011',email:'login-owner@example.invalid',email_confirmed_at:'2026-11-22T12:00:00Z',created_at:'2026-11-22T12:00:00Z',user_metadata:{username:'loginowner'},app_metadata:{providers:['email']}};
   const claims={sub:user.id,session_id:'ab100000-0000-4000-8000-000000000001'};
   const session={user,access_token:'fixture.'+Buffer.from(JSON.stringify(claims)).toString('base64url')+'.signature',refresh_token:'fixture-refresh'};
-  let verified=false,loads=0,sends=0;
+  let verified=false,loads=0,sends=0,allowCode,allowLoad;
+  const codeGate=new Promise(resolve=>{allowCode=resolve}),profileGate=new Promise(resolve=>{allowLoad=resolve});
   await page.addInitScript(()=>localStorage.setItem('iydu.storage-notice.v1','test'));
   await page.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
    const req=route.request(),url=new URL(req.url());let data,status=200;
@@ -22,12 +23,12 @@ module.exports=async(browser,engine)=>{
      if(++sends>1){status=429;data={code:'RATE_LIMITED'}}
      else data={ok:true,id:'ab200000-0000-4000-8000-000000000001',expiresIn:600};
     }else if(body.action==='confirm'){
-     if(body.code==='123456'){verified=true;data={ok:true,verified:true}}
+     if(body.code==='123456'){await codeGate;verified=true;data={ok:true,verified:true}}
      else{status=400;data={code:'INVALID_CHALLENGE'}}
     }
    }else if(url.pathname.endsWith('/iydu_quick_resume_status')){assert.equal(req.headers().authorization,'Bearer '+session.access_token);data={allowed:verified};
    }else if(url.pathname.endsWith('/iydu_load')){
-    assert.equal(verified,true,'no profile call before email proof');loads++;
+    assert.equal(verified,true,'no profile call before email proof');loads++;await profileGate;
     data=[{data:{u:'loginowner',nick:'Login owner',authUid:user.id,email:user.email}}];
    }else if(url.pathname.endsWith('/iydu_progress_policy'))data='daily';
    else if(url.pathname.endsWith('/iydu_save'))data=null;
@@ -46,7 +47,9 @@ module.exports=async(browser,engine)=>{
    await modal.getByRole('button',{name:'Request another code',exact:true}).click();
    await page.locator('#browser-verify-message').filter({hasText:'60 seconds'}).waitFor();
    await page.locator('#browser-verify-code').fill('123456');await page.locator('#browser-verify-code').press('Enter');
-   await page.locator('.shell').waitFor();assert.equal(loads,1);assert.deepEqual(errors,[]);
+   await page.locator('#browser-verify-message').filter({hasText:'Verifying'}).waitFor();assert.equal(loads,0);
+   allowCode();await page.locator('#browser-verify-message').filter({hasText:'Sign-in confirmed'}).waitFor();
+   allowLoad();await page.locator('.shell').waitFor();assert.equal(loads,1);assert.deepEqual(errors,[]);
    const requestsBeforeReload=sends;
    await page.reload();await page.locator('#welcome-continue').waitFor();
    await page.evaluate(async()=>{const original=sbSession();const claims=JSON.parse(atob(original.access_token.split('.')[1]));claims.session_id='ab100000-0000-4000-8000-000000000099';const candidate={...original,access_token:'fixture.'+btoa(JSON.stringify(claims))+'.signature'};await activateCloudUser(candidate,'loginowner','password')});
