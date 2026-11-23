@@ -16,7 +16,7 @@ function fixture(){
  ${extract('const RQ_EN=','const NAV_KEYS=')}
  function rqFor(){return DB.lang==='tr'?RQ_TR:RQ_EN}
  ${extract("function periodDefaultQuestions(kind,key,scope='review'){",'/* ---- gecmis raporlar')}
- ${extract('function reportDetailView(){','P.rep=()=>{')}
+ ${extract('function archivePeriodList(keys,day,section){','P.rep=()=>{')}
  this.f={reportQuestionText,reportQuestionForPeriod,makeReportQuestion,qa,submitPeriodReport,addQ,addRandQ,delQ,reportDetailView,
   banks:REPORT_QUESTION_BANKS,defaults:DEFQ_EN,plans:PLANQ_EN};`,context);
  const f=context.f;

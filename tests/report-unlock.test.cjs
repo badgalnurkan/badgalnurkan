@@ -121,6 +121,8 @@ test('the annual summary and answer archive select just the preceding active yea
   c.reportDetail='summary';const summary=c.reportDetailView();
   assert.equal(summary.includes('2026-11-18'),expected);
   assert.doesNotMatch(summary,/2025-12-31|2027-12-31/);
+  c.reportDetail='answers-older';assert.equal(c.reportDetailView().includes('Answer for 2025'),expected);
+  c.reportDetail='summary-older';assert.equal(c.reportDetailView().includes('2025-12-31'),expected);
  }
  c.current='2028-01-01';c.reportDetail='answers';
  assert.match(c.reportDetailView(),/Answer for 2027/);assert.doesNotMatch(c.reportDetailView(),/Answer for 2026/);

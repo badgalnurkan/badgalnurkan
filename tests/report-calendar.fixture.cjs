@@ -11,6 +11,6 @@ module.exports=()=>{
   $:()=>null,historySection:()=>'',rqFor:()=>context.DB.lang==='tr'?context.RQ_TR:context.RQ_EN,
  };
  context.mon=day=>context.addD(day,-((new Date(day+'T12:00Z').getUTCDay()+6)%7));
- vm.createContext(context);vm.runInContext(extract('const RQ_EN=','const NAV_KEYS=')+"function rqFor(){return DB.lang==='tr'?RQ_TR:RQ_EN}\n"+extract("function periodDefaultQuestions(kind,key,scope='review'){",'/* ---- gecmis raporlar')+extract('function reportDetailView(){','P.rep=()=>{'),context);
+ vm.createContext(context);vm.runInContext(extract('const RQ_EN=','const NAV_KEYS=')+"function rqFor(){return DB.lang==='tr'?RQ_TR:RQ_EN}\n"+extract("function periodDefaultQuestions(kind,key,scope='review'){",'/* ---- gecmis raporlar')+extract('function archivePeriodList(keys,day,section){','P.rep=()=>{'),context);
  return {context,extract,source};
 };

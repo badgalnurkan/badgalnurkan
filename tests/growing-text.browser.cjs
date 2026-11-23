@@ -24,6 +24,10 @@ module.exports=async function verifyGrowingText(browser,engine){
     for(const width of [320,768,1440]){
       await page.setViewportSize({width,height:800});
       await page.goto('http://127.0.0.1:4173/review-app.html?page=home&lang=tr');
+      if(width===320){
+        await page.locator('#storage-notice button').click();
+        await page.locator('#storage-notice').waitFor({state:'detached'});
+      }
       const journal=page.locator('#journal-input');
       await write(journal,long);
       assert.ok(await journal.evaluate(el=>el.getBoundingClientRect().bottom<=innerHeight+2),'last journal line stays visible');

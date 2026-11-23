@@ -258,6 +258,6 @@ PR #60 merged as 3ada04cde1aac7bbd0be343f0bc18bb6ad83e9ac; production deployment
 
 ## 23 Kasım 2026 · Aylık rapor döngüsü ve uzun metin
 
-Aylık rapor Türkiye saatinde ayın ilk günü önceki ayın etkinliğiyle açılır. Kayıt ayında hesabına görev, günlük veya tamamlanmış odak kaydı ekleyen kullanıcı bir sonraki ay katılabilir. Tamamlanmamış cevaplar ayın son günü boyunca düzenlenebilir. Son alan onaylandığında veya Gönder seçildiğinde mevcut dönem kilidi kaydedilir. Yıllık görünüm 1 Ocak boyunca yalnızca önceki takvim yılını okur.
+Aylık rapor Türkiye saatinde ayın ilk günü önceki ayın etkinliğiyle açılır. Kayıt ayında hesabına görev, günlük veya tamamlanmış odak kaydı ekleyen kullanıcı bir sonraki ay katılabilir. Tamamlanmamış cevaplar ayın son günü boyunca düzenlenebilir. Son alan onaylandığında veya Gönder seçildiğinde mevcut dönem kilidi kaydedilir. Yıllık görünüm 1 Ocak boyunca önceki takvim yılını gösterir. Mevcut eski yanıtlar ve geçmiş görevler aynı gün arşivin “Daha eski yıllar” düğmesinden okunabilir.
 
 316 birim testi ve statik önizleme derlemesi geçti. Kontroller 2027 ve 2028'in bütün aylarını, 1 Ocak ve 2 Ocak Türkiye saati sınırlarını, eski cevapların ve görevlerin korunmasını ve eski bir formun yeni döneme yazamamasını kapsar. Tarayıcı senaryoları örnek hesaplarla çalışır. Bu sürümde veritabanı geçişi veya gerçek kullanıcılar üzerinde veri düzenleme işlemi yoktur.
