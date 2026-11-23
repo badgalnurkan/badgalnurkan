@@ -8,19 +8,16 @@ function fixture(){
   addD:(value,days)=>new Date(Date.parse(value+'T00:00:00Z')+days*86400000).toISOString().slice(0,10),recordActivity(){},esc:s=>String(s),tr:()=>context.DB.lang==='tr',t:key=>key,save(){},fmt:s=>s,today:()=>context.current,istanbulDayKey:()=>context.current,
   D:d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'),
   mon:d=>context.addD(d,-((new Date(d+'T12:00:00Z').getUTCDay()+6)%7)),
-  st:()=>({t:2,d:1,p:50,by:{}}),reportPeriodEnded:(now,end)=>now>=end,reportDetail:'answers',
-  answerArchiveUnlocked:(now,key)=>Number(now.slice(0,4))>Number(key.slice(0,4)),
+  st:()=>({t:2,d:1,p:50,by:{}}),reportDetail:'answers',
   Math:Object.assign(Object.create(Math),{random:()=>0}),$:()=>({value:'A custom question'}),
  };
  vm.createContext(context);
  vm.runInContext(`
  ${extract('const RQ_EN=','const NAV_KEYS=')}
  function rqFor(){return DB.lang==='tr'?RQ_TR:RQ_EN}
- ${extract("function periodDefaultQuestions(kind,key,scope='review'){",'/* Weekly/monthly reports')}
- ${extract('function reportInitialUnlockDate(kind,start','function pendingReportCard(')}
- ${extract('function repCard(title,per,a,b,pa,pb,key,nk,defs)','/* ---- gecmis raporlar')}
+ ${extract("function periodDefaultQuestions(kind,key,scope='review'){",'/* ---- gecmis raporlar')}
  ${extract('function reportDetailView(){','P.rep=()=>{')}
- this.f={reportQuestionText,reportQuestionForPeriod,makeReportQuestion,qa,submitPeriodReport,addQ,addRandQ,delQ,repCard,reportDetailView,
+ this.f={reportQuestionText,reportQuestionForPeriod,makeReportQuestion,qa,submitPeriodReport,addQ,addRandQ,delQ,reportDetailView,
   banks:REPORT_QUESTION_BANKS,defaults:DEFQ_EN,plans:PLANQ_EN};`,context);
  const f=context.f;
  const render=(kind='week',key=kind==='week'?'2026-11-23':'2026-11',next=kind==='week'?'2026-11-30':'2026-12')=>{

@@ -4,7 +4,7 @@ import shutil
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / 'dist'
 DIST.mkdir(exist_ok=True)
-for name in ('index.html', 'privacy.html', 'kvkk.html', 'terms.html', 'cookies.html', 'account-security.js', 'account-security.css', 'recovery-browser.js', 'browser-verification.js', 'turnstile-auth.js', 'quick-session.js', 'account-close.html', 'account-close.js'):
+for name in ('index.html', 'privacy.html', 'kvkk.html', 'terms.html', 'cookies.html', 'account-security.js', 'account-security.css', 'recovery-browser.js', 'browser-verification.js', 'turnstile-auth.js', 'quick-session.js', 'growing-text.js', 'account-close.html', 'account-close.js'):
     shutil.copy2(ROOT / name, DIST / name)
 
 # This isolated sample has no cloud requests or persistent browser storage.
@@ -38,7 +38,7 @@ assert html.count(boot) == 1, 'Application boot marker changed'
 html = html.replace(boot, fixture)
 # Date simulation belongs only to this isolated review, never to index.html.
 html = html.replace('const today=()=>D(new Date()),fmt=', "const today=()=>{const value=new URLSearchParams(location.search).get('date');return validProgressDate(value)?value:D(new Date())},fmt=", 1)
-html = html.replace('function istanbulDayKey(at=new Date()){', "function istanbulDayKey(at=new Date()){const chosen=new URLSearchParams(location.search).get('date');if(validProgressDate(chosen))return chosen;", 1)
+html = html.replace('function istanbulDayKey(at=new Date()){', "function istanbulDayKey(at=new Date()){const chosen=new URLSearchParams(location.search).get('date');if(!arguments.length && validProgressDate(chosen))return chosen;", 1)
 html = html.replace('<head>', '<head>\n<meta http-equiv="Content-Security-Policy" content="connect-src \'none\'; form-action \'none\'">', 1)
 html = html.replace('</style>', '\n/* Phone-like overlay scrollbars in the review frame. */\nhtml{scrollbar-width:none}html::-webkit-scrollbar{display:none}\n</style>', 1)
 (DIST / 'review-app.html').write_text(html)

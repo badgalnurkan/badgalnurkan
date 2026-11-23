@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#f6eee3">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Fraunces:wght@500;600;700&family=Homemade+Apple&family=Libre+Baskerville:wght@400;700&family=Patrick+Hand&family=Nunito:wght@400;600;700&family=UnifrakturCook:wght@700&display=swap">
 <style>
-.task-compose{resize:none;overflow:hidden;min-height:2.9rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.row>.task-compose{flex:1 1 12rem;min-width:0;width:auto}.tomorrow-plan-add>.task-compose{min-width:0}
+.task-compose{min-height:2.9rem;line-height:1.5}.row>.task-compose{flex:1 1 12rem;min-width:0;width:auto}.tomorrow-plan-add>.task-compose{min-width:0}
 :root{--bg:#FFFAFA;--card:#ffffff;--ink:#542A0C;--mut:#835C3B;--acc:#800000;--acc2:#FDD7E4;--ok:#387C44;--no:#C71585;--ln:#ebd8d4;--sh:0 12px 32px #542A0C13;--on-acc:#fff;--okbg:#eaf4ed;--fs:'Fraunces',Georgia,'Times New Roman',serif;--okbg:#e6f1e6}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px);font-size:clamp(16px,.35vw + 11px,24px);overflow-y:scroll}
@@ -28,7 +28,7 @@ button.s{min-height:2.2rem;padding:.25em .9em;font-size:.82rem}
 button.d{color:var(--no);border-color:var(--no)}
 button:disabled{opacity:.35;cursor:not-allowed;transform:none}
 input,select,textarea{background:var(--bg);border:1.5px solid var(--ln);border-radius:16px;padding:.7em 1.1em;width:100%;margin:.3em 0 .8em;font-size:max(16px,1rem);transition:border .3s}
-textarea{resize:vertical}
+textarea{resize:none;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;scroll-margin-block-end:1rem}
 input:focus,textarea:focus{outline:0;border-color:var(--acc)}
 :focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 label{font-size:.9rem;font-weight:600}
@@ -154,7 +154,7 @@ h1,h2{font-size:1.3rem}h3{font-size:1.05rem}
 .tag.on{border-color:var(--acc)}
 .note{background:var(--bg);border:1px dashed var(--acc);border-radius:12px;padding:.6em 1em;margin:.5em 0;font-size:.9rem}
 .qa{display:flex;gap:.5rem;align-items:flex-start}
-.qa textarea{margin:0;flex:1}
+.qa textarea{margin:0;flex:1 1 auto}
 .qcap{text-align:right;font-size:.78rem;margin:.2rem 0 .8rem}
 .pct-big{font-family:var(--fs);font-size:clamp(2.4rem,8vw,4rem);font-weight:700;color:var(--acc);line-height:1}
 footer{text-align:center;padding:1rem;color:var(--mut);font-size:.8rem;background:var(--card);border-top:1px solid var(--ln);width:100%;margin-top:auto}
@@ -533,13 +533,13 @@ button{transition:background .25s,transform .18s,box-shadow .22s}
 body,button,input,select,textarea{font-size:var(--ui-mid)}
 button{line-height:1.35}
 .card h2,.card h3{overflow-wrap:normal;word-break:normal;hyphens:none}
-.task span{overflow-wrap:break-word;word-break:normal;white-space:pre-wrap}
+.task span{overflow-wrap:anywhere;word-break:normal;white-space:pre-wrap}
 #tl .task{gap:.5rem;align-items:center}
 #tl .task span{flex:1 1 13rem;min-width:min(100%,13rem)}
 .project-add{display:grid;grid-template-columns:minmax(0,1fr) minmax(8rem,11rem) auto;gap:.55rem;align-items:center;min-width:0;max-width:100%}
 .tomorrow-plan-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.5rem;align-items:center}
-.tomorrow-plan-add input{margin:0;min-width:0;width:100%}
-.project-add>input{margin:0;min-width:0;min-inline-size:0;width:100%;max-width:100%;box-sizing:border-box}
+.tomorrow-plan-add textarea{margin:0;min-width:0;width:100%}
+.project-add>textarea{margin:0;min-width:0;min-inline-size:0;width:100%;max-width:100%;box-sizing:border-box}
 .project-add>button{min-width:5.5rem;max-width:100%;white-space:normal;overflow-wrap:anywhere}
 .project-add-error{grid-column:1/-1;margin:0;color:var(--no);font-size:.85rem;overflow-wrap:anywhere}
 .project-add-error:empty{display:none}
@@ -588,7 +588,7 @@ button{line-height:1.35}
  header.top .account-chip .avatar{width:2.25rem;height:2.25rem;font-size:1.05rem}
  .top-tools .account-name{display:none}
  #tl .task{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:.42rem}
- #tl .task span{flex:1 0 100%;min-width:0;width:100%;line-height:1.5;margin:0 0 .18rem;overflow-wrap:break-word;word-break:normal}
+ #tl .task span{flex:1 0 100%;min-width:0;width:100%;line-height:1.5;margin:0 0 .18rem;overflow-wrap:anywhere;word-break:normal}
  #tl .task button{flex:0 0 auto;min-width:2.6rem}
  #tl .task button.g.s{font-size:clamp(.78rem,3.2vw,.9rem)}
  .project-add{grid-template-columns:minmax(0,1fr) auto;gap:.45rem}
@@ -809,7 +809,7 @@ header.top .top-tools{grid-column:3;grid-row:1;justify-self:end;display:flex;jus
 
 /* Future notes: short native date field + one readable note prompt, no overflow. */
 #mn .future-add-row{margin-top:.7rem;gap:.28rem;max-width:100%;min-width:0}
-#mn .future-add-row input{box-sizing:border-box;margin:0;min-width:0;max-width:100%;min-height:2.7rem;padding:.47rem .7rem;font-size:1rem}
+#mn .future-add-row :is(input,textarea){box-sizing:border-box;margin:0;min-width:0;max-width:100%;min-height:2.7rem;padding:.47rem .7rem;font-size:1rem}
 #mn .future-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:.45rem;min-width:0}
 #mn .future-fields #fnd{width:min(100%,15rem);height:2.7rem;max-height:2.7rem}
 #mn .future-note-compose{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.5rem;align-items:center;min-width:0}
@@ -1713,6 +1713,7 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 <script src="/browser-verification.js"></script>
 <script src="/turnstile-auth.js"></script>
 <script src="/quick-session.js"></script>
+<script src="/growing-text.js"></script>
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
@@ -2488,8 +2489,12 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-23-refresh-email-reentry-02';
+const SITE_RELEASE='2026-11-23-calendar-months-text-fields-03';
 const SITE_CHANGES=[
+ {date:'2026-11-23',trTitle:'Aylık rapor ve uzun metin alanları',enTitle:'Monthly reports and long text',items:[
+  ['Her ayın ilk günü, önceki aydaki etkinliğinle aylık rapor açılır. Tüm cevapları tamamladığında kapanır. Sonraki rapor bir sonraki ayın ilk günü açılır.','On the first of each month, activity in the preceding month unlocks its report. Completing the answers closes it until the first of the next month.'],
+  ['Yıllık özet 1 Ocak boyunca önceki takvim yılının kayıtlarını gösterir.','On January 1 the annual summary shows records from the preceding calendar year.'],
+  ['Görev, günlük, not, proje, profil açıklaması ve rapor alanları yazdıkça büyür.','Task, journal, note, project, bio and report fields expand as you type.']]},
  {date:'2026-11-23',trTitle:'Yenileme sonrası giriş düzeltmesi',enTitle:'Sign-in after refresh',items:[['Bir saat içindeki yeniden girişte aynı hesaba ait doğrulanmış oturum sunucudan kontrol edilerek yeniden kullanılır.','Reentry within one hour reuses the same account’s verified session after server validation.']]},
   {date:'2026-11-23',trTitle:'Rapor takvimi ve hızlı geçiş',enTitle:'Report calendar and quick switch',items:[
   ['Görev yazma alanları metinle birlikte büyür.','Task editors grow as you type.'],
@@ -2841,7 +2846,7 @@ function renderAppOrAuth(){
     h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${tr()?'E-posta doğrulama kodu':'Email verification code'}</h2>${m()}<p class="mut">${tr()?'Kod isteğin alındı, ancak e-posta teslimi henüz doğrulanmadı. Bu e-postayla zaten bir hesabın varsa yeni kod gelmeyebilir. Giriş yapmayı veya şifreni sıfırlamayı deneyebilirsin.':'Your request was accepted, but email delivery has not been confirmed. If you already have an account with this email, a new code may not arrive. Try signing in or resetting your password.'}</p><p><strong>${esc(pendingSignup.email)}</strong></p><label for="signup-code-input">${tr()?'6 haneli kod':'Six-digit code'}</label><input id="signup-code-input" inputmode="numeric" type="text" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();verifySignupCode()}">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('resend'):''}<div class="row"><button type="button" id="signup-code-submit" onclick="verifySignupCode()">${tr()?'Kodu doğrula':'Verify code'}</button><button class="g" type="button" id="signup-code-resend" onclick="resendSignupCode()">${tr()?'Yeni kod iste':'Resend code'}</button></div><button class="g s" type="button" id="signup-code-signin" onclick="signupOtpFinishWithSignIn(pendingSignup.email,tr()?'Mevcut hesabın varsa giriş yapabilir veya şifreni sıfırlayabilirsin.':'If you already have an account, sign in or reset your password.')">${tr()?'Giriş ekranına geç':'Go to sign in'}</button><button class="g s" type="button" onclick="pendingSignup=null;goTo('setup','home')">${tr()?'Geri dön':'Back'}</button><p id="signup-code-status" role="status" aria-live="polite"></p>`);
   }
   else if(view==='forgot')h=`<div class="langbar">${langBtns()}</div>`+box(`<h2>${t('forgot')}</h2>${m()}<label>${t('email')}</label><input id="u" type="email" autocomplete="email">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('recovery'):''}<div class="row"><button id="forgot-reset-submit" type="button" onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button><button class="g" type="button" onclick="IYRecovery.resume(document.getElementById('u').value)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`);
-  $('#app').innerHTML=h;ensureReleaseNotification();
+  $('#app').innerHTML=h;fitTextFields($('#app'));ensureReleaseNotification();
   if(typeof IYTurnstile!=='undefined')IYTurnstile.mount();
   if(view==='login'){const pe=$('#p'),ue=$('#u');if(pe&&loginDat.u){pe.focus()}else if(ue){ue.focus()}}
 }
@@ -2911,7 +2916,11 @@ function openModal(id,html){
   d.addEventListener('click',e=>{if(e.target===d)closeModal(id)});
   const title=d.querySelector('h2');if(title){title.id=id+'-title';d.setAttribute('aria-labelledby',title.id)}
   d.tabIndex=-1;d.addEventListener('keydown',event=>{if(event.key!=='Tab')return;const controls=[...d.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),textarea:not([readonly]),select,summary,[tabindex="0"]')].filter(el=>el.getClientRects().length),first=controls[0],last=controls[controls.length-1];if(!first){event.preventDefault();d.focus();return}if(event.shiftKey&&(document.activeElement===first||!d.contains(document.activeElement))){event.preventDefault();last.focus()}else if(!event.shiftKey&&(document.activeElement===last||!d.contains(document.activeElement))){event.preventDefault();first.focus()}});
-  document.body.appendChild(d);resizeTaskInputs(d);requestAnimationFrame(()=>{if(d.isConnected)(d.querySelector('button:not([disabled]),input:not([disabled])')||d).focus({preventScroll:true})});
+  document.body.appendChild(d);fitTextFields(d);
+  requestAnimationFrame(()=>{
+    if(d.isConnected&&!d.contains(document.activeElement))
+      (d.querySelector('button:not([disabled]),input:not([disabled]),textarea:not([disabled])')||d).focus({preventScroll:true});
+  });
 }
 function closeModal(id){
   const el=document.getElementById(id);
@@ -3603,10 +3612,7 @@ function renderPage(){
 let reportRenderedDay='';
 setInterval(()=>{if(A&&A.day!==today())shell();if(A&&view==='app'&&pg==='rep'&&reportRenderedDay!==istanbulDayKey())P.rep()},1000);
 
-function resizeTaskInput(el){if(!el)return;el.style.height='auto';const border=el.offsetHeight-el.clientHeight;el.style.height=(el.scrollHeight+Math.max(0,border))+'px'}
-function resizeTaskInputs(root){root.querySelectorAll('.task-compose').forEach(resizeTaskInput)}
-window.addEventListener('resize',()=>resizeTaskInputs(document));
-const P={};const M=h=>{const main=$('#mn');if(main){main.innerHTML=h;resizeTaskInputs(main);if(!main.classList.contains('an'))motionReveal(main)}};
+const P={};const M=h=>{const main=$('#mn');if(main){main.innerHTML=h;fitTextFields(main);if(!main.classList.contains('an'))motionReveal(main)}};
 P.home=()=>{
   expireTimedRecords();
   const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length;
@@ -3618,7 +3624,7 @@ P.home=()=>{
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
   <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="1000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/1000</span></div></div>
-  <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><input id="pn" maxlength="40" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
+  <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
 };
 function updateJournalCounter(el){const e=document.getElementById('journal-counter');if(e)e.textContent=String(el?.value?.length||0)+'/1000'}
 function saveJournal(){
@@ -3702,8 +3708,8 @@ P.todo=()=>{
     ?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.')
     :t('addTask');
   const todayTasksMarkup=renderedTodayTasks||`<p class="mut">${esc(emptyTodayText)}</p>`;
-  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" oninput="resizeTaskInput(this)" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
-  <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><textarea rows="1" class="task-compose" oninput="resizeTaskInput(this)" id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addTomorrowPlan()}"></textarea><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
+  <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><textarea rows="1" class="task-compose" id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addTomorrowPlan()}"></textarea><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
 function vibrateTask(){try{if(navigator.vibrate)navigator.vibrate(12)}catch(_){}}
@@ -3839,7 +3845,7 @@ function finishTaskReorder(event){
 function editTask(index){
   const task=A?.tasks?.[index];if(!task)return;
   taskEditContext={owner:A,task};
-  openModal('task-edit-modal',`<h2>${tr()?'Görevi düzenle':'Edit task'}</h2><label for="task-edit-text">${tr()?'Görev':'Task'}</label><textarea id="task-edit-text" class="task-compose" rows="1" maxlength="120" oninput="resizeTaskInput(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveTaskEdit()}">${esc(task.t)}</textarea><div class="row"><button onclick="saveTaskEdit()">${t('save')}</button><button class="g" onclick="closeModal('task-edit-modal')">${t('cancel')}</button></div>`);
+  openModal('task-edit-modal',`<h2>${tr()?'Görevi düzenle':'Edit task'}</h2><label for="task-edit-text">${tr()?'Görev':'Task'}</label><textarea id="task-edit-text" class="task-compose" rows="1" maxlength="120" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();saveTaskEdit()}">${esc(task.t)}</textarea><div class="row"><button onclick="saveTaskEdit()">${t('save')}</button><button class="g" onclick="closeModal('task-edit-modal')">${t('cancel')}</button></div>`);
   document.getElementById('task-edit-text')?.focus();
 }
 function saveTaskEdit(){
@@ -3959,7 +3965,7 @@ P.pc=()=>{
   }
   const monthKey=`${y}-${pad(mo+1)}`;
   const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}<small class="note-countdown">${futureNoteCountdown(k)}</small></b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}')">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><input id="fn-text" type="text" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
 };
 function newNote(){
   const d=String($('#fnd')?.value||'');
@@ -3969,7 +3975,7 @@ function newNote(){
   const draft=String($('#fn-text')?.value||'').slice(0,500);
   openDay(d);
   // Reuse the existing confirmation/save path to avoid unintended overwrites.
-  const editor=$('#dn');if(editor&&draft)editor.value=draft;
+  const editor=$('#dn');if(editor&&draft){editor.value=draft;fitTextField(editor)}
 }
 function delNote(k){delete A.future[k];if(A.futureMeta)delete A.futureMeta[k];save();P.pc()}
 function st(a,b){let t=0,d=0,by={};for(let x=a;x<=b;x=addD(x,1)){items(x).forEach(i=>{t++;by[i.t]=by[i.t]||[0,0];by[i.t][1]++;if(i.done){d++;by[i.t][0]++}})}return{t,d,p:t?Math.round(d/t*100):0,by}}
@@ -4007,33 +4013,43 @@ function reportQuestionStore(scope='review'){
 }
 function reportWindow(kind,day=istanbulDayKey()){
  const current=calendarReportPeriod(kind,day);
- if(kind==='week')return {period:current,opens:current.b,next:addD(current.b,7)};
- const period=calendarReportPeriod('month',addD(current.a,-1));
- return {period,opens:current.a,next:current.nk+'-01'};
+ if(kind==='week')return {period:current,opens:current.b,closes:addD(current.b,1),next:addD(current.b,7)};
+ const period=calendarReportPeriod('month',current.pb);
+ const next=current.nk+'-01';
+ return {period,opens:current.a,closes:next,next};
 }
-function reportPeriodEligible(period){
+function reportPeriodEligible(period,day=istanbulDayKey()){
  if(!A)return false;
- const since=reportAvailability(period.key.length===7?'month':'week').since;
- if(period.a<since)return false;
+ const monthly=period.key.length===7;
+ const {since}=reportAvailability(monthly?'month':'week',day);
+ if(monthly){
+   const first=since>period.a?since:period.a;
+   return first<=period.b&&reportHasActivity(first,period.b);
+ }
  const joined=Date.parse(A.reportJoinedAt||'');
- if(Number.isFinite(joined)&&joined>Date.parse(period.a+'T00:00:00+03:00'))return false;
+ if(period.a<since||(Number.isFinite(joined)&&joined>Date.parse(period.a+'T00:00:00+03:00')))return false;
  return reportHasActivity(period.a,period.b);
 }
 function reportHasActivity(a,b){
  const inRange=day=>/^\d{4}-\d{2}-\d{2}$/.test(day)&&day>=a&&day<=b;
- if(Object.entries(A.hist||{}).some(([day,tasks])=>inRange(day)&&Array.isArray(tasks)&&tasks.some(task=>String(task?.t||'').trim())))return true;
- if(inRange(A.day||'')&&(A.tasks||[]).some(task=>String(task?.t||'').trim()))return true;
+ const hasTask=tasks=>Array.isArray(tasks)&&tasks.some(task=>
+   String(typeof task==='string'?task:task?.t||task?.text||task?.title||'').trim());
+ for(const records of [A.hist,A.completedBatches]){
+   if(Object.entries(records||{}).some(([day,tasks])=>inRange(day)&&hasTask(tasks)))return true;
+ }
+ if(inRange(A.day||'')&&hasTask(A.tasks))return true;
  if(Object.entries(A.journal||{}).some(([day,entry])=>inRange(day)&&String(entry?.text||'').trim()))return true;
  return (A.focusHistory||[]).some(record=>record?.completed===true&&record.seconds>0&&Number.isFinite(record.at)&&inRange(istanbulDayKey(new Date(record.at))));
 }
 function reportQuestionsOpen(kind,day=istanbulDayKey()){
  const window=reportWindow(kind,day);
- return day===window.opens&&reportPeriodEligible(window.period);
+ return day>=window.opens&&day<window.closes&&!A?.ql?.[window.period.key]&&reportPeriodEligible(window.period,day);
 }
-function canAnswerReport(key,scope='review',day=istanbulDayKey()){
+function canAnswerReport(key,scope='review',day=istanbulDayKey(),formPeriod){
  const kind=/^\d{4}-\d{2}$/.test(key)?'month':/^\d{4}-\d{2}-\d{2}$/.test(key)?'week':null;
  if(!kind||!reportQuestionsOpen(kind,day))return false;
  const period=reportWindow(kind,day).period;
+ if(formPeriod&&formPeriod!==period.key)return false;
  return key===period.key||(scope==='plan'&&key===period.nk);
 }
 function reportQuestionForPeriod(question,key,scope='review'){
@@ -4051,11 +4067,11 @@ function reportQuestionLocks(scope='review'){
  const field=scope==='plan'?'planningLocks':'ql';
  if(!A[field]||typeof A[field]!=='object'||Array.isArray(A[field]))A[field]={};return A[field];
 }
-function reportLockedNotice(k){const year=Number(k.slice(0,4));return `<p class="report-lock-note" role="status">🔒 ${tr()?`Cevapların kilitlendi. ${year+1} yılının başında Yanıt arşivinden okuyabilirsin.`:`Your answers are locked. Read them in the Answer archive at the beginning of ${year+1}.`}</p>`}
+function reportLockedNotice(){return `<p class="report-lock-note" role="status">🔒 ${tr()?'Bu bölümün yanıtları kaydedildi ve kilitlendi.':'Your answers for this section are saved and locked.'}</p>`}
 function reportGroupLocked(scope,k){
   return !!(reportQuestionLocks(scope)[k]||(scope==='plan'&&reportQuestionLocks('review')[k]));
 }
-function submitPeriodReport(kind,key){
+function submitPeriodReport(kind,key,quiet=false){
   const day=istanbulDayKey();
   if(!['week','month'].includes(kind)||!reportQuestionsOpen(kind,day))return false;
   const period=reportWindow(kind,day).period;
@@ -4068,7 +4084,7 @@ function submitPeriodReport(kind,key){
     if(!Array.isArray(questions))return false;
     const missing=questions.findIndex(q=>!String(q.a||'').trim());
     if(missing>=0){
-      if(typeof document!=='undefined'){
+      if(!quiet&&typeof document!=='undefined'){
         toast(tr()?'Göndermeden önce kalan soruları cevapla.':'Answer the remaining questions before submitting.');
         document.getElementById('report-'+scope+'-'+k+'-'+missing)?.focus();
       }
@@ -4079,53 +4095,13 @@ function submitPeriodReport(kind,key){
   for(const [scope,k] of pending)reportQuestionLocks(scope)[k]=1;
   save();P.rep();return true;
 }
-const qb=(k,arr,ro,scope='review')=>arr.map((x,i)=>`<label for="report-${scope}-${k}-${i}">${esc(reportQuestionForPeriod(x,k,scope))}</label><div class="qa"><textarea id="report-${scope}-${k}-${i}" rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this,'${scope}')">${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i},'${scope}')">${t('delete')}</button>`}</div><div class="qcap mut">${String(x.a||'').length}/400</div>`).join('');
-function qa(k,i,el,scope='review'){if(!canAnswerReport(k,scope)||reportGroupLocked(scope,k))return;const question=reportQuestionStore(scope)[k]?.[i];if(!question)return;const previous=question.a;question.a=el.value.slice(0,400);if(question.a.trim()&&question.a!==previous)recordActivity();else save();const counter=el.parentElement?.nextElementSibling;if(counter)counter.textContent=question.a.length+'/400'}
-function delQ(k,i,scope='review'){if(!canAnswerReport(k,scope)||reportGroupLocked(scope,k))return;const questions=reportQuestionStore(scope)[k];if(!Array.isArray(questions)||!questions[i])return;questions.splice(i,1);save();P.rep()}
-function addRandQ(k,scope='review'){if(!canAnswerReport(k,scope)||reportGroupLocked(scope,k))return;const kind=k.length===7?'month':'week',R=scope==='plan'?(tr()?PLAN_RQ_TR[kind]:PLAN_RQ_EN[kind]):rqFor();(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(R[Math.floor(Math.random()*R.length)]));save();P.rep()}
+const qb=(k,arr,ro,scope,formPeriod)=>arr.map((x,i)=>`<label for="report-${scope}-${k}-${i}">${esc(reportQuestionForPeriod(x,k,scope))}</label><div class="qa"><textarea id="report-${scope}-${k}-${i}" rows="2" maxlength="400" ${ro?'readonly':''} placeholder="${tr()?'Kısa cevap (en fazla 400 karakter)':'Short answer (max 400 characters)'}" oninput="qa('${k}',${i},this,'${scope}','${formPeriod}')" ${!ro&&formPeriod.length===7?`onchange="submitPeriodReport('month','${formPeriod}',true)"`:''}>${esc(x.a)}</textarea>${ro?'':`<button class="g s d" onclick="delQ('${k}',${i},'${scope}','${formPeriod}')">${t('delete')}</button>`}</div><div class="qcap mut">${String(x.a||'').length}/400</div>`).join('');
+function qa(k,i,el,scope='review',formPeriod){if(!canAnswerReport(k,scope,istanbulDayKey(),formPeriod)||reportGroupLocked(scope,k))return;const question=reportQuestionStore(scope)[k]?.[i];if(!question)return;const previous=question.a;question.a=el.value.slice(0,400);if(question.a.trim()&&question.a!==previous)recordActivity();else save();const counter=el.parentElement?.nextElementSibling;if(counter)counter.textContent=question.a.length+'/400'}
+function delQ(k,i,scope='review',formPeriod){if(!canAnswerReport(k,scope,istanbulDayKey(),formPeriod)||reportGroupLocked(scope,k))return;const questions=reportQuestionStore(scope)[k];if(!Array.isArray(questions)||!questions[i])return;questions.splice(i,1);save();P.rep()}
+function addRandQ(k,scope='review',formPeriod){if(!canAnswerReport(k,scope,istanbulDayKey(),formPeriod)||reportGroupLocked(scope,k))return;const kind=k.length===7?'month':'week',R=scope==='plan'?(tr()?PLAN_RQ_TR[kind]:PLAN_RQ_EN[kind]):rqFor();(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(R[Math.floor(Math.random()*R.length)]));save();P.rep()}
 function addQ(k,scope='review'){if(!canAnswerReport(k,scope)||reportGroupLocked(scope,k))return;const e=$('#nq-'+k),v=String(e?.value||'').trim().slice(0,150);if(v){(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(v,true));save();P.rep()}}
-/* Weekly/monthly reports unlock on the last calendar day of their period.
-   Keep showing the most recently unlocked period after the week/month changes. */
-function reportPeriodEnded(now,end){return /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}-\d{2}$/.test(String(end))&&now>=end}
-function latestUnlockedReportPeriod(kind,day){
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(day)))return null;
-  if(kind==='week'){
-    let start=mon(day);
-    if(!reportPeriodEnded(day,addD(start,6)))start=addD(start,-7);
-    return {a:start,b:addD(start,6),pa:addD(start,-7),pb:addD(start,-1),
-      key:start,nk:addD(start,7)};
-  }
-  if(kind==='month'){
-    const first=new Date(Number(day.slice(0,4)),Number(day.slice(5,7))-1,1);
-    const currentEnd=D(new Date(first.getFullYear(),first.getMonth()+1,0));
-    if(!reportPeriodEnded(day,currentEnd))first.setMonth(first.getMonth()-1);
-    const y=first.getFullYear(),m=first.getMonth();
-    const a=D(new Date(y,m,1));
-    return {a,b:D(new Date(y,m+1,0)),
-      pa:D(new Date(y,m-1,1)),pb:D(new Date(y,m,0)),
-      key:a.slice(0,7),nk:D(new Date(y,m+1,1)).slice(0,7)};
-  }
-  throw new RangeError('Invalid report period');
-}
-/* Never retroactively change a pre-existing account's earned unlock.
-   Legacy accounts keep their original month-end and first-week progress.
-   Only accounts explicitly created with full-period-v1 use next COMPLETE
-   calendar period if they join mid-period. A normalizer-derived reportStart
-   on an old account is not evidence that the user opted into new timing. */
-function reportInitialUnlockDate(kind,start,fullPeriod=false){
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(start)))return null;
-  if(kind==='week'){
-    const firstMonday=mon(start);
-    const firstSunday=addD(firstMonday,6);
-    if(fullPeriod)return addD(firstMonday===start?firstMonday:addD(firstMonday,7),6);
-    // Legacy Sunday signup starts its first complete seven-day cycle next week.
-    return start===firstSunday?addD(firstSunday,7):firstSunday;
-  }
-  if(kind==='month'){
-    const [y,m,d]=start.split('-').map(Number);
-    return D(new Date(y,m+(fullPeriod&&d!==1?1:0),0));
-  }
-  throw new RangeError('Invalid report kind');
+function reportDateLabel(day){
+ return new Intl.DateTimeFormat(tr()?'tr-TR':'en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:'Europe/Istanbul'}).format(new Date(day+'T12:00:00+03:00'));
 }
 function pendingReportCard(title,start,available){
   const td=istanbulDayKey();
@@ -4133,21 +4109,11 @@ function pendingReportCard(title,start,available){
   const elapsed=Math.min(total,Math.max(0,dd(start,td)+1));
   const left=Math.max(0,dd(td,available));
   return `<div class="card"><h2>🔒 ${title}</h2>
-    <p class="mut">${t('opensOn')} ${fmt(available)} — ${left} ${t('daysLeft')}</p>
+    <p class="mut">${t('opensOn')} <time datetime="${available}">${reportDateLabel(available)}</time> — ${left} ${t('daysLeft')}</p>
     <div class="bar"><i style="width:${Math.min(100,elapsed/total*100)}%"></i></div></div>`;
 }
-function answerArchiveUnlocked(now,periodKey){return now.slice(5)==='01-01'&& /^\d{4}-\d{2}-\d{2}$/.test(String(now))&&/^\d{4}-\d{2}(?:-\d{2})?$/.test(String(periodKey))&&Number(now.slice(0,4))>Number(periodKey.slice(0,4))}
-function repCard(title,per,a,b,pa,pb,key,nk,defs){
-  const td=istanbulDayKey();
-  if(!reportPeriodEnded(td,b)){
-    const tot=dd(a,b)+1,pass=dd(a,td)+1;
-    return`<div class="card"><h2>🔒 ${title}</h2><p class="mut">${t('opensOn')} ${fmt(b)} — ${dd(td,b)} ${t('daysLeft')}</p><div class="bar"><i style="width:${Math.min(100,pass/tot*100)}%"></i></div></div>`;
-  }
-  const s=st(a,b),pv=st(pa,pb),df=s.p-pv.p;
-  const rows=Object.entries(s.by).map(([k,v])=>`<div class="task"><span>${esc(k)}</span><b>${v[0]}/${v[1]}</b></div>`).join('');
-  const summary=`<div class="card"><h2>${title} <small class="mut" style="display:block;font-size:.75rem;font-weight:400">${fmt(a)} – ${fmt(b)}</small></h2><p>${s.d}/${s.t} ${t('tasksDone')} — <b>%${s.p}</b> <span class="mut">(${t('previous')} ${per}: %${pv.p}, ${t('change')} ${df>=0?'+':''}${df})</span></p><div class="bar"><i style="width:${s.p}%"></i></div>${rows}`;
-  if(td!==b||!canAnswerReport(key,'review',td))return summary+'</div>';
-  return summary+periodReportForm(key.length===7?'month':'week',key,nk)+'</div>';
+function answerArchiveUnlocked(now,periodKey){
+ return /^\d{4}-01-01$/.test(now)&&/^\d{4}-\d{2}(?:-\d{2})?$/.test(periodKey)&&Number(now.slice(0,4))-1===Number(periodKey.slice(0,4));
 }
 function periodReportForm(kind,key,next){
   const weekly=kind==='week';
@@ -4155,21 +4121,21 @@ function periodReportForm(kind,key,next){
   const groups=[
     ['review',key,tr()?'Dönem değerlendirmen':'Your period review'],
     ['plan',key,tr()?'Bu dönem için yaptığın planlar':'Your earlier plans for this period'],
-    ['plan',next,tr()?(weekly?'Gelecek hafta':'Gelecek ay'):(weekly?'Next week':'Next month')]
+    ['plan',next,tr()?(weekly?'Gelecek hafta':'Bu ayın planı'):(weekly?'Next week':'Plans for this month')]
   ];
-  if(!A.qs[next])A.qs[next]=periodDefaultQuestions(kind,next,'review');
-  if(groups.every(([scope,k])=>reportGroupLocked(scope,k))){
-    const nextEnd=calendarReportPeriod(kind,weekly?next:next+'-01').b;
-    return `<section class="report-submitted"><h3>${heading}</h3>${reportLockedNotice(key)}<p>${tr()?'Sonraki rapor':'Next report'} · ${fmt(nextEnd)}</p></section>`;
+  if(A.ql?.[key]){
+    const opens=reportWindow(kind).next;
+    return `<section class="report-submitted"><h3>${heading}</h3>${reportLockedNotice()}<p>${tr()?'Sonraki rapor':'Next report'} · <time datetime="${opens}">${reportDateLabel(opens)}</time></p></section>`;
   }
+  if(!A.qs[next])A.qs[next]=periodDefaultQuestions(kind,next,'review');
   const fields=groups.map(([scope,k,title])=>{
     const records=reportQuestionStore(scope);
     if(!Array.isArray(records[k]))records[k]=periodDefaultQuestions(kind,k,scope);
     const locked=reportGroupLocked(scope,k);
-    const body=locked?reportLockedNotice(k):qb(k,records[k],false,scope)+`<button type="button" class="g s" onclick="addRandQ('${k}','${scope}')">${t('randomQuestion')}</button>`;
+    const body=locked?reportLockedNotice():qb(k,records[k],false,scope,key)+`<button type="button" class="g s" onclick="addRandQ('${k}','${scope}','${key}')">${t('randomQuestion')}</button>`;
     return `<section class="${scope==='plan'?'report-plan-period':'report-review-period'}" id="report-group-${scope}-${k}"><h3>${title}</h3>${body}</section>`;
   }).join('');
-  return `<section class="period-questionnaire" data-period="${key}"><h2>${heading}</h2><p class="mut">${tr()?'Yanıtlarını düzenleyebilirsin. Gönderdiğinde bu dönem kapanır.':'You can edit your answers until you submit this period.'}</p>${fields}<button class="report-send" type="button" onclick="submitPeriodReport('${kind}','${key}')">${tr()?'Gönder':'Submit'}</button></section>`;
+  return `<section class="period-questionnaire" data-period="${key}"><h2>${heading}</h2><p class="mut">${weekly?(tr()?'Yanıtlarını düzenleyebilirsin. Gönderdiğinde bu dönem kapanır.':'You can edit your answers until you submit this period.'):(tr()?'Son cevabını yazıp alandan çıktığında aylık rapor kilitlenir.':'The monthly report locks when you finish the last answer and leave its field.')}</p>${fields}<button class="report-send" type="button" onclick="submitPeriodReport('${kind}','${key}')">${tr()?'Gönder':'Submit'}</button></section>`;
 }
 /* ---- gecmis raporlar: kisa ozet (haftalik / aylik) ---- */
 function briefRow(label,val,sub){
@@ -4208,17 +4174,19 @@ function reportDetailView(){
   }
   if(reportDetail==='answers'){
     if(!annualReportOpen())return header+annualReportCard();
-    const keys=[...new Set([...Object.keys(A.ql||{}),...Object.keys(A.planningLocks||{})])].filter(k=>/^\d{4}-(\d{2}(-\d{2})?)$/.test(k)).sort().reverse();
+    const day=istanbulDayKey();
+    const keys=[...new Set([...Object.keys(A.ql||{}),...Object.keys(A.planningLocks||{})])].filter(k=>answerArchiveUnlocked(day,k)).sort().reverse();
     const rows=keys.filter(k=>A.ql?.[k]||A.planningLocks?.[k]).map(k=>{
-      const year=Number(k.slice(0,4)),locked=!answerArchiveUnlocked(istanbulDayKey(),k),qs=A.ql?.[k]&&Array.isArray(A.qs[k])?A.qs[k]:[];
+      const qs=A.ql?.[k]&&Array.isArray(A.qs[k])?A.qs[k]:[];
       const plans=(A.planningLocks?.[k]||A.ql?.[k])&&Array.isArray(A.planningQs?.[k])?A.planningQs[k]:[];
       const renderQuestion=q=>`<div><b>${esc(reportQuestionText(q))}</b><p>${esc(q.a||'')}</p></div>`;
-      return `<article class="note-tile"><b>${esc(k)} ${locked?'🔒':''}</b>${locked?`<p class="mut">${tr()?`Yanıtlar ${year+1} yılının başında açılır.`:`Answers unlock at the beginning of ${year+1}.`}</p>`:`${plans.length?`<h3>${tr()?'Dönem başındaki planların':'Plans made before this period'}</h3>${plans.map(renderQuestion).join('')}<h3>${tr()?'Dönem değerlendirmen':'Your period review'}</h3>`:''}${qs.map(renderQuestion).join('')}`}</article>`;
+      return `<article class="note-tile"><b>${esc(k)}</b>${plans.length?`<h3>${tr()?'Dönem başındaki planların':'Plans made before this period'}</h3>${plans.map(renderQuestion).join('')}<h3>${tr()?'Dönem değerlendirmen':'Your period review'}</h3>`:''}${qs.map(renderQuestion).join('')}</article>`;
     });
     return header+`<div class="card"><div class="note-grid">${rows.join('')||`<p class="mut">${tr()?'Henüz kilitli yanıt bulunmuyor.':'No locked answers yet.'}</p>`}</div></div>`;
   }
   if(!annualReportOpen())return header+annualReportCard();
-  const byDay=Object.keys(A.hist||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&Array.isArray(A.hist[k])).sort().reverse();
+  const day=istanbulDayKey();
+  const byDay=Object.keys(A.hist||{}).filter(k=>k.length===10&&answerArchiveUnlocked(day,k)&&Array.isArray(A.hist[k])).sort().reverse();
   const groups=new Map();for(const day of byDay){const month=day.slice(0,7);if(!groups.has(month))groups.set(month,[]);groups.get(month).push(day)}
   const cards=[...groups].map(([month,days])=>{
     const lines=days.map(d=>{const it=items(d),done=it.filter(x=>x&&x.done).length;return `<div class="task"><span>${esc(d)} — ${done}/${it.length} ${t('tasksDone')}</span><button class="g s" onclick="openDay('${d}',true)">${tr()?'İncele':'Review'}</button></div>`}).join('');
@@ -4226,27 +4194,31 @@ function reportDetailView(){
   }).join('');
   return header+`<div class="card"><button class="g s" onclick="showReportDetail('answers')">${tr()?'🔒 Yıl sonu yanıt arşivi':'🔒 Year-end answer archive'}</button><p class="mut">${tr()?'Yanıtlar kilitlendikten sonra yıl bitene kadar gizli kalır.':'Locked answers stay hidden until the year ends.'}</p></div>${cards||`<div class="card"><p class="mut">${tr()?'Henüz geçmiş kayıt yok.':'No past records yet.'}</p></div>`}`;
 }
-function reportAvailability(kind,td=today()){
+function reportAvailability(kind,td=istanbulDayKey()){
  const dates=[A?.reportStart,A?.pctFrom].filter(v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v)));
- const since=dates[0]||td;
- let start=calendarReportPeriod(kind,since).a;
  const joined=Date.parse(A?.reportJoinedAt||'');
- if(start<since||(Number.isFinite(joined)&&joined>Date.parse(start+'T00:00:00+03:00')))start=kind==='week'?addD(start,7):calendarReportPeriod('month',start).nk+'-01';
- const full=calendarReportPeriod(kind,start);
- return {since,unlock:kind==='week'?full.b:full.nk+'-01'};
+ const saved=dates[0]||td,joinedDay=Number.isFinite(joined)?istanbulDayKey(new Date(joined)):saved;
+ const since=joinedDay>saved?joinedDay:saved;
+ const period=calendarReportPeriod(kind,since);
+ if(kind==='month')return {since,unlock:period.nk+'-01'};
+ const partial=period.a<since||(Number.isFinite(joined)&&joined>Date.parse(period.a+'T00:00:00+03:00'));
+ return {since,unlock:partial?addD(period.b,7):period.b};
 }
 function calendarReportPeriod(kind,day){
  if(kind==='week'){const a=mon(day);return{a,b:addD(a,6),pa:addD(a,-7),pb:addD(a,-1),key:a,nk:addD(a,7)}}
  if(kind==='month'){const [y,m]=day.split('-').map(Number),a=D(new Date(y,m-1,1));return{a,b:D(new Date(y,m,0)),pa:D(new Date(y,m-2,1)),pb:D(new Date(y,m-1,0)),key:a.slice(0,7),nk:D(new Date(y,m,1)).slice(0,7)}}
  throw new RangeError('Invalid report period');
 }
-function reportSummaryCard(kind,lastCompleted){
+function reportSummaryCard(kind){
  const td=istanbulDayKey(),window=reportWindow(kind,td),period=window.period,{since,unlock}=reportAvailability(kind,td),title=t(kind==='week'?'weeklyReport':'monthlyReport');
- const submitted=!!A.ql?.[period.key],open=reportQuestionsOpen(kind,td)&&!submitted;
+ const submitted=!!A.ql?.[period.key],open=reportQuestionsOpen(kind,td);
  if(!open){
   const next=unlock>td?unlock:window.opens>td?window.opens:window.next;
-  const reason=submitted?(tr()?'Bu dönemin yanıtları gönderildi.':'Your answers for this period were submitted.'):!reportPeriodEligible(period)?(tr()?'Tamamını geçirdiğin ve görev, günlük veya odak kaydı bulunan bir dönem gerekli.':'A full period since joining with a task, journal or focus record is required.'):'';
-  return '<section class="report-period-block">'+pendingReportCard(title,since,next)+(reason?'<p class="mut">'+reason+'</p>':'')+'</section>';
+  const reason=submitted?(tr()?'Bu dönemin yanıtları gönderildi.':'Your answers for this period were submitted.')
+    :!reportPeriodEligible(period,td)?(kind==='month'
+      ?(tr()?'Önceki ayda hesaba eklenmiş bir görev, günlük veya tamamlanmış odak oturumu gerekir.':'A task, journal entry or completed focus session in the preceding month is required.')
+      :(tr()?'Tamamını geçirdiğin ve görev, günlük veya odak kaydı bulunan bir hafta gerekli.':'A full week since joining with a task, journal or focus record is required.')):'';
+  return `<section class="report-period-block${submitted?' report-submitted':''}">${pendingReportCard(title,kind==='month'?window.opens:since,next)}${reason?'<p class="mut">'+reason+'</p>':''}</section>`;
  }
  const summary=st(period.a,period.b);
  return `<section class="card report-summary"><h2>${title}</h2><p class="mut">${fmt(period.a)} – ${fmt(period.b)}</p><p>${summary.d}/${summary.t} ${t('tasksDone')} · %${summary.p}</p><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Soruları yanıtla':'Answer questions'} →</button></section>`;
@@ -4263,7 +4235,7 @@ function periodTaskBreakdown(a,b){
 function periodReportDetail(kind,previous=false){
  const td=istanbulDayKey(),window=reportWindow(kind,td),period=window.period,title=t(kind==='week'?'weeklyReport':'monthlyReport');
  const header=`<div class="card"><div class="row report-heading"><h2>${title}</h2><button class="g s" onclick="reportBack()">← ${t('back')}</button></div></div>`;
- if(previous||!reportQuestionsOpen(kind,td)||A.ql?.[period.key])return header+reportSummaryCard(kind);
+ if(previous||!reportQuestionsOpen(kind,td))return header+reportSummaryCard(kind);
  return header+periodTaskBreakdown(period.a,period.b)+`<section class="card">${periodReportForm(kind,period.key,period.nk)}</section>`;
 }
 function annualReportOpen(day=istanbulDayKey()){
@@ -4273,7 +4245,10 @@ function annualReportOpen(day=istanbulDayKey()){
 }
 function annualReportCard(){
  const day=istanbulDayKey(),year=Number(day.slice(0,4)),title=tr()?'Yıllık özet':'Annual summary';
- if(!annualReportOpen(day))return `<section class="card"><h2>🔒 ${title}</h2><p class="mut">${tr()?'1 Ocak günü, tamamını geçirdiğin ve kayıtlarının bulunduğu önceki yıl için açılır.':'Opens on January 1 for a full preceding year with your activity records.'}</p></section>`;
+ if(!annualReportOpen(day)){
+   const next=(year+1)+'-01-01';
+   return `<section class="card"><h2>🔒 ${title}</h2><p class="mut">${tr()?'Sonraki yıllık özet':'Next annual summary'} · <time datetime="${next}">${reportDateLabel(next)}</time>. ${tr()?'Tamamını geçirdiğin önceki takvim yılında görev, günlük veya odak kaydın varsa açılır.':'Opens if you spent the full preceding calendar year here and recorded a task, journal entry or focus session.'}</p></section>`;
+ }
  const result=st((year-1)+'-01-01',(year-1)+'-12-31');
  return `<section class="card"><h2>${title} · ${year-1}</h2><p>${result.d}/${result.t} ${t('tasksDone')} · %${result.p}</p><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıtlarını incele':'Review your answers'}</button></section>`;
 }
@@ -4288,8 +4263,7 @@ function reportPlanningOverview(){
 P.rep=()=>{
  reportRenderedDay=istanbulDayKey();
  if(reportDetail){M(reportDetailView());return}
- const td=istanbulDayKey(),w=latestUnlockedReportPeriod('week',td),m=latestUnlockedReportPeriod('month',td);
- M(reportSummaryCard('week',w)+reportSummaryCard('month',m)+reportPlanningOverview()+annualReportCard()+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'} 🔒</button></div></section>`);
+ M(reportSummaryCard('week')+reportSummaryCard('month')+reportPlanningOverview()+annualReportCard()+`<section class="card report-archives"><h2>${tr()?'Arşivlerin':'Your archives'}</h2><div class="row"><button class="g" onclick="showReportDetail('summary')">${tr()?'Geçmiş özetler':'Past summaries'}</button><button class="g" onclick="showReportDetail('journals')">${tr()?'Günlükler':'Journals'}</button><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıt arşivi':'Answer archive'} 🔒</button></div></section>`);
 };
 
 let pm={w:25,b:5,ph:'w',left:1500,run:0,end:0,n:0,iv:0,lg:0,sw:0,swT:0,swI:0,swMs:0};

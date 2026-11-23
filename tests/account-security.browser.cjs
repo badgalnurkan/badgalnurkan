@@ -2,6 +2,7 @@
 const { chromium, webkit, firefox }=require('playwright');
 const verifyRecovery=require('./recovery-browser.browser.cjs');
 const verifyLoginEmail=require('./login-email-gate.browser.cjs');
+const verifyGrowingText=require('./growing-text.browser.cjs');
 const {spawn}=require('node:child_process'),assert=require('node:assert/strict');
 (async()=>{
  const server=spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
@@ -16,6 +17,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await require('./turnstile-provider.browser.cjs')(browser);
    await verifyRecovery(browser,engine);
    await verifyLoginEmail(browser,engine);
+   await verifyGrowingText(browser,engine);
    if(engine==='firefox'){await browser.close();continue}
    for(const width of [320,375,390,430,768,1440]){
     const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:2});
@@ -324,16 +326,33 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const monthly=productivity.locator('.period-questionnaire');
    await monthly.locator('.report-send').click();
    assert.ok(await monthly.locator('textarea').count()>0,engine+' incomplete report remains editable');
-   for(const field of await monthly.locator('textarea').all())await field.fill('Kasım yanıtım');
-   await monthly.locator('.report-send').click();
+   const review=monthly.locator('textarea').first(),longAnswer='Kasım yanıtım\n'.repeat(18);
+   await review.fill(longAnswer);
+   assert.ok(await review.evaluate(el=>el.clientHeight>=el.scrollHeight-1),engine+' long report answer fits');
+   await changeDay('2026-12-02');
+   assert.equal(await review.inputValue(),longAnswer,engine+' open monthly draft survives the first midnight');
+   await changeDay('2026-12-31');
+   assert.equal(await review.inputValue(),longAnswer,engine+' unfinished report stays open through the last day');
+   const answers=monthly.locator('textarea');
+   for(const field of await answers.all())await field.fill('Kasım yanıtım');
+   assert.ok(await answers.last().isVisible(),'the last answer remains editable while typing');
+   await answers.last().press('Tab');
    await productivity.locator('.report-submitted').waitFor();
    assert.equal(await productivity.locator('.report-planning-overview textarea').count(),0);
+   assert.equal(await productivity.locator('.report-submitted time').getAttribute('datetime'),'2027-01-01');
    await productivity.evaluate(()=>showReportDetail('month'));
    assert.equal(await productivity.locator('textarea[id^="report-"]').count(),0);
-   await productivity.evaluate(()=>reportBack());
-   await changeDay('2026-12-02');assert.equal(await productivity.locator('.report-planning-overview').count(),0);
+   await productivity.evaluate(()=>{reportBack();A.hist['2026-12-30']=[{t:'December task',done:true}];A.hist['2025-12-31']=[{t:'Older task',done:true}]});
+   await changeDay('2027-01-01');
+   assert.equal(await monthly.getAttribute('data-period'),'2026-12');
+   await productivity.evaluate(()=>showReportDetail('summary'));
+   await productivity.locator('button[onclick*="2026-12-30"]').waitFor();
+   assert.equal(await productivity.locator('button[onclick*="2025-12-31"]').count(),0);
+   await changeDay('2027-01-02');
+   assert.equal(await productivity.locator('button[onclick*="2026-12-30"]').count(),0,engine+' open annual detail locks at midnight');
+   assert.equal(await productivity.locator('time[datetime="2028-01-01"]').count(),1);
    await productivity.evaluate(()=>showReportDetail('month-previous'));
-   assert.equal(await productivity.locator('textarea[id^="report-"]').count(),0,engine+' previous month is read-only statistics');
+   assert.equal(await productivity.locator('textarea[id^="report-"]').count(),0,engine+' previous month stays read-only');
    await productivity.goto('http://127.0.0.1:4173/review-app.html?page=pomo&lang=en&date=2026-11-18');
    await productivity.evaluate(()=>{A.focusHistory=Array.from({length:6},(_,i)=>({at:new Date(2026,i===5?9:10,i===5?31:18-i,12).getTime(),seconds:(i+1)*60,completed:true}));P.pomo()});
    const analysis=productivity.locator('.focus-history'),more=analysis.locator('summary'),dateRows=analysis.locator('.focus-day:visible');

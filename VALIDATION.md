@@ -255,3 +255,9 @@ Browser tests use synthetic account and mail responses. A real three-account ses
 A newly authenticated session now reuses an earlier same-account session only after the server quick-resume RPC approves its original email-proof deadline. Cache timestamps alone never authorize reuse. Explicit logout/forget removes the cached proof. 310 Node checks passed. Final-head Chromium, WebKit and Firefox regression checks passed, including email proof, page reload, a new same-account authentication result, and no increase in mail requests. Provider/Auth responses in these browser checks are synthetic. Server permission and original one-hour deadline remain authoritative; no database or Edge changes in this follow-up.
 
 PR #60 merged as 3ada04cde1aac7bbd0be343f0bc18bb6ad83e9ac; production deployment dpl_H7ynwSHsZe96KAK6owz6FyPy2phf READY. The user's exact browser session was not operated.
+
+## 23 Kasım 2026 · Aylık rapor döngüsü ve uzun metin
+
+Aylık rapor Türkiye saatinde ayın ilk günü önceki ayın etkinliğiyle açılır. Kayıt ayında hesabına görev, günlük veya tamamlanmış odak kaydı ekleyen kullanıcı bir sonraki ay katılabilir. Tamamlanmamış cevaplar ayın son günü boyunca düzenlenebilir. Son alan onaylandığında veya Gönder seçildiğinde mevcut dönem kilidi kaydedilir. Yıllık görünüm 1 Ocak boyunca yalnızca önceki takvim yılını okur.
+
+316 birim testi ve statik önizleme derlemesi geçti. Kontroller 2027 ve 2028'in bütün aylarını, 1 Ocak ve 2 Ocak Türkiye saati sınırlarını, eski cevapların ve görevlerin korunmasını ve eski bir formun yeni döneme yazamamasını kapsar. Tarayıcı senaryoları örnek hesaplarla çalışır. Bu sürümde veritabanı geçişi veya gerçek kullanıcılar üzerinde veri düzenleme işlemi yoktur.
