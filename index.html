@@ -2514,8 +2514,10 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-23-period-end-entry-and-writing-04';
+const SITE_RELEASE='2026-11-23-month-calendar-05';
 const SITE_CHANGES=[
+  {date:'2026-11-23',trTitle:'Aylık rapor takvimi',enTitle:'Monthly report calendar',items:[
+  ['Aylık rapor kartında ilgili ayın adı, ayın son günündeki açılış ve sonraki ayın ilk günündeki kapanış Türkiye saatiyle gösterilir.','The monthly report shows its month, its opening on the final day and its closing on the first day of the following month in Istanbul time.']]},
  {date:'2026-11-23',trTitle:'Dönem raporları, kayıt ve yazma alanları',enTitle:'Period reports, signup and text fields',items:[
   ['Haftalık rapor pazar, aylık rapor ayın son günü, yıllık özet 31 Aralık günü açılır. Gün bittiğinde kapanır.','Weekly reports open on Sundays, monthly reports on the last calendar day, and the annual summary on December 31. Each closes at midnight.'],
   ['Uzun metin alanları yazdıkça büyür. Günlük sınırı 2000 karakterdir. Geleceğe notlar kendi düzenleyicisinde açılır.','Long text fields expand as you type. Journals allow 2,000 characters and future notes have a note-only editor.'],
@@ -4214,17 +4216,21 @@ function qa(k,i,el,scope='review',formPeriod){
 function delQ(k,i,scope='review',formPeriod){if(!canAnswerReport(k,scope,istanbulDayKey(),formPeriod)||reportGroupLocked(scope,k))return;const questions=reportQuestionStore(scope)[k];if(!Array.isArray(questions)||!questions[i])return;questions.splice(i,1);save();P.rep()}
 function addRandQ(k,scope='review',formPeriod){if(!canAnswerReport(k,scope,istanbulDayKey(),formPeriod)||reportGroupLocked(scope,k))return;const kind=k.length===7?'month':'week',R=scope==='plan'?(tr()?PLAN_RQ_TR[kind]:PLAN_RQ_EN[kind]):rqFor();(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(R[Math.floor(Math.random()*R.length)]));save();P.rep()}
 function addQ(k,scope='review'){if(!canAnswerReport(k,scope)||reportGroupLocked(scope,k))return;const e=$('#nq-'+k),v=String(e?.value||'').trim().slice(0,150);if(v){(reportQuestionStore(scope)[k]||=[]).push(makeReportQuestion(v,true));save();P.rep()}}
-function reportDateLabel(day){
- return new Intl.DateTimeFormat(tr()?'tr-TR':'en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:'Europe/Istanbul'}).format(new Date(day+'T12:00:00+03:00'));
+function reportDateLabel(day,monthOnly=false){
+ const options={month:'long',year:'numeric',timeZone:'Europe/Istanbul'};
+ if(!monthOnly)options.day='numeric';
+ return new Intl.DateTimeFormat(tr()?'tr-TR':'en-GB',options).format(new Date(day+'T12:00:00+03:00'));
+}
+function reportProgressBar(start,end,day){
+ const total=Math.max(1,dd(start,end)+1);
+ const elapsed=Math.min(total,Math.max(0,dd(start,day)+1));
+ return `<div class="bar"><i style="width:${Math.min(100,elapsed/total*100)}%"></i></div>`;
 }
 function pendingReportCard(title,start,available){
-  const td=istanbulDayKey();
-  const total=Math.max(1,dd(start,available)+1);
-  const elapsed=Math.min(total,Math.max(0,dd(start,td)+1));
-  const left=Math.max(0,dd(td,available));
-  return `<div class="card"><h2>🔒 ${title}</h2>
-    <p class="mut">${t('opensOn')} <time datetime="${available}">${reportDateLabel(available)}</time> — ${left} ${t('daysLeft')}</p>
-    <div class="bar"><i style="width:${Math.min(100,elapsed/total*100)}%"></i></div></div>`;
+ const td=istanbulDayKey(),left=Math.max(0,dd(td,available));
+ return `<div class="card"><h2>🔒 ${title}</h2>
+   <p class="mut">${t('opensOn')} <time datetime="${available}">${reportDateLabel(available)}</time> — ${left} ${t('daysLeft')}</p>
+   ${reportProgressBar(start,available,td)}</div>`;
 }
 function answerArchiveUnlocked(now,periodKey){
  return /^\d{4}-12-31$/.test(now)&&/^\d{4}-\d{2}(?:-\d{2})?$/.test(periodKey)&&now.slice(0,4)===periodKey.slice(0,4);
@@ -4342,8 +4348,28 @@ function reportActivityLine(a,b){
  if(focus)parts.push(tr()?`${focus} tamamlanmış odak oturumu`:`${focus} completed focus ${focus===1?'session':'sessions'}`);
  return parts.join(' · ');
 }
+function monthlyReportCard(day,window,firstMonthEnd){
+ const {period,opens,closes,next}=window;
+ const submitted=!!A.ql?.[period.key],open=reportQuestionsOpen('month',day);
+ const title=t('monthlyReport')+' · '+reportDateLabel(period.a,true);
+ const midnight=date=>`<time datetime="${date}T00:00:00+03:00">${reportDateLabel(date)} ${tr()?'00.00':'00:00'}</time>`;
+ const schedule=`<p class="mut report-month-window">${tr()?'Açılış':'Opens'} · ${midnight(opens)}<br>${tr()?'Kapanış':'Closes'} · ${midnight(closes)} (${tr()?'Türkiye saati':'Istanbul time'})</p>`;
+ let status='';
+ if(submitted){
+   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>`;
+ }else if(period.b<firstMonthEnd){
+   status=`<p class="mut report-first-month">${tr()?'Yeni üyeler kayıt ayını izleyen aydan başlar. İlk kişisel raporun':'New members start the month after signing up. Your first personal report'} · <time datetime="${firstMonthEnd}">${reportDateLabel(firstMonthEnd)}</time>. ${tr()?'O ayda bir görev, günlük veya tamamlanmış odak kaydı gerekir.':'Record a task, journal entry or completed focus session in that month.'}</p>`;
+ }else if(open){
+   status=`<p>${reportActivityLine(period.a,period.b)}</p><button class="g report-more" onclick="showReportDetail('month')">${tr()?'Soruları yanıtla':'Answer questions'} →</button>`;
+ }else if(!reportHasActivity(period.a,period.b)){
+   status=`<p class="mut">${tr()?'Bu ay için henüz görev, günlük veya tamamlanmış odak kaydı yok.':'No tasks, journal entries or completed focus sessions recorded this month yet.'}</p>`;
+ }
+ const countdown=day<opens?`<p class="mut">${dd(day,opens)} ${t('daysLeft')}</p>${reportProgressBar(period.a,opens,day)}`:'';
+ return `<section class="card report-month-card${open?' report-summary':submitted?' report-submitted':''}" data-month="${period.key}"><h2>${open?'':'🔒 '}${title}</h2>${schedule}${countdown}${status}</section>`;
+}
 function reportSummaryCard(kind){
  const td=istanbulDayKey(),window=reportWindow(kind,td),period=window.period,{since,unlock}=reportAvailability(kind,td),title=t(kind==='week'?'weeklyReport':'monthlyReport');
+ if(kind==='month')return monthlyReportCard(td,window,unlock);
  const submitted=!!A.ql?.[period.key],open=reportQuestionsOpen(kind,td);
  if(!open){
   const next=unlock>td?unlock:window.opens>td?window.opens:window.next;

@@ -171,3 +171,42 @@ test('midnight archives a completed last field before blur, keeps incomplete dra
  const d=active();d.current='2026-11-30';d.periodReportForm('month',key,next);d.qa(key,0,{value:'My draft'},'review',key);
  d.current='2026-12-01';assert.equal(d.finishPendingReport(),false);assert.equal(d.A.ql[key],undefined);assert.equal(d.A.qs[key][0].a,'My draft');
 });
+
+
+test('the monthly card always names the current month and its Istanbul midnights',()=>{
+ const c=fixture().context;c.DB.lang='tr';c.current='2026-11-23';
+ for(const signup of ['2025-08-12','2026-11-14','2026-11-23']){
+  c.A.reportStart=signup;c.A.reportJoinedAt=signup+'T10:00:00+03:00';
+  const before=JSON.stringify(c.A),card=c.reportSummaryCard('month');
+  assert.match(card,/data-month="2026-11"/);assert.match(card,/Kasım 2026<\/h2>/);
+  assert.match(card,/Açılış · <time datetime="2026-11-30T00:00:00\+03:00">30 Kasım 2026 00\.00<\/time>/);
+  assert.match(card,/Kapanış · <time datetime="2026-12-01T00:00:00\+03:00">1 Aralık 2026 00\.00<\/time>/);
+  assert.doesNotMatch(card,/report-more/);
+  assert.equal(JSON.stringify(c.A),before);
+ }
+});
+test('monthly cards roll from each last day to the next first without skipping a month',()=>{
+ const c=fixture().context;c.A.reportStart='1900-01-01';
+ for(const year of [2026,2028,2100]){
+  for(let month=1;month<=12;month++){
+   const end=new Date(Date.UTC(year,month,0)).toISOString().slice(0,10);
+   const first=c.addD(end,1),key=end.slice(0,7);
+   c.A.journal[end]={text:'My entry'};c.current=end;
+   let card=c.reportSummaryCard('month');
+   assert.ok(card.includes('data-month="'+key+'"'));assert.ok(card.includes('datetime="'+end+'T00:00:00+03:00"'));
+   assert.ok(card.includes('datetime="'+first+'T00:00:00+03:00"'));assert.match(card,/report-more/);
+   c.A.ql[key]=1;assert.doesNotMatch(c.reportSummaryCard('month'),/report-more/);
+   c.current=first;card=c.reportSummaryCard('month');
+   assert.ok(card.includes('data-month="'+first.slice(0,7)+'"'));assert.doesNotMatch(card,/report-more/);
+   assert.equal(c.canAnswerReport(key),false);assert.equal(c.A.journal[end].text,'My entry');
+  }
+ }
+});
+test('a previously eligible account can start recording on the final day and unlock that same month',()=>{
+ const c=fixture().context;c.current='2028-02-29';c.DB.lang='tr';
+ assert.match(c.reportSummaryCard('month'),/Bu ay için henüz/);
+ assert.doesNotMatch(c.reportSummaryCard('month'),/Soruları yanıtla/);
+ c.A.journal[c.current]={text:'Son gün'};
+ assert.match(c.reportSummaryCard('month'),/Soruları yanıtla/);
+ c.current='2028-03-01';assert.doesNotMatch(c.reportSummaryCard('month'),/Soruları yanıtla/);
+});

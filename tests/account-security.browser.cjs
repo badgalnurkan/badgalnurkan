@@ -318,6 +318,9 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    }
    await productivity.goto('http://127.0.0.1:4173/review-app.html?page=rep&lang=tr&date=2026-11-29');
    await productivity.evaluate(()=>{A.reportStart='2026-01-01';A.reportJoinedAt='2026-01-01T00:00:00+03:00';A.hist['2026-11-25']=[{t:'Test task',done:true}];P.rep()});
+   const monthCard=productivity.locator('.report-month-card'),monthWindow=monthCard.locator('.report-month-window');
+   assert.match(await monthCard.locator('h2').innerText(),/Kasım 2026/);
+   assert.deepEqual(await monthWindow.locator('time').evaluateAll(times=>times.map(t=>t.dateTime)),['2026-11-30T00:00:00+03:00','2026-12-01T00:00:00+03:00']);
    assert.equal(await productivity.locator('.report-plan-period').count(),2,engine+' only weekly plan groups on Sunday');
    assert.equal(await productivity.locator('#report-group-plan-2026-12').count(),0);
    const draft=productivity.locator('.report-plan-period textarea').first();await draft.fill('Pazar taslağı');
@@ -338,8 +341,12 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const fields=monthly.locator('textarea');
    for(const field of await fields.all())await field.fill('Kasım yanıtım');
    await fields.last().press('Tab');await monthly.waitFor({state:'detached'});
-   assert.equal(await productivity.locator('.report-submitted time').getAttribute('datetime'),'2026-12-31');
+   assert.equal(await productivity.locator('.report-month-card.report-submitted .report-next-month time').getAttribute('datetime'),'2026-12-31');
    await changeDay('2026-12-01');assert.equal(await productivity.locator('.period-questionnaire').count(),0);
+   await productivity.locator('.report-month-card[data-month="2026-12"]').waitFor();
+   assert.match(await monthCard.locator('h2').innerText(),/Aralık 2026/);
+   assert.deepEqual(await monthWindow.locator('time').evaluateAll(times=>times.map(t=>t.dateTime)),['2026-12-31T00:00:00+03:00','2027-01-01T00:00:00+03:00']);
+
    await productivity.evaluate(()=>{A.hist['2026-12-30']=[{t:'December task',done:true}];A.hist['2025-12-31']=[{t:'Older task',done:true}]});
    await changeDay('2026-12-31');await productivity.locator('.period-questionnaire[data-period="2026-12"]').waitFor();
    await productivity.evaluate(()=>showReportDetail('answers'));await productivity.getByText('Haftalık yanıtım',{exact:true}).first().waitFor();
