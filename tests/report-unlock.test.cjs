@@ -149,3 +149,11 @@ test('a submitted week belongs to its owner and is readable in their first year-
  c.A=fixture().context.A;c.A.authUid='owner-two';
  assert.equal(c.currentReportForm(control),false);assert.doesNotMatch(c.reportDetailView(),/My week/);
 });
+
+test('journal-only and focus-only summaries describe records for that user and month',()=>{
+ const c=fixture().context;c.current='2026-11-30';c.st=()=>({t:0,d:0,p:0});
+ c.A.journal={'2026-10-31':{text:'Prior month'},'2026-11-01':{text:'Journal'}};
+ assert.match(c.reportSummaryCard('month'),/1 journal entry/);assert.doesNotMatch(c.reportSummaryCard('month'),/0\/0|focus session/);
+ c.A.journal={};c.A.focusHistory=[{at:Date.parse('2026-11-30T18:00:00Z'),seconds:1000,completed:true},{at:Date.parse('2026-11-30T21:00:00Z'),seconds:1000,completed:true}];
+ assert.match(c.reportSummaryCard('month'),/1 completed focus session/);assert.doesNotMatch(c.reportSummaryCard('month'),/journal entry/);
+});

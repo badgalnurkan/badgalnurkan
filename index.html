@@ -2115,7 +2115,7 @@ function taskStatus(task){
  // Older history stored only done:false; it does not prove the user chose ✕.
  return task?.done===true?'done':'pending';
 }
-function taskSnapshot(task){const s=taskStatus(task);return {t:String(task?.t||''),done:s==='done',s}}
+function taskSnapshot(task){const s=taskStatus(task);return {t:String(typeof task==='string'?task:task?.t||task?.text||task?.title||''),done:s==='done',s}}
 function roll(){
   const t=today();
   try{fixTodoData()}catch(e){}
@@ -4065,7 +4065,7 @@ function newNote(){
   const editor=$('#dn');if(editor&&draft){editor.value=draft;fitTextField(editor)}
 }
 function delNote(k){delete A.future[k];if(A.futureMeta)delete A.futureMeta[k];save();P.pc()}
-function st(a,b){let t=0,d=0,by={};for(let x=a;x<=b;x=addD(x,1)){items(x).forEach(i=>{t++;by[i.t]=by[i.t]||[0,0];by[i.t][1]++;if(i.done){d++;by[i.t][0]++}})}return{t,d,p:t?Math.round(d/t*100):0,by}}
+function st(a,b){let t=0,d=0,by=Object.create(null);for(let x=a;x<=b;x=addD(x,1)){items(x).forEach(i=>{if(!i.t.trim())return;t++;by[i.t]=by[i.t]||[0,0];by[i.t][1]++;if(i.done){d++;by[i.t][0]++}})}return{t,d,p:t?Math.round(d/t*100):0,by}}
 function periodDefaultQuestions(kind,key,scope='review'){
   // Stable variation by period: no regenerating or overwriting an answered question.
   const base=scope==='plan'?(tr()?PLANQ_TR:PLANQ_EN)[kind]:(tr()?DEFQ_TR:DEFQ_EN)[kind];
@@ -4108,6 +4108,10 @@ function reportPeriodEligible(period,day=istanbulDayKey()){
  const kind=period.key.length===7?'month':'week';
  return period.b>=reportAvailability(kind,day).unlock&&reportHasActivity(period.a,period.b);
 }
+function reportFocusInRange(record,a,b){
+ if(record?.completed!==true||!(record.seconds>0)||!Number.isFinite(record.at)||Math.abs(record.at)>8640000000000000)return false;
+ const day=istanbulDayKey(new Date(record.at));return day>=a&&day<=b;
+}
 function reportHasActivity(a,b){
  const inRange=day=>/^\d{4}-\d{2}-\d{2}$/.test(day)&&day>=a&&day<=b;
  const hasTask=tasks=>Array.isArray(tasks)&&tasks.some(task=>
@@ -4117,7 +4121,7 @@ function reportHasActivity(a,b){
  }
  if(inRange(A.day||'')&&hasTask(A.tasks))return true;
  if(Object.entries(A.journal||{}).some(([day,entry])=>inRange(day)&&String(entry?.text||'').trim()))return true;
- return (A.focusHistory||[]).some(record=>record?.completed===true&&record.seconds>0&&Number.isFinite(record.at)&&inRange(istanbulDayKey(new Date(record.at))));
+ return Array.isArray(A.focusHistory)&&A.focusHistory.some(record=>reportFocusInRange(record,a,b));
 }
 function reportQuestionsOpen(kind,day=istanbulDayKey()){
  const window=reportWindow(kind,day);
@@ -4304,6 +4308,15 @@ function calendarReportPeriod(kind,day){
  if(kind==='month'){const [y,m]=day.split('-').map(Number),a=D(new Date(y,m-1,1));return{a,b:D(new Date(y,m,0)),pa:D(new Date(y,m-2,1)),pb:D(new Date(y,m-1,0)),key:a.slice(0,7),nk:D(new Date(y,m,1)).slice(0,7)}}
  throw new RangeError('Invalid report period');
 }
+function reportActivityLine(a,b){
+ const tasks=st(a,b),parts=[];
+ if(tasks.t)parts.push(`${tasks.d}/${tasks.t} ${t('tasksDone')} · %${tasks.p}`);
+ const journals=Object.entries(A.journal||{}).filter(([day,entry])=>day>=a&&day<=b&&String(entry?.text||'').trim()).length;
+ const focus=Array.isArray(A.focusHistory)?A.focusHistory.filter(record=>reportFocusInRange(record,a,b)).length:0;
+ if(journals)parts.push(tr()?`${journals} günlük kaydı`:`${journals} journal ${journals===1?'entry':'entries'}`);
+ if(focus)parts.push(tr()?`${focus} tamamlanmış odak oturumu`:`${focus} completed focus ${focus===1?'session':'sessions'}`);
+ return parts.join(' · ');
+}
 function reportSummaryCard(kind){
  const td=istanbulDayKey(),window=reportWindow(kind,td),period=window.period,{since,unlock}=reportAvailability(kind,td),title=t(kind==='week'?'weeklyReport':'monthlyReport');
  const submitted=!!A.ql?.[period.key],open=reportQuestionsOpen(kind,td);
@@ -4313,8 +4326,7 @@ function reportSummaryCard(kind){
     :!reportPeriodEligible(period,td)?(tr()?'Rapor, kayıt olduğun dönemi izleyen dönemden itibaren, o dönemde görev, günlük veya tamamlanmış odak kaydın varsa açılır.':'From the period after signup, reports open for periods with a task, journal entry or completed focus session.'):'';
   return `<section class="report-period-block${submitted?' report-submitted':''}">${pendingReportCard(title,period.a>since?period.a:since,next)}${reason?'<p class="mut">'+reason+'</p>':''}</section>`;
  }
- const summary=st(period.a,period.b);
- return `<section class="card report-summary"><h2>${title}</h2><p class="mut">${fmt(period.a)} – ${fmt(period.b)}</p><p>${summary.d}/${summary.t} ${t('tasksDone')} · %${summary.p}</p><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Soruları yanıtla':'Answer questions'} →</button></section>`;
+ return `<section class="card report-summary"><h2>${title}</h2><p class="mut">${fmt(period.a)} – ${fmt(period.b)}</p><p>${reportActivityLine(period.a,period.b)}</p><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Soruları yanıtla':'Answer questions'} →</button></section>`;
 }
 function periodTaskBreakdown(a,b){
  const days=[];for(let day=a;day<=b;day=addD(day,1)){
@@ -4348,8 +4360,7 @@ function annualReportCard(){
    const next=Math.max(firstYear,day.slice(5)==='12-31'?year+1:year)+'-12-31';
    return `<section class="card"><h2>🔒 ${title}</h2><p class="mut">${tr()?'Sonraki yıllık özet':'Next annual summary'} · <time datetime="${next}">${reportDateLabel(next)}</time>. ${tr()?'Tam bir takvim yılında en az bir görev, günlük veya tamamlanmış odak kaydı gerekir.':'Opens for a full calendar year with a task, journal entry or completed focus session.'}</p></section>`;
  }
- const result=st(year+'-01-01',year+'-12-31');
- return `<section class="card"><h2>${title} · ${year}</h2><p>${result.d}/${result.t} ${t('tasksDone')} · %${result.p}</p><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıtlarını incele':'Review your answers'}</button></section>`;
+ return `<section class="card"><h2>${title} · ${year}</h2><p>${reportActivityLine(year+'-01-01',year+'-12-31')}</p><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıtlarını incele':'Review your answers'}</button></section>`;
 }
 function reportPlanningOverview(){
   const day=istanbulDayKey();

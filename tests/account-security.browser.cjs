@@ -339,9 +339,9 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    await changeDay('2026-12-31');await productivity.locator('.period-questionnaire[data-period="2026-12"]').waitFor();
    await productivity.evaluate(()=>showReportDetail('answers'));await productivity.getByText('Haftalık yanıtım',{exact:true}).first().waitFor();
    await productivity.evaluate(()=>showReportDetail('summary'));
-   await productivity.locator('button[onclick*="2026-12-30"]').waitFor();
-   assert.equal(await productivity.locator('button[onclick*="2025-12-31"]').count(),0);
-   await productivity.locator('button[onclick*="2026-12-30"]').click();
+   await productivity.locator("#mn button[onclick=\"openDay('2026-12-30',true)\"]").waitFor();
+   assert.equal(await productivity.locator("#mn button[onclick=\"openDay('2025-12-31',true)\"]").count(),0);
+   await productivity.locator("#mn button[onclick=\"openDay('2026-12-30',true)\"]").click();
    await productivity.locator('#day-modal [data-annual-tasks]').waitFor();
    await productivity.locator('#day-modal #dn').fill('Takvim notu taslağım');
    await changeDay('2027-01-01');
