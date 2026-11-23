@@ -264,4 +264,6 @@ Haftalık sorular pazar günü, aylık sorular takvim ayının son günü, yıll
 
 ## Aylık rapor kartında takvim ve kişisel durum
 
-Kart İstanbul saatine göre içinde bulunulan ayı, son günün 00.00 açılışını ve sonraki ayın ilk günündeki 00.00 kapanışını aynı ekranda gösterir. Gönderilmiş bir rapor ve henüz etkinliği olmayan hesap kendi durumunu görür. Örnek hesaplarla kasım-aralık geçişi, on iki ay, artık gün ve 2100 yılı sınırları kontrol edilir. Gerçek hesapların kayıtlarını değiştiren bir veritabanı geçişi yoktur.
+Kayıt ayında uygun etkinliği olan kullanıcı, o ilk ayın son gününde de hesabının raporunu yanıtlayabilir. Sonraki aylarda yine ilgili ayın etkinliği gerekir. Kart İstanbul saatine göre içinde bulunulan ayı, son günün 00.00 açılışını ve sonraki ayın ilk günündeki 00.00 kapanışını aynı ekranda gösterir. Gönderilmiş bir rapor ve henüz etkinliği olmayan hesap kendi durumunu görür. Örnek hesaplarla kasım-aralık geçişi, on iki ay, artık gün ve 2100 yılı sınırları kontrol edilir. Gerçek hesapların kayıtlarını değiştiren bir veritabanı geçişi yoktur.
+
+Yerelde 326 birim testi, uygulama sözdizimi ve statik önizleme derlemesi geçti. Ayın son günü üye olup saat 23.59’da ilk kaydını oluşturan hesap 2026, 2028 ve 2100 yıllarının her ayında denendi. Tarayıcı senaryosu kasımda üye olan bir hesabın 23 Kasım’da gördüğü iki sınırı, 30 Kasım’da cevaplayıp kilitlemesini ve 1 Aralık’ta yeni kartı görmesini denetler.

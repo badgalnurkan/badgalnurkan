@@ -316,17 +316,24 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
      assert.equal(wholeWords,true,engine+' archive label wraps inside a word at '+width+' '+lang);
     }
    }
-   await productivity.goto('http://127.0.0.1:4173/review-app.html?page=rep&lang=tr&date=2026-11-29');
-   await productivity.evaluate(()=>{A.reportStart='2026-01-01';A.reportJoinedAt='2026-01-01T00:00:00+03:00';A.hist['2026-11-25']=[{t:'Test task',done:true}];P.rep()});
+   await productivity.goto('http://127.0.0.1:4173/review-app.html?page=rep&lang=tr&date=2026-11-23');
+   await productivity.evaluate(()=>{
+     A.reportStart='2026-11-10';A.reportJoinedAt='2026-11-10T14:00:00+03:00';
+     A.hist['2026-11-23']=[{t:'Kasım görevi',done:true}];P.rep();
+   });
+   const changeDay=async value=>{
+     await productivity.evaluate(date=>{const url=new URL(location.href);url.searchParams.set('date',date);history.replaceState(history.state,'',url);updateIstanbulClock()},value);
+   };
    const monthCard=productivity.locator('.report-month-card'),monthWindow=monthCard.locator('.report-month-window');
    assert.match(await monthCard.locator('h2').innerText(),/Kasım 2026/);
    assert.deepEqual(await monthWindow.locator('time').evaluateAll(times=>times.map(t=>t.dateTime)),['2026-11-30T00:00:00+03:00','2026-12-01T00:00:00+03:00']);
+   assert.doesNotMatch(await monthCard.innerText(),/31 Aralık/);
+   assert.equal(await productivity.locator('.period-questionnaire[data-period="2026-11"]').count(),0);
+   await changeDay('2026-11-29');
+   await productivity.locator('.period-questionnaire[data-period="2026-11-23"]').waitFor();
    assert.equal(await productivity.locator('.report-plan-period').count(),2,engine+' only weekly plan groups on Sunday');
    assert.equal(await productivity.locator('#report-group-plan-2026-12').count(),0);
    const draft=productivity.locator('.report-plan-period textarea').first();await draft.fill('Pazar taslağı');
-   const changeDay=async value=>{
-    await productivity.evaluate(date=>{const url=new URL(location.href);url.searchParams.set('date',date);history.replaceState(history.state,'',url);updateIstanbulClock()},value);
-   };
    const weekly=productivity.locator('.period-questionnaire[data-period="2026-11-23"]');
    for(const field of await weekly.locator('textarea').all())await field.fill('Haftalık yanıtım');
    await weekly.locator('textarea').last().press('Tab');await weekly.waitFor({state:'detached'});
@@ -347,7 +354,11 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    assert.match(await monthCard.locator('h2').innerText(),/Aralık 2026/);
    assert.deepEqual(await monthWindow.locator('time').evaluateAll(times=>times.map(t=>t.dateTime)),['2026-12-31T00:00:00+03:00','2027-01-01T00:00:00+03:00']);
 
-   await productivity.evaluate(()=>{A.hist['2026-12-30']=[{t:'December task',done:true}];A.hist['2025-12-31']=[{t:'Older task',done:true}]});
+   // Exercise the separate annual summary with a full-year enrollment.
+   await productivity.evaluate(()=>{
+     A.reportStart='2026-01-01';A.reportJoinedAt='2026-01-01T00:00:00+03:00';
+     A.hist['2026-12-30']=[{t:'December task',done:true}];A.hist['2025-12-31']=[{t:'Older task',done:true}];
+   });
    await changeDay('2026-12-31');await productivity.locator('.period-questionnaire[data-period="2026-12"]').waitFor();
    await productivity.evaluate(()=>showReportDetail('answers'));await productivity.getByText('Haftalık yanıtım',{exact:true}).first().waitFor();
    await productivity.evaluate(()=>showReportDetail('summary'));
