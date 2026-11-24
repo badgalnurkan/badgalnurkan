@@ -5131,7 +5131,7 @@ function forgetKnownProfile(name){
 function confirmForgetKnownProfile(name){
   const other=DB.accounts?.[name];
   if(!A||!other?.authUid||other.authUid===A.authUid)return false;
-  if(!cloudForgetDrafts(other.authUid)){toast(tr()?'Bekleyen taslaklar kaldırılamadı.':'Pending drafts could not be removed.');return false}
+  try{if(cloudDraftEntries(other.authUid).length){toast(tr()?'Bu hesabın eşitlenmemiş taslakları var. Önce bu hesaba giriş yap ve kayıtlarını yedekle.':'This account has unsynced drafts. Sign in to that account and back up its changes first.');return false}}catch(_){toast(tr()?'Bekleyen taslaklar doğrulanamadı.':'Pending drafts could not be verified.');return false}
   window.IYQuickSession?.forget(other.authUid);
   delete DB.accounts[name];
   if(DB.lastUser===name)DB.lastUser=A.u;
@@ -5753,15 +5753,16 @@ function cloudDraftEntries(uid){
     const d=JSON.parse(raw);
     if(d?.uid!==uid||d.profile?.authUid!==uid||!d.base||typeof d.base!=='object'||Array.isArray(d.base)||!d.profile||Array.isArray(d.profile)||
        (d.base.authUid!=null&&d.base.authUid!==uid))throw new Error('Invalid account outbox record');
-    entries.push({key,...d});
+    entries.push({...d,key});
   }
   return entries;
 }
 function cloudRemoveDraft(key){try{if(typeof localStorage!=='undefined')localStorage.removeItem(key)}catch(_){}}
 function cloudStageDraft(account){
   const uid=account?.authUid,baseline=cloudBaselines.get(uid);
-  if(!uid||typeof baseline!=='string'||sbSession()?.user?.id!==uid||typeof localStorage==='undefined')return null;
+  if(!uid||typeof baseline!=='string'||sbSession()?.user?.id!==uid)return null;
   try{
+    if(typeof localStorage==='undefined')return null;
     const base=JSON.parse(baseline),profile=cloudProfilePayload(account),previous=cloudOwnDrafts.get(uid);
     const previousRaw=previous?localStorage.getItem(previous):null;
     if(previousRaw){const prior=JSON.parse(previousRaw);if(cloudDraftValue(prior.base)===cloudDraftValue(base)&&cloudDraftValue(prior.profile)===cloudDraftValue(profile))return previous}
@@ -5816,7 +5817,7 @@ function cloudAcknowledgeDraft(uid,key){
 }
 function cloudForgetDrafts(uid){
   try{
-    for(const entry of cloudDraftEntries(uid))cloudRemoveDraft(entry.key);
+    for(const entry of cloudDraftEntries(uid))localStorage.removeItem(entry.key);
     cloudOwnDrafts.delete(uid);cloudRecoveredDrafts.delete(uid);cloudBlockedDrafts.delete(uid);
   }catch(_){return false}
   return true;
@@ -5953,6 +5954,7 @@ function toggleBeige(){DB.beige=!DB.beige;applyTheme();save();if(pg==='pc')P.pc(
 view='welcome';pg='home';A=null;
 applyTheme();renderAppOrAuth();
 bootstrapCloudAuth();
+window.addEventListener('online',()=>{if(A?.authUid&&sbSession()?.user?.id===A.authUid&&!cloudBlockedDrafts.has(A.authUid))schedulePush()});
 window.addEventListener('pageshow',e=>{if(e.persisted&&A){pg='home';renderAppOrAuth()}else if(e.persisted&&!A){view='welcome';pg='home';renderAppOrAuth()}});
 
 </script>
