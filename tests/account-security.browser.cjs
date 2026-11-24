@@ -35,9 +35,12 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
      try{
       const state=await page.evaluate(()=>{
        if(typeof A==='undefined'||!A?.authUid||typeof IYReconcile==='undefined')return null;
-       const uid=A.authUid;
+       const uid=A.authUid, drafts=cloudDraftEntries(uid);
+       const baseline=JSON.parse(cloudBaselines.get(uid)||'{}');
+       // The inputs in this fixture are synthetic; report conflict field roots only.
+       const conflicts=drafts.map(d=>cloudMergeDraft(d.base,d.profile,baseline).conflicts.map(path=>path.split('.')[0]));
        return {online:navigator.onLine,hidden:document.hidden,blocked:cloudBlockedDrafts.has(uid),
-        pending:cloudDraftEntries(uid).length,offline: IYOfflinePad.list(uid).length,
+        pending:drafts.length,offline:IYOfflinePad.list(uid).length,conflicts,
         localAcknowledgements:Object.keys(A.offlineDraftIds||{}).length};
       });
       if(state)console.log('Browser sync fixture summary:',JSON.stringify({state,outcomes}));
