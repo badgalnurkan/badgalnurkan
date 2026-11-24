@@ -17,8 +17,8 @@ const plusDays=(value,n)=>new Date(Date.parse(value+'T00:00:00Z')+n*86400000).to
 function archiveFixture(){
  const account={projects:[],future:{},futureMeta:{},timedArchive:{notes:[]},tasks:[{t:'Retain task'}],journal:{'2026-11-20':{text:'Retain journal'}}};
  const c={A:account,Date,pg:'pc',P:{pc(){},home(){}},t:x=>x,tr:()=>true,esc:x=>String(x),
-  today:()=>day,save(){this.saves++},saves:0,recordActivity(){this.saves++},toast(){this.toasts++},toasts:0,
-  openModal(id,markup){this.modal={id,markup}},closeModal(){},document:{getElementById(id){
+  today:()=>day,save(){c.saves++},saves:0,recordActivity(){c.saves++},toast(){c.toasts++},toasts:0,
+  openModal(id,markup){c.modal={id,markup}},closeModal(){},document:{getElementById(id){
    if(id==='timed-restore-date')return {value:c.nextDate};
    if(id==='timed-project-date')return {value:c.nextDate};
    if(id==='timed-project-name')return {value:c.nextName};
@@ -99,7 +99,7 @@ test('daily information picks one bilingual source-linked fact for each date',()
 });
 test('suggested tasks preserve existing records and use the following day after completion',()=>{
  const c={A:{day,tasks:[{t:'Existing',s:''}],plans:{}},P:{todo(){this.renders++},renders:0},
-  t:x=>x,tr:()=>true,today:()=>day,addD:plusDays,recordActivity(){this.activities++},activities:0,
+  t:x=>x,tr:()=>true,today:()=>day,addD:plusDays,recordActivity(){c.activities++},activities:0,
   toast(){},finished:false,allTodayTasksArchived:()=>c.finished,ensurePlans(){if(!c.A.plans)c.A.plans={}}};
  vm.createContext(c);
  vm.runInContext(extract('const TASK_SUGGESTIONS=', '/* sis:'),c);
