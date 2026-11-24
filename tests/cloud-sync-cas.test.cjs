@@ -172,3 +172,98 @@ test('only an explicitly approved legacy migration may replace a legacy local ac
  assert.throws(()=>guard('sample','owner-one'),/V13_LOCAL_USERNAME_COLLISION/);
  assert.doesNotThrow(()=>guard('sample','owner-one',true));
 });
+
+
+function draftStorage(){
+ const records=new Map();
+ return {get length(){return records.size},key:i=>[...records.keys()][i]??null,getItem:key=>records.get(key)??null,setItem:(key,value)=>records.set(key,String(value)),removeItem:key=>records.delete(key)};
+}
+let draftSequence=0;
+function durableFixture(storage=draftStorage(),uid='owner-one'){
+ const f=fixture();
+ f.context.localStorage=storage;
+ f.context.rndHex=()=>String(++draftSequence).padStart(32,'0');
+ f.account.authUid=uid;
+ f.setSession({access_token:'synthetic-token',user:{id:uid}});
+ vm.runInContext('this.drafts={cloudStageDraft,cloudDraftEntries,cloudResumeProfile,cloudMergeDraft,cloudBlockedDrafts,cloudForgetDrafts};',f.context);
+ return {...f,storage,drafts:f.context.drafts};
+}
+test('offline snapshot survives creation of a fresh application context',async()=>{
+ const f=durableFixture();f.api.cloudBaselines.set('owner-one',JSON.stringify(original));
+ f.context.sb=async()=>{throw Error('Synthetic offline')};
+ assert.equal(await f.api.sbPush(),false);
+ assert.equal(f.drafts.cloudDraftEntries('owner-one').length,1);
+ const reopened=durableFixture(f.storage);reopened.api.cloudBaselines.set('owner-one',JSON.stringify(original));
+ const recovered=reopened.drafts.cloudResumeProfile('owner-one',original);
+ assert.equal(recovered.tasks[0].t,'Keep existing task');
+ assert.equal(reopened.drafts.cloudBlockedDrafts.has('owner-one'),false);
+ reopened.context.A=recovered;
+ assert.equal(await reopened.api.sbPush(),true);
+ assert.equal(reopened.drafts.cloudDraftEntries('owner-one').length,0);
+});
+test('independent fields merge, same-field edits and deletion conflicts do not',()=>{
+ const f=durableFixture();
+ const base={authUid:'owner-one',tasks:[],nick:'Initial',journal:{day:'initial'}};
+ const remote={...base,nick:'Server name'};
+ const local={...base,tasks:[{t:'New task'}]};
+ const result=f.drafts.cloudMergeDraft(base,local,remote);
+ assert.equal(result.conflicts.length,0);
+ assert.equal(result.merged.nick,'Server name');
+ assert.equal(result.merged.tasks[0].t,'New task');
+ const conflict=f.drafts.cloudMergeDraft(base,local,{...remote,tasks:[{t:'Other task'}]});
+ assert.equal(conflict.conflicts.join(','),'tasks');
+ const deleted={...base};delete deleted.journal;
+ assert.equal(f.drafts.cloudMergeDraft(base,deleted,{...base,journal:{day:'Edited'}}).conflicts.join(','),'journal');
+});
+test('ambiguous array conflict pauses automatic writes and keeps the durable draft',async()=>{
+ const f=durableFixture();
+ f.api.cloudBaselines.set('owner-one',JSON.stringify(original));f.drafts.cloudStageDraft(f.account);
+ const remote={...original,tasks:[{t:'Another device task'}]};
+ const reopened=durableFixture(f.storage);
+ reopened.api.cloudBaselines.set('owner-one',JSON.stringify(remote));
+ const recovered=reopened.drafts.cloudResumeProfile('owner-one',remote);
+ assert.equal(recovered.tasks[0].t,'Another device task');
+ assert.equal(reopened.drafts.cloudBlockedDrafts.has('owner-one'),true);
+ reopened.context.A=recovered;
+ assert.equal(await reopened.api.sbPush(),false);
+ assert.equal(reopened.calls.length,0);
+ assert.ok(reopened.drafts.cloudDraftEntries('owner-one').some(d=>d.profile.tasks[0].t==='Keep existing task'));
+});
+test('three synthetic identities have independent drafts in the same browser storage',()=>{
+ const storage=draftStorage();
+ for(const uid of ['owner-one','owner-two','owner-three']){
+  const f=durableFixture(storage,uid);f.api.cloudBaselines.set(uid,JSON.stringify({}));
+  f.account.tasks=[{t:uid}];f.drafts.cloudStageDraft(f.account);
+ }
+ for(const uid of ['owner-one','owner-two','owner-three']){
+  const f=durableFixture(storage,uid);
+  const entries=f.drafts.cloudDraftEntries(uid);
+  assert.equal(entries.length,1);assert.equal(entries[0].profile.tasks[0].t,uid);
+  assert.throws(()=>f.drafts.cloudResumeProfile('different-owner',null),/Account changed/);
+ }
+});
+test('two tabs of the same synthetic account use separate durable snapshot keys',()=>{
+ const storage=draftStorage(),a=durableFixture(storage),b=durableFixture(storage);
+ for(const f of [a,b])f.api.cloudBaselines.set('owner-one',JSON.stringify(original));
+ a.account.tasks=[{t:'Tab A'}];b.account.tasks=[{t:'Tab B'}];
+ a.drafts.cloudStageDraft(a.account);b.drafts.cloudStageDraft(b.account);
+ assert.equal(a.drafts.cloudDraftEntries('owner-one').length,2);
+ a.account.tasks.push({t:'Tab A second'});a.drafts.cloudStageDraft(a.account);
+ const entries=b.drafts.cloudDraftEntries('owner-one');
+ assert.equal(entries.length,2);assert.ok(entries.some(d=>d.profile.tasks[0].t==='Tab B'));
+});
+test('a previously committed snapshot with lost response is acknowledged on re-entry',()=>{
+ const f=durableFixture();f.api.cloudBaselines.set('owner-one',JSON.stringify(original));
+ f.drafts.cloudStageDraft(f.account);
+ const remote=JSON.parse(JSON.stringify(f.api.cloudProfilePayload(f.account)));remote.iyduSyncVersion='new-server-version';
+ const reopened=durableFixture(f.storage);
+ reopened.drafts.cloudResumeProfile('owner-one',remote);
+ assert.equal(reopened.drafts.cloudDraftEntries('owner-one').length,0);
+});
+test('a malformed outbox record never gets silently removed or uploaded',()=>{
+ const f=durableFixture();
+ const key='iydu.outbox.v1.owner-one.invalid';
+ f.storage.setItem(key,JSON.stringify({uid:'owner-one',base:{},profile:{authUid:'owner-two'}}));
+ assert.throws(()=>f.drafts.cloudResumeProfile('owner-one',original),/Invalid account outbox record/);
+ assert.ok(f.storage.getItem(key));
+});
