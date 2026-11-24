@@ -1497,7 +1497,7 @@ body{font-size:1rem!important}
 .notification-toggle{position:relative;display:inline-grid;place-items:center;flex:0 0 44px;width:44px;min-width:44px;min-height:44px;padding:.6rem;color:var(--acc);background:var(--card);border:1px solid var(--ln);box-shadow:none}.notification-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.notification-dot{display:none;position:absolute;right:7px;top:7px;width:8px;height:8px;border-radius:50%;background:#dc2626;box-shadow:0 0 0 2px var(--card)}.has-unread .notification-dot{display:block}
 .notification-banners{position:fixed;top:max(.8rem,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:min(28rem,calc(100vw - 1.5rem));z-index:10010;display:grid;gap:.55rem;pointer-events:none}.notification-banner{display:flex;align-items:flex-start;background:var(--card);color:var(--ink);border:1px solid var(--ln);border-radius:20px;box-shadow:0 12px 45px #0002;animation:noticeIn .38s var(--motion-spring) both;pointer-events:auto;overflow:hidden}.notification-banner.is-leaving{animation:noticeOut .24s var(--motion-return) both}
 .notification-banner-main{flex:1;min-width:0;background:none;color:inherit;box-shadow:none!important;text-align:left;border-radius:0;padding:.85rem 1rem;display:grid;gap:.15rem;font-weight:400}.notification-banner-main:hover{transform:none}.notification-banner-main small{font-size:.58rem;letter-spacing:.15em;color:var(--mut)}.notification-banner-main strong{font-size:.9rem}.notification-banner-main>span{font-size:.8rem;overflow-wrap:anywhere}.notification-banner-close{background:none;box-shadow:none;color:var(--mut);min-width:44px;min-height:44px;padding:.4rem;font-size:1.2rem}
-.notification-banner{touch-action:pan-y;transition:transform .24s var(--motion-return),opacity .24s var(--motion-return)}
+.notification-banner{touch-action:none;transition:transform .24s var(--motion-return),opacity .24s var(--motion-return)}
 .notification-banner.is-dragging{animation:none;transition:none;user-select:none;-webkit-user-select:none}
 .notification-banner.is-leaving{pointer-events:none}
 .notification-banner.is-leaving.is-swiped{animation:noticeSwipeOut .24s var(--motion-return) both}
@@ -2517,6 +2517,7 @@ function welcomeDisplayName(){
 /* One inbox for release news, project dates, tasks and focus reminders. */
 const SITE_RELEASE='2026-11-24-calendar-daily-01';
 const SITE_CHANGES=[
+ {date:'2026-11-24',trTitle:'Bildirimler ve kişisel odak',enTitle:'Notifications and focus patterns',items:[['Açılır bildirim sağa kaydırıldığında silinir, yukarı kaydırıldığında gelen kutusunda kalır.','Swipe a banner right to delete it, or up to retain it in the inbox.'],['Pomodoro kayıtlarından son 30 günlük odak saatleri ve görev tamamlama örüntüleri gösterilir.','View focus-hour and task-completion patterns from the past 30 days.']]},
  {date:'2026-11-24',trTitle:'Süreli kayıt arşivi',enTitle:'Timed record archive',items:[['Süresi biten geleceğe notlar ve proje hatırlatmaları arşive taşınır. Düzenleme, yeni tarihle geri yükleme ve onayla kalıcı silme mümkündür.','Expired future notes and project reminders move to the archive, with editing, restoration on a new date and confirmed permanent deletion.']]},
  {date:'2026-11-24',trTitle:'Aylık rapor ve günlük keşif',enTitle:'Monthly report and daily discovery',items:[['Aylık rapor yanıtları ayın son günü gece yarısına kadar düzenlenebilir.','Monthly report answers can be edited until midnight on the last day of the month.'],['Ana sayfaya kaynaklı günlük bilgi, görev listesine rastgele öneri eklendi.','Added sourced daily facts and random task suggestions.'],['Giriş geçişi kısaltıldı; kod onayı beklemeden gösterilir.','Shortened the entry animation and display code confirmation immediately.']]},
   {date:'2026-11-23',trTitle:'Aylık rapor takvimi',enTitle:'Monthly report calendar',items:[
@@ -2664,17 +2665,18 @@ function bindNotificationSwipe(banner){
  const begin=(x,y,id)=>{if(banner.classList.contains('is-leaving'))return;clearTimeout(banner._noticeTimer);blockClick=false;start={x,y,id,active:false}};
  const move=(x,y,id)=>{
   if(!start||start.id!==id)return;const dx=x-start.x,dy=y-start.y;
-  if(!start.active&&Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)*.9){reset();return}
+  if(!start.active&&Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)*.9){if(dy>=0||Math.abs(dy)<=Math.abs(dx)*1.3){reset();return}start.active=true;start.vertical=true;banner.style.animation='none';banner.classList.add('is-dragging');try{banner.setPointerCapture?.(id)}catch(_){}}
   if(!start.active&&Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)*1.3){start.active=true;banner.style.animation='none';banner.classList.add('is-dragging');try{banner.setPointerCapture?.(id)}catch(_){}}
   if(!start.active)return;
-  const opacity=Math.max(.25,1-Math.abs(dx)/Math.max(1,banner.offsetWidth));
-  banner.style.transform=`translateX(${dx}px)`;banner.style.opacity=String(opacity);
+  const opacity=Math.max(.25,1-Math.abs(start.vertical?dy:dx)/Math.max(1,banner.offsetWidth));
+  banner.style.transform=start.vertical?`translateY(${Math.min(0,dy)}px)`:`translateX(${dx}px)`;banner.style.opacity=String(opacity);
   banner.style.setProperty('--notice-drag-x',dx+'px');banner.style.setProperty('--notice-drag-opacity',String(opacity));
  };
  const finish=(x,y,id)=>{
-  if(!start||start.id!==id)return;const wasActive=start.active,direction=wasActive?notificationSwipeDirection(x-start.x,y-start.y,banner.offsetWidth):0;
+  if(!start||start.id!==id)return;const dx=x-start.x,dy=y-start.y,wasActive=start.active,direction=wasActive&&!start.vertical?notificationSwipeDirection(dx,dy,banner.offsetWidth):0;
+  const upward=wasActive&&start.vertical&&dy<=-44&&Math.abs(dy)>Math.abs(dx)*1.3;
   blockClick=wasActive;start=null;
-  if(direction)dismissTopNotification(banner,direction);else reset();
+  if(direction===1&&banner._onSwipeDelete)banner._onSwipeDelete();else if(direction)dismissTopNotification(banner,direction);else if(upward)dismissTopNotification(banner);else reset();
   try{if(banner.hasPointerCapture?.(id))banner.releasePointerCapture(id)}catch(_){}
  };
  banner.addEventListener('click',event=>{if(blockClick){blockClick=false;event.preventDefault();event.stopImmediatePropagation()}},true);
@@ -2698,6 +2700,7 @@ function showTopNotification(item){
  let stack=document.getElementById('notification-banners');
  if(!stack){stack=document.createElement('div');stack.id='notification-banners';stack.className='notification-banners';stack.setAttribute('aria-live','polite');stack.setAttribute('aria-relevant','additions');document.body.appendChild(stack)}
  const copy=notificationCopy(item),banner=document.createElement('div');banner.className='notification-banner';banner.dataset.notificationId=item.id;
+ const owner=noticeOwner();banner._onSwipeDelete=()=>{if(noticeOwner()===owner)deleteNotification(item.id,1);else dismissTopNotification(banner,1)};
  banner.innerHTML=`<button class="notification-banner-main" onclick="openNotification('${item.id}')"><small>${tr()?'BİLDİRİM':'NOTIFICATION'}</small><strong>${esc(copy.title)}</strong><span>${esc(copy.body)}</span></button><button class="notification-banner-close" aria-label="${tr()?'Bildirimi gizle':'Dismiss alert'}" onclick="dismissTopNotification(this.parentElement)">×</button>`;
  stack.appendChild(banner);while(stack.children.length>3)removeTopNotification(stack.firstElementChild);
  bindNotificationSwipe(banner);
@@ -2748,10 +2751,11 @@ function clearNotifications(){
  },360);
 }
 function setNotificationPreference(key,enabled){if(A&&['projects','tasks','pomo'].includes(key)){ensureNoticeState().notificationPrefs[key]=!!enabled;save()}}
-function deleteNotification(id){
+function deleteNotification(id,direction=0){
  const owner=ensureNoticeState();owner.notifications=owner.notifications.filter(item=>item.id!==id);save();updateNotificationBadge();
- for(const banner of document.querySelectorAll?.('.notification-banner')||[])if(banner.dataset.notificationId===id)dismissTopNotification(banner);
+ for(const banner of document.querySelectorAll?.('.notification-banner')||[])if(banner.dataset.notificationId===id)dismissTopNotification(banner,direction);
  const list=document.getElementById('notification-list');if(list){list.innerHTML=notificationList();motionReveal(list)}
+ const clearButton=document.getElementById('notification-clear');if(clearButton&&!clearButton.classList?.contains('is-emptying'))clearButton.disabled=!owner.notifications.length;
 }
 function openNotification(id){
  const item=ensureNoticeState().notifications.find(item=>item.id===id);if(!item)return;
@@ -4596,6 +4600,41 @@ function focusSummary(history,start,end){
   }
   return {seconds,sessions,perDay};
 }
+function focusPatterns(history,now=Date.now()){
+ const hours=Array(24).fill(0),days=new Set();let sessions=0;
+ const cutoff=now-30*86400000;
+ const hourFormat=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Istanbul',hour:'2-digit',hourCycle:'h23'});
+ for(const record of Array.isArray(history)?history:[]){
+   if(record?.completed!==true||!Number.isFinite(record.at)||record.at>now||record.at<cutoff||!Number.isFinite(record.seconds)||record.seconds<=0||record.seconds>36000)continue;
+   sessions++;days.add(istanbulDayKey(new Date(record.at)));
+   for(const part of Array.isArray(record.parts)?record.parts:[record]){
+     if(!Number.isFinite(part?.at)||!Number.isFinite(part.seconds)||part.seconds<=0||part.seconds>36000||part.at>record.at||part.at<cutoff)continue;
+     let cursor=Math.max(cutoff,part.at-part.seconds*1000);
+     while(cursor<part.at){
+       const boundary=Math.min(part.at,(Math.floor(cursor/3600000)+1)*3600000);
+       const hour=Number(hourFormat.format(new Date(cursor)));
+       if(Number.isInteger(hour)&&hour>=0&&hour<24)hours[hour]+=(boundary-cursor)/1000;
+       cursor=boundary;
+     }
+   }
+ }
+ const top=hours.reduce((best,seconds,hour)=>seconds>hours[best]?hour:best,0);
+ return {hours,top,sessions,days:days.size};
+}
+function focusPatternMarkup(now=today()){
+ const p=focusPatterns(A?.focusHistory),en=!tr();
+ const from=addD(now,-30),loads=Array.from({length:7},()=>({days:0,total:0,missed:0}));
+ for(let day=from;day<now;day=addD(day,1)){
+   const records=items(day).filter(x=>x&&typeof x.t==='string');if(!records.length)continue;
+   const w=(new Date(day+'T12:00:00Z').getUTCDay()+6)%7;
+   loads[w].days++;loads[w].total+=records.length;loads[w].missed+=records.filter(x=>!x.done).length;
+ }
+ const eligible=loads.map((d,i)=>({...d,i})).filter(d=>d.days>=3&&d.total>0).sort((a,b)=>b.missed/b.total-a.missed/a.total);
+ const heavy=eligible[0],names=en?['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']:['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+ const hours=p.sessions>=5&&p.days>=3&&p.hours[p.top]>0?`${pad(p.top)}.00–${pad((p.top+1)%24)}.00 · ${Math.round(p.hours[p.top]/60)} ${en?'minutes':'dakika'}`:(en?'At least 5 completed sessions on 3 days are needed.':'En az 3 güne yayılan 5 tamamlanmış seans gerekli.');
+ const load=heavy&&heavy.missed>0?`${names[heavy.i]} · ${heavy.missed}/${heavy.total} ${en?'unfinished tasks':'tamamlanmamış görev'}`:(en?'Not enough recurring unfinished tasks yet.':'Henüz yeterli tekrarlanan tamamlanmamış görev yok.');
+ return `<section><h3>${en?'Your focus patterns':'Kişisel odak istatistikleri'} · ${en?'Last 30 days':'Son 30 gün'}</h3><p><b>${en?'Most recorded focus time':'En çok odak süresi'}:</b> ${hours}</p><p><b>${en?'Potentially heavier day':'Planı gözden geçirilebilecek gün'}:</b> ${load}</p><p class="mut">${en?'These are patterns in recorded time and unfinished tasks, not a measure of ability or stress.':'Bunlar kayıtlı süre ve tamamlanmamış görevlerden çıkan örüntülerdir; yetenek veya stres ölçümü değildir.'}</p></section>`;
+}
 function focusHistoryCard(){
   const now=today(),month=now.slice(0,7)+'-01',week=mon(now);
   const entries=new Map(Object.entries(focusSummary(A?.focusHistory,'',now).perDay));
@@ -4613,6 +4652,7 @@ function focusHistoryCard(){
     <p class="mut">${tr()?'Tamamladığın odak seansları ve çalışma süren.':'Your completed focus sessions and time spent focusing.'}</p>
     <div class="focus-history-totals"><div><small>${tr()?'Bu hafta':'This week'}</small><b>${time(w.seconds)}</b><span>${w.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div>
     <div><small>${tr()?'Bu ay':'This month'}</small><b>${time(m.seconds)}</b><span>${m.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div></div>
+    ${focusPatternMarkup(now)}
     <h3>${tr()?'Gün gün':'Day by day'}</h3>
     ${rows.length?rows.slice(0,3).join(''):`<p class="mut">${tr()?'Henüz tamamlanmış odak seansı yok.':'No completed focus sessions yet.'}</p>`}
     ${older.length?`<details class="focus-history-details"><summary><span class="expand">${tr()?'Daha fazlası':'More details'}</span><span class="collapse">${tr()?'Daha az göster':'Show less'}</span> <small>(${older.length})</small></summary><div class="focus-history-older" tabindex="0" role="region" aria-label="${tr()?'Önceki odak günleri':'Earlier focus days'}">${older.join('')}</div></details>`:''}
