@@ -25,7 +25,10 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    // No user data, profile documents, identity, credentials or request headers are logged.
    const createPage=browser.newPage.bind(browser);
    browser.newPage=async(...args)=>{
-    const page=await createPage(...args),outcomes={accepted:0,rejected:0,failed:0};
+    // Keep network-mocked login tests isolated from service workers in engines
+    // that do not run the dedicated Chromium offline scenario. All assertions stay active.
+    const options=engine==='chromium'?(args[0]||{}):{...(args[0]||{}),serviceWorkers:'block'};
+    const page=await createPage(options),outcomes={accepted:0,rejected:0,failed:0};
     page.on('response',async response=>{
      if(!new URL(response.url()).pathname.endsWith('/iydu_sync_profile'))return;
      try{if(!response.ok())outcomes.failed++;else if(await response.json()===true)outcomes.accepted++;else outcomes.rejected++}catch{outcomes.failed++}
