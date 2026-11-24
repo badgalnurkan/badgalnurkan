@@ -52,12 +52,16 @@ const IYReconcile=(()=>{
    if(IYOfflinePad.apply(A,e)==='added')added=true;
   }
   if(added){save();if(view==='app'&&!document.activeElement?.matches('input,textarea,select')&&!document.querySelector('.modal:not(.is-closing)'))renderPage()}
+  return added;
  }
  async function reconcile(uid,choice){
   if(!active(uid)||document.hidden||!navigator.onLine)return false;
   let latest=await sbPull(false)||{};
   if(!active(uid))return false;
-  importPad(uid,latest);
+  // Drain historical snapshots before creating a new snapshot from the offline pad.
+  // Otherwise two snapshots with the same stale base can conflict with each other.
+  acknowledgePad(uid,latest);
+  if(!cloudDraftEntries(uid).length)importPad(uid,latest);
   const display=cloudContent(A);
   const previous=cloudBaselines.get(uid);
   if(!cloudDraftEntries(uid).length&&previous&&display!==cloudContent(JSON.parse(previous))){
@@ -70,7 +74,9 @@ const IYReconcile=(()=>{
     if(cloudContent(A)!==display){later();return false}
     if(Object.keys(latest).length&&!acceptedProfile(uid,latest)){later(2500);return false}
     cloudBaselines.set(uid,JSON.stringify(latest));cloudBlockedDrafts.delete(uid);cloudRecoveredDrafts.delete(uid);issue=null;
-    importPad(uid,latest);wait=900;return true;
+    const imported=importPad(uid,latest);wait=900;
+    if(imported){later(0);return false}
+    return true;
    }
    const result=cloudMergeDraft(entry.base,entry.profile,latest);
    let next=result.merged;
