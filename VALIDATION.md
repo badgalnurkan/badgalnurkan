@@ -1,3 +1,17 @@
+# 24 Kasım 2026 — Süreli arşiv ve üretkenlik özellikleri (yayın adayı; doğrulama bekliyor)
+
+- Geliştirme dalı: `feature/2026-11-24-archive-and-productivity`. Üretim `main` dalına bu çalışmada yazılmadı.
+- Süresi dolan geleceğe notlar artık doğrudan silinmez; `timedArchive.notes` içinde metin, tarih ve oluşturma metaverisiyle saklanır. Arşivden düzenleme, tarih seçerek geri yükleme ve onaylı kalıcı silme eklendi. Aynı tarihte mevcut başka not varsa üzerine yazılmaz.
+- Proje hatırlatmaları süre dolduğunda projeyi veya alt görevlerini silmeden `archivedAt` işaretlenerek arşive alınır. Arşivlenmiş proje sonraki hatırlatma kontrollerinde yeniden tetiklenmez. Proje yeni tarih ile geri yüklenebilir.
+- Aynı gün oluşturulan sıradan takvim notları yanlışlıkla geleceğe not olarak işaretlenmez.
+- Ana sayfaya kaynak bağlantılı Türkçe/İngilizce, gün bazlı dönen bilgi kartı; görev listesine tekrarlı önerilerden kaçınan rastgele görev seçimi; Pomodoro istatistiklerine son 30 günün tamamlanan seansları ve tamamlanmamış görevlerini gösteren betimleyici özet eklendi. Bilgi havuzu statiktir; günlük otomatik dış kaynak güncellemesi yapılmaz.
+- Yeni regresyon kontrolleri `tests/timed-records.test.cjs` ve `tests/productivity-new-features.test.cjs` içinde hesap değiştirme, tarih sınırları, veri koruma, geri yükleme ve yeni kartların davranışını kapsayacak şekilde yazıldı. Yeni test `npm test` komutuna bağlandı.
+- Bu kayıt sırasındaki doğrulama: güncel `index.html` gömülü ana JavaScript betiğinin `new Function(...)` ile sözdizimi kontrolü geçti. Kaynak kod, iki ayrı commit grubunda GitHub'a kaydedildi.
+- **Henüz doğrulanmayanlar:** Tam `npm test` sonucu, `python scripts/build-preview.py` çıktısı, gerçek mobil tarayıcı, Supabase gerçek çoklu hesap eşitlemesi, çevrimdışı veri kuyruğu, üretim Vercel karşılaştırması. Bu denetimlerden önce canlı yayına veya tüm istekler tamamlandı beyanına geçilmez.
+- **Devam eden işler:** Rapor gönderimi sonrası güvenli düzenleme, bildirimleri kaydırarak arşivleme/silme, giriş animasyonunun kısaltılması, Supabase veri çakışma çözümü ve çevrimdışı IndexedDB işlemleri. Eski veri eşitleme akışı hâlâ tüm kullanıcı verisini RPC ile kaydetmektedir; CAS ve sürüm kontrolü olmadan yeni çevrimdışı eşitleme iddiasında bulunulmaz.
+
+---
+
 # 22 Kasım 2026 — Güvenlik başlıkları, yayından kaldırılan dosyalar ve kayıtlı kullanıcı adları (yayın adayı)
 
 - `vercel.json` tüm yanıtlara `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` ve `Permissions-Policy` ekler. CSP kaynakları sitenin kendi dosyaları, Google Fonts, Supabase projesi ve izin verilen veri/blob kaynaklarıyla sınırlar; çerçeveleme ve eklenti nesneleri kapalıdır. `<base>` adresi ve form gönderimleri aynı origin ile sınırlıdır. Mevcut satır içi betik ve `onclick` yapısı nedeniyle `'unsafe-inline'` korunur, `'unsafe-eval'` yoktur.
