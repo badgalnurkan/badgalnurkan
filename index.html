@@ -2888,7 +2888,7 @@ function expireTimedRecords(now=Date.now()){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(key))continue;
   const meta=A.futureMeta?.[key]||{},created=Number(meta.createdAt),wasFuture=meta.expireAfterDay===key||(Number.isFinite(created)&&created>0&&istanbulDayKey(new Date(created))<key);
   if(key<day&&wasFuture){ensureTimedArchive().notes.push({key,text:String(value),meta:{...meta},archivedAt:now});delete A.future[key];if(A.futureMeta)delete A.futureMeta[key];changed=true}
-  else if(key>=day&&meta.expireAfterDay!==key){(A.futureMeta||={})[key]={...meta,expireAfterDay:key};changed=true}
+  else if(key>day&&meta.expireAfterDay!==key){(A.futureMeta||={})[key]={...meta,expireAfterDay:key};changed=true}
  }
  for(const project of A.projects||[]){
   const due=projectReminderTime(project);
