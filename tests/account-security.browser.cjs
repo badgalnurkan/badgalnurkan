@@ -412,7 +412,12 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     else if(url.endsWith('/functions/v1/browser-verification'))data={ok:true,verified:true,expiresAt:new Date(Date.now()+3600000).toISOString()};
     else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
     else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
-    else if(url.endsWith('/rpc/iydu_save'))data=null;
+    else if(url.endsWith('/rpc/iydu_sync_profile')){
+     const payload=route.request().postDataJSON();
+     assert.ok(payload && payload.p_expected_data && typeof payload.p_expected_data==='object');
+     assert.equal(payload.p_data.authUid,'fixture-user');
+     data=true;
+    }
     else if(url.endsWith('/functions/v1/account-security')){
      const b=route.request().postDataJSON();actions.push(b.action);
      if(b.action==='request_deactivate')data={ok:true,id:'b04146d1-f2a4-4a04-bd46-70159554b90f'};
