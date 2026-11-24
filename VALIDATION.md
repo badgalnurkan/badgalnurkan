@@ -1,3 +1,16 @@
+# 24 Kasım 2026 — Supabase CAS istemcisi ve güvenli yayın kapısı (taslak PR #65)
+
+- **Geliştirme dalı:** `feature/2026-11-24-archive-and-productivity`; `main` dalı ve mevcut canlı site bu taslakta değiştirilmedi.
+- **Üretim salt okunur tespit:** `public.iydu_sync_profile(p_expected_data jsonb, p_data jsonb)` mevcut, `authenticated` rolüne açık, `anon` için kapalı, `SECURITY INVOKER`. Mevcut kaydın `iyduSyncVersion` hariç JSON gövdesini beklenen belgeyle karşılaştırarak yazıyor. Bu fonksiyonun veritabanında bulunması, canlı istemcinin onu zaten kullandığı anlamına gelmez.
+- **QA farkı:** `lvomrcqytfygcmguojcj` projesinde `iydu_save_cas` mevcut ancak `iydu_sync_profile` yok. İki ortamın RPC sözleşmeleri eşitlenmeden gerçek QA entegrasyonu geçti sayılmaz. QA veya üretime yeni SQL uygulanmadı.
+- **Taslak istemci değişikliği:** `sbPull` yalnızca doğrulanmış oturumla okunan profil belgesini kullanıcı UUID'sine göre karşılaştırma tabanı olarak tutuyor. `sbPush` artık koşulsuz `iydu_save` yerine `iydu_sync_profile` çağırıyor; çakışmada zorla kayıt yapmıyor. Bir oturumda eşzamanlı yazmalar seri hale getiriliyor; yanıt beklerken yapılan değişiklikler yeni gönderim için işaretleniyor; kimlik uyuşmazlığı yazmayı engelliyor. RPC başarısızlığında cihazdaki kayıt korunuyor ve uygulama uyarı gösteriyor.
+- **Regresyon kapsamı:** `tests/cloud-sync-cas.test.cjs` içinde sunucudan okunan taban belge, kimlik, çakışma, ağ kesintisi, eşzamanlı yazma, eski oturum yanıtı, yeni değişiklik ve 401 yenileme yolları bulunuyor; `npm test` kapsamına eklendi. Gerçek e-posta gönderimi, üretim kaydı düzenleme ve canlı kullanıcı erişimi yapılmadı.
+- **Yayın engelleri:** Çevrimdışıyken yapılan düzenlemelerin sayfa/oturum yeniden açılışında sessizce kaybolmasını önleyecek kalıcı işlem kuyruğu ve cihazlar arası çatışma çözüm arayüzü tamamlanmadı. Gerçek iki cihaz / iki hesap eşitlemesi, fiziksel iOS ve Android testleri yapılmadı. Bu yüzden bu özellikler kullanıma hazır veya tamamen doğrulanmış olarak işaretlenemez.
+- **Supabase güvenlik taraması:** Üretimde anonim kullanıcıların çağırabildiği dört `SECURITY DEFINER` RPC için güvenlik danışmanı uyarısı var (`iydu_pickup_email`, `iydu_relay_email`, `iydu_username_available`, `username_available`). Fonksiyonların kullanım amacı, çağrı doğrulaması ve kötüye kullanım sınırları gözden geçirilmeden yetki değişikliği yapılmayacak. `user_data` ve `iydu_usernames` için RLS etkin; sahiplik politikaları ve kısıtlayıcı hesap yaşam döngüsü politikaları mevcut.
+- **Yayın disiplini:** Bu denetim tamamlanmadan PR birleştirilmemeli. Her yeni commit sonrasında GitHub CI / `npm test` / statik önizleme / tarayıcı kontrolleri yeniden incelenmeli. Önceki yeşil CI sonucu yeni CAS commit'i için otomatik olarak kanıt sayılmaz.
+
+---
+
 # 24 Kasım 2026 — Süreli arşiv ve üretkenlik özellikleri (yayın adayı; doğrulama bekliyor)
 
 - Geliştirme dalı: `feature/2026-11-24-archive-and-productivity`. Üretim `main` dalına bu çalışmada yazılmadı.
