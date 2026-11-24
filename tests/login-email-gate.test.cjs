@@ -4,6 +4,9 @@ const gate=fs.readFileSync(path.join(__dirname,'../browser-verification.js'),'ut
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
 const activation=script.slice(script.indexOf('async function activateCloudUser('),script.indexOf('async function login(){'));
+const recoveryStart=script.indexOf('const cloudOwnDrafts='),recoveryEnd=script.indexOf('function cloudSyncNotice(){',recoveryStart);
+assert.ok(recoveryStart>=0&&recoveryEnd>recoveryStart);
+const outbox=script.slice(recoveryStart,recoveryEnd);
 const CID='ab200000-0000-4000-8000-000000000001';
 function fixture(options={}){
  let verified=false,session=null,loads=0,entries=0,releaseRequest;
@@ -39,7 +42,7 @@ function fixture(options={}){
   norm:x=>({...x}),bindReportCalendar(){},applyServerProgressPolicy(){},deviceAccountCount:()=>0,MAX_DEVICE_ACCOUNTS:3,
   v13ProtectLegacyCollision(){},restorePomodoroState(){},applyTheme(){},save(){},goTo(){entries++}
  };
- ctx.window=ctx;vm.createContext(ctx);vm.runInContext(gate,ctx);vm.runInContext(activation,ctx);
+ ctx.window=ctx;vm.createContext(ctx);vm.runInContext(gate,ctx);vm.runInContext(outbox,ctx);vm.runInContext(activation,ctx);
  return {ctx,elements,buttons,calls,authenticated,loads:()=>loads,entries:()=>entries,release:()=>releaseRequest?.()};
 }
 test('both account emails reach the same verification gate without loading private data',async()=>{
