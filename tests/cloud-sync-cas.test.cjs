@@ -1,0 +1,115 @@
+'use strict';
+const fs=require('node:fs');
+const vm=require('node:vm');
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+const source=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+assert.ok(source,'Application script missing');
+const begin=source.indexOf('const cloudBaselines=new Map();');
+const end=source.indexOf('// The database owns the old/new-user cutoff;',begin);
+assert.ok(begin>=0&&end>begin,'Cloud CAS section missing');
+const cloudCode=source.slice(begin,end);
+function fixture(){
+ const account={u:'first',nick:'First',authUid:'owner-one',pw:'private-password',salt:'do-not-upload',tasks:[{t:'Keep existing task'}]};
+ let session={access_token:'test-token',user:{id:'owner-one'}};
+ const calls=[],notices=[],timers=[];
+ const context={
+  A:account,view:'app',tr:()=>false,toast:text=>notices.push(text),
+  sbSession:()=>session,sbRefresh:async()=>false,
+  sb:async(path,options)=>{calls.push({path,options});return true},
+  setTimeout:(fn,delay)=>{timers.push({fn,delay});return timers.length},
+  schedulePush:()=>{context.scheduled=(context.scheduled||0)+1}
+ };
+ vm.createContext(context);
+ vm.runInContext(cloudCode+'\nthis.cloudApi={sbPush,sbPull,cloudBaselines,cloudPushInFlight,cloudProfilePayload};',context);
+ return {context,api:context.cloudApi,account,calls,notices,timers,setSession(value){session=value}};
+}
+const original={u:'first',nick:'Remote first',authUid:'owner-one',tasks:[]};
+test('a verified cloud pull establishes the exact account-scoped comparison baseline',async()=>{
+ const f=fixture();
+ f.context.sb=async(path)=>{assert.match(path,/iydu_load/);return [{data:original}]};
+ const profile=await f.api.sbPull();
+ assert.equal(profile.nick,'Remote first');
+ assert.equal(f.api.cloudBaselines.get('owner-one'),JSON.stringify(original));
+ assert.equal(f.api.cloudBaselines.has('owner-two'),false);
+});
+test('CAS sends the last observed profile; password and salt never reach the cloud',async()=>{
+ const f=fixture();f.api.cloudBaselines.set('owner-one',JSON.stringify(original));
+ assert.equal(await f.api.sbPush(),true);
+ assert.equal(f.calls.length,1);
+ assert.equal(f.calls[0].path,'/rest/v1/rpc/iydu_sync_profile');
+ assert.equal(JSON.stringify(f.calls[0].options.body.p_expected_data),JSON.stringify(original));
+ assert.equal(f.calls[0].options.body.p_data.authUid,'owner-one');
+ assert.equal(f.calls[0].options.body.p_data.pw,'');
+ assert.equal('salt' in f.calls[0].options.body.p_data,false);
+ assert.equal(JSON.parse(f.api.cloudBaselines.get('owner-one')).pw,'');
+});
+test('CAS conflict never falls back to a destructive unconditional overwrite',async()=>{
+ const f=fixture();f.api.cloudBaselines.set('owner-one',JSON.stringify(original));
+ f.context.sb=async(path,options)=>{f.calls.push({path,options});return false};
+ const before=JSON.stringify(f.account);
+ assert.equal(await f.api.sbPush(),false);
+ assert.equal(JSON.stringify(f.account),before);
+ assert.equal(f.api.cloudBaselines.get('owner-one'),JSON.stringify(original));
+ assert.equal(f.calls.length,1);
+ assert.equal(f.calls[0].path,'/rest/v1/rpc/iydu_sync_profile');
+ assert.equal(f.notices.length,1);
+});
+test('network failure retains local changes and does not invent a successful cloud write',async()=>{
+ const f=fixture();f.api.cloudBaselines.set('owner-one',JSON.stringify(original));
+ f.context.sb=async()=>{throw new Error('Offline')};
+ assert.equal(await f.api.sbPush(),false);
+ assert.equal(f.account.tasks[0].t,'Keep existing task');
+ assert.equal(f.api.cloudBaselines.get('owner-one'),JSON.stringify(original));
+});
+test('unknown cloud baseline or a different login identity blocks writes',async()=>{
+ const f=fixture();
+ assert.equal(await f.api.sbPush(),false);
+ assert.equal(f.calls.length,0);
+ f.api.cloudBaselines.set('owner-one',JSON.stringify(original));
+ f.setSession({access_token:'second-token',user:{id:'owner-two'}});
+ assert.equal(await f.api.sbPush(),false);
+ assert.equal(f.calls.length,0);
+});
+test('simultaneous cloud saves are serialized per account',async()=>{
+ const f=fixture();f.api.cloudBaselines.set('owner-one',JSON.stringify(original));
+ let resolve;
+ f.context.sb=async(path,options)=>{f.calls.push({path,options});return await new Promise(done=>{resolve=done})};
+ const first=f.api.sbPush(),second=f.api.sbPush();
+ assert.equal(f.calls.length,1);
+ resolve(true);
+ assert.equal(await first,true);
+ assert.equal(await second,true);
+ assert.equal(f.calls.length,1);
+});
+test('a sign-out during an in-flight write cannot set a stale baseline for a new session',async()=>{
+ const f=fixture();f.api.cloudBaselines.set('owner-one',JSON.stringify(original));
+ let resolve;f.context.sb=async()=>new Promise(done=>{resolve=done});
+ const pending=f.api.sbPush();
+ f.setSession({access_token:'other-token',user:{id:'owner-two'}});
+ resolve(true);
+ assert.equal(await pending,true);
+ assert.equal(f.api.cloudBaselines.get('owner-one'),JSON.stringify(original));
+ assert.equal(f.api.cloudBaselines.has('owner-two'),false);
+});
+test('edits made during an in-flight save trigger a follow-up save after success',async()=>{
+ const f=fixture();f.api.cloudBaselines.set('owner-one',JSON.stringify(original));
+ let resolve;f.context.sb=async()=>new Promise(done=>{resolve=done});
+ const pending=f.api.sbPush();
+ f.account.tasks.push({t:'Edited while sending'});
+ resolve(true);
+ assert.equal(await pending,true);
+ assert.equal(f.timers.length,1);
+ assert.equal(f.timers[0].delay,0);
+ f.timers[0].fn();
+ assert.equal(f.context.scheduled,1);
+});
+test('an expired credential retries only for the original verified account',async()=>{
+ const f=fixture();f.api.cloudBaselines.set('owner-one',JSON.stringify(original));
+ let attempts=0,refreshes=0;
+ f.context.sb=async()=>{attempts++;if(attempts===1)throw Object.assign(new Error('Expired'),{status:401});return true};
+ f.context.sbRefresh=async()=>{refreshes++;return true};
+ assert.equal(await f.api.sbPush(),true);
+ assert.equal(attempts,2);assert.equal(refreshes,1);
+});
