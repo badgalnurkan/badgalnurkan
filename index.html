@@ -2523,8 +2523,9 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-24-local-storage-warning-04';
+const SITE_RELEASE='2026-11-24-account-collision-05';
 const SITE_CHANGES=[
+  {date:'2026-11-24',trTitle:'Cihazda hesap çakışması koruması',enTitle:'On-device account collision protection',items:[['Aynı kullanıcı adındaki farklı hesapların cihazdaki kayıtları artık birbirinin üzerine yazılmaz.','Cached profiles with matching usernames cannot overwrite a different account identity.']]},
   {date:'2026-11-24',trTitle:'Cihaz kaydı hata uyarısı',enTitle:'Device storage failure warning',items:[['Kalıcı cihaz kaydı başarısız olursa uygulama artık uyarı gösterir ve mümkünse bulut kaydını denemeye devam eder.','If persistent device storage fails, the app now warns you and still attempts cloud sync where possible.']]},
   {date:'2026-11-24',trTitle:'Bulut eşitleme çakışma denetimi (taslak)',enTitle:'Cloud sync conflict check (draft)',items:[['Girişten sonra okunan uzak veriyle karşılaştırmalı kayıt uygulanır. Çakışmada veri zorla üzerine yazılmaz; cihazdaki kayıt korunur. Çevrimdışı oturum dönüşündeki anlaşmazlıkların çözümü henüz tamamlanmadı.','Cloud saves compare against the last downloaded profile. Conflicts no longer force-overwrite remote data; the local copy remains. Offline re-entry conflict resolution is not yet complete.']]},
  {date:'2026-11-24',trTitle:'Daha hızlı giriş geçişi',enTitle:'Faster sign-in transition',items:[['Giriş onayından sonraki animasyon 1,6 saniyeden 0,85 saniyeye indirildi; düşük hareket tercihi korunur.','Reduced post-sign-in transition from 1.6 seconds to 0.85 seconds while respecting reduced-motion preferences.']]},
@@ -5527,9 +5528,13 @@ async function v13BeginMigration(){
   }finally{v13MigrationBusy=false;v13UpdateMigrationControls()}
 }
 function v13ProtectLegacyCollision(username,uid,allowLegacyReplacement=false){
-  const existingKey=findUser(username);
-  const existing=existingKey?DB.accounts[existingKey]:null;
-  if(!allowLegacyReplacement&&existing&&existing.accountOrigin==='local'&&!accountCloudHints(existing)&&existing.pw&&existing.authUid!==uid){
+  const normalized=String(username).toLowerCase();
+  for(const [key,existing] of Object.entries(DB.accounts)){
+    if(key.toLowerCase()!==normalized||!existing)continue;
+    if(existing.authUid===uid&&uid)continue;
+    // An explicit legacy migration may replace only its local source,
+    // never a cached profile belonging to another authenticated UUID.
+    if(allowLegacyReplacement&&!existing.authUid&&existing.accountOrigin==='local'&&!accountCloudHints(existing)&&existing.pw)continue;
     throw new Error('V13_LOCAL_USERNAME_COLLISION');
   }
 }
@@ -5816,7 +5821,7 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     // Do not auto-login from unverified localStorage contents.
     if(e.status===401)sbClear();
     if(e.message==='V13_LOCAL_USERNAME_COLLISION'){
-      sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki eski yerel hesapla çakışıyor. Eski veri korunuyor. Yerel hesabından JSON yedeği al ve aktarım adımını kullan.':'A cloud username conflicts with a legacy profile on this device. Local data was preserved. Export it and use the migration flow.';
+      sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki başka bir hesapla çakışıyor. Kayıtlar korunuyor. Hesapları doğrulamadan üzerine yazılmayacak.':'The cloud username conflicts with another cached account. Existing records are preserved.';
     }
     if(!A&&!expectedUid){view='login';renderAppOrAuth()}return false;
   }
