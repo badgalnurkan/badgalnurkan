@@ -66,3 +66,20 @@ test('a rejected server write retains the offline entry and the pending snapshot
  assert.equal(pad.list(f.uid).length,1);
  assert.ok(f.pending());
 });
+
+test('older pending snapshots are sent before importing a new offline entry',async()=>{
+ const f=reconciliationFixture(true);
+ f.local.nick='Earlier unsynced edit';
+ f.context.cloudStageDraft();
+ assert.equal(await f.context.reconcile.check(),false);
+ assert.equal(f.remote().nick,'Earlier unsynced edit');
+ assert.equal(f.remote().offlineDraftIds,undefined,'the new entry must not be combined into a stale snapshot');
+ assert.equal(pad.list(f.uid).length,1);
+ assert.equal(f.pending(),null);
+ // After the earlier snapshot is confirmed, a later pass can send the new entry.
+ assert.equal(await f.context.reconcile.check(),false);
+ assert.equal(f.remote().offlineDraftIds[f.entry.id],true);
+ assert.equal(f.remote().tasks.filter(t=>t.id===f.entry.id).length,1);
+ assert.equal(f.remote().nick,'Earlier unsynced edit');
+ assert.equal(pad.list(f.uid).length,0);
+});
