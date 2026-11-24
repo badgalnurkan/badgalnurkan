@@ -267,3 +267,19 @@ Haftalık sorular pazar günü, aylık sorular takvim ayının son günü, yıll
 Kayıt ayında uygun etkinliği olan kullanıcı, o ilk ayın son gününde de hesabının raporunu yanıtlayabilir. Sonraki aylarda yine ilgili ayın etkinliği gerekir. Kart İstanbul saatine göre içinde bulunulan ayı, son günün 00.00 açılışını ve sonraki ayın ilk günündeki 00.00 kapanışını aynı ekranda gösterir. Gönderilmiş bir rapor ve henüz etkinliği olmayan hesap kendi durumunu görür. Örnek hesaplarla kasım-aralık geçişi, on iki ay, artık gün ve 2100 yılı sınırları kontrol edilir. Gerçek hesapların kayıtlarını değiştiren bir veritabanı geçişi yoktur.
 
 Yerelde 326 birim testi, uygulama sözdizimi ve statik önizleme derlemesi geçti. Ayın son günü üye olup saat 23.59’da ilk kaydını oluşturan hesap 2026, 2028 ve 2100 yıllarının her ayında denendi. Tarayıcı senaryosu kasımda üye olan bir hesabın 23 Kasım’da gördüğü iki sınırı, 30 Kasım’da cevaplayıp kilitlemesini ve 1 Aralık’ta yeni kartı görmesini denetler.
+
+
+## 2026-11-24 — Timed archive, productivity, notification swipe and report editing (development branch)
+
+Scope: index.html, tests/archive-productivity.test.cjs, tests/report-edit.test.cjs, tests/notification-swipe.test.cjs, package.json.
+
+- Added recoverable archives for expired future notes and project reminders. Project records and subtasks are preserved. Restore requires a valid new date and rejects note collisions. Permanent deletion requires separate confirmation.
+- Added source-linked bilingual daily facts that rotate by date. This is a curated catalogue, not a live news feed.
+- Added opt-in random task suggestions, including tomorrow-plan handling once today's tasks are complete.
+- Added descriptive 30-day focus-hour and unfinished-task patterns. These do not establish causes of focus difficulty.
+- Updated notification banner gestures: right swipe removes the inbox record; upward swipe hides the banner but keeps the record.
+- Added an explicit same-day editor for submitted weekly/monthly report answers. Submitted locks remain in place and edits are saved only after confirmation, with a fresh date/account check.
+- Added regression tests for archives, accidental overwrite, cross-account stale dialogs, reminders, suggestions, focus insights, notification swipes and report editing.
+- No production Supabase data, existing user records or the main branch were modified by these commits.
+- At initial writing, the inline JavaScript passed V8 syntax compilation. Full npm test, the preview build, browser E2E, real-device checks, multi-device synchronization and production deployment remained unverified; consult pull-request CI for subsequent results.
+- The offline operation queue and conflict-safe server synchronization are not implemented by this branch. Do not describe these as complete.
