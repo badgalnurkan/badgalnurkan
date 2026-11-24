@@ -24,3 +24,45 @@ test('offline dates use the civil calendar and previous and future tasks keep th
  const a=pad.newEntry('u','task','2028-02-29','leap day'),b=pad.newEntry('u','task','2028-03-02','tomorrow');
  assert.equal(pad.apply(profile,a),'added');assert.equal(profile.hist[a.day][0].id,a.id);assert.equal(pad.apply(profile,b),'added');assert.deepEqual(profile.plans[b.day],['tomorrow']);
 });
+
+const vm=require('node:vm'),fs=require('node:fs');
+function reconciliationFixture(accept){
+ const uid='fixture-owner',copy=v=>JSON.parse(JSON.stringify(v));
+ const local={u:'fixture',authUid:uid,day:'2026-11-24',tasks:[]};
+ let server={...copy(local),theme:'dark'},pending=null;
+ const entry=pad.newEntry(uid,'task',local.day,'Saved while offline');
+ const context={
+  A:local,view:'app',tr:()=>false,sbSession:()=>({user:{id:uid}}),
+  navigator:{onLine:true},window:{addEventListener(){}},
+  document:{hidden:false,activeElement:{matches:()=>true},querySelector:()=>null,getElementById:()=>null,addEventListener(){}},
+  IYOfflinePad:pad,cloudBlockedDrafts:new Set(),cloudRecoveredDrafts:new Map(),cloudOwnDrafts:new Map(),
+  cloudPushInFlight:new Map(),cloudBaselines:new Map([[uid,JSON.stringify(local)]]),
+  cloudContent:JSON.stringify,cloudProfilePayload:copy,
+  cloudDraftEntries:()=>pending?[pending]:[],
+  cloudStageDraft:()=>{pending={key:'fixture-draft',base:copy(local),profile:copy(local)};entries.set(pending.key,'pending');return pending.key},
+  save:()=>context.cloudStageDraft(),
+  cloudMergeDraft:(_base,profile,latest)=>({merged:{...profile,theme:latest.theme},conflicts:[]}),
+  cloudRemoveDraft:key=>{entries.delete(key);pending=null},
+  sbPull:async()=>copy(server),
+  sb:async(_path,{body})=>{assert.deepEqual(body.p_expected_data,server);if(accept)server=copy(body.p_data);return accept},
+  localStorage:storage(entries),setTimeout:()=>1,clearTimeout(){}
+ };
+ vm.createContext(context);
+ vm.runInContext(fs.readFileSync('cloud-reconcile.js','utf8')+'\nthis.reconcile=IYReconcile;',context);
+ return {uid,entry,local,context,remote:()=>server,pending:()=>pending};
+}
+test('server-confirmed offline entry is acknowledged even when a focused editor prevents profile rendering',async()=>{
+ const f=reconciliationFixture(true);
+ assert.equal(await f.context.reconcile.check(),false,'focused input prevents a full profile refresh');
+ assert.equal(f.remote().offlineDraftIds[f.entry.id],true);
+ assert.equal(f.remote().tasks[0].id,f.entry.id);
+ assert.equal(pad.list(f.uid).length,0);
+ assert.equal(f.pending(),null);
+});
+test('a rejected server write retains the offline entry and the pending snapshot',async()=>{
+ const f=reconciliationFixture(false);
+ assert.equal(await f.context.reconcile.check(),false);
+ assert.equal(f.remote().offlineDraftIds,undefined);
+ assert.equal(pad.list(f.uid).length,1);
+ assert.ok(f.pending());
+});
