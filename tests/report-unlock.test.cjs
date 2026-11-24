@@ -11,20 +11,20 @@ test('monthly opens on the last day only for this month’s activity',()=>{
  assert.equal(c.reportQuestionsOpen('month','2026-12-01'),false);
  assert.equal(c.reportQuestionsOpen('month','2026-12-31'),false);
 });
-test('new accounts first qualify in the following week and month with activity in each',()=>{
+test('new accounts qualify in their signup month and the following week with activity in each',()=>{
  const c=active();c.A.reportStart='2026-11-18';c.A.reportJoinedAt='2026-11-18T10:00:00Z';
  assert.equal(c.reportQuestionsOpen('week','2026-11-22'),false);
- assert.equal(c.reportQuestionsOpen('month','2026-11-30'),false);
+ assert.equal(c.reportQuestionsOpen('month','2026-11-30'),true);
  assert.equal(c.reportQuestionsOpen('week','2026-11-29'),false);
  c.A.hist['2026-11-25']=[{t:'Task'}];assert.equal(c.reportQuestionsOpen('week','2026-11-29'),true);
  assert.equal(c.reportQuestionsOpen('month','2026-12-31'),false);
  c.A.journal['2026-12-01']={text:'Entry'};assert.equal(c.reportQuestionsOpen('month','2026-12-31'),true);
 });
-test('joining at midnight on period day one still targets the following period',()=>{
+test('joining at midnight targets this month-end and the following week-end',()=>{
  const c=active();c.A.reportStart='2026-11-16';c.A.reportJoinedAt='2026-11-16T00:00:00+03:00';
  assert.equal(c.reportAvailability('week').unlock,'2026-11-29');
  c.A.reportStart='2026-11-01';c.A.reportJoinedAt='2026-11-01T00:00:00+03:00';
- assert.equal(c.reportAvailability('month').unlock,'2026-12-31');
+ assert.equal(c.reportAvailability('month').unlock,'2026-11-30');
 });
 test('empty and unrelated activity cannot unlock reports for existing users',()=>{
  const c=fixture().context;c.A.activeDays={'2026-11-18':true};c.A.future={'2026-11-18':'a note'};assert.equal(c.reportQuestionsOpen('week','2026-11-22'),false);c.A.hist={'2026-11-10':[{t:'Old'}]};assert.equal(c.reportQuestionsOpen('week','2026-11-22'),false);
@@ -46,14 +46,18 @@ test('monthly defaults and next-month plans remain separate and retain three que
  const c=active();c.current='2026-11-30';c.reportPlanningOverview();assert.equal(c.A.qs['2026-11'].length,3);assert.equal(c.A.planningQs['2026-11'].length,3);assert.equal(c.A.planningQs['2026-12'].length,3);assert.equal(c.canAnswerReport('2026-12','plan'),true);assert.equal(c.canAnswerReport('2026-12','review'),false);
 });
 
-test('November signup shows December 31 even for an account created on November 30',()=>{
+test('joining November 30 and recording a first entry opens November before Istanbul midnight',()=>{
  const c=fixture().context;c.current='2026-11-30';c.DB.lang='tr';c.A.reportStart=c.current;
- c.A.reportJoinedAt='2026-11-30T23:45:00+03:00';c.A.journal[c.current]={text:'Kayıt'};
- assert.match(c.reportSummaryCard('month'),/<time datetime="2026-12-31">31 Aralık 2026<\/time>/);
+ c.A.reportJoinedAt='2026-11-30T23:45:00+03:00';
  assert.equal(c.reportQuestionsOpen('month'),false);
+ c.A.journal[c.current]={text:'Kayıt'};
+ assert.equal(c.reportQuestionsOpen('month'),true);
+ assert.match(c.periodReportDetail('month'),/data-period="2026-11"/);
+ assert.doesNotMatch(c.reportSummaryCard('month'),/31 Aralık/);
+ c.current='2026-12-01';assert.equal(c.reportQuestionsOpen('month'),false);
+ assert.equal(c.canAnswerReport('2026-11'),false);
  c.current='2026-12-31';assert.equal(c.reportQuestionsOpen('month'),false);
- c.A.journal[c.current]={text:'Aralık günlüğü'};
- assert.match(c.periodReportDetail('month'),/data-period="2026-12"/);
+ c.A.journal[c.current]={text:'Aralık günlüğü'};assert.equal(c.reportQuestionsOpen('month'),true);
 });
 test('all twelve calendar months, leap February and Gregorian century boundaries close at the next midnight',()=>{
  const c=fixture().context;c.A.reportStart='1900-01-01';
@@ -170,4 +174,68 @@ test('midnight archives a completed last field before blur, keeps incomplete dra
  assert.equal(one.qs[key][2].a,'My last sentence');assert.equal(c.finishPendingReport(),false);
  const d=active();d.current='2026-11-30';d.periodReportForm('month',key,next);d.qa(key,0,{value:'My draft'},'review',key);
  d.current='2026-12-01';assert.equal(d.finishPendingReport(),false);assert.equal(d.A.ql[key],undefined);assert.equal(d.A.qs[key][0].a,'My draft');
+});
+
+
+test('the monthly card always names the current month and its Istanbul midnights',()=>{
+ const c=fixture().context;c.DB.lang='tr';c.current='2026-11-23';
+ for(const signup of ['2025-08-12','2026-11-14','2026-11-23']){
+  c.A.reportStart=signup;c.A.reportJoinedAt=signup+'T10:00:00+03:00';
+  const before=JSON.stringify(c.A),card=c.reportSummaryCard('month');
+  assert.match(card,/data-month="2026-11"/);assert.match(card,/Kasım 2026<\/h2>/);
+  assert.match(card,/Açılış · <time datetime="2026-11-30T00:00:00\+03:00">30 Kasım 2026 00\.00<\/time>/);
+  assert.match(card,/Kapanış · <time datetime="2026-12-01T00:00:00\+03:00">1 Aralık 2026 00\.00<\/time>/);
+  assert.doesNotMatch(card,/report-more/);
+  assert.equal(JSON.stringify(c.A),before);
+ }
+});
+test('monthly cards roll from each last day to the next first without skipping a month',()=>{
+ const c=fixture().context;c.A.reportStart='1900-01-01';
+ for(const year of [2026,2028,2100]){
+  for(let month=1;month<=12;month++){
+   const end=new Date(Date.UTC(year,month,0)).toISOString().slice(0,10);
+   const first=c.addD(end,1),key=end.slice(0,7);
+   c.A.journal[end]={text:'My entry'};c.current=end;
+   let card=c.reportSummaryCard('month');
+   assert.ok(card.includes('data-month="'+key+'"'));assert.ok(card.includes('datetime="'+end+'T00:00:00+03:00"'));
+   assert.ok(card.includes('datetime="'+first+'T00:00:00+03:00"'));assert.match(card,/report-more/);
+   c.A.ql[key]=1;assert.doesNotMatch(c.reportSummaryCard('month'),/report-more/);
+   c.current=first;card=c.reportSummaryCard('month');
+   assert.ok(card.includes('data-month="'+first.slice(0,7)+'"'));assert.doesNotMatch(card,/report-more/);
+   assert.equal(c.canAnswerReport(key),false);assert.equal(c.A.journal[end].text,'My entry');
+  }
+ }
+});
+test('a previously eligible account can start recording on the final day and unlock that same month',()=>{
+ const c=fixture().context;c.current='2028-02-29';c.DB.lang='tr';
+ assert.match(c.reportSummaryCard('month'),/Bu ay için henüz/);
+ assert.doesNotMatch(c.reportSummaryCard('month'),/Soruları yanıtla/);
+ c.A.journal[c.current]={text:'Son gün'};
+ assert.match(c.reportSummaryCard('month'),/Soruları yanıtla/);
+ c.current='2028-03-01';assert.doesNotMatch(c.reportSummaryCard('month'),/Soruları yanıtla/);
+});
+
+test('first-month eligibility and summary use only this account’s records since joining',()=>{
+ const c=fixture().context;c.current='2026-11-30';c.A.reportStart='2026-11-11';
+ c.A.reportJoinedAt='2026-11-11T16:00:00+03:00';
+ c.A.journal={'2026-11-10':{text:'Earlier'},'2026-12-01':{text:'New month'}};
+ assert.equal(c.reportQuestionsOpen('month'),false);
+ c.A.journal['2026-11-11']={text:'My first entry'};assert.equal(c.reportQuestionsOpen('month'),true);
+ assert.match(c.reportSummaryCard('month'),/1 journal entry/);
+ const first=c.A,pristine=JSON.stringify(first);
+ c.A={...fixture().context.A,reportStart:'2026-11-11'};assert.equal(c.reportQuestionsOpen('month'),false);
+ assert.equal(JSON.stringify(first),pristine);
+});
+
+test('joining on any month-end includes a completed focus before midnight and closes at midnight',()=>{
+ for(const year of [2026,2028,2100])for(let month=1;month<=12;month++){
+  const c=fixture().context,end=new Date(Date.UTC(year,month,0)).toISOString().slice(0,10);
+  c.A.reportStart=end;c.A.reportJoinedAt=end+'T23:40:00+03:00';
+  c.A.focusHistory=[{at:Date.parse(end+'T23:59:59+03:00'),completed:true,seconds:900}];
+  c.current=c.istanbulDayKey(new Date(end+'T23:59:59+03:00'));
+  assert.equal(c.reportQuestionsOpen('month'),true,end);
+  const next=c.addD(end,1);c.current=c.istanbulDayKey(new Date(next+'T00:00:00+03:00'));
+  assert.equal(c.current,next);assert.equal(c.reportQuestionsOpen('month'),false);
+  assert.equal(c.canAnswerReport(end.slice(0,7)),false);
+ }
 });
