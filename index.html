@@ -2514,8 +2514,9 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-24-timed-archive-01';
+const SITE_RELEASE='2026-11-24-timed-archive-productivity-02';
 const SITE_CHANGES=[
+ {date:'2026-11-24',trTitle:'Günün bilgisi, görev önerileri ve odak desenleri',enTitle:'Daily facts, task suggestions and focus patterns',items:[['Ana sayfaya kaynak bağlantılı günlük bilgi eklendi; yapılacaklar listesine rastgele görev önerisi ve Pomodoro analizine 30 günlük örüntü özeti eklendi.','Added a source-linked daily fact to Home, a random task suggestion button and a 30-day pattern summary to Pomodoro analysis.']]},
  {date:'2026-11-24',trTitle:'Süreli not ve proje arşivi',enTitle:'Expiring notes and project archive',items:[['Geleceğe bırakılan notlar ve süresi dolan proje hatırlatmaları artık otomatik silinmek yerine arşive alınır. Arşivde düzenleme, yeni tarihle geri yükleme ve onaylı kalıcı silme bulunur.','Future notes and expired project reminders are archived instead of automatically deleted. You can edit, restore with a new date or permanently delete with confirmation.']]},
   {date:'2026-11-23',trTitle:'Aylık rapor takvimi',enTitle:'Monthly report calendar',items:[
   ['İlk aylık rapor kayıt olduğun ayda açılır. O ay kayıt tarihinden itibaren bir görev, günlük veya tamamlanmış odak kaydı gerekir.','Your first monthly report opens in your signup month if you record a task, journal entry or completed focus session after joining.'],
@@ -3809,6 +3810,28 @@ let reportRenderedDay='';
 setInterval(()=>{if(A&&A.day!==today())shell();if(A&&view==='app'&&pg==='rep'&&reportRenderedDay!==istanbulDayKey())P.rep()},1000);
 
 const P={};const M=h=>{const main=$('#mn');if(main){main.innerHTML=h;fitTextFields(main);if(!main.classList.contains('an'))motionReveal(main)}};
+
+const DAILY_FACTS=[
+ {tr:'Ay, Dünya’dan ortalama yaklaşık 384.400 kilometre uzaktadır.',en:'The Moon is approximately 384,400 kilometres from Earth on average.',source:'NASA · Moon',url:'https://science.nasa.gov/moon/facts/'},
+ {tr:'Güneş, Güneş Sistemi’nin merkezindeki bir yıldızdır.',en:'The Sun is the star at the centre of our solar system.',source:'NASA · Sun',url:'https://science.nasa.gov/sun/facts/'},
+ {tr:'Dünya, Güneş etrafındaki turunu yaklaşık 365,25 günde tamamlar.',en:'Earth takes approximately 365.25 days to orbit the Sun.',source:'NASA · Earth',url:'https://science.nasa.gov/earth/facts/'},
+ {tr:'Mavi balina, günümüzde yaşayan en büyük hayvandır.',en:'The blue whale is the largest animal living today.',source:'NOAA · Blue whale',url:'https://www.fisheries.noaa.gov/species/blue-whale'},
+ {tr:'Deniz suyunun yaklaşık %3,5’i çözünmüş tuzlardan oluşur.',en:'About 3.5% of seawater consists of dissolved salts.',source:'NOAA · Ocean salinity',url:'https://oceanservice.noaa.gov/facts/whysalty.html'},
+ {tr:'Uluslararası Uzay İstasyonu, Dünya’nın çevresinde yaklaşık 90 dakikada bir döner.',en:'The International Space Station orbits Earth about once every 90 minutes.',source:'NASA · ISS',url:'https://www.nasa.gov/international-space-station/'},
+ {tr:'Atmosferdeki su buharı, bulut ve yağış oluşumunda önemli rol oynar.',en:'Water vapour in the atmosphere plays a key role in clouds and precipitation.',source:'NASA · Water cycle',url:'https://science.nasa.gov/earth/earth-observatory/the-water-cycle-108'},
+ {tr:'Mercan resifleri, pek çok deniz canlısına yaşam alanı sağlar.',en:'Coral reefs provide habitat for many marine species.',source:'NOAA · Coral reefs',url:'https://oceanservice.noaa.gov/facts/coralreef-climate.html'}
+];
+function dailyFactFor(day=istanbulDayKey()){
+ const n=Number(String(day).replace(/-/g,''))||1;
+ return DAILY_FACTS[n%DAILY_FACTS.length];
+}
+function dailyFactCard(){
+ const fact=dailyFactFor();
+ return '<section class="card daily-fact"><div class="mut">'+(tr()?'Günün bilgisi':'Fact of the day')+'</div>'
+  +'<p>'+esc(tr()?fact.tr:fact.en)+'</p><a href="'+fact.url+'" target="_blank" rel="noopener noreferrer">'
+  +(tr()?'Kaynak':'Source')+': '+esc(fact.source)+'</a></section>';
+}
+
 P.home=()=>{
   expireTimedRecords();
   const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length;
@@ -3818,7 +3841,7 @@ P.home=()=>{
     return`<div class="task project-task"><span>${esc(p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
   }).join('');
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
-  <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
+  ${dailyFactCard()}<div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="2000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/2000</span></div></div>
   <div class="card"><div class="row"><h2>${t('projectReminders')}</h2><button type="button" class="g s" onclick="showTimedArchive()">${tr()?'Arşiv':'Archive'} (${timedArchiveCount()})</button></div>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
 };
@@ -3904,7 +3927,7 @@ P.todo=()=>{
     ?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.')
     :t('addTask');
   const todayTasksMarkup=renderedTodayTasks||`<p class="mut">${esc(emptyTodayText)}</p>`;
-  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button><button type="button" class="g s" onclick="suggestRandomTask()">${tr()?'Rastgele görev öner':'Suggest random task'}</button></div></div>
   <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><textarea rows="1" class="task-compose" id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addTomorrowPlan()}"></textarea><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
@@ -4111,6 +4134,27 @@ function addTomorrowPlan(text){
   return true;
 }
 function removePlan(i){if(A.day!==today()){shell();return}ensurePlans();const next=addD(today(),1);if(A.plans[next])A.plans[next].splice(i,1);save();P.todo()}
+
+const TASK_SUGGESTIONS={
+ tr:['15 dakika kitap oku','Yarın için üç öncelik yaz','Çalışma alanını 5 dakika düzenle','Kısa bir yürüyüş yap','Bugünkü bir başarını not et','Ertelediğin bir işi küçük adımlara böl','Öğrenmek istediğin bir konuyu araştır','Bir arkadaşına hâl hatır sor','Çalışma notlarını gözden geçir','Yarınki programını kontrol et','Bir bardak su iç','Bugünkü yapılacaklarını gözden geçir'],
+ en:['Read for 15 minutes','Write three priorities for tomorrow','Tidy your desk for five minutes','Go for a short walk','Note one achievement from today','Break a postponed task into smaller steps','Research a subject you want to learn','Check in with a friend','Review your study notes','Check tomorrow’s schedule','Drink a glass of water','Review today’s to-do list']
+};
+function suggestRandomTask(){
+ if(!A||A.day!==today())return false;
+ const finished=allTodayTasksArchived();
+ if(finished)ensurePlans();
+ const next=addD(today(),1),existing=finished?(A.plans[next]||[]):(A.tasks||[]).map(task=>task.t);
+ const pool=TASK_SUGGESTIONS[tr()?'tr':'en'].filter(task=>!existing.some(value=>String(value).toLocaleLowerCase()===task.toLocaleLowerCase()));
+ if(!pool.length){toast(tr()?'Tüm önerileri zaten ekledin.':'You have already added every suggestion.');return false}
+ const text=pool[Math.floor(Math.random()*pool.length)];
+ if(finished){
+  if(!Array.isArray(A.plans[next]))A.plans[next]=[];
+  if(A.plans[next].length>=100){toast(tr()?'Yarın için en fazla 100 plan.':'Up to 100 plans for tomorrow.');return false}
+  A.plans[next].push(text);
+ }else A.tasks.push({t:text,s:''});
+ recordActivity();P.todo();return true;
+}
+
 
 /* sis: tamamlanmamis gecmis gunler */
 function dayFog(k){if(!A||!A.fog)return false;if(k>=today())return false;const its=items(k);return !(its.length>0&&its.every(x=>x.done))}
@@ -4596,6 +4640,34 @@ function focusSummary(history,start,end){
   }
   return {seconds,sessions,perDay};
 }
+
+function focusPatternSummary(history,now=istanbulDayKey()){
+ const earliest=addD(now,-29),byHour=new Map(),byWeekday=new Map();
+ for(const record of Array.isArray(history)?history:[]){
+  if(record?.completed!==true||!Number.isFinite(record.at)||!Number.isFinite(record.seconds)||record.seconds<=0||record.seconds>36000)continue;
+  const at=new Date(record.at),day=istanbulDayKey(at);
+  if(day<earliest||day>now)continue;
+  const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Istanbul',hour:'2-digit',hourCycle:'h23'}).format(at));
+  const weekday=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Istanbul',weekday:'long'}).format(at);
+  byHour.set(hour,(byHour.get(hour)||0)+1);byWeekday.set(weekday,(byWeekday.get(weekday)||0)+1);
+ }
+ const most=map=>[...map.entries()].sort((a,b)=>b[1]-a[1]||(a[0]>b[0]?1:-1))[0]||null;
+ const heavy=Object.entries(A?.hist||{}).filter(([day,tasks])=>day>=earliest&&day<=now&&Array.isArray(tasks)&&tasks.length>=3)
+  .map(([day,tasks])=>({day,total:tasks.length,unfinished:tasks.filter(task=>task?.done!==true&&task?.s!=='done').length}))
+  .filter(item=>item.unfinished>0).sort((a,b)=>b.unfinished-a.unfinished||b.total-a.total)[0]||null;
+ return {hour:most(byHour),weekday:most(byWeekday),heavy};
+}
+function focusPatternCard(){
+ const patterns=focusPatternSummary(A?.focusHistory);
+ if(!patterns.hour&&!patterns.heavy)return '';
+ const hour=patterns.hour?'<p>'+(tr()?'En çok seans tamamladığın saat: ':'Most sessions finished around: ')
+  +'<b>'+String(patterns.hour[0]).padStart(2,'0')+'.00</b> ('+patterns.hour[1]+')</p>':'';
+ const heavy=patterns.heavy?'<p>'+(tr()?'En çok yarım kalan görev günü: ':'Day with the most unfinished tasks: ')
+  +'<b>'+esc(patterns.heavy.day)+'</b> ('+patterns.heavy.unfinished+'/'+patterns.heavy.total+')</p>':'';
+ return '<div class="focus-pattern"><h3>'+(tr()?'Son 30 günden desenler':'Patterns from the last 30 days')+'</h3>'
+  +hour+heavy+'<small class="mut">'+(tr()?'Bu veriler yalnızca kayıtlarının özetidir; odaklanma nedenini kesin olarak göstermez.':'These are summaries of your records, not conclusions about why you focus.')+'</small></div>';
+}
+
 function focusHistoryCard(){
   const now=today(),month=now.slice(0,7)+'-01',week=mon(now);
   const entries=new Map(Object.entries(focusSummary(A?.focusHistory,'',now).perDay));
@@ -4613,7 +4685,7 @@ function focusHistoryCard(){
     <p class="mut">${tr()?'Tamamladığın odak seansları ve çalışma süren.':'Your completed focus sessions and time spent focusing.'}</p>
     <div class="focus-history-totals"><div><small>${tr()?'Bu hafta':'This week'}</small><b>${time(w.seconds)}</b><span>${w.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div>
     <div><small>${tr()?'Bu ay':'This month'}</small><b>${time(m.seconds)}</b><span>${m.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div></div>
-    <h3>${tr()?'Gün gün':'Day by day'}</h3>
+    ${focusPatternCard()}<h3>${tr()?'Gün gün':'Day by day'}</h3>
     ${rows.length?rows.slice(0,3).join(''):`<p class="mut">${tr()?'Henüz tamamlanmış odak seansı yok.':'No completed focus sessions yet.'}</p>`}
     ${older.length?`<details class="focus-history-details"><summary><span class="expand">${tr()?'Daha fazlası':'More details'}</span><span class="collapse">${tr()?'Daha az göster':'Show less'}</span> <small>(${older.length})</small></summary><div class="focus-history-older" tabindex="0" role="region" aria-label="${tr()?'Önceki odak günleri':'Earlier focus days'}">${older.join('')}</div></details>`:''}
   </section>`;
