@@ -22,6 +22,7 @@ function fixture(){
   schedulePush:()=>{context.scheduled=(context.scheduled||0)+1}
  };
  vm.createContext(context);
+ vm.runInContext(fs.readFileSync('profile-merge.js','utf8'),context);
  vm.runInContext(cloudCode+'\nthis.cloudApi={sbPush,sbPull,cloudBaselines,cloudPushInFlight,cloudProfilePayload};',context);
  return {context,api:context.cloudApi,account,calls,notices,timers,setSession(value){session=value}};
 }

@@ -7,7 +7,7 @@ function context(extra={}){const c={DB:{lang:'en'},A:{day:'2026-11-24',tasks:[],
  allTodayTasksArchived:()=>false,ensurePlans(){c.A.plans||={}},toast(){},Math:Object.assign(Object.create(Math),{random:()=>0}),
  addD:(day,n)=>new Date(Date.parse(day+'T00:00:00Z')+n*86400000).toISOString().slice(0,10),
  istanbulDayKey:d=>d?new Date(new Date(d).getTime()+10800000).toISOString().slice(0,10):'2026-11-24',
- ...extra};vm.createContext(c);return c}
+ rndHex:()=>String(Math.random()),...extra};vm.createContext(c);return c}
 test('daily fact is stable within a day and comes with a source URL',()=>{
  const c=context();vm.runInContext(part('const DAILY_FACTS=[','P.home=()=>{')+'this.fact=dailyFactFor;',c);
  const one=c.fact('2026-11-24'),two=c.fact('2026-11-24');

@@ -100,7 +100,7 @@ test('daily information picks one bilingual source-linked fact for each date',()
 test('suggested tasks preserve existing records and use the following day after completion',()=>{
  const c={A:{day,tasks:[{t:'Existing',s:''}],plans:{}},P:{todo(){this.renders++},renders:0},
   t:x=>x,tr:()=>true,today:()=>day,addD:plusDays,recordActivity(){c.activities++},activities:0,
-  toast(){},finished:false,allTodayTasksArchived:()=>c.finished,ensurePlans(){if(!c.A.plans)c.A.plans={}}};
+  rndHex:()=>String(Math.random()),toast(){},finished:false,allTodayTasksArchived:()=>c.finished,ensurePlans(){if(!c.A.plans)c.A.plans={}}};
  vm.createContext(c);
  vm.runInContext(extract('const TASK_SUGGESTIONS=', '/* sis:'),c);
  assert.equal(c.suggestRandomTask(),true);
