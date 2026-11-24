@@ -2514,8 +2514,9 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-24-timed-archive-productivity-swipe-03';
+const SITE_RELEASE='2026-11-24-feature-review-04';
 const SITE_CHANGES=[
+ {date:'2026-11-24',trTitle:'Rapor yanıtlarını düzenleme',enTitle:'Editing submitted report answers',items:[['Gönderilmiş haftalık veya aylık rapor yanıtları ilgili rapor gününde açıkça Düzenle seçilerek kaydedilebilir. Kaydetmeden çıkış yanıtları değiştirmez; sonraki gün düzenleme kapanır.','Submitted weekly or monthly report answers can be explicitly edited on their report day. Unsaved edits are discarded and editing closes the following day.']]},
  {date:'2026-11-24',trTitle:'Bildirim kaydırma hareketleri',enTitle:'Notification swipe gestures',items:[['Üst bildirimleri sağa kaydırarak gelen kutusundan silebilir, yukarı kaydırarak ekrandan kaldırıp bildirim merkezinde tutabilirsin.','Swipe top notifications right to delete them from the inbox, or up to dismiss the banner while keeping the inbox entry.']]},
  {date:'2026-11-24',trTitle:'Günün bilgisi, görev önerileri ve odak desenleri',enTitle:'Daily facts, task suggestions and focus patterns',items:[['Ana sayfaya kaynak bağlantılı günlük bilgi eklendi; yapılacaklar listesine rastgele görev önerisi ve Pomodoro analizine 30 günlük örüntü özeti eklendi.','Added a source-linked daily fact to Home, a random task suggestion button and a 30-day pattern summary to Pomodoro analysis.']]},
  {date:'2026-11-24',trTitle:'Süreli not ve proje arşivi',enTitle:'Expiring notes and project archive',items:[['Geleceğe bırakılan notlar ve süresi dolan proje hatırlatmaları artık otomatik silinmek yerine arşive alınır. Arşivde düzenleme, yeni tarihle geri yükleme ve onaylı kalıcı silme bulunur.','Future notes and expired project reminders are archived instead of automatically deleted. You can edit, restore with a new date or permanently delete with confirmation.']]},
@@ -4267,6 +4268,57 @@ function reportWindow(kind,day=istanbulDayKey()){
  const next=calendarReportPeriod(kind,addD(period.b,1));
  return {period,opens:period.b,closes:addD(period.b,1),next:next.b};
 }
+
+let submittedReportEditor=null;
+function canEditSubmittedReport(kind,key,day=istanbulDayKey()){
+ if(!A||!['week','month'].includes(kind))return false;
+ const window=reportWindow(kind,day);
+ return window.period.key===key&&day>=window.opens&&day<window.closes
+  &&!!A.ql?.[key]&&reportPeriodEligible(window.period,day);
+}
+function startSubmittedReportEdit(kind,key){
+ if(!canEditSubmittedReport(kind,key))return false;
+ const period=reportWindow(kind).period;
+ const groups=[['review',key],['plan',key],['plan',period.nk]].map(([scope,periodKey])=>{
+  const questions=reportQuestionStore(scope)[periodKey];
+  return {scope,key:periodKey,questions};
+ }).filter(group=>Array.isArray(group.questions)&&group.questions.length);
+ if(!groups.length)return false;
+ submittedReportEditor={owner:A,kind,key,groups};
+ const fields=groups.map((group,g)=>{
+  const title=group.scope==='review'?(tr()?'Dönem değerlendirmesi':'Period review'):(tr()?'Dönem planları':'Period plans');
+  return '<section><h3>'+title+' · '+esc(group.key)+'</h3>'
+   +group.questions.map((q,i)=>'<label for="report-edit-'+g+'-'+i+'">'+esc(reportQuestionForPeriod(q,group.key,group.scope))+'</label>'
+    +'<textarea id="report-edit-'+g+'-'+i+'" rows="3" maxlength="400">'+esc(q.a||'')+'</textarea>').join('')+'</section>';
+ }).join('');
+ openModal('submitted-report-edit','<h2>'+(tr()?'Rapor yanıtlarını düzenle':'Edit report answers')+'</h2>'
+  +'<p class="mut">'+(tr()?'Yalnızca bu rapor gününün sonuna kadar düzenleyebilirsin. Kaydetmeden çıkarsan değişiklikler uygulanmaz.':'You can edit until the end of this report day. Unsaved changes are discarded.')+'</p>'
+  +fields+'<div class="row"><button onclick="saveSubmittedReportEdit()">'+t('save')+'</button>'
+  +'<button type="button" class="g" onclick="closeModal('+"'submitted-report-edit'"+')">'+t('cancel')+'</button></div>');
+ return true;
+}
+function saveSubmittedReportEdit(){
+ const session=submittedReportEditor;
+ if(!session||session.owner!==A||!canEditSubmittedReport(session.kind,session.key))return false;
+ const updates=[];
+ for(let g=0;g<session.groups.length;g++){
+  const group=session.groups[g],current=reportQuestionStore(group.scope)[group.key];
+  if(current!==group.questions)return false;
+  for(let i=0;i<current.length;i++){
+   const field=document.getElementById('report-edit-'+g+'-'+i);
+   if(!field)return false;
+   const answer=String(field.value||'').trim().slice(0,400);
+   if(!answer){toast(tr()?'Tüm soruların yanıtlarını doldur.':'Complete every answer.');field.focus();return false}
+   updates.push([current[i],answer]);
+  }
+ }
+ for(const [question,answer] of updates)question.a=answer;
+ submittedReportEditor=null;
+ save();closeModal('submitted-report-edit');P.rep();
+ toast(tr()?'Düzenlemeler kaydedildi.':'Changes saved.');
+ return true;
+}
+
 function reportActivityStart(period,day){
  if(!A)return null;
  const kind=period.key.length===7?'month':'week';
@@ -4526,7 +4578,7 @@ function monthlyReportCard(day,window){
  const schedule=`<p class="mut report-month-window">${tr()?'Açılış':'Opens'} · ${midnight(opens)}<br>${tr()?'Kapanış':'Closes'} · ${midnight(closes)} (${tr()?'Türkiye saati':'Istanbul time'})</p>`;
  let status='';
  if(submitted){
-   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>`;
+   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>${canEditSubmittedReport('month',period.key,day)?`<button class="g s report-edit" onclick="startSubmittedReportEdit('month','${period.key}')">${tr()?'Düzenle':'Edit answers'}</button>`:''}`;
  }else if(open){
    status=`<p>${reportActivityLine(start,period.b)}</p><button class="g report-more" onclick="showReportDetail('month')">${tr()?'Soruları yanıtla':'Answer questions'} →</button>`;
  }else if(!start||!reportHasActivity(start,period.b)){
@@ -4544,7 +4596,7 @@ function reportSummaryCard(kind){
   const next=unlock>td?unlock:window.opens>td?window.opens:window.next;
   const reason=submitted?(tr()?'Bu dönemin yanıtları gönderildi.':'Your answers for this period were submitted.')
     :!reportPeriodEligible(period,td)?(tr()?'Rapor, kayıt olduğun dönemi izleyen dönemden itibaren, o dönemde görev, günlük veya tamamlanmış odak kaydın varsa açılır.':'From the period after signup, reports open for periods with a task, journal entry or completed focus session.'):'';
-  return `<section class="report-period-block${submitted?' report-submitted':''}">${pendingReportCard(title,period.a>since?period.a:since,next)}${reason?'<p class="mut">'+reason+'</p>':''}</section>`;
+  return `<section class="report-period-block${submitted?' report-submitted':''}">${pendingReportCard(title,period.a>since?period.a:since,next)}${reason?'<p class="mut">'+reason+'</p>':''}${canEditSubmittedReport(kind,period.key,td)?`<button class="g s report-edit" onclick="startSubmittedReportEdit('${kind}','${period.key}')">${tr()?'Düzenle':'Edit answers'}</button>`:''}</section>`;
  }
  return `<section class="card report-summary"><h2>${title}</h2><p class="mut">${fmt(period.a)} – ${fmt(period.b)}</p><p>${reportActivityLine(period.a,period.b)}</p><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Soruları yanıtla':'Answer questions'} →</button></section>`;
 }
