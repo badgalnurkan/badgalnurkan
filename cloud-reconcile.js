@@ -37,10 +37,18 @@ const IYReconcile=(()=>{
   DB.accounts[next.u]=next;DB.lastUser=next.u;A=next;setItem(LSK,JSON.stringify(DB));
   if(view==='app'){applyTheme();renderPage()}return true;
  }
+ // A server-confirmed entry can be acknowledged independently of rendering.
+ // Never delete a local entry using an unverified account or local-only marker.
+ function acknowledgePad(uid,remote){
+  if(!active(uid)||remote?.authUid!==uid)return;
+  for(const e of IYOfflinePad.list(uid)){
+   if(Object.hasOwn(remote.offlineDraftIds||{},e.id)&&remote.offlineDraftIds[e.id]===true)IYOfflinePad.remove(uid,e.id);
+  }
+ }
  function importPad(uid,remote){
+  acknowledgePad(uid,remote);
   let added=false;
   for(const e of IYOfflinePad.list(uid)){
-   if(remote?.offlineDraftIds?.[e.id]){IYOfflinePad.remove(uid,e.id);continue}
    if(IYOfflinePad.apply(A,e)==='added')added=true;
   }
   if(added){save();if(view==='app'&&!document.activeElement?.matches('input,textarea,select')&&!document.querySelector('.modal:not(.is-closing)'))renderPage()}
@@ -87,6 +95,7 @@ const IYReconcile=(()=>{
     if(!active(uid))return false;
     latest=await sbPull(false)||{};
     if(!active(uid))return false;
+    acknowledgePad(uid,latest);
    }
    cloudRemoveDraft(entry.key);
    if(localStorage.getItem(entry.key)!==null)throw Error('Draft acknowledgement failed');
