@@ -51,13 +51,14 @@ function inboxFixture(reduced=false){
  const timers=[],names=new Set(),classes={add:k=>names.add(k),remove:k=>names.delete(k),contains:k=>names.has(k)};
  const button={disabled:false,classList:classes},list={innerHTML:'initial'};
  const account={notifications:[{id:'a'},{id:'b'}],noticeDelivered:{a:1,b:1}};
- const context={A:account,tr:()=>true,save:()=>{context.saves++},saves:0,updateNotificationBadge:()=>{context.badges++},badges:0,
+ const context={A:account,DB:{},tr:()=>true,save:()=>{context.saves++},saves:0,updateNotificationBadge:()=>{context.badges++},badges:0,
   ensureNoticeState:()=>context.A,notificationList:()=>'<p>empty or entries</p>',motionReveal:()=>{},
   window:{matchMedia:()=>({matches:reduced})},
   document:{getElementById:id=>id==='notification-clear'?button:id==='notification-list'?list:null,querySelectorAll:()=>[]},
   setTimeout:(cb,delay)=>{timers.push({cb,delay})},dismissTopNotification:()=>{},openModal:()=>{}};
  vm.createContext(context);
  vm.runInContext("function captchaErrorText(err){\n  if(!/captcha/i.test(String(err?.code||'')+' '+String(err?.message||'')))return '';\n  return tr()?'Robot doğrulaması tamamlanamadı. Kutucuğu kontrol edip yeniden dene.':'Security verification failed. Check the verification box and try again.';\n}\n",context);
+ vm.runInContext(extract('function rememberPublicNoticeRemoval(ids){','function ensureNoticeState(){'),context);
  vm.runInContext(extract('function notificationClearButton(){','function setNotificationPreference(key,enabled){')+'this.clear=clearNotifications;this.buttonHTML=notificationClearButton;',context);
  return {context,button,list,names,timers};
 }
@@ -100,4 +101,13 @@ test('mobile project date and long project names stay in constrained card column
  assert.match(html,/\.project-add #pd\{[^}]*max-width:100%!important/);
  assert.match(html,/\.project-task>span\{[^}]*overflow-wrap:anywhere/);
  assert.match(html,/@media\(max-width:600px\)\{\s*\.project-add\{grid-template-columns:minmax\(0,1fr\)!important/);
+});
+
+test('clearing public releases records dismissal without recording private IDs',()=>{
+ const {context}=inboxFixture(true);
+ context.A.notifications.push({id:'release:test'});
+ context.clear();
+ assert.equal(context.DB.publicNoticeDismissed['release:test'],true);
+ assert.equal(context.DB.publicNoticeDismissed.a,undefined);
+ assert.equal(context.DB.publicNoticeDismissed.b,undefined);
 });
