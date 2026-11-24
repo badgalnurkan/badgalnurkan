@@ -21,7 +21,32 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    browser=await type.launch(engine==='chromium'&&process.env.IYD_CHROMIUM_EXECUTABLE?{executablePath:process.env.IYD_CHROMIUM_EXECUTABLE}:{});
    await require('./turnstile-provider.browser.cjs')(browser);
    await verifyRecovery(browser,engine);
-   await verifyLoginEmail(browser,engine,origin);
+   // Report only aggregate sync state and CAS outcomes for disposable browser fixtures.
+   // No user data, profile documents, identity, credentials or request headers are logged.
+   const createPage=browser.newPage.bind(browser);
+   browser.newPage=async(...args)=>{
+    const page=await createPage(...args),outcomes={accepted:0,rejected:0,failed:0};
+    page.on('response',async response=>{
+     if(!new URL(response.url()).pathname.endsWith('/iydu_sync_profile'))return;
+     try{if(!response.ok())outcomes.failed++;else if(await response.json()===true)outcomes.accepted++;else outcomes.rejected++}catch{outcomes.failed++}
+    });
+    const close=page.close.bind(page);
+    page.close=async(...options)=>{
+     try{
+      const state=await page.evaluate(()=>{
+       if(typeof A==='undefined'||!A?.authUid||typeof IYReconcile==='undefined')return null;
+       const uid=A.authUid;
+       return {online:navigator.onLine,hidden:document.hidden,blocked:cloudBlockedDrafts.has(uid),
+        pending:cloudDraftEntries(uid).length,offline: IYOfflinePad.list(uid).length,
+        localAcknowledgements:Object.keys(A.offlineDraftIds||{}).length};
+      });
+      if(state)console.log('Browser sync fixture summary:',JSON.stringify({state,outcomes}));
+     }catch{}
+     return close(...options);
+    };
+    return page;
+   };
+   try{await verifyLoginEmail(browser,engine,origin)}finally{browser.newPage=createPage}
    await require('./signup-fields.browser.cjs')(browser,engine);
    await verifyGrowingText(browser,engine);
    if(engine==='firefox'){await browser.close();continue}
