@@ -20,7 +20,8 @@ test -n "$container"
 docker exec "$container" pg_dump -U postgres -Fc postgres > "$state/fixture.dump"
 docker exec "$container" createdb -U postgres -T template0 iyd_restore
 docker exec "$container" psql -U postgres -d iyd_restore -v ON_ERROR_STOP=1 -qc "DROP SCHEMA public;"
-docker exec -i "$container" pg_restore -U postgres --exit-on-error -d iyd_restore < "$state/fixture.dump"
+# Restore the archive as the target owner; do not try to assume managed platform roles.
+docker exec -i "$container" pg_restore -U postgres --no-owner --exit-on-error -d iyd_restore < "$state/fixture.dump"
 probe="select (select count(*) from auth.users), (select count(*) from auth.sessions), (select count(*) from iydu_private.browser_verified_sessions), (select md5(string_agg(md5(data::text),',' order by user_id)) from public.user_data)"
 before=$(docker exec "$container" psql -U postgres -Atqc "$probe" postgres)
 after=$(docker exec "$container" psql -U postgres -Atqc "$probe" iyd_restore)
