@@ -113,3 +113,35 @@ test('an expired credential retries only for the original verified account',asyn
  assert.equal(await f.api.sbPush(),true);
  assert.equal(attempts,2);assert.equal(refreshes,1);
 });
+
+
+/* Exercise the actual persistence function, not an independently reimplemented model. */
+function persistenceFixture(persist){
+ const start=source.indexOf('const save=()=>{');
+ const stop=source.indexOf('/* oturum:',start);
+ assert.ok(start>=0&&stop>start,'Local persistence function missing');
+ const account={u:'fixture',tasks:[{t:'Unsynced draft'}]};
+ const warnings=[];
+ let pushes=0,touches=0;
+ const context={A:account,DB:{accounts:{fixture:account}},LSK:'fixture-local-store',
+  setItem:()=>persist(),touchSession:()=>{touches++},schedulePush:()=>{pushes++},
+  view:'app',tr:()=>false,toast:message=>warnings.push(message),
+  console:{warn:message=>warnings.push(message)}};
+ vm.createContext(context);
+ vm.runInContext(source.slice(start,stop)+'\nthis.persist=save;',context);
+ return {account,warnings,run:()=>context.persist(),pushes:()=>pushes,touches:()=>touches};
+}
+test('successful local persistence schedules normal cloud sync without warning',()=>{
+ const f=persistenceFixture(()=>true);f.run();
+ assert.equal(f.pushes(),1);assert.equal(f.touches(),1);assert.equal(f.warnings.length,0);
+});
+test('failed durable local persistence is reported rather than silently swallowed',()=>{
+ const f=persistenceFixture(()=>false);f.run();
+ assert.equal(f.account.tasks[0].t,'Unsynced draft');
+ assert.ok(f.warnings.length>0,'A failed persistent write must not be silently treated as saved');
+});
+test('a thrown storage exception is reported and leaves the in-memory draft intact',()=>{
+ const f=persistenceFixture(()=>{throw new Error('Synthetic storage quota exceeded')});f.run();
+ assert.equal(f.account.tasks[0].t,'Unsynced draft');
+ assert.ok(f.warnings.length>0,'Storage exception must be surfaced');
+});
