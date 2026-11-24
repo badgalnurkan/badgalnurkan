@@ -145,3 +145,30 @@ test('a thrown storage exception is reported and leaves the in-memory draft inta
  assert.equal(f.account.tasks[0].t,'Unsynced draft');
  assert.ok(f.warnings.length>0,'Storage exception must be surfaced');
 });
+
+
+function profileCollisionFixture(accounts){
+ const start=source.indexOf('function v13ProtectLegacyCollision(');
+ const stop=source.indexOf('/* V13.1:',start);
+ assert.ok(start>=0&&stop>start);
+ const context={DB:{accounts},findUser:name=>Object.keys(accounts).find(k=>k.toLowerCase()===String(name).toLowerCase()),accountCloudHints:a=>!!(a.authUid||a.accountOrigin==='cloud')};
+ vm.createContext(context);
+ vm.runInContext(source.slice(start,stop)+'\nthis.guard=v13ProtectLegacyCollision;',context);
+ return context.guard;
+}
+test('a renamed cloud account cannot replace a different cached identity even with a legacy migration flag',()=>{
+ const accounts={Sample:{authUid:'owner-one',accountOrigin:'cloud',tasks:[{t:'first owner'}]},other:{authUid:'owner-two',accountOrigin:'cloud'},third:{authUid:'owner-three',accountOrigin:'cloud'}};
+ const before=JSON.stringify(accounts),guard=profileCollisionFixture(accounts);
+ for(const allow of [false,true])assert.throws(()=>guard('sample','owner-two',allow),/V13_LOCAL_USERNAME_COLLISION/);
+ assert.equal(JSON.stringify(accounts),before);
+});
+test('the same cloud UUID and a genuinely free username are allowed',()=>{
+ const guard=profileCollisionFixture({Sample:{authUid:'owner-one',accountOrigin:'cloud'}});
+ assert.doesNotThrow(()=>guard('Sample','owner-one'));
+ assert.doesNotThrow(()=>guard('available','owner-two'));
+});
+test('only an explicitly approved legacy migration may replace a legacy local account',()=>{
+ const guard=profileCollisionFixture({sample:{accountOrigin:'local',pw:'synthetic-local-hash'}});
+ assert.throws(()=>guard('sample','owner-one'),/V13_LOCAL_USERNAME_COLLISION/);
+ assert.doesNotThrow(()=>guard('sample','owner-one',true));
+});
