@@ -2618,10 +2618,16 @@ function siteChangesContent(){
  return `<h2>${tr()?'Site güncellenmiştir!':'The site has been updated!'}</h2><p class="mut">${tr()?'Nelerin değiştiğini buradan takip edebilirsin.':'See what has changed here.'}</p><div class="release-list">${SITE_CHANGES.map(release=>`<article class="release-entry"><time datetime="${release.date}">${new Date(release.date+'T12:00').toLocaleDateString(tr()?'tr-TR':'en-GB',{day:'numeric',month:'long',year:'numeric'})}</time><h3>${tr()?release.trTitle:release.enTitle}</h3><ul>${release.items.map(pair=>`<li>${esc(pair[tr()?0:1])}</li>`).join('')}</ul></article>`).join('')}</div><button class="g" onclick="closeModal('release-details')">${tr()?'Kapat':'Close'}</button>`;
 }
 function noticeOwner(){return A||DB}
+function publicNoticeRemoved(id){
+ return typeof id==='string'&&id.startsWith('release:')&&DB.publicNoticeDismissed?.[id]===true;
+}
+function rememberPublicNoticeRemoval(ids){
+ for(const id of ids)if(typeof id==='string'&&id.startsWith('release:'))(DB.publicNoticeDismissed||={})[id]=true;
+}
 function ensureNoticeState(){
  const owner=noticeOwner();
  if(!Array.isArray(owner.notifications))owner.notifications=[];
- owner.notifications=owner.notifications.filter(item=>item&&/^[a-zA-Z0-9:._-]{1,180}$/.test(String(item.id||''))&&['release','project','tasks','pomo-five','pomo-break','pomo-focus'].includes(item.type)&&Number.isFinite(Date.parse(item.at)));
+ owner.notifications=owner.notifications.filter(item=>item&&!publicNoticeRemoved(item.id)&&/^[a-zA-Z0-9:._-]{1,180}$/.test(String(item.id||''))&&['release','project','tasks','pomo-five','pomo-break','pomo-focus'].includes(item.type)&&Number.isFinite(Date.parse(item.at)));
  if(!owner.noticeDelivered||typeof owner.noticeDelivered!=='object'||Array.isArray(owner.noticeDelivered))owner.noticeDelivered={};
  if(!owner.notificationPrefs||typeof owner.notificationPrefs!=='object')owner.notificationPrefs={};
  return owner;
@@ -2636,7 +2642,7 @@ function notificationCopy(item){
  return {title:tr()?'Yeniden odaklanma zamanı':'Time to focus again',body:tr()?'Molan bitti; yeni odak oturumun başladı.':'Your break is over; a new focus session has started.'};
 }
 function notificationButton(){
- const owner=ensureNoticeState(),unread=owner.notifications.some(item=>!item.read)||!owner.noticeDelivered['release:'+SITE_RELEASE];
+ const owner=ensureNoticeState(),unread=owner.notifications.some(item=>!item.read)||(!publicNoticeRemoved('release:'+SITE_RELEASE)&&!owner.noticeDelivered['release:'+SITE_RELEASE]);
  return `<button type="button" id="notification-toggle" class="notification-toggle ${unread?'has-unread':''}" onclick="openNotifications()" aria-haspopup="dialog" aria-label="${tr()?'Bildirimler':'Notifications'}${unread?(tr()?', yeni bildirim var':', new notifications'):''}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg><span class="notification-dot" aria-hidden="true"></span></button>`;
 }
 function updateNotificationBadge(){
@@ -2699,6 +2705,7 @@ function showTopNotification(item){
  if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',900)+200);return}
  let stack=document.getElementById('notification-banners');
  if(!stack){stack=document.createElement('div');stack.id='notification-banners';stack.className='notification-banners';stack.setAttribute('aria-live','polite');stack.setAttribute('aria-relevant','additions');document.body.appendChild(stack)}
+ if(!ensureNoticeState().notifications.some(n=>n.id===item.id))return;
  const copy=notificationCopy(item),banner=document.createElement('div');banner.className='notification-banner';banner.dataset.notificationId=item.id;
  const owner=noticeOwner();banner._onSwipeDelete=()=>{if(noticeOwner()===owner)deleteNotification(item.id,1);else dismissTopNotification(banner,1)};
  banner.innerHTML=`<button class="notification-banner-main" onclick="openNotification('${item.id}')"><small>${tr()?'BİLDİRİM':'NOTIFICATION'}</small><strong>${esc(copy.title)}</strong><span>${esc(copy.body)}</span></button><button class="notification-banner-close" aria-label="${tr()?'Bildirimi gizle':'Dismiss alert'}" onclick="dismissTopNotification(this.parentElement)">×</button>`;
@@ -2715,7 +2722,7 @@ function addNotification(id,type,data={},announce=true){
   const clearButton=document.getElementById('notification-clear');if(clearButton&&!clearButton.classList.contains('is-emptying'))clearButton.disabled=!owner.notifications.length;
  if(announce)showTopNotification(item);return true;
 }
-function ensureReleaseNotification(){addNotification('release:'+SITE_RELEASE,'release',{},true)}
+function ensureReleaseNotification(){const id='release:'+SITE_RELEASE,owner=ensureNoticeState();if(publicNoticeRemoved(id)){if(!owner.noticeDelivered[id]){owner.noticeDelivered[id]=Date.now();save()}updateNotificationBadge();return}addNotification(id,'release',{},true)}
 function notificationList(){
  return ensureNoticeState().notifications.map(item=>{const copy=notificationCopy(item);return `<article class="notification-item"><button class="notification-item-main" onclick="openNotification('${item.id}')"><strong>${esc(copy.title)}</strong><span>${esc(copy.body)}</span><time datetime="${esc(item.at)}">${new Date(item.at).toLocaleString(tr()?'tr-TR':'en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time></button></article>`}).join('')||`<p class="mut">${tr()?'Bildirimin yok. Yeni hatırlatmalar burada görünecek.':'No notifications. New reminders will appear here.'}</p>`;
 }
@@ -2735,7 +2742,7 @@ function clearNotifications(){
  const purge=()=>{
   if(ensureNoticeState()!==owner)return;
   const current=owner;
-  current.notifications=current.notifications.filter(item=>!ids.has(item.id));
+  rememberPublicNoticeRemoval(ids);current.notifications=current.notifications.filter(item=>!ids.has(item.id));
   save();updateNotificationBadge();
   for(const banner of document.querySelectorAll?.('.notification-banner')||[])if(ids.has(banner.dataset.notificationId))dismissTopNotification(banner);
   const list=document.getElementById('notification-list');
@@ -2752,7 +2759,7 @@ function clearNotifications(){
 }
 function setNotificationPreference(key,enabled){if(A&&['projects','tasks','pomo'].includes(key)){ensureNoticeState().notificationPrefs[key]=!!enabled;save()}}
 function deleteNotification(id,direction=0){
- const owner=ensureNoticeState();owner.notifications=owner.notifications.filter(item=>item.id!==id);save();updateNotificationBadge();
+ const owner=ensureNoticeState();if(owner.notifications.some(item=>item.id===id))rememberPublicNoticeRemoval([id]);owner.notifications=owner.notifications.filter(item=>item.id!==id);save();updateNotificationBadge();
  for(const banner of document.querySelectorAll?.('.notification-banner')||[])if(banner.dataset.notificationId===id)dismissTopNotification(banner,direction);
  const list=document.getElementById('notification-list');if(list){list.innerHTML=notificationList();motionReveal(list)}
  const clearButton=document.getElementById('notification-clear');if(clearButton&&!clearButton.classList?.contains('is-emptying'))clearButton.disabled=!owner.notifications.length;
