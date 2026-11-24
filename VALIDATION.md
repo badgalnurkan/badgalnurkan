@@ -1,3 +1,30 @@
+# 24 Kasım 2026 — Supabase CAS istemcisi ve güvenli yayın kapısı (taslak PR #65)
+
+- **Geliştirme dalı:** `feature/2026-11-24-archive-and-productivity`; `main` dalı ve mevcut canlı site bu taslakta değiştirilmedi.
+- **Üretim salt okunur tespit:** `public.iydu_sync_profile(p_expected_data jsonb, p_data jsonb)` mevcut, `authenticated` rolüne açık, `anon` için kapalı, `SECURITY INVOKER`. Mevcut kaydın `iyduSyncVersion` hariç JSON gövdesini beklenen belgeyle karşılaştırarak yazıyor. Bu fonksiyonun veritabanında bulunması, canlı istemcinin onu zaten kullandığı anlamına gelmez.
+- **QA farkı:** `lvomrcqytfygcmguojcj` projesinde `iydu_save_cas` mevcut ancak `iydu_sync_profile` yok. İki ortamın RPC sözleşmeleri eşitlenmeden gerçek QA entegrasyonu geçti sayılmaz. QA veya üretime yeni SQL uygulanmadı.
+- **Taslak istemci değişikliği:** `sbPull` yalnızca doğrulanmış oturumla okunan profil belgesini kullanıcı UUID'sine göre karşılaştırma tabanı olarak tutuyor. `sbPush` artık koşulsuz `iydu_save` yerine `iydu_sync_profile` çağırıyor; çakışmada zorla kayıt yapmıyor. Bir oturumda eşzamanlı yazmalar seri hale getiriliyor; yanıt beklerken yapılan değişiklikler yeni gönderim için işaretleniyor; kimlik uyuşmazlığı yazmayı engelliyor. RPC başarısızlığında cihazdaki kayıt korunuyor ve uygulama uyarı gösteriyor.
+- **Regresyon kapsamı:** `tests/cloud-sync-cas.test.cjs` içinde sunucudan okunan taban belge, kimlik, çakışma, ağ kesintisi, eşzamanlı yazma, eski oturum yanıtı, yeni değişiklik ve 401 yenileme yolları bulunuyor; `npm test` kapsamına eklendi. Gerçek e-posta gönderimi, üretim kaydı düzenleme ve canlı kullanıcı erişimi yapılmadı.
+- **Yayın engelleri:** Çevrimdışıyken yapılan düzenlemelerin sayfa/oturum yeniden açılışında sessizce kaybolmasını önleyecek kalıcı işlem kuyruğu ve cihazlar arası çatışma çözüm arayüzü tamamlanmadı. Gerçek iki cihaz / iki hesap eşitlemesi, fiziksel iOS ve Android testleri yapılmadı. Bu yüzden bu özellikler kullanıma hazır veya tamamen doğrulanmış olarak işaretlenemez.
+- **Supabase güvenlik taraması:** Üretimde anonim kullanıcıların çağırabildiği dört `SECURITY DEFINER` RPC için güvenlik danışmanı uyarısı var (`iydu_pickup_email`, `iydu_relay_email`, `iydu_username_available`, `username_available`). Fonksiyonların kullanım amacı, çağrı doğrulaması ve kötüye kullanım sınırları gözden geçirilmeden yetki değişikliği yapılmayacak. `user_data` ve `iydu_usernames` için RLS etkin; sahiplik politikaları ve kısıtlayıcı hesap yaşam döngüsü politikaları mevcut.
+- **Yayın disiplini:** Bu denetim tamamlanmadan PR birleştirilmemeli. Her yeni commit sonrasında GitHub CI / `npm test` / statik önizleme / tarayıcı kontrolleri yeniden incelenmeli. Önceki yeşil CI sonucu yeni CAS commit'i için otomatik olarak kanıt sayılmaz.
+
+---
+
+# 24 Kasım 2026 — Süreli arşiv ve üretkenlik özellikleri (yayın adayı; doğrulama bekliyor)
+
+- Geliştirme dalı: `feature/2026-11-24-archive-and-productivity`. Üretim `main` dalına bu çalışmada yazılmadı.
+- Süresi dolan geleceğe notlar artık doğrudan silinmez; `timedArchive.notes` içinde metin, tarih ve oluşturma metaverisiyle saklanır. Arşivden düzenleme, tarih seçerek geri yükleme ve onaylı kalıcı silme eklendi. Aynı tarihte mevcut başka not varsa üzerine yazılmaz.
+- Proje hatırlatmaları süre dolduğunda projeyi veya alt görevlerini silmeden `archivedAt` işaretlenerek arşive alınır. Arşivlenmiş proje sonraki hatırlatma kontrollerinde yeniden tetiklenmez. Proje yeni tarih ile geri yüklenebilir.
+- Aynı gün oluşturulan sıradan takvim notları yanlışlıkla geleceğe not olarak işaretlenmez.
+- Ana sayfaya kaynak bağlantılı Türkçe/İngilizce, gün bazlı dönen bilgi kartı; görev listesine tekrarlı önerilerden kaçınan rastgele görev seçimi; Pomodoro istatistiklerine son 30 günün tamamlanan seansları ve tamamlanmamış görevlerini gösteren betimleyici özet eklendi. Bilgi havuzu statiktir; günlük otomatik dış kaynak güncellemesi yapılmaz.
+- Yeni regresyon kontrolleri `tests/timed-records.test.cjs` ve `tests/productivity-new-features.test.cjs` içinde hesap değiştirme, tarih sınırları, veri koruma, geri yükleme ve yeni kartların davranışını kapsayacak şekilde yazıldı. Yeni test `npm test` komutuna bağlandı.
+- Bu kayıt sırasındaki doğrulama: güncel `index.html` gömülü ana JavaScript betiğinin `new Function(...)` ile sözdizimi kontrolü geçti. Kaynak kod, iki ayrı commit grubunda GitHub'a kaydedildi.
+- **Henüz doğrulanmayanlar:** Tam `npm test` sonucu, `python scripts/build-preview.py` çıktısı, gerçek mobil tarayıcı, Supabase gerçek çoklu hesap eşitlemesi, çevrimdışı veri kuyruğu, üretim Vercel karşılaştırması. Bu denetimlerden önce canlı yayına veya tüm istekler tamamlandı beyanına geçilmez.
+- **Devam eden işler:** Rapor gönderimi sonrası güvenli düzenleme, bildirimleri kaydırarak arşivleme/silme, giriş animasyonunun kısaltılması, Supabase veri çakışma çözümü ve çevrimdışı IndexedDB işlemleri. Eski veri eşitleme akışı hâlâ tüm kullanıcı verisini RPC ile kaydetmektedir; CAS ve sürüm kontrolü olmadan yeni çevrimdışı eşitleme iddiasında bulunulmaz.
+
+---
+
 # 22 Kasım 2026 — Güvenlik başlıkları, yayından kaldırılan dosyalar ve kayıtlı kullanıcı adları (yayın adayı)
 
 - `vercel.json` tüm yanıtlara `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` ve `Permissions-Policy` ekler. CSP kaynakları sitenin kendi dosyaları, Google Fonts, Supabase projesi ve izin verilen veri/blob kaynaklarıyla sınırlar; çerçeveleme ve eklenti nesneleri kapalıdır. `<base>` adresi ve form gönderimleri aynı origin ile sınırlıdır. Mevcut satır içi betik ve `onclick` yapısı nedeniyle `'unsafe-inline'` korunur, `'unsafe-eval'` yoktur.
@@ -267,3 +294,21 @@ Haftalık sorular pazar günü, aylık sorular takvim ayının son günü, yıll
 Kayıt ayında uygun etkinliği olan kullanıcı, o ilk ayın son gününde de hesabının raporunu yanıtlayabilir. Sonraki aylarda yine ilgili ayın etkinliği gerekir. Kart İstanbul saatine göre içinde bulunulan ayı, son günün 00.00 açılışını ve sonraki ayın ilk günündeki 00.00 kapanışını aynı ekranda gösterir. Gönderilmiş bir rapor ve henüz etkinliği olmayan hesap kendi durumunu görür. Örnek hesaplarla kasım-aralık geçişi, on iki ay, artık gün ve 2100 yılı sınırları kontrol edilir. Gerçek hesapların kayıtlarını değiştiren bir veritabanı geçişi yoktur.
 
 Yerelde 326 birim testi, uygulama sözdizimi ve statik önizleme derlemesi geçti. Ayın son günü üye olup saat 23.59’da ilk kaydını oluşturan hesap 2026, 2028 ve 2100 yıllarının her ayında denendi. Tarayıcı senaryosu kasımda üye olan bir hesabın 23 Kasım’da gördüğü iki sınırı, 30 Kasım’da cevaplayıp kilitlemesini ve 1 Aralık’ta yeni kartı görmesini denetler.
+
+
+## 2026-11-24 — Timed archive, productivity, notification swipe and report editing (development branch)
+
+Scope: index.html, tests/archive-productivity.test.cjs, tests/report-edit.test.cjs, tests/notification-swipe.test.cjs, package.json.
+
+- Added recoverable archives for expired future notes and project reminders. Project records and subtasks are preserved. Restore requires a valid new date and rejects note collisions. Permanent deletion requires separate confirmation.
+- Added source-linked bilingual daily facts that rotate by date. This is a curated catalogue, not a live news feed.
+- Added opt-in random task suggestions, including tomorrow-plan handling once today's tasks are complete.
+- Added descriptive 30-day focus-hour and unfinished-task patterns. These do not establish causes of focus difficulty.
+- Updated notification banner gestures: right swipe removes the inbox record; upward swipe hides the banner but keeps the record.
+- Added an explicit same-day editor for submitted weekly/monthly report answers. Submitted locks remain in place and edits are saved only after confirmation, with a fresh date/account check.
+- Added regression tests for archives, accidental overwrite, cross-account stale dialogs, reminders, suggestions, focus insights, notification swipes and report editing.
+- No production Supabase data, existing user records or the main branch were modified by these commits.
+- At initial writing, the inline JavaScript passed V8 syntax compilation. Full npm test, the preview build, browser E2E, real-device checks, multi-device synchronization and production deployment remained unverified; consult pull-request CI for subsequent results.
+- The offline operation queue and conflict-safe server synchronization are not implemented by this branch. Do not describe these as complete.
+
+- Updated the login portal from 1,600 ms to 850 ms, preserving reduced-motion bypass. Updated the entry transition regression test accordingly; rerun CI on the new commit before release.

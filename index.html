@@ -1338,7 +1338,7 @@ body{font-size:1rem!important}
   #login-portal.v13131-portal .portal-disc,#login-portal.v13131-portal .portal-ring{animation:none!important}
 }
 /* Shared web motion, inspired by Apple's motion guidance. */
-:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:1600}
+:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:850}
 #app{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main,.shell main.swap{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main.an{animation:pgIn .34s var(--motion-ease) both}
@@ -1464,15 +1464,15 @@ body{font-size:1rem!important}
   .nav-shell aside a::after,.nav-shell aside a .nav-icon svg{transition:none}
 }
 
-/* Welcome entry: 180ms brand, 340ms forward, 240ms reverse, then 840ms greeting. */
+/* Compact entry: 100ms brand, 240ms forward, 160ms reverse, then 350ms greeting. */
 #login-portal.entry-portal{background:var(--bg);pointer-events:auto;animation:entryPortalOut calc(var(--entry-total-ms)*1ms) linear both!important}
-#login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .58s linear .18s both!important}
-#login-portal.entry-portal .portal-brand{position:relative;z-index:2;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:entryBrandPass .58s linear .18s both!important}
+#login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .4s linear .1s both!important}
+#login-portal.entry-portal .portal-brand{position:relative;z-index:2;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:entryBrandPass .4s linear .1s both!important}
 #login-portal.entry-portal .portal-title{font-family:var(--brand-title-font);font-size:clamp(1.1rem,4.5vw,1.65rem);font-weight:600;line-height:1.3;text-wrap:balance;text-align:center;color:var(--acc)}
 #login-portal.entry-portal .portal-ring{position:absolute;inset:-2px;display:block;width:auto;height:auto;border:2px solid var(--ln);border-top-color:var(--acc);border-right-color:var(--acc);border-radius:50%;animation:entrySpinner .9s linear infinite!important}
-#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .84s var(--motion-ease) .76s both!important}
-@keyframes entryCirclePass{0%{transform:translate(-50%,-50%) scale(0);animation-timing-function:var(--motion-return)}58.62069%{transform:translate(-50%,-50%) scale(1.5);animation-timing-function:var(--motion-return)}100%{transform:translate(-50%,-50%) scale(0)}}
-@keyframes entryBrandPass{0%{opacity:1;transform:scale(1);animation-timing-function:var(--motion-return)}58.62069%{opacity:1;transform:scale(1.08);animation-timing-function:var(--motion-return)}100%{opacity:0;transform:scale(1)}}
+#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .35s var(--motion-ease) .5s both!important}
+@keyframes entryCirclePass{0%{transform:translate(-50%,-50%) scale(0);animation-timing-function:var(--motion-return)}60%{transform:translate(-50%,-50%) scale(1.5);animation-timing-function:var(--motion-return)}100%{transform:translate(-50%,-50%) scale(0)}}
+@keyframes entryBrandPass{0%{opacity:1;transform:scale(1);animation-timing-function:var(--motion-return)}60%{opacity:1;transform:scale(1.08);animation-timing-function:var(--motion-return)}100%{opacity:0;transform:scale(1)}}
 @keyframes entrySpinner{to{transform:rotate(360deg)}}
 @keyframes entryGreeting{0%{opacity:0;letter-spacing:-.01em;transform:scale(.985)}35%,82%{opacity:1;letter-spacing:.045em;transform:scale(1)}100%{opacity:0;letter-spacing:.065em;transform:scale(1.01)}}
 @keyframes entryPortalOut{0%,90%{opacity:1}100%{opacity:0}}
@@ -1718,6 +1718,7 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 #signup-terms:checked::after{content:'';width:.65rem;height:.32rem;border:solid var(--on-acc);border-width:0 0 2px 2px;transform:translateY(-.08rem) rotate(-45deg)}
 .entry-confirmed{display:block;font:600 .85rem/1.4 system-ui;margin-top:.45rem}
 .signup-docs{text-align:center;margin:.3rem 0 .8rem}
+[hidden]#sync-status{display:none}#sync-review pre{max-height:12rem;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}#sync-review fieldset{min-width:0;border:1px solid var(--bd,#8885);margin:.6rem 0}#sync-review input[type=radio]{width:auto}
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -1730,6 +1731,10 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 <script src="/browser-verification.js"></script>
 <script src="/turnstile-auth.js"></script>
 <script src="/quick-session.js"></script>
+<script src="/profile-merge.js"></script>
+<script src="/daily-facts.js"></script>
+<script src="/offline-pad.js"></script>
+<script src="/cloud-reconcile.js"></script>
 <script src="/growing-text.js"></script>
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
@@ -1755,13 +1760,23 @@ document.documentElement.lang=DB.lang;
 let pushT=null;
 function schedulePush(){clearTimeout(pushT);if(!A?.authUid)return;pushT=setTimeout(()=>{sbPush().then(ok=>{if(!ok&&A)console.warn('Cloud sync could not complete')})},850)}
 const save=()=>{
+  let persisted=false;
   try{
     if(A)A.updatedAt=Date.now();
     DB.savedAt=Date.now();
-    setItem(LSK,JSON.stringify(DB));
-    touchSession();
-    schedulePush();
-  }catch(e){}
+    if(A?.authUid)cloudStageDraft(A);
+    persisted=setItem(LSK,JSON.stringify(DB))===true;
+  }catch(_){}
+  if(!persisted){
+    console.warn('Local persistent storage write failed');
+    const now=Date.now();
+    if(view==='app'&&typeof toast==='function'&&(!save.lastStorageWarning||now-save.lastStorageWarning>=15000)){
+      save.lastStorageWarning=now;
+      toast(tr()?'Cihaz kaydı başarısız. Bu sekmeyi açık tut ve mümkünse verilerini yedekle.':'Device storage failed. Keep this tab open and back up your data if possible.');
+    }
+  }
+  // A local storage failure must not prevent a possible verified cloud save.
+  try{touchSession();schedulePush()}catch(_){console.warn('Could not schedule profile persistence')}
 };
 /* oturum: kullanici bilgisi kucuk ve ayri tutulur -> ana kayit bozulsa da geri donus var */
 function touchSession(){
@@ -1803,6 +1818,9 @@ window.addEventListener('storage',e=>{
     const same=current&&current.authUid===A.authUid;
     const moved=!same&&A.authUid?Object.values(nd.accounts).find(x=>x?.authUid===A.authUid):null;
     if(same||moved){
+      if(A.authUid&&typeof IYReconcile!=='undefined'){
+        DB.accounts[A.u]=A;IYReconcile.later();return;
+      }
       A=norm(same?current:moved);
       if(view==='app')renderAppOrAuth();
     }else{
@@ -2079,7 +2097,7 @@ function bindReportCalendar(account,user,newProfile=false){
   else if(newProfile&&created>=release)account.reportCalendarRule='full-period-v1';
 }
 function norm(a){
-  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},planningQs:{},planningLocks:{},ql:{},notifications:[],noticeDelivered:{},notificationPrefs:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
+  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},planningQs:{},planningLocks:{},ql:{},notifications:[],noticeDelivered:{},notificationPrefs:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},timedArchive:{notes:[]},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
   // Preserve when reporting began independently of the percentage counter.
   // Older accounts have no reportStart; use their saved pctFrom as a one-time
@@ -2514,8 +2532,22 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-23-month-calendar-05';
+const SITE_RELEASE='2026-11-24-offline-recovery-07';
 const SITE_CHANGES=[
+ {date:'2026-11-24',trTitle:'Çevrimdışı görev ve notlar, eşitleme ve günün haberi',enTitle:'Offline entries, sync and daily reporting',items:[
+ ['Bu cihazda giriş yaptıktan sonra bağlantı kesilirse görev ve not kaydedebilirsin. Aynı hesap doğrulandığında kayıtlar eşitlenir.','After signing in on this device, you can record tasks and notes offline. They sync when the same account reconnects and is verified.'],
+ ['Aynı alanda iki farklı değişiklik varsa Ayarlar → Verilerim → Eşitlemeyi incele bölümünde iki sürümü karşılaştırabilirsin.','Compare conflicting fields in Settings → My data → Review sync.'],
+ ['Günün bilgisinin altında, günün konusuyla ilgili güncel bir haber bulunduğunda kaynağı ve tarihi gösterilir.','When a recent story is available for the daily topic, its publisher and date appear below the daily discovery.']]},
+
+  {date:'2026-11-24',trTitle:'Bekleyen eşitleme taslakları',enTitle:'Pending sync drafts',items:[['Cihazdaki bekleyen kayıtlar hesaba özel taslaklarda tutulur. Bağımsız alanlar yeniden girişte birleştirilebilir; belirsiz çakışmalarda otomatik kayıt durur ve taslaklar dışa aktarılabilir.','Pending changes are stored in account-specific drafts. Independent fields can merge on sign-in; ambiguous conflicts pause automatic sync and allow draft export.']]},
+  {date:'2026-11-24',trTitle:'Cihazda hesap çakışması koruması',enTitle:'On-device account collision protection',items:[['Aynı kullanıcı adındaki farklı hesapların cihazdaki kayıtları artık birbirinin üzerine yazılmaz.','Cached profiles with matching usernames cannot overwrite a different account identity.']]},
+  {date:'2026-11-24',trTitle:'Cihaz kaydı hata uyarısı',enTitle:'Device storage failure warning',items:[['Kalıcı cihaz kaydı başarısız olursa uygulama artık uyarı gösterir ve mümkünse bulut kaydını denemeye devam eder.','If persistent device storage fails, the app now warns you and still attempts cloud sync where possible.']]},
+  {date:'2026-11-24',trTitle:'Bulut eşitleme çakışma denetimi (taslak)',enTitle:'Cloud sync conflict check (draft)',items:[['Girişten sonra okunan uzak veriyle karşılaştırmalı kayıt uygulanır. Çakışmada veri zorla üzerine yazılmaz; cihazdaki kayıt korunur. Çevrimdışı oturum dönüşündeki anlaşmazlıkların çözümü henüz tamamlanmadı.','Cloud saves compare against the last downloaded profile. Conflicts no longer force-overwrite remote data; the local copy remains. Offline re-entry conflict resolution is not yet complete.']]},
+ {date:'2026-11-24',trTitle:'Daha hızlı giriş geçişi',enTitle:'Faster sign-in transition',items:[['Giriş onayından sonraki animasyon 1,6 saniyeden 0,85 saniyeye indirildi; düşük hareket tercihi korunur.','Reduced post-sign-in transition from 1.6 seconds to 0.85 seconds while respecting reduced-motion preferences.']]},
+ {date:'2026-11-24',trTitle:'Rapor yanıtlarını düzenleme',enTitle:'Editing submitted report answers',items:[['Gönderilmiş haftalık veya aylık rapor yanıtları ilgili rapor gününde açıkça Düzenle seçilerek kaydedilebilir. Kaydetmeden çıkış yanıtları değiştirmez; sonraki gün düzenleme kapanır.','Submitted weekly or monthly report answers can be explicitly edited on their report day. Unsaved edits are discarded and editing closes the following day.']]},
+ {date:'2026-11-24',trTitle:'Bildirim kaydırma hareketleri',enTitle:'Notification swipe gestures',items:[['Üst bildirimleri sağa kaydırarak gelen kutusundan silebilir, yukarı kaydırarak ekrandan kaldırıp bildirim merkezinde tutabilirsin.','Swipe top notifications right to delete them from the inbox, or up to dismiss the banner while keeping the inbox entry.']]},
+ {date:'2026-11-24',trTitle:'Günün bilgisi, görev önerileri ve odak desenleri',enTitle:'Daily facts, task suggestions and focus patterns',items:[['Ana sayfaya kaynak bağlantılı günlük bilgi eklendi; yapılacaklar listesine rastgele görev önerisi ve Pomodoro analizine 30 günlük örüntü özeti eklendi.','Added a source-linked daily fact to Home, a random task suggestion button and a 30-day pattern summary to Pomodoro analysis.']]},
+ {date:'2026-11-24',trTitle:'Süreli not ve proje arşivi',enTitle:'Expiring notes and project archive',items:[['Geleceğe bırakılan notlar ve süresi dolan proje hatırlatmaları artık otomatik silinmek yerine arşive alınır. Arşivde düzenleme, yeni tarihle geri yükleme ve onaylı kalıcı silme bulunur.','Future notes and expired project reminders are archived instead of automatically deleted. You can edit, restore with a new date or permanently delete with confirmation.']]},
   {date:'2026-11-23',trTitle:'Aylık rapor takvimi',enTitle:'Monthly report calendar',items:[
   ['İlk aylık rapor kayıt olduğun ayda açılır. O ay kayıt tarihinden itibaren bir görev, günlük veya tamamlanmış odak kaydı gerekir.','Your first monthly report opens in your signup month if you record a task, journal entry or completed focus session after joining.'],
   ['Aylık rapor kartında ilgili ayın adı, ayın son günündeki açılış ve sonraki ayın ilk günündeki kapanış Türkiye saatiyle gösterilir.','The monthly report shows its month, its opening on the final day and its closing on the first day of the following month in Istanbul time.']]},
@@ -2661,17 +2693,24 @@ function bindNotificationSwipe(banner){
  const begin=(x,y,id)=>{if(banner.classList.contains('is-leaving'))return;clearTimeout(banner._noticeTimer);blockClick=false;start={x,y,id,active:false}};
  const move=(x,y,id)=>{
   if(!start||start.id!==id)return;const dx=x-start.x,dy=y-start.y;
+  if(!start.active&&dy< -14&&Math.abs(dy)>Math.abs(dx)*1.3){start.active=true;start.axis='up';banner.style.animation='none';banner.classList.add('is-dragging')}
   if(!start.active&&Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)*.9){reset();return}
-  if(!start.active&&Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)*1.3){start.active=true;banner.style.animation='none';banner.classList.add('is-dragging');try{banner.setPointerCapture?.(id)}catch(_){}}
+  if(!start.active&&Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)*1.3){start.active=true;start.axis='side';banner.style.animation='none';banner.classList.add('is-dragging');try{banner.setPointerCapture?.(id)}catch(_){}}
   if(!start.active)return;
-  const opacity=Math.max(.25,1-Math.abs(dx)/Math.max(1,banner.offsetWidth));
-  banner.style.transform=`translateX(${dx}px)`;banner.style.opacity=String(opacity);
+  const offset=start.axis==='up'?Math.min(0,dy):dx;
+  const opacity=Math.max(.25,1-Math.abs(offset)/Math.max(1,banner.offsetWidth));
+  banner.style.transform=start.axis==='up'?`translateY(${offset}px)`:`translateX(${dx}px)`;banner.style.opacity=String(opacity);
   banner.style.setProperty('--notice-drag-x',dx+'px');banner.style.setProperty('--notice-drag-opacity',String(opacity));
  };
  const finish=(x,y,id)=>{
-  if(!start||start.id!==id)return;const wasActive=start.active,direction=wasActive?notificationSwipeDirection(x-start.x,y-start.y,banner.offsetWidth):0;
+  if(!start||start.id!==id)return;const wasActive=start.active,up=wasActive&&start.axis==='up'&&start.y-y>56&&start.y-y>Math.abs(x-start.x)*1.3;
+  const direction=wasActive&&start.axis!=='up'?notificationSwipeDirection(x-start.x,y-start.y,banner.offsetWidth):0;
   blockClick=wasActive;start=null;
-  if(direction)dismissTopNotification(banner,direction);else reset();
+  if(up)dismissTopNotification(banner);
+  else if(direction){
+   if(direction>0&&typeof deleteNotification==='function'&&banner.dataset?.notificationId)deleteNotification(banner.dataset.notificationId);
+   dismissTopNotification(banner,direction);
+  }else reset();
   try{if(banner.hasPointerCapture?.(id))banner.releasePointerCapture(id)}catch(_){}
  };
  banner.addEventListener('click',event=>{if(blockClick){blockClick=false;event.preventDefault();event.stopImmediatePropagation()}},true);
@@ -2691,7 +2730,7 @@ function bindNotificationSwipe(banner){
 }
 function showTopNotification(item){
  if(document.visibilityState!=='visible')return;
- if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',1600)+200);return}
+ if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',850)+200);return}
  let stack=document.getElementById('notification-banners');
  if(!stack){stack=document.createElement('div');stack.id='notification-banners';stack.className='notification-banners';stack.setAttribute('aria-live','polite');stack.setAttribute('aria-relevant','additions');document.body.appendChild(stack)}
  const copy=notificationCopy(item),banner=document.createElement('div');banner.className='notification-banner';banner.dataset.notificationId=item.id;
@@ -2759,21 +2798,129 @@ function openNotification(id){
 }
 function projectId(project){if(!/^[a-zA-Z0-9_-]+$/.test(String(project.id||'')))project.id=window.crypto?.randomUUID?.()||('p'+Date.now().toString(36)+Math.random().toString(36).slice(2));return project.id}
 function projectReminderTime(project){
- if(project.reminderEnabled===false)return NaN;
+ if(project.reminderEnabled===false||project.archivedAt)return NaN;
  return Date.parse(project.reminderAt||(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(project.d)?project.d+'T09:00:00+03:00':''));
 }
+
+function ensureTimedArchive(){
+ if(!A.timedArchive||typeof A.timedArchive!=='object'||Array.isArray(A.timedArchive))A.timedArchive={};
+ if(!Array.isArray(A.timedArchive.notes))A.timedArchive.notes=[];
+ return A.timedArchive;
+}
+function timedArchiveCount(){
+ return (Array.isArray(A?.timedArchive?.notes)?A.timedArchive.notes.length:0)
+   +(Array.isArray(A?.projects)?A.projects.filter(p=>p&&p.archivedAt).length:0);
+}
+let timedArchiveEditorOwner=null,timedArchiveEditorItem=null;
+function showTimedArchive(){
+ if(!A)return;
+ expireTimedRecords();
+ const notes=ensureTimedArchive().notes.map((item,index)=>
+  '<article class="note-tile"><b>'+esc(item.key)+'</b><p>'+esc(item.text)+'</p><div class="row">'
+  +'<button type="button" class="g s" onclick="editTimedArchiveNote('+index+')">'+(tr()?'Düzenle':'Edit')+'</button>'
+  +'<button type="button" class="g s" onclick="restoreTimedArchiveNote('+index+')">'+(tr()?'Geri yükle':'Restore')+'</button>'
+  +'<button type="button" class="g s" onclick="confirmDeleteTimedArchiveNote('+index+')">'+t('delete')+'</button></div></article>').join('');
+ const projects=(A.projects||[]).map((project,index)=>({project,index})).filter(x=>x.project?.archivedAt).map(({project,index})=>
+  '<article class="note-tile"><b>'+esc(project.reminderLabel||project.n)+'</b><p>'+esc(project.d)+'</p><div class="row">'
+  +'<button type="button" class="g s" onclick="restoreTimedArchiveProject('+index+')">'+(tr()?'Düzenle / geri yükle':'Edit / restore')+'</button>'
+  +'<button type="button" class="g s" onclick="confirmDeleteTimedArchiveProject('+index+')">'+t('delete')+'</button></div></article>').join('');
+ openModal('timed-archive-modal','<h2>'+(tr()?'Süresi dolan kayıtlar':'Expired records')+'</h2><p class="mut">'
+  +(tr()?'Kayıtlar otomatik silinmez. Geri yüklerken yeni bir tarih seç.':'Records are not automatically deleted. Choose a new date when restoring.')+'</p>'
+  +'<div class="note-grid">'+(notes+projects||'<p class="mut">'+t('noRecords')+'</p>')+'</div>'
+  +'<button type="button" class="g" onclick="closeModal(\'timed-archive-modal\')">'+(tr()?'Kapat':'Close')+'</button>');
+}
+function editTimedArchiveNote(index){
+ const item=ensureTimedArchive().notes[index];if(!item)return;
+ timedArchiveEditorOwner=A;timedArchiveEditorItem=item;
+ openModal('timed-archive-editor','<h2>'+(tr()?'Arşivdeki notu düzenle':'Edit archived note')+'</h2>'
+  +'<textarea id="timed-archive-text" rows="5" maxlength="500">'+esc(item.text)+'</textarea>'
+  +'<div class="row"><button onclick="saveTimedArchiveNote('+index+')">'+t('save')+'</button>'
+  +'<button class="g" onclick="showTimedArchive()">'+t('back')+'</button></div>');
+}
+function saveTimedArchiveNote(index){
+ if(!A||A!==timedArchiveEditorOwner||timedArchiveEditorItem!==A.timedArchive?.notes?.[index])return;
+ const item=ensureTimedArchive().notes[index],text=String(document.getElementById('timed-archive-text')?.value||'').trim().slice(0,500);
+ if(!item||!text){toast(tr()?'Not boş olamaz.':'Note cannot be empty.');return}
+ item.text=text;item.editedAt=Date.now();save();showTimedArchive();
+}
+function validArchiveDate(key){return /^\d{4}-\d{2}-\d{2}$/.test(key)&&Number.isFinite(Date.parse(key+'T12:00:00+03:00'))&&new Date(key+'T12:00:00+03:00').toISOString().slice(0,10)===key;}
+function restoreTimedArchiveNote(index){
+ const item=ensureTimedArchive().notes[index];if(!item)return;
+ timedArchiveEditorOwner=A;timedArchiveEditorItem=item;
+ openModal('timed-archive-restore','<h2>'+(tr()?'Notu geri yükle':'Restore note')+'</h2><p>'+esc(item.text)+'</p>'
+  +'<label for="timed-restore-date">'+(tr()?'Yeni tarih':'New date')+'</label>'
+  +'<input id="timed-restore-date" type="date" min="'+today()+'">'
+  +'<button onclick="saveRestoredTimedArchiveNote('+index+')">'+(tr()?'Geri yükle':'Restore')+'</button>');
+}
+function saveRestoredTimedArchiveNote(index){
+ if(!A||A!==timedArchiveEditorOwner||timedArchiveEditorItem!==A.timedArchive?.notes?.[index])return;
+ const item=ensureTimedArchive().notes[index],key=String(document.getElementById('timed-restore-date')?.value||'');
+ if(!item||!validArchiveDate(key)||key<today()){
+  toast(tr()?'Bugün veya sonrası için geçerli bir tarih seç.':'Choose a valid date today or later.');return;
+ }
+ if(A.future?.[key]){toast(tr()?'Bu tarihte zaten bir not bulunuyor.':'A note already exists on this date.');return}
+ (A.future||={})[key]=item.text;
+ (A.futureMeta||={})[key]={createdAt:Date.now(),editedAt:null,expireAfterDay:key};
+ A.timedArchive.notes.splice(index,1);
+ recordActivity();closeModal('timed-archive-restore');
+ if(pg==='pc')P.pc();else if(pg==='home')P.home();
+ toast(tr()?'Not geri yüklendi.':'Note restored.');
+}
+function restoreTimedArchiveProject(index){
+ const project=A?.projects?.[index];if(!project?.archivedAt)return;
+ timedArchiveEditorOwner=A;timedArchiveEditorItem=project;
+ openModal('timed-project-restore','<h2>'+(tr()?'Proje hatırlatmasını geri yükle':'Restore project reminder')+'</h2>'
+  +'<label for="timed-project-name">'+(tr()?'Hatırlatma metni':'Reminder text')+'</label><input id="timed-project-name" maxlength="40" value="'+esc(project.reminderLabel||project.n)+'">'
+  +'<label for="timed-project-date">'+(tr()?'Yeni tarih':'New date')+'</label><input id="timed-project-date" type="date" min="'+today()+'">'
+  +'<button onclick="saveRestoredTimedArchiveProject('+index+')">'+(tr()?'Geri yükle':'Restore')+'</button>');
+}
+function saveRestoredTimedArchiveProject(index){
+ if(!A||A!==timedArchiveEditorOwner||timedArchiveEditorItem!==A.projects?.[index])return;
+ const project=A.projects?.[index],name=String(document.getElementById('timed-project-name')?.value||'').trim().slice(0,40);
+ const key=String(document.getElementById('timed-project-date')?.value||'');
+ if(!project?.archivedAt||!name||!validArchiveDate(key)||key<today()){
+  toast(tr()?'Proje adını ve yeni geçerli tarihi yaz.':'Enter a project name and a valid new date.');return;
+ }
+ project.reminderLabel=name;project.reminderAt=new Date(key+'T09:00:00+03:00').toISOString();
+ project.reminderEnabled=true;delete project.archivedAt;delete project.reminderArchivedAt;
+ recordActivity();closeModal('timed-project-restore');if(pg==='home')P.home();else if(pg==='pc')P.pc();
+ toast(tr()?'Proje geri yüklendi.':'Project restored.');
+}
+function confirmDeleteTimedArchiveNote(index){
+ if(!ensureTimedArchive().notes[index])return;
+ timedArchiveEditorOwner=A;timedArchiveEditorItem=ensureTimedArchive().notes[index];
+ openModal('timed-archive-delete','<h2>'+(tr()?'Arşivdeki not kalıcı silinsin mi?':'Permanently delete archived note?')+'</h2>'
+ +'<div class="row"><button class="danger-logout" onclick="deleteTimedArchiveNote('+index+')">'+t('yes')+'</button>'
+ +'<button class="g" onclick="showTimedArchive()">'+t('no')+'</button></div>');
+}
+function deleteTimedArchiveNote(index){
+ if(!A||A!==timedArchiveEditorOwner||timedArchiveEditorItem!==A.timedArchive?.notes?.[index]||!ensureTimedArchive().notes[index])return;
+ A.timedArchive.notes.splice(index,1);save();showTimedArchive();
+}
+function confirmDeleteTimedArchiveProject(index){
+ if(!A?.projects?.[index]?.archivedAt)return;
+ timedArchiveEditorOwner=A;timedArchiveEditorItem=A.projects[index];
+ openModal('timed-project-delete','<h2>'+(tr()?'Arşivdeki hatırlatma kalıcı silinsin mi?':'Permanently delete this archived reminder?')+'</h2>'
+ +'<div class="row"><button class="danger-logout" onclick="deleteTimedArchiveProject('+index+')">'+t('yes')+'</button>'
+ +'<button class="g" onclick="showTimedArchive()">'+t('no')+'</button></div>');
+}
+function deleteTimedArchiveProject(index){
+ if(!A||A!==timedArchiveEditorOwner||timedArchiveEditorItem!==A.projects?.[index]||!A.projects?.[index]?.archivedAt)return;
+ const project=A.projects[index];delete project.archivedAt;delete project.reminderArchivedAt;delete project.reminderLabel;project.reminderEnabled=false;save();showTimedArchive();
+}
+
 function expireTimedRecords(now=Date.now()){
  if(!A)return false;
  let changed=false;const day=istanbulDayKey(new Date(now));
  for(const [key,value] of Object.entries(A.future||{})){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(key))continue;
   const meta=A.futureMeta?.[key]||{},created=Number(meta.createdAt),wasFuture=meta.expireAfterDay===key||(Number.isFinite(created)&&created>0&&istanbulDayKey(new Date(created))<key);
-  if(key<day&&wasFuture){delete A.future[key];if(A.futureMeta)delete A.futureMeta[key];changed=true}
-  else if(key>=day&&meta.expireAfterDay!==key){(A.futureMeta||={})[key]={...meta,expireAfterDay:key};changed=true}
+  if(key<day&&wasFuture){ensureTimedArchive().notes.push({key,text:String(value),meta:{...meta},archivedAt:now});delete A.future[key];if(A.futureMeta)delete A.futureMeta[key];changed=true}
+  else if(key>day&&meta.expireAfterDay!==key){(A.futureMeta||={})[key]={...meta,expireAfterDay:key};changed=true}
  }
  for(const project of A.projects||[]){
   const due=projectReminderTime(project);
-  if(Number.isFinite(due)&&due<=now){project.reminderEnabled=false;delete project.reminderAt;changed=true}
+  if(Number.isFinite(due)&&due<=now){project.archivedAt=now;project.reminderArchivedAt=due;project.reminderEnabled=false;delete project.reminderAt;changed=true}
  }
  if(changed)save();return changed;
 }
@@ -2783,7 +2930,7 @@ function checkAppReminders(now=Date.now()){
  if(owner.notificationPrefs.projects!==false){
   for(const project of A.projects||[]){
    const due=projectReminderTime(project);if(!Number.isFinite(due)||due>now)continue;
-   addNotification('project:'+projectId(project)+':'+due,'project',{name:project.n});
+   addNotification('project:'+projectId(project)+':'+due,'project',{name:project.reminderLabel||project.n});
   }
  }
  const expired=expireTimedRecords(now);if(expired&&['home','pc'].includes(pg))renderPage();
@@ -2835,6 +2982,7 @@ function welcomeScreen(){
  <div class="welcome-footer-bar"><div>© 2026 nurkancanbulat</div><a class="welcome-contact" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=nurkancanbulat89%40gmail.com" target="_blank" rel="noopener noreferrer">${t('contact')} ↗</a><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">TikTok</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">Instagram</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">X</a></div></div></div>`;
 }
 function renderAppOrAuth(){
+ const panel=document.getElementById('sync-review');if(panel&&panel.dataset.owner!==A?.authUid)panel.remove();
  if(!A){document.getElementById('notification-banners')?.remove();document.getElementById('notifications-modal')?.remove()}
 
   if(A){try{sessionStorage.setItem('b1.view','app')}catch(e){}shell();return}
@@ -2948,7 +3096,7 @@ function playWelcomeTransition(cb,codeApproved=false){
   let cleaned=false,fallback=0;
   const cleanup=()=>{if(cleaned)return;cleaned=true;clearTimeout(fallback);root.remove();if(cb)cb()};
   root.addEventListener('animationend',e=>{if(e.target===root&&e.animationName==='entryPortalOut')cleanup()});
-  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',1600)+200);
+  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',850)+200);
 }
 function goHome(){reportDetail='';stopTimers();if(A?.loginMethod!=='google')sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 function backToLogin(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
@@ -3078,7 +3226,8 @@ async function finishCloudEntry(j,preferredName,method,options,codeApproved,stil
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
   if(!fromLocal&&deviceAccountCount()>=MAX_DEVICE_ACCOUNTS){sbClear();throw Object.assign(Error('DEVICE_ACCOUNT_LIMIT'),{code:'DEVICE_ACCOUNT_LIMIT'})}
   const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
-  const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
+  const recovered=cloudResumeProfile(uid,fromCloud);
+  const a=norm(recovered||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
   bindReportCalendar(a,j.user,!fromCloud&&!fromLocal);
   applyServerProgressPolicy(a,progressPolicy);
   a.u=username;a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
@@ -3092,6 +3241,7 @@ async function finishCloudEntry(j,preferredName,method,options,codeApproved,stil
   goTo('app','home');
   if(options.greet||codeApproved)playWelcomeTransition(undefined,codeApproved||options.codeApproved);
   if(!fromCloud)await sbPush();
+  cloudDraftStatus();if(typeof IYReconcile!=='undefined')IYReconcile.afterEntry(uid);
   return a;
 }
 async function login(){
@@ -3638,9 +3788,9 @@ function shell(){
   const firstShell=!document.querySelector('.shell aside');
   document.querySelectorAll('body > #mini-cal').forEach(el=>el.remove());
   const oldBackdrop=document.getElementById('mini-backdrop');if(oldBackdrop)oldBackdrop.remove();
-  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" style="--nav-indicator-x:${Math.max(0,NAV.findIndex(([k])=>k===pg))*100}%" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')" aria-label="${esc(navLabel(k))}" title="${esc(navLabel(k))}">${navIcon(k)}<span class="nav-label">${navLabel(k)}</span><span class="nav-label-mobile" aria-hidden="true">${navShortLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button><button type="button" class="g s" id="sync-status" hidden onclick="IYReconcile.show()"></button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" style="--nav-indicator-x:${Math.max(0,NAV.findIndex(([k])=>k===pg))*100}%" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')" aria-label="${esc(navLabel(k))}" title="${esc(navLabel(k))}">${navIcon(k)}<span class="nav-label">${navLabel(k)}</span><span class="nav-label-mobile" aria-hidden="true">${navShortLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
-  renderPage();setTimeout(checkAppReminders,0);
+  if(typeof IYReconcile!=='undefined')IYReconcile.badge();renderPage();setTimeout(checkAppReminders,0);
   requestAnimationFrame(()=>{centerNav(true);resetMobileDockForPage()});
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),650)}
   const cal=$('#mini-cal');if(cal&&cal.parentElement!==document.body)document.body.appendChild(cal);
@@ -3698,21 +3848,46 @@ function renderPage(){
 }
 
 let reportRenderedDay='';
-setInterval(()=>{if(A&&A.day!==today())shell();if(A&&view==='app'&&pg==='rep'&&reportRenderedDay!==istanbulDayKey())P.rep()},1000);
+setInterval(()=>{if(A&&A.day!==today())shell();if(A&&view==='app'&&pg==='rep'&&reportRenderedDay!==istanbulDayKey())P.rep();
+ if(A&&pg==='home'&&view==='app'){const el=document.getElementById('daily-fact'),day=istanbulDayKey();if(el&&el.dataset.day!==day){el.outerHTML=IYFacts.card(day,tr());IYFacts.refresh(day,tr())}}},1000);
 
 const P={};const M=h=>{const main=$('#mn');if(main){main.innerHTML=h;fitTextFields(main);if(!main.classList.contains('an'))motionReveal(main)}};
+
+const DAILY_FACTS=[
+ {tr:'Ay, Dünya’dan ortalama yaklaşık 384.400 kilometre uzaktadır.',en:'The Moon is approximately 384,400 kilometres from Earth on average.',source:'NASA · Moon',url:'https://science.nasa.gov/moon/facts/'},
+ {tr:'Güneş, Güneş Sistemi’nin merkezindeki bir yıldızdır.',en:'The Sun is the star at the centre of our solar system.',source:'NASA · Sun',url:'https://science.nasa.gov/sun/facts/'},
+ {tr:'Dünya, Güneş etrafındaki turunu yaklaşık 365,25 günde tamamlar.',en:'Earth takes approximately 365.25 days to orbit the Sun.',source:'NASA · Earth',url:'https://science.nasa.gov/earth/facts/'},
+ {tr:'Mavi balina, günümüzde yaşayan en büyük hayvandır.',en:'The blue whale is the largest animal living today.',source:'NOAA · Blue whale',url:'https://www.fisheries.noaa.gov/species/blue-whale'},
+ {tr:'Deniz suyunun yaklaşık %3,5’i çözünmüş tuzlardan oluşur.',en:'About 3.5% of seawater consists of dissolved salts.',source:'NOAA · Ocean salinity',url:'https://oceanservice.noaa.gov/facts/whysalty.html'},
+ {tr:'Uluslararası Uzay İstasyonu, Dünya’nın çevresinde yaklaşık 90 dakikada bir döner.',en:'The International Space Station orbits Earth about once every 90 minutes.',source:'NASA · ISS',url:'https://www.nasa.gov/international-space-station/'},
+ {tr:'Atmosferdeki su buharı, bulut ve yağış oluşumunda önemli rol oynar.',en:'Water vapour in the atmosphere plays a key role in clouds and precipitation.',source:'NASA · Water cycle',url:'https://science.nasa.gov/earth/earth-observatory/the-water-cycle-108'},
+ {tr:'Mercan resifleri, pek çok deniz canlısına yaşam alanı sağlar.',en:'Coral reefs provide habitat for many marine species.',source:'NOAA · Coral reefs',url:'https://oceanservice.noaa.gov/facts/coralreef-climate.html'}
+];
+function dailyFactFor(day=istanbulDayKey()){
+ const n=Number(String(day).replace(/-/g,''))||1;
+ return DAILY_FACTS[n%DAILY_FACTS.length];
+}
+function dailyFactCard(){
+ if(typeof IYFacts!=='undefined')return IYFacts.card(istanbulDayKey(),tr());
+ const fact=dailyFactFor();
+ return '<section class="card daily-fact"><div class="mut">'+(tr()?'Günün bilgisi':'Fact of the day')+'</div>'
+  +'<p>'+esc(tr()?fact.tr:fact.en)+'</p><a href="'+fact.url+'" target="_blank" rel="noopener noreferrer">'
+  +(tr()?'Kaynak':'Source')+': '+esc(fact.source)+'</a></section>';
+}
+
 P.home=()=>{
   expireTimedRecords();
   const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length;
   const j=A.journal?.[today()]?.text||'';
-  const pr=(A.projects||[]).map((p,i)=>{
-    const d=dd(today(),p.d);
-    return`<div class="task project-task"><span>${esc(p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
+  const pr=(A.projects||[]).map((p,i)=>({p,i})).filter(({p})=>!p?.archivedAt).map(({p,i})=>{
+    const due=projectReminderTime(p),d=dd(today(),Number.isFinite(due)?istanbulDayKey(new Date(due)):p.d);
+    return`<div class="task project-task"><span>${esc(p.reminderLabel||p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
   }).join('');
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
-  <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
+  ${dailyFactCard()}<div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="2000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/2000</span></div></div>
-  <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
+  <div class="card"><div class="row"><h2>${t('projectReminders')}</h2><button type="button" class="g s" onclick="showTimedArchive()">${tr()?'Arşiv':'Archive'} (${timedArchiveCount()})</button></div>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
+  if(typeof IYFacts!=='undefined')IYFacts.refresh(istanbulDayKey(),tr());
 };
 function updateJournalCounter(el){const e=document.getElementById('journal-counter');if(e)e.textContent=String(el?.value?.length||0)+'/2000'}
 function saveJournal(){
@@ -3796,7 +3971,7 @@ P.todo=()=>{
     ?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.')
     :t('addTask');
   const todayTasksMarkup=renderedTodayTasks||`<p class="mut">${esc(emptyTodayText)}</p>`;
-  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button><button type="button" class="g s" onclick="suggestRandomTask()">${tr()?'Rastgele görev öner':'Suggest random task'}</button></div></div>
   <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><textarea rows="1" class="task-compose" id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addTomorrowPlan()}"></textarea><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
@@ -3955,7 +4130,7 @@ function fromBack(i){
     if(!pushTomorrowPlan(task))return;
     A.backlog.splice(i,1);recordActivity();P.todo();return;
   }
-  A.tasks.push({t:A.backlog[i],s:'',createdAt:Date.now()});A.backlog.splice(i,1);recordActivity();P.todo();
+  A.tasks.push({id:rndHex(16),t:A.backlog[i],s:'',createdAt:Date.now()});A.backlog.splice(i,1);recordActivity();P.todo();
 }
 function delT(i){if(A.day!==today()){shell();return}if(!A.tasks[i])return;A.tasks.splice(i,1);archiveFinishedTasks();vibrateTask();recordActivity();P.todo()}
 function addT(){
@@ -3966,7 +4141,7 @@ function addT(){
     if(addTomorrowPlan(v))$('#nt')?.focus({preventScroll:true});
     return;
   }
-  A.tasks.push({t:v,s:'',createdAt:Date.now()});recordActivity();P.todo();
+  A.tasks.push({id:rndHex(16),t:v,s:'',createdAt:Date.now()});recordActivity();P.todo();
   $('#nt')?.focus({preventScroll:true});
 }
 function mk(i,status){
@@ -4003,6 +4178,27 @@ function addTomorrowPlan(text){
   return true;
 }
 function removePlan(i){if(A.day!==today()){shell();return}ensurePlans();const next=addD(today(),1);if(A.plans[next])A.plans[next].splice(i,1);save();P.todo()}
+
+const TASK_SUGGESTIONS={
+ tr:['15 dakika kitap oku','Yarın için üç öncelik yaz','Çalışma alanını 5 dakika düzenle','Kısa bir yürüyüş yap','Bugünkü bir başarını not et','Ertelediğin bir işi küçük adımlara böl','Öğrenmek istediğin bir konuyu araştır','Bir arkadaşına hâl hatır sor','Çalışma notlarını gözden geçir','Yarınki programını kontrol et','Bir bardak su iç','Bugünkü yapılacaklarını gözden geçir'],
+ en:['Read for 15 minutes','Write three priorities for tomorrow','Tidy your desk for five minutes','Go for a short walk','Note one achievement from today','Break a postponed task into smaller steps','Research a subject you want to learn','Check in with a friend','Review your study notes','Check tomorrow’s schedule','Drink a glass of water','Review today’s to-do list']
+};
+function suggestRandomTask(){
+ if(!A||A.day!==today())return false;
+ const finished=allTodayTasksArchived();
+ if(finished)ensurePlans();
+ const next=addD(today(),1),existing=finished?(A.plans[next]||[]):(A.tasks||[]).map(task=>task.t);
+ const pool=TASK_SUGGESTIONS[tr()?'tr':'en'].filter(task=>!existing.some(value=>String(value).toLocaleLowerCase()===task.toLocaleLowerCase()));
+ if(!pool.length){toast(tr()?'Tüm önerileri zaten ekledin.':'You have already added every suggestion.');return false}
+ const text=pool[Math.floor(Math.random()*pool.length)];
+ if(finished){
+  if(!Array.isArray(A.plans[next]))A.plans[next]=[];
+  if(A.plans[next].length>=100){toast(tr()?'Yarın için en fazla 100 plan.':'Up to 100 plans for tomorrow.');return false}
+  A.plans[next].push(text);
+ }else A.tasks.push({id:rndHex(16),t:text,s:'',createdAt:Date.now()});
+ recordActivity();P.todo();return true;
+}
+
 
 /* sis: tamamlanmamis gecmis gunler */
 function dayFog(k){if(!A||!A.fog)return false;if(k>=today())return false;const its=items(k);return !(its.length>0&&its.every(x=>x.done))}
@@ -4055,7 +4251,7 @@ P.pc=()=>{
   }
   const monthKey=`${y}-${pad(mo+1)}`;
   const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}<small class="note-countdown">${futureNoteCountdown(k)}</small></b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}',false,true)">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><div class="row"><h2>${t('futureNotes')}</h2><button type="button" class="g s" onclick="showTimedArchive()">${tr()?'Arşiv':'Archive'} (${timedArchiveCount()})</button></div><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
 };
 function newNote(){
   const d=String($('#fnd')?.value||'');
@@ -4106,6 +4302,57 @@ function reportWindow(kind,day=istanbulDayKey()){
  const next=calendarReportPeriod(kind,addD(period.b,1));
  return {period,opens:period.b,closes:addD(period.b,1),next:next.b};
 }
+
+let submittedReportEditor=null;
+function canEditSubmittedReport(kind,key,day=istanbulDayKey()){
+ if(!A||!['week','month'].includes(kind))return false;
+ const window=reportWindow(kind,day);
+ return window.period.key===key&&day>=window.opens&&day<window.closes
+  &&!!A.ql?.[key]&&reportPeriodEligible(window.period,day);
+}
+function startSubmittedReportEdit(kind,key){
+ if(!canEditSubmittedReport(kind,key))return false;
+ const period=reportWindow(kind).period;
+ const groups=[['review',key],['plan',key],['plan',period.nk]].map(([scope,periodKey])=>{
+  const questions=reportQuestionStore(scope)[periodKey];
+  return {scope,key:periodKey,questions};
+ }).filter(group=>Array.isArray(group.questions)&&group.questions.length);
+ if(!groups.length)return false;
+ submittedReportEditor={owner:A,kind,key,groups};
+ const fields=groups.map((group,g)=>{
+  const title=group.scope==='review'?(tr()?'Dönem değerlendirmesi':'Period review'):(tr()?'Dönem planları':'Period plans');
+  return '<section><h3>'+title+' · '+esc(group.key)+'</h3>'
+   +group.questions.map((q,i)=>'<label for="report-edit-'+g+'-'+i+'">'+esc(reportQuestionForPeriod(q,group.key,group.scope))+'</label>'
+    +'<textarea id="report-edit-'+g+'-'+i+'" rows="3" maxlength="400">'+esc(q.a||'')+'</textarea>').join('')+'</section>';
+ }).join('');
+ openModal('submitted-report-edit','<h2>'+(tr()?'Rapor yanıtlarını düzenle':'Edit report answers')+'</h2>'
+  +'<p class="mut">'+(tr()?'Yalnızca bu rapor gününün sonuna kadar düzenleyebilirsin. Kaydetmeden çıkarsan değişiklikler uygulanmaz.':'You can edit until the end of this report day. Unsaved changes are discarded.')+'</p>'
+  +fields+'<div class="row"><button onclick="saveSubmittedReportEdit()">'+t('save')+'</button>'
+  +'<button type="button" class="g" onclick="closeModal('+"'submitted-report-edit'"+')">'+t('cancel')+'</button></div>');
+ return true;
+}
+function saveSubmittedReportEdit(){
+ const session=submittedReportEditor;
+ if(!session||session.owner!==A||!canEditSubmittedReport(session.kind,session.key))return false;
+ const updates=[];
+ for(let g=0;g<session.groups.length;g++){
+  const group=session.groups[g],current=reportQuestionStore(group.scope)[group.key];
+  if(current!==group.questions)return false;
+  for(let i=0;i<current.length;i++){
+   const field=document.getElementById('report-edit-'+g+'-'+i);
+   if(!field)return false;
+   const answer=String(field.value||'').trim().slice(0,400);
+   if(!answer){toast(tr()?'Tüm soruların yanıtlarını doldur.':'Complete every answer.');field.focus();return false}
+   updates.push([current[i],answer]);
+  }
+ }
+ for(const [question,answer] of updates)question.a=answer;
+ submittedReportEditor=null;
+ save();closeModal('submitted-report-edit');P.rep();
+ toast(tr()?'Düzenlemeler kaydedildi.':'Changes saved.');
+ return true;
+}
+
 function reportActivityStart(period,day){
  if(!A)return null;
  const kind=period.key.length===7?'month':'week';
@@ -4365,7 +4612,7 @@ function monthlyReportCard(day,window){
  const schedule=`<p class="mut report-month-window">${tr()?'Açılış':'Opens'} · ${midnight(opens)}<br>${tr()?'Kapanış':'Closes'} · ${midnight(closes)} (${tr()?'Türkiye saati':'Istanbul time'})</p>`;
  let status='';
  if(submitted){
-   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>`;
+   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>${canEditSubmittedReport('month',period.key,day)?`<button class="g s report-edit" onclick="startSubmittedReportEdit('month','${period.key}')">${tr()?'Düzenle':'Edit answers'}</button>`:''}`;
  }else if(open){
    status=`<p>${reportActivityLine(start,period.b)}</p><button class="g report-more" onclick="showReportDetail('month')">${tr()?'Soruları yanıtla':'Answer questions'} →</button>`;
  }else if(!start||!reportHasActivity(start,period.b)){
@@ -4383,7 +4630,7 @@ function reportSummaryCard(kind){
   const next=unlock>td?unlock:window.opens>td?window.opens:window.next;
   const reason=submitted?(tr()?'Bu dönemin yanıtları gönderildi.':'Your answers for this period were submitted.')
     :!reportPeriodEligible(period,td)?(tr()?'Rapor, kayıt olduğun dönemi izleyen dönemden itibaren, o dönemde görev, günlük veya tamamlanmış odak kaydın varsa açılır.':'From the period after signup, reports open for periods with a task, journal entry or completed focus session.'):'';
-  return `<section class="report-period-block${submitted?' report-submitted':''}">${pendingReportCard(title,period.a>since?period.a:since,next)}${reason?'<p class="mut">'+reason+'</p>':''}</section>`;
+  return `<section class="report-period-block${submitted?' report-submitted':''}">${pendingReportCard(title,period.a>since?period.a:since,next)}${reason?'<p class="mut">'+reason+'</p>':''}${canEditSubmittedReport(kind,period.key,td)?`<button class="g s report-edit" onclick="startSubmittedReportEdit('${kind}','${period.key}')">${tr()?'Düzenle':'Edit answers'}</button>`:''}</section>`;
  }
  return `<section class="card report-summary"><h2>${title}</h2><p class="mut">${fmt(period.a)} – ${fmt(period.b)}</p><p>${reportActivityLine(period.a,period.b)}</p><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Soruları yanıtla':'Answer questions'} →</button></section>`;
 }
@@ -4488,6 +4735,34 @@ function focusSummary(history,start,end){
   }
   return {seconds,sessions,perDay};
 }
+
+function focusPatternSummary(history,now=istanbulDayKey()){
+ const earliest=addD(now,-29),byHour=new Map(),byWeekday=new Map();
+ for(const record of Array.isArray(history)?history:[]){
+  if(record?.completed!==true||!Number.isFinite(record.at)||!Number.isFinite(record.seconds)||record.seconds<=0||record.seconds>36000)continue;
+  const at=new Date(record.at),day=istanbulDayKey(at);
+  if(day<earliest||day>now)continue;
+  const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Istanbul',hour:'2-digit',hourCycle:'h23'}).format(at));
+  const weekday=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Istanbul',weekday:'long'}).format(at);
+  byHour.set(hour,(byHour.get(hour)||0)+1);byWeekday.set(weekday,(byWeekday.get(weekday)||0)+1);
+ }
+ const most=map=>[...map.entries()].sort((a,b)=>b[1]-a[1]||(a[0]>b[0]?1:-1))[0]||null;
+ const heavy=Object.entries(A?.hist||{}).filter(([day,tasks])=>day>=earliest&&day<=now&&Array.isArray(tasks)&&tasks.length>=3)
+  .map(([day,tasks])=>({day,total:tasks.length,unfinished:tasks.filter(task=>task?.done!==true&&task?.s!=='done').length}))
+  .filter(item=>item.unfinished>0).sort((a,b)=>b.unfinished-a.unfinished||b.total-a.total)[0]||null;
+ return {hour:most(byHour),weekday:most(byWeekday),heavy};
+}
+function focusPatternCard(){
+ const patterns=focusPatternSummary(A?.focusHistory);
+ if(!patterns.hour&&!patterns.heavy)return '';
+ const hour=patterns.hour?'<p>'+(tr()?'En çok seans tamamladığın saat: ':'Most sessions finished around: ')
+  +'<b>'+String(patterns.hour[0]).padStart(2,'0')+'.00</b> ('+patterns.hour[1]+')</p>':'';
+ const heavy=patterns.heavy?'<p>'+(tr()?'En çok yarım kalan görev günü: ':'Day with the most unfinished tasks: ')
+  +'<b>'+esc(patterns.heavy.day)+'</b> ('+patterns.heavy.unfinished+'/'+patterns.heavy.total+')</p>':'';
+ return '<div class="focus-pattern"><h3>'+(tr()?'Son 30 günden desenler':'Patterns from the last 30 days')+'</h3>'
+  +hour+heavy+'<small class="mut">'+(tr()?'Bu veriler yalnızca kayıtlarının özetidir; odaklanma nedenini kesin olarak göstermez.':'These are summaries of your records, not conclusions about why you focus.')+'</small></div>';
+}
+
 function focusHistoryCard(){
   const now=today(),month=now.slice(0,7)+'-01',week=mon(now);
   const entries=new Map(Object.entries(focusSummary(A?.focusHistory,'',now).perDay));
@@ -4505,7 +4780,7 @@ function focusHistoryCard(){
     <p class="mut">${tr()?'Tamamladığın odak seansları ve çalışma süren.':'Your completed focus sessions and time spent focusing.'}</p>
     <div class="focus-history-totals"><div><small>${tr()?'Bu hafta':'This week'}</small><b>${time(w.seconds)}</b><span>${w.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div>
     <div><small>${tr()?'Bu ay':'This month'}</small><b>${time(m.seconds)}</b><span>${m.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div></div>
-    <h3>${tr()?'Gün gün':'Day by day'}</h3>
+    ${focusPatternCard()}<h3>${tr()?'Gün gün':'Day by day'}</h3>
     ${rows.length?rows.slice(0,3).join(''):`<p class="mut">${tr()?'Henüz tamamlanmış odak seansı yok.':'No completed focus sessions yet.'}</p>`}
     ${older.length?`<details class="focus-history-details"><summary><span class="expand">${tr()?'Daha fazlası':'More details'}</span><span class="collapse">${tr()?'Daha az göster':'Show less'}</span> <small>(${older.length})</small></summary><div class="focus-history-older" tabindex="0" role="region" aria-label="${tr()?'Önceki odak günleri':'Earlier focus days'}">${older.join('')}</div></details>`:''}
   </section>`;
@@ -4855,7 +5130,7 @@ P.set=()=>{
   ${ac?`<div class="card"><h2>${tr()?'Bu cihazdaki diğer profiller':'Other profiles on this device'}</h2>${ac}</div>`:''}
   <div class="card"><h2>${t('resetSystem')}</h2><p class="mut">${tr()?'Görevler, notlar, günlükler, ilerleme ve raporlar sıfırlanır. Hesap kimliğin kalır.':'Tasks, journals, progress and reports will be reset. Account identity is retained.'}</p><button style="background:var(--no)" onclick="resetSys()">${t('reset')}</button></div>
   ${accountConnection(A)==='local'?`<div class="card legacy-migrate-card"><h2>${tr()?'V13 · Yerel hesabı Google’a taşı':'V13 · Move local account to Google'}</h2><p class="legacy-migrate-warning">${tr()?'Eski hesabının görevlerini, günlüklerini, notlarını ve mevcut ilerleme hesabını bir Google oturumuyla Supabase’e taşı. Önce JSON yedeği alacağız. Google hesabında yalnızca otomatik oluşturulmuş boş bir profil varsa, bu profil açık onayınla aktarılabilir. Google hesabının gerçek verileri varsa işlem durur; hiçbir şey birleştirilmez.':'Move your legacy tasks, journals, notes, and progress to Supabase using a Google sign-in. First download a JSON backup. An automatically created empty Google profile may be replaced with your consent. If that profile contains user data, migration stops without merging or overwriting anything.'}</p><div class="legacy-migrate-actions"><button onclick="v13ShowMigration()">${tr()?'Google hesabına taşı':'Move to Google'}</button></div></div>`:''}
-  <div class="card"><h2>${tr()?'Verilerim ve hesabım':'My data and account'}</h2>${accountConnectionHtml(A)}<p class="mut account-data-help">${tr()?'Yüklü hesabının görevlerini, notlarını, günlüklerini ve ilerleme kayıtlarını JSON dosyası olarak dışa aktar. Bu dosya hassas bilgiler içerebilir; güvenli bir yerde sakla.':'Export your loaded tasks, notes, journals and progress as a JSON file. The file may contain private information, so store it securely.'}</p><div class="account-data-actions"><button class="g" onclick="exportMyData()">${tr()?'Verilerimi indir (JSON)':'Download my data (JSON)'}</button><button class="g d" onclick="delAcc()">${accountRemovalButtonLabel(A)}</button></div><p class="mut account-data-help">${accountConnection(A)==='cloud'?(tr()?'Bulut hesabını silmek için yakın zamanda giriş, açık onay ve sunucu doğrulaması gerekir.':'Cloud account deletion requires a recent sign-in, explicit confirmation and server verification.'):accountConnection(A)==='local'?(tr()?'Bu cihazdaki profil kopyasını kaldırmak bulut hesabı silmez.':'Removing this device profile never deletes a cloud account.'):(tr()?'Bağlantı belirsizken silme kapalıdır. Önce yeniden giriş yap.':'Deletion is blocked until the account connection is verified.')}</p></div>
+  <div class="card"><h2>${tr()?'Verilerim ve hesabım':'My data and account'}</h2>${accountConnectionHtml(A)}<p class="mut account-data-help">${tr()?'Yüklü hesabının görevlerini, notlarını, günlüklerini ve ilerleme kayıtlarını JSON dosyası olarak dışa aktar. Bu dosya hassas bilgiler içerebilir; güvenli bir yerde sakla.':'Export your loaded tasks, notes, journals and progress as a JSON file. The file may contain private information, so store it securely.'}</p><div class="account-data-actions"><button class="g" onclick="exportMyData()">${tr()?'Verilerimi indir (JSON)':'Download my data (JSON)'}</button>${A.authUid?'<button type="button" class="g" onclick="IYReconcile.show()">'+(tr()?'Eşitlemeyi incele':'Review sync')+'</button><button class="g" onclick="exportCloudDrafts()">'+(tr()?'Bekleyen taslakları indir':'Download pending drafts')+'</button>':''}<button class="g d" onclick="delAcc()">${accountRemovalButtonLabel(A)}</button></div><p class="mut account-data-help">${accountConnection(A)==='cloud'?(tr()?'Bulut hesabını silmek için yakın zamanda giriş, açık onay ve sunucu doğrulaması gerekir.':'Cloud account deletion requires a recent sign-in, explicit confirmation and server verification.'):accountConnection(A)==='local'?(tr()?'Bu cihazdaki profil kopyasını kaldırmak bulut hesabı silmez.':'Removing this device profile never deletes a cloud account.'):(tr()?'Bağlantı belirsizken silme kapalıdır. Önce yeniden giriş yap.':'Deletion is blocked until the account connection is verified.')}</p></div>
   ${A.authUid?IYAccount.settingsMarkup():''}
   <div class="card"><h2>${tr()?'Oturum':'Session'}</h2><p class="mut">${tr()?'Hesabından güvenli şekilde çıkış yap.':'Sign out of your account.'}</p><button class="danger-logout" onclick="confirmLogout()">${t('logout')}</button></div>`);
 };
@@ -4873,6 +5148,7 @@ function forgetKnownProfile(name){
 function confirmForgetKnownProfile(name){
   const other=DB.accounts?.[name];
   if(!A||!other?.authUid||other.authUid===A.authUid)return false;
+  try{if(cloudDraftEntries(other.authUid).length){toast(tr()?'Bu hesabın eşitlenmemiş taslakları var. Önce bu hesaba giriş yap ve kayıtlarını yedekle.':'This account has unsynced drafts. Sign in to that account and back up its changes first.');return false}}catch(_){toast(tr()?'Bekleyen taslaklar doğrulanamadı.':'Pending drafts could not be verified.');return false}
   window.IYQuickSession?.forget(other.authUid);
   delete DB.accounts[name];
   if(DB.lastUser===name)DB.lastUser=A.u;
@@ -5146,8 +5422,9 @@ function checkCloudDeletionConsent(){
   if(button)button.disabled=accountDeletionBusy||accountConnection(A)!=='cloud'||
     !pendingDeleteUid||A?.authUid!==pendingDeleteUid||email!==verified||phrase!=='DELETE MY ACCOUNT';
 }
-function removeDeletedAccountFromBrowser(uid,username){
+function removeDeletedAccountFromBrowser(uid,username,permanent=false){
   clearTimeout(pushT);pushT=null;
+  if(uid&&permanent){cloudForgetDrafts(uid);for(const e of IYOfflinePad.list(uid))IYOfflinePad.remove(uid,e.id);for(const k of Object.keys(localStorage))if(k.startsWith('iydu.resolved.v1.'+uid+'.'))localStorage.removeItem(k)}
   // Remove *only* the deleted identity. Preserve unrelated local profiles.
   for(const [key,account] of Object.entries(DB.accounts)){
     if(uid ? account?.authUid===uid : key===username && !accountCloudHints(account))delete DB.accounts[key];
@@ -5184,7 +5461,7 @@ async function deleteCloudConfirmed(){
     const uid=A.authUid,username=A.u;
     const result=await accountFunction('delete',{email,confirmation:'DELETE MY ACCOUNT'});
     if(!result?.ok||result.deleted!==true)throw Object.assign(new Error('SERVER_ERROR'),{code:'SERVER_ERROR'});
-    stopTimers();removeDeletedAccountFromBrowser(uid,username);pendingDeleteUid=null;
+    stopTimers();removeDeletedAccountFromBrowser(uid,username,true);pendingDeleteUid=null;
     closeModal('delete-cloud-modal');goTo('welcome','home');
     toast(tr()?'Hesap silindi. Diğer cihazlarda kalan kopyaları ayrıca temizle.':'Account deleted. Clear any remaining copies on other devices.');
   }catch(e){
@@ -5274,9 +5551,13 @@ async function v13BeginMigration(){
   }finally{v13MigrationBusy=false;v13UpdateMigrationControls()}
 }
 function v13ProtectLegacyCollision(username,uid,allowLegacyReplacement=false){
-  const existingKey=findUser(username);
-  const existing=existingKey?DB.accounts[existingKey]:null;
-  if(!allowLegacyReplacement&&existing&&existing.accountOrigin==='local'&&!accountCloudHints(existing)&&existing.pw&&existing.authUid!==uid){
+  const normalized=String(username).toLowerCase();
+  for(const [key,existing] of Object.entries(DB.accounts)){
+    if(key.toLowerCase()!==normalized||!existing)continue;
+    if(existing.authUid===uid&&uid)continue;
+    // An explicit legacy migration may replace only its local source,
+    // never a cached profile belonging to another authenticated UUID.
+    if(allowLegacyReplacement&&!existing.authUid&&existing.accountOrigin==='local'&&!accountCloudHints(existing)&&existing.pw)continue;
     throw new Error('V13_LOCAL_USERNAME_COLLISION');
   }
 }
@@ -5415,13 +5696,14 @@ async function bootstrapCloudAuth(){
     msg=tr()?'Google aktarımı yarıda kesildi. Eski profilin korunuyor. Yeniden denemeden önce bulut hesabının durumunu kontrol et.':'Google migration was interrupted. Your legacy profile remains intact. Check your cloud account before trying again.';
     view='login';renderAppOrAuth();return;
   }
-  // An existing session is a candidate for Continue, never an automatic entry.
+  const returning=typeof IYOfflinePad==='undefined'?null:IYOfflinePad.takeReturn();
+  if(returning&&returning===sbSession()?.user?.id)await restoreCloudOnLoad(returning,sbSession().user.app_metadata?.providers?.includes('google')===true);
   return;
 }
 
 const sbSession=()=>{try{return JSON.parse(getItem(SESS_KEY)||'null')}catch(e){return null}};
 function sbSave(session){if(session&&session.user&&session.access_token){setItem(SESS_KEY,JSON.stringify(session));window.IYQuickSession?.update(session)}}
-function sbClear(){setItem(SESS_KEY,'')}
+function sbClear(){if(typeof IYReconcile!=='undefined')IYReconcile.release(sbSession()?.user?.id);setItem(SESS_KEY,'')}
 async function sb(path,opt={}){
   const session=sbSession();
   const headers={'apikey':SUPABASE_KEY,'Content-Type':'application/json',...(opt.headers||{})};
@@ -5446,29 +5728,174 @@ async function sbRefresh(){
   const session=sbSession();if(!session?.refresh_token)return false;
   try{
     const j=await sb('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:session.refresh_token}});
-    if(!j?.access_token||!j?.user?.id)return false;
+    if(!j?.access_token||j.user?.id!==session.user?.id||sbSession()?.refresh_token!==session.refresh_token)return false;
     sbSave({...j,at:Date.now()});return true;
-  }catch(_){sbClear();return false}
+  }catch(e){if([400,401,403].includes(e.status)&&sbSession()?.refresh_token===session.refresh_token)sbClear();return false}
 }
 async function sbCurrentUser(){
   try{return await sb('/auth/v1/user')}
   catch(e){if(e.status===401&&await sbRefresh())return sb('/auth/v1/user');throw e}
 }
-async function sbPush(){
-  const session=sbSession();
-  if(!A?.authUid||!session?.user?.id||A.authUid!==session.user.id)return false;
-  const sanitized=JSON.parse(JSON.stringify(A));sanitized.pw='';delete sanitized.salt;
-  try{
-    await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true;
-  }catch(e){
-    if(e.status===401&&await sbRefresh()){
-      const current=sbSession();if(current?.user?.id!==A.authUid)return false;
-      try{await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true}catch(_){return false}
-    }
-    return false;
-  }
+// A failed cloud write must never fall back to an unconditional profile replacement.
+// Baselines are scoped to the authenticated UUID and populated only by a verified cloud read.
+const cloudBaselines=new Map();
+const cloudPushInFlight=new Map();
+let lastCloudSyncWarning=0;
+function cloudProfilePayload(account){
+  const data=JSON.parse(JSON.stringify(account));
+  data.pw='';delete data.salt;
+  return data;
 }
-async function sbPull(){
+
+// Durable snapshots are kept in independent immutable slots. Two tabs must
+// never overwrite each other's pending changes in a shared localStorage key.
+const cloudOwnDrafts=new Map(),cloudRecoveredDrafts=new Map(),cloudBlockedDrafts=new Set();
+function cloudDraftPrefix(uid){return 'iydu.outbox.v1.'+encodeURIComponent(uid)+'.'}
+function cloudDraftValue(v){
+  if(v===undefined)return undefined;
+  if(v===null||typeof v!=='object')return JSON.stringify(v);
+  if(Array.isArray(v))return '['+v.map(cloudDraftValue).join(',')+']';
+  return '{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+cloudDraftValue(v[k])).join(',')+'}';
+}
+function cloudContent(profile){
+  const copy={...(profile||{})};delete copy.iyduSyncVersion;delete copy.updatedAt;
+  return cloudDraftValue(copy);
+}
+function cloudDraftEntries(uid){
+  if(typeof localStorage==='undefined')return [];
+  const prefix=cloudDraftPrefix(uid),keys=[];
+  for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key?.startsWith(prefix))keys.push(key)}
+  const entries=[];
+  for(const key of keys){
+    const raw=localStorage.getItem(key);if(raw===null)continue;
+    const d=JSON.parse(raw);
+    if(d?.uid!==uid||d.profile?.authUid!==uid||!d.base||typeof d.base!=='object'||Array.isArray(d.base)||!d.profile||Array.isArray(d.profile)||
+       (d.base.authUid!=null&&d.base.authUid!==uid))throw new Error('Invalid account outbox record');
+    entries.push({...d,key});
+  }
+  return entries.sort((a,b)=>(a.at||0)-(b.at||0)||a.key.localeCompare(b.key));
+}
+function cloudRemoveDraft(key){try{if(typeof localStorage!=='undefined')localStorage.removeItem(key)}catch(_){}}
+function cloudStageDraft(account){
+  const uid=account?.authUid,baseline=cloudBaselines.get(uid);
+  if(!uid||typeof baseline!=='string'||sbSession()?.user?.id!==uid)return null;
+  try{
+    if(typeof localStorage==='undefined')return null;
+    const base=JSON.parse(baseline),profile=cloudProfilePayload(account),previous=cloudOwnDrafts.get(uid);
+    const previousRaw=previous?localStorage.getItem(previous):null;
+    if(previousRaw){const prior=JSON.parse(previousRaw);if(cloudDraftValue(prior.base)===cloudDraftValue(base)&&cloudDraftValue(prior.profile)===cloudDraftValue(profile))return previous}
+    if(!previous&&cloudBlockedDrafts.has(uid)&&cloudContent(profile)===cloudContent(base))return null;
+    const key=cloudDraftPrefix(uid)+rndHex(16),raw=JSON.stringify({uid,base,profile,at:Date.now()});
+    localStorage.setItem(key,raw);if(localStorage.getItem(key)!==raw)throw Error('Draft was not persisted');
+    cloudOwnDrafts.set(uid,key);
+    if(previous)cloudRemoveDraft(previous);
+    return key;
+  }catch(_){cloudSyncNotice();return null}
+}
+// Merge only independently changed top-level fields; arrays are atomic.
+// An ambiguous edit or deletion is never resolved by timestamp guessing.
+function cloudMergeDraft(base,local,remote,decision=false){
+  const copy=v=>JSON.parse(JSON.stringify(v||{}));
+  return IYProfileMerge.merge(copy(base),copy(local),copy(remote),decision);
+}
+function cloudResumeProfile(uid,remote){
+  if(sbSession()?.user?.id!==uid)throw new Error('Account changed during outbox recovery');
+  const entries=cloudDraftEntries(uid);
+  cloudBlockedDrafts.delete(uid);cloudRecoveredDrafts.delete(uid);
+  let merged=remote||{},blocked=false;
+  const recovered=[];
+  for(const entry of entries){
+    if(cloudContent(entry.profile)===cloudContent(remote)){cloudRemoveDraft(entry.key);continue}
+    const result=cloudMergeDraft(entry.base,entry.profile,merged);
+    if(result.conflicts.length){blocked=true;continue}
+    merged=result.merged;recovered.push(entry.key);
+  }
+  if(blocked){
+    cloudBlockedDrafts.add(uid);cloudOwnDrafts.delete(uid);
+    // Show the canonical cloud copy; retain EVERY unresolved draft for export.
+    // Even independently mergeable drafts are not removed in this branch.
+    return remote||null;
+  }
+  if(recovered.length){cloudRecoveredDrafts.set(uid,recovered);return merged}
+  return remote;
+}
+function cloudAcknowledgeDraft(uid,key){
+  if(key)cloudRemoveDraft(key);
+  for(const recovered of cloudRecoveredDrafts.get(uid)||[])cloudRemoveDraft(recovered);
+  cloudRecoveredDrafts.delete(uid);
+  if(cloudOwnDrafts.get(uid)===key)cloudOwnDrafts.delete(uid);
+}
+function cloudForgetDrafts(uid){
+  try{
+    for(const entry of cloudDraftEntries(uid))localStorage.removeItem(entry.key);
+    cloudOwnDrafts.delete(uid);cloudRecoveredDrafts.delete(uid);cloudBlockedDrafts.delete(uid);
+  }catch(_){return false}
+  return true;
+}
+function cloudDraftStatus(){
+  if(!A?.authUid||!cloudBlockedDrafts.has(A.authUid))return;
+  toast(tr()?'Cihaz ve bulut kayıtları çakışıyor. Ayarlar > Verilerim bölümünde iki sürümü karşılaştırıp seçebilirsin.':'Device and cloud changes conflict. Compare both versions and choose in Settings > My data.');
+}
+function exportCloudDrafts(){
+  const uid=A?.authUid;
+  if(!uid||sbSession()?.user?.id!==uid)return;
+  try{
+    const drafts=cloudDraftEntries(uid).map(d=>({base:exportDataSnapshot(d.base).account,profile:exportDataSnapshot(d.profile).account}));
+    const retained=[];
+    const prefix='iydu.resolved.v1.'+uid+'.';
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);if(!k||!k.startsWith(prefix))continue;
+      const v=JSON.parse(localStorage.getItem(k));if(v.profile?.authUid===uid&&v.cloud?.authUid===uid)retained.push({device:exportDataSnapshot(v.profile).account,cloud:exportDataSnapshot(v.cloud).account});
+    }
+    if(!drafts.length&&!retained.length){toast(tr()?'Bekleyen taslak yok.':'No pending drafts.');return}
+    const url=URL.createObjectURL(new Blob([JSON.stringify({format:'iydu-unsynced-drafts',version:2,drafts,retained},null,2)],{type:'application/json'}));
+    const link=document.createElement('a');link.href=url;link.download='improvin-pending-drafts.json';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+  }catch(_){toast(tr()?'Taslaklar okunamadı.':'Could not read pending drafts.')}
+}
+
+function cloudSyncNotice(){
+  if(typeof view==='undefined'||view!=='app'||typeof toast!=='function')return;
+  const now=Date.now();
+  if(now-lastCloudSyncWarning<15000)return;
+  lastCloudSyncWarning=now;
+  toast(tr()?'Bulut eşitlemesi tamamlanamadı. Bu sekmeyi kapatmadan önce verilerini yedekle.':
+    'Cloud sync could not complete. Back up your changes before closing this tab.');
+}
+async function sbPush(){
+  const account=A,session=sbSession(),uid=account?.authUid;
+  if(!uid||!session?.access_token||session.user?.id!==uid)return false;
+  if(typeof IYReconcile!=='undefined'&&IYReconcile.busy(uid))return IYReconcile.busy(uid);
+  if(cloudPushInFlight.has(uid))return cloudPushInFlight.get(uid);
+  const baseline=cloudBaselines.get(uid);
+  if(typeof baseline!=='string'){cloudSyncNotice();return false}
+  const draft=cloudStageDraft(account);
+  if(cloudBlockedDrafts.has(uid)){cloudSyncNotice();return false}
+  const payload=cloudProfilePayload(account),sent=JSON.stringify(payload);
+  const body={p_expected_data:JSON.parse(baseline),p_data:payload};
+  const pending=(async()=>{
+    try{
+      let accepted;
+      try{accepted=await sb('/rest/v1/rpc/iydu_sync_profile',{method:'POST',body})}
+      catch(error){
+        if(error.status!==401||sbSession()?.user?.id!==uid||!await sbRefresh()||sbSession()?.user?.id!==uid)throw error;
+        accepted=await sb('/rest/v1/rpc/iydu_sync_profile',{method:'POST',body});
+      }
+      if(accepted!==true){cloudSyncNotice();if(typeof IYReconcile!=='undefined')IYReconcile.later(0);return false}
+      // The RPC uses CAS and issues a fresh server-side sync UUID; it ignores that
+      // UUID in the value comparison. Never treat a conflict as permission to force-save.
+      cloudAcknowledgeDraft(uid,draft);
+      if(sbSession()?.user?.id===uid)cloudBaselines.set(uid,sent);
+      if(A===account&&sbSession()?.user?.id===uid&&JSON.stringify(cloudProfilePayload(account))!==sent){
+        cloudStageDraft(account);
+        setTimeout(schedulePush,0);
+      }
+      return true;
+    }catch(error){cloudSyncNotice();if(typeof IYReconcile!=='undefined'&&navigator.onLine)IYReconcile.later(1500);return false}
+  })();
+  cloudPushInFlight.set(uid,pending);
+  try{return await pending}finally{if(cloudPushInFlight.get(uid)===pending)cloudPushInFlight.delete(uid)}
+}
+async function sbPull(setBaseline=true){
   const session=sbSession();if(!session?.user?.id)throw new Error('Not authenticated');
   let rows;
   try{rows=await sb('/rest/v1/rpc/iydu_load',{method:'POST',body:{p_username:''}})}
@@ -5478,6 +5905,7 @@ async function sbPull(){
   if(profile!=null&&(typeof profile!=='object'||Array.isArray(profile)))throw new Error('Invalid cloud data');
   if(profile?.authUid!=null&&profile.authUid!==session.user.id)throw new Error('CLOUD_PROFILE_IDENTITY_MISMATCH');
   if(sbSession()?.user?.id!==session.user.id)throw new Error('Session changed during cloud read');
+  if(setBaseline)cloudBaselines.set(session.user.id,JSON.stringify(profile||{}));
   return profile&&Object.keys(profile).length?profile:null;
 }
 // The database owns the old/new-user cutoff; do not infer it from a missing
@@ -5515,7 +5943,8 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
     const meta=user.user_metadata||{};
-    const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
+    const recovered=cloudResumeProfile(user.id,remote);
+    const a=norm(recovered||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
     bindReportCalendar(a,user,!remote&&!local);
     applyServerProgressPolicy(a,progressPolicy);
     a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
@@ -5524,12 +5953,12 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     DB.accounts[a.u]=a;DB.lastUser=a.u;DB.last=a.nick;A=a;
     view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();
     if(animateEntry)playWelcomeTransition();
-    if(!remote)await sbPush();return true;
+    if(!remote)await sbPush();cloudDraftStatus();if(typeof IYReconcile!=='undefined')IYReconcile.afterEntry(user.id);return true;
   }catch(e){
     // Do not auto-login from unverified localStorage contents.
     if(e.status===401)sbClear();
     if(e.message==='V13_LOCAL_USERNAME_COLLISION'){
-      sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki eski yerel hesapla çakışıyor. Eski veri korunuyor. Yerel hesabından JSON yedeği al ve aktarım adımını kullan.':'A cloud username conflicts with a legacy profile on this device. Local data was preserved. Export it and use the migration flow.';
+      sbClear();msg=tr()?'Bulut kullanıcı adı bu cihazdaki başka bir hesapla çakışıyor. Kayıtlar korunuyor. Hesapları doğrulamadan üzerine yazılmayacak.':'The cloud username conflicts with another cached account. Existing records are preserved.';
     }
     if(!A&&!expectedUid){view='login';renderAppOrAuth()}return false;
   }
@@ -5542,6 +5971,7 @@ function toggleBeige(){DB.beige=!DB.beige;applyTheme();save();if(pg==='pc')P.pc(
 view='welcome';pg='home';A=null;
 applyTheme();renderAppOrAuth();
 bootstrapCloudAuth();
+
 window.addEventListener('pageshow',e=>{if(e.persisted&&A){pg='home';renderAppOrAuth()}else if(e.persisted&&!A){view='welcome';pg='home';renderAppOrAuth()}});
 
 </script>

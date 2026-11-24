@@ -225,7 +225,7 @@ test('email provider rejection is not shown as delivered OTP',async()=>{
 });
 
 test('cloud reads reject an identity belonging to a different account',async()=>{
- const source=code.slice(code.indexOf('async function sbPull(){'),code.indexOf('// The database owns the old/new-user cutoff;',code.indexOf('async function sbPull(){')));
+ const source=code.slice(code.indexOf('async function sbPull('),code.indexOf('// The database owns the old/new-user cutoff;',code.indexOf('async function sbPull(')));
  assert.ok(source.includes('CLOUD_PROFILE_IDENTITY_MISMATCH'));
  const context={
   sbSession:()=>({user:{id:'owner-1'}}),

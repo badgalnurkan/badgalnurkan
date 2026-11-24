@@ -5,10 +5,15 @@ const verifyLoginEmail=require('./login-email-gate.browser.cjs');
 const verifyGrowingText=require('./growing-text.browser.cjs');
 const {spawn}=require('node:child_process'),assert=require('node:assert/strict');
 (async()=>{
- const server=spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
- let browser;
+ const launchOrigin=()=>spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
+ const waitOrigin=async()=>{for(let n=0;n<50;n++){try{if((await fetch('http://127.0.0.1:4173')).ok)return}catch{}await new Promise(r=>setTimeout(r,100))}throw Error('Test origin could not start')};
+ let server=launchOrigin(),browser;
+ const origin={
+  disconnect:()=>new Promise(resolve=>{server.once('exit',resolve);server.kill()}),
+  reconnect:async()=>{server=launchOrigin();await waitOrigin()}
+ };
  try{
-  for(let n=0;n<50;n++){try{if((await fetch('http://127.0.0.1:4173')).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
+  await waitOrigin();
   const suite=process.env.IYD_BROWSER_SUITE;
   const uiEngines=[['chromium',chromium],['webkit',webkit]];
   const engines=suite==='chromium'?[['chromium',chromium]]:suite==='firefox'?[['firefox',firefox]]:suite==='ui'?uiEngines:[...uiEngines,['firefox',firefox]];
@@ -16,7 +21,38 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    browser=await type.launch(engine==='chromium'&&process.env.IYD_CHROMIUM_EXECUTABLE?{executablePath:process.env.IYD_CHROMIUM_EXECUTABLE}:{});
    await require('./turnstile-provider.browser.cjs')(browser);
    await verifyRecovery(browser,engine);
-   await verifyLoginEmail(browser,engine);
+   // Report only aggregate sync state and CAS outcomes for disposable browser fixtures.
+   // No user data, profile documents, identity, credentials or request headers are logged.
+   const createPage=browser.newPage.bind(browser);
+   browser.newPage=async(...args)=>{
+    // Keep network-mocked login tests isolated from service workers in engines
+    // that do not run the dedicated Chromium offline scenario. All assertions stay active.
+    const options=engine==='chromium'?(args[0]||{}):{...(args[0]||{}),serviceWorkers:'block'};
+    const page=await createPage(options),outcomes={accepted:0,rejected:0,failed:0};
+    page.on('response',async response=>{
+     if(!new URL(response.url()).pathname.endsWith('/iydu_sync_profile'))return;
+     try{if(!response.ok())outcomes.failed++;else if(await response.json()===true)outcomes.accepted++;else outcomes.rejected++}catch{outcomes.failed++}
+    });
+    const close=page.close.bind(page);
+    page.close=async(...options)=>{
+     try{
+      const state=await page.evaluate(()=>{
+       if(typeof A==='undefined'||!A?.authUid||typeof IYReconcile==='undefined')return null;
+       const uid=A.authUid, drafts=cloudDraftEntries(uid);
+       const baseline=JSON.parse(cloudBaselines.get(uid)||'{}');
+       // The inputs in this fixture are synthetic; report conflict field roots only.
+       const conflicts=drafts.map(d=>cloudMergeDraft(d.base,d.profile,baseline).conflicts.map(path=>path.split('.')[0]));
+       return {online:navigator.onLine,hidden:document.hidden,blocked:cloudBlockedDrafts.has(uid),
+        pending:drafts.length,offline:IYOfflinePad.list(uid).length,conflicts,
+        localAcknowledgements:Object.keys(A.offlineDraftIds||{}).length};
+      });
+      if(state)console.log('Browser sync fixture summary:',JSON.stringify({state,outcomes}));
+     }catch{}
+     return close(...options);
+    };
+    return page;
+   };
+   try{await verifyLoginEmail(browser,engine,origin)}finally{browser.newPage=createPage}
    await require('./signup-fields.browser.cjs')(browser,engine);
    await verifyGrowingText(browser,engine);
    if(engine==='firefox'){await browser.close();continue}
@@ -386,7 +422,8 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    assert.deepEqual(productivityErrors,[]);
    await productivity.close();
    console.log('PASS '+engine+': task edit, keyboard and pointer reorder, future countdown and mobile report widths');
-   const page=await browser.newPage({viewport:{width:390,height:844}});
+   // This lifecycle fixture intercepts auth requests; offline behavior is tested separately.
+   const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});
    const session={user:{id:'fixture-user',email:record.email},access_token:'fixture.'+Buffer.from(JSON.stringify({sub:'fixture-user',session_id:'ab100000-0000-4000-8000-000000000001'})).toString('base64url')+'.signature',refresh_token:'fixture-refresh-token'};
    const db={accounts:{[record.u]:record},lastUser:record.u,last:record.nick,lang:'tr',beige:false};
    await page.addInitScript(({db,session})=>{localStorage.setItem('b1',JSON.stringify(db));localStorage.setItem('b1sb',JSON.stringify(session));localStorage.setItem('iydu.storage-notice.v1','test')},{db,session});
@@ -412,7 +449,12 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     else if(url.endsWith('/functions/v1/browser-verification'))data={ok:true,verified:true,expiresAt:new Date(Date.now()+3600000).toISOString()};
     else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
     else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
-    else if(url.endsWith('/rpc/iydu_save'))data=null;
+    else if(url.endsWith('/rpc/iydu_sync_profile')){
+     const payload=route.request().postDataJSON();
+     assert.ok(payload && payload.p_expected_data && typeof payload.p_expected_data==='object');
+     assert.equal(payload.p_data.authUid,'fixture-user');
+     data=true;
+    }
     else if(url.endsWith('/functions/v1/account-security')){
      const b=route.request().postDataJSON();actions.push(b.action);
      if(b.action==='request_deactivate')data={ok:true,id:'b04146d1-f2a4-4a04-bd46-70159554b90f'};

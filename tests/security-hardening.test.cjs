@@ -8,7 +8,7 @@ const root = path.join(__dirname, '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const vercel = JSON.parse(read('vercel.json'));
 const html = read('index.html');
-const PUBLIC_PAGES = ['index.html', 'privacy.html', 'kvkk.html', 'terms.html', 'cookies.html', 'account-close.html', 'google71b0ad28b2232354.html'];
+const PUBLIC_PAGES = ['index.html', 'offline.html', 'privacy.html', 'kvkk.html', 'terms.html', 'cookies.html', 'account-close.html', 'google71b0ad28b2232354.html'];
 const PUBLIC_ASSETS = ['account-security.js', 'account-security.css', 'recovery-browser.js', 'account-close.js'];
 
 function redirected(pathname) {

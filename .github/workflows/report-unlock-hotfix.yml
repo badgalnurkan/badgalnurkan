@@ -5,7 +5,10 @@ on:
       - 'index.html'
       - 'package.json'
       - 'account-security.*'
-      - 'recovery-browser.js'
+      - '*.js'
+      - 'api/**'
+      - 'offline.html'
+      - 'scripts/build-preview.py'
       - 'cookies.html'
       - 'supabase/**'
       - 'tests/account-security*'
@@ -18,7 +21,10 @@ on:
       - 'index.html'
       - 'package.json'
       - 'account-security.*'
-      - 'recovery-browser.js'
+      - '*.js'
+      - 'api/**'
+      - 'offline.html'
+      - 'scripts/build-preview.py'
       - 'cookies.html'
       - 'supabase/**'
       - 'tests/account-security*'
@@ -69,6 +75,19 @@ jobs:
             if(!r.ok||!d.ok)throw Error('Account backend not reachable');
           })().catch(e=>{console.error(e);process.exitCode=1});
           NODE
+  real-auth-restore:
+    name: Real Auth, two devices and database restore
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.4.0
+      - run: bash tests/integration/run-auth-restore.sh
   production-smoke:
     name: Verify deployed production files
     if: github.event_name == 'push'
@@ -85,6 +104,7 @@ jobs:
           const fs=require('node:fs'),crypto=require('node:crypto');
           const digest=buffer=>crypto.createHash('sha256').update(buffer).digest('hex');
           const files=[['index.html','/'],['recovery-browser.js','/recovery-browser.js'],['browser-verification.js','/browser-verification.js'],['turnstile-auth.js','/turnstile-auth.js'],['quick-session.js','/quick-session.js'],['account-security.js','/account-security.js'],['account-security.css','/account-security.css'],['cookies.html','/cookies.html'],['account-close.html','/account-close.html'],['account-close.js','/account-close.js']];
+          for(const name of ['cloud-reconcile.js','profile-merge.js','sw.js','offline-pad.js','offline.html','daily-facts.js','growing-text.js'])files.push([name,'/'+name]);
           const expected=files.map(([filename,path])=>({filename,path,hash:digest(fs.readFileSync(filename))}));
           const base='https://badgalnurkan.com';
           const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
