@@ -2517,6 +2517,7 @@ function welcomeDisplayName(){
 /* One inbox for release news, project dates, tasks and focus reminders. */
 const SITE_RELEASE='2026-11-24-calendar-daily-01';
 const SITE_CHANGES=[
+ {date:'2026-11-24',trTitle:'Süreli kayıt arşivi',enTitle:'Timed record archive',items:[['Süresi biten geleceğe notlar ve proje hatırlatmaları arşive taşınır. Düzenleme, yeni tarihle geri yükleme ve onayla kalıcı silme mümkündür.','Expired future notes and project reminders move to the archive, with editing, restoration on a new date and confirmed permanent deletion.']]},
  {date:'2026-11-24',trTitle:'Aylık rapor ve günlük keşif',enTitle:'Monthly report and daily discovery',items:[['Aylık rapor yanıtları ayın son günü gece yarısına kadar düzenlenebilir.','Monthly report answers can be edited until midnight on the last day of the month.'],['Ana sayfaya kaynaklı günlük bilgi, görev listesine rastgele öneri eklendi.','Added sourced daily facts and random task suggestions.'],['Giriş geçişi kısaltıldı; kod onayı beklemeden gösterilir.','Shortened the entry animation and display code confirmation immediately.']]},
   {date:'2026-11-23',trTitle:'Aylık rapor takvimi',enTitle:'Monthly report calendar',items:[
   ['İlk aylık rapor kayıt olduğun ayda açılır. O ay kayıt tarihinden itibaren bir görev, günlük veya tamamlanmış odak kaydı gerekir.','Your first monthly report opens in your signup month if you record a task, journal entry or completed focus session after joining.'],
@@ -2764,20 +2765,79 @@ function projectReminderTime(project){
  if(project.reminderEnabled===false)return NaN;
  return Date.parse(project.reminderAt||(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(project.d)?project.d+'T09:00:00+03:00':''));
 }
+function archivedNoteList(account=A){
+ if(!account)return [];
+ if(account.timedNoteArchive===undefined)account.timedNoteArchive=[];
+ return Array.isArray(account.timedNoteArchive)?account.timedNoteArchive:null;
+}
+function archiveExpiredNote(key,value,meta,now){
+ const list=archivedNoteList();if(!list)return false;
+ list.push({date:key,text:value,meta:{...meta},archivedAt:now});return true;
+}
 function expireTimedRecords(now=Date.now()){
  if(!A)return false;
  let changed=false;const day=istanbulDayKey(new Date(now));
  for(const [key,value] of Object.entries(A.future||{})){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(key))continue;
   const meta=A.futureMeta?.[key]||{},created=Number(meta.createdAt),wasFuture=meta.expireAfterDay===key||(Number.isFinite(created)&&created>0&&istanbulDayKey(new Date(created))<key);
-  if(key<day&&wasFuture){delete A.future[key];if(A.futureMeta)delete A.futureMeta[key];changed=true}
+  if(key<day&&wasFuture){if(archiveExpiredNote(key,value,meta,now)){delete A.future[key];if(A.futureMeta)delete A.futureMeta[key];changed=true}}
   else if(key>=day&&meta.expireAfterDay!==key){(A.futureMeta||={})[key]={...meta,expireAfterDay:key};changed=true}
  }
  for(const project of A.projects||[]){
   const due=projectReminderTime(project);
-  if(Number.isFinite(due)&&due<=now){project.reminderEnabled=false;delete project.reminderAt;changed=true}
+  if(Number.isFinite(due)&&due<=now){project.reminderArchive={archivedAt:now,originalDue:due};project.reminderEnabled=false;delete project.reminderAt;changed=true}
  }
  if(changed)save();return changed;
+}
+let timedArchiveEdit=null;
+function timedArchiveCard(kind){
+ const notes=kind==='note',entries=notes?(archivedNoteList()||[]):(A.projects||[]);
+ const rows=entries.map((item,i)=>{
+   if(!item||(!notes&&!item.reminderArchive))return '';
+   return `<article class="note-tile"><b>${esc((notes?item.date:item.d)||'')}</b><p>${esc((notes?item.text:item.n)||'')}</p><button type="button" class="g s" onclick="openTimedArchive('${kind}',${i})">${tr()?'Aç / düzenle':'Open / edit'}</button></article>`;
+ }).join('');
+ return `<section class="card"><details><summary>${tr()?'Arşiv':'Archive'} · ${notes?entries.length:entries.filter(p=>p?.reminderArchive).length}</summary><div class="note-grid">${rows||`<p class="mut">${tr()?'Arşiv boş.':'Archive is empty.'}</p>`}</div></details></section>`;
+}
+function openTimedArchive(kind,index){
+ if(!A||!['note','project'].includes(kind))return;
+ const notes=kind==='note',list=notes?archivedNoteList():A.projects,item=list?.[index];
+ if(!item||(!notes&&!item.reminderArchive))return;
+ timedArchiveEdit={owner:A,kind,item};
+ const name=notes?item.text:item.n,date=item.restoreDate||(notes?item.date:item.d);
+ openModal('timed-archive-edit',`<h2>${tr()?'Arşiv kaydı':'Archived item'}</h2><label for="archive-text">${tr()?'Metin':'Text'}</label><textarea id="archive-text" rows="3" maxlength="${notes?500:40}">${esc(name||'')}</textarea><label for="archive-date">${tr()?'Geri yükleme tarihi':'Restore date'}</label><input type="date" id="archive-date" value="${esc(date||'')}"><p class="mut">${tr()?'Geri yüklemek için bugün veya sonraki bir günü seç. Aynı tarihte not varsa üzerine yazılmaz.':'Choose today or later to restore. An existing note on that date will not be overwritten.'}</p><div class="row"><button class="g" onclick="saveTimedArchive(false)">${t('save')}</button><button onclick="saveTimedArchive(true)">${tr()?'Geri taşı':'Restore'}</button><button class="g s" onclick="deleteTimedArchive()">${tr()?'Kalıcı sil':'Delete permanently'}</button><button class="g" onclick="closeModal('timed-archive-edit')">${t('cancel')}</button></div>`);
+}
+function timedArchiveContext(){
+ const edit=timedArchiveEdit;if(!A||!edit||edit.owner!==A)return null;
+ const list=edit.kind==='note'?archivedNoteList():A.projects;
+ if(!list?.includes(edit.item)||(edit.kind==='project'&&!edit.item.reminderArchive))return null;
+ return {...edit,list};
+}
+function applyTimedArchive(edit,text,date,restore,now=Date.now()){
+ if(!edit||edit.owner!==A||typeof text!=='string'||!text.trim()||!validProgressDate(date))return false;
+ const note=edit.kind==='note',limit=note?500:40;
+ if(text.length>limit||!edit.list.includes(edit.item)||(!note&&!edit.item.reminderArchive))return false;
+ const day=istanbulDayKey(new Date(now));
+ if(restore&&(date<day||(note&&Object.hasOwn(A.future||{},date))||(!note&&Date.parse(date+'T09:00:00+03:00')<=now)))return false;
+ const item=edit.item;
+ if(!restore){if(note)item.text=text.trim();else item.n=text.trim();item.restoreDate=date;save();return true}
+ if(note){
+   (A.future||={})[date]=text.trim();(A.futureMeta||={})[date]={...item.meta,createdAt:now,editedAt:now,expireAfterDay:date};
+   edit.list.splice(edit.list.indexOf(item),1);
+ }else{
+   item.n=text.trim();item.d=date;item.reminderAt=new Date(date+'T09:00:00+03:00').toISOString();item.reminderEnabled=true;
+   delete item.reminderArchive;delete item.restoreDate;
+ }
+ save();return true;
+}
+function saveTimedArchive(restore){
+ const edit=timedArchiveContext(),text=String(document.getElementById('archive-text')?.value||''),date=String(document.getElementById('archive-date')?.value||'');
+ if(!applyTimedArchive(edit,text,date,restore)){toast(tr()?'Geçerli, boş olmayan bir kayıt ve uygun yeni tarih seç. Bugünkü proje için saat 09.00 geçtiyse sonraki günü seç.':'Enter a valid nonempty record and available date. If 09:00 has passed, choose a later day for a project.');return}
+ timedArchiveEdit=null;closeModal('timed-archive-edit');renderPage();toast(t('saved'));
+}
+function deleteTimedArchive(){
+ const edit=timedArchiveContext();if(!edit||!window.confirm(tr()?'Bu arşiv kaydı kalıcı olarak silinsin mi?':'Permanently delete this archived record?'))return;
+ if(timedArchiveContext()?.item!==edit.item)return;
+ edit.list.splice(edit.list.indexOf(edit.item),1);save();timedArchiveEdit=null;closeModal('timed-archive-edit');renderPage();
 }
 function checkAppReminders(now=Date.now()){
  if(!A||view!=='app'||document.visibilityState!=='visible')return;
@@ -2945,8 +3005,7 @@ function playWelcomeTransition(cb,codeApproved=false){
   const root=document.createElement('div');
   root.id='login-portal';root.className='entry-portal';
   root.setAttribute('role','status');root.setAttribute('aria-live','polite');root.setAttribute('aria-atomic','true');
-  root.innerHTML=`<div class="portal-disc" aria-hidden="true"></div><div class="portal-brand" aria-hidden="true"><span class="portal-title">Improvin' your day.</span><span class="portal-ring"></span></div><p class="portal-greeting">${esc(greetText())}${codeApproved?`<small class="entry-confirmed">${tr()?'Giriş onaylandı.':'Sign-in confirmed.'}</small>`:''}</p>`;
-  if(codeApproved){root.insertAdjacentHTML('beforeend',`<p class="entry-confirmation-fixed" role="status">${tr()?'Giriş onaylandı.':'Sign-in confirmed.'}</p>`);root.querySelector('.entry-confirmed')?.remove()}
+  root.innerHTML=`<div class="portal-disc" aria-hidden="true"></div><div class="portal-brand" aria-hidden="true"><span class="portal-title">Improvin' your day.</span><span class="portal-ring"></span></div><p class="portal-greeting">${esc(greetText())}</p>${codeApproved?`<p class="entry-confirmation-fixed">${tr()?'Giriş onaylandı.':'Sign-in confirmed.'}</p>`:''}`;
   document.body.appendChild(root);
   let cleaned=false,fallback=0;
   const cleanup=()=>{if(cleaned)return;cleaned=true;clearTimeout(fallback);root.remove();if(cb)cb()};
@@ -3718,13 +3777,14 @@ P.home=()=>{
   const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length;
   const j=A.journal?.[today()]?.text||'';
   const pr=(A.projects||[]).map((p,i)=>{
+    if(p.reminderArchive)return '';
     const d=dd(today(),p.d);
     return`<div class="task project-task"><span>${esc(p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
   }).join('');
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>${dailyFactCard()}
   <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="2000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/2000</span></div></div>
-  <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
+  <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>${timedArchiveCard('project')}`);
 };
 function updateJournalCounter(el){const e=document.getElementById('journal-counter');if(e)e.textContent=String(el?.value?.length||0)+'/2000'}
 function saveJournal(){
@@ -4076,7 +4136,7 @@ P.pc=()=>{
   }
   const monthKey=`${y}-${pad(mo+1)}`;
   const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}<small class="note-countdown">${futureNoteCountdown(k)}</small></b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}',false,true)">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>${timedArchiveCard('note')}`);
 };
 function newNote(){
   const d=String($('#fnd')?.value||'');
