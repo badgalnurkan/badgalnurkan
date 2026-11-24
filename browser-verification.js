@@ -54,6 +54,7 @@ window.IYBrowserGate=(()=>{
   return result;
  }
  function display(user){
+  document.getElementById('auth-busy')?.remove();
   A=null;view='login';pg='home';renderAppOrAuth();
   openModal('browser-verify-gate',
    '<h2>'+text('Girişini doğrula','Verify your sign-in')+'</h2>'+

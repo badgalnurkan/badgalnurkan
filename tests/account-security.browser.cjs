@@ -5,10 +5,15 @@ const verifyLoginEmail=require('./login-email-gate.browser.cjs');
 const verifyGrowingText=require('./growing-text.browser.cjs');
 const {spawn}=require('node:child_process'),assert=require('node:assert/strict');
 (async()=>{
- const server=spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
- let browser;
+ const launchOrigin=()=>spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
+ const waitOrigin=async()=>{for(let n=0;n<50;n++){try{if((await fetch('http://127.0.0.1:4173')).ok)return}catch{}await new Promise(r=>setTimeout(r,100))}throw Error('Test origin could not start')};
+ let server=launchOrigin(),browser;
+ const origin={
+  disconnect:()=>new Promise(resolve=>{server.once('exit',resolve);server.kill()}),
+  reconnect:async()=>{server=launchOrigin();await waitOrigin()}
+ };
  try{
-  for(let n=0;n<50;n++){try{if((await fetch('http://127.0.0.1:4173')).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
+  await waitOrigin();
   const suite=process.env.IYD_BROWSER_SUITE;
   const uiEngines=[['chromium',chromium],['webkit',webkit]];
   const engines=suite==='chromium'?[['chromium',chromium]]:suite==='firefox'?[['firefox',firefox]]:suite==='ui'?uiEngines:[...uiEngines,['firefox',firefox]];
@@ -16,9 +21,10 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    browser=await type.launch(engine==='chromium'&&process.env.IYD_CHROMIUM_EXECUTABLE?{executablePath:process.env.IYD_CHROMIUM_EXECUTABLE}:{});
    await require('./turnstile-provider.browser.cjs')(browser);
    await verifyRecovery(browser,engine);
-   await verifyLoginEmail(browser,engine);
+   await verifyLoginEmail(browser,engine,origin);
    await require('./signup-fields.browser.cjs')(browser,engine);
    await verifyGrowingText(browser,engine);
+   await require('./daily-features.browser.cjs')(browser,engine);
    if(engine==='firefox'){await browser.close();continue}
    for(const width of [320,375,390,430,768,1440]){
     const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:2});
@@ -349,7 +355,15 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    for(const field of await fields.all())await field.fill('Kasım yanıtım');
    await fields.last().press('Tab');await monthly.waitFor({state:'detached'});
    assert.equal(await productivity.locator('.report-month-card.report-submitted .report-next-month time').getAttribute('datetime'),'2026-12-31');
+   await monthCard.getByRole('button',{name:'Düzenle',exact:true}).click();
+   const correction=productivity.locator('#monthly-correction');
+   await correction.locator('textarea').first().fill('Düzeltilmiş kasım yanıtım');
+   await correction.locator('button[type="submit"]').click();await correction.waitFor({state:'detached'});
+   assert.equal(await productivity.evaluate(()=>A.qs['2026-11'][0].a),'Düzeltilmiş kasım yanıtım');
+   assert.equal(await productivity.evaluate(()=>A.ql['2026-11']),1);
+   await monthCard.getByRole('button',{name:'Düzenle',exact:true}).click();
    await changeDay('2026-12-01');assert.equal(await productivity.locator('.period-questionnaire').count(),0);
+   await correction.waitFor({state:'detached'});assert.equal(await monthCard.locator('.report-correct').count(),0);
    await productivity.locator('.report-month-card[data-month="2026-12"]').waitFor();
    assert.match(await monthCard.locator('h2').innerText(),/Aralık 2026/);
    assert.deepEqual(await monthWindow.locator('time').evaluateAll(times=>times.map(t=>t.dateTime)),['2026-12-31T00:00:00+03:00','2027-01-01T00:00:00+03:00']);
@@ -390,7 +404,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const session={user:{id:'fixture-user',email:record.email},access_token:'fixture.'+Buffer.from(JSON.stringify({sub:'fixture-user',session_id:'ab100000-0000-4000-8000-000000000001'})).toString('base64url')+'.signature',refresh_token:'fixture-refresh-token'};
    const db={accounts:{[record.u]:record},lastUser:record.u,last:record.nick,lang:'tr',beige:false};
    await page.addInitScript(({db,session})=>{localStorage.setItem('b1',JSON.stringify(db));localStorage.setItem('b1sb',JSON.stringify(session));localStorage.setItem('iydu.storage-notice.v1','test')},{db,session});
-   const actions=[],requests=[];let closed=false,hasPassword=false;
+   const actions=[],requests=[];let cloudRecord=structuredClone(record),closed=false,hasPassword=false;
    await page.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
     const url=route.request().url();requests.push(url);
     let data=null;
@@ -410,9 +424,9 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
     else if(url.endsWith('/rpc/iydu_quick_resume_status'))data={allowed:true};
     else if(url.endsWith('/rpc/iydu_account_status'))data={user_id:'fixture-user',email:record.email,email_verified:true,state:closed?'deactivated':'active',has_password:hasPassword,password_required:false,server_time:'2026-11-17T00:00:00Z'};
     else if(url.endsWith('/functions/v1/browser-verification'))data={ok:true,verified:true,expiresAt:new Date(Date.now()+3600000).toISOString()};
-    else if(url.endsWith('/rpc/iydu_load'))data=[{data:record}];
+    else if(url.endsWith('/rpc/iydu_load'))data=[{data:cloudRecord}];
     else if(url.endsWith('/rpc/iydu_progress_policy'))data='daily';
-    else if(url.endsWith('/rpc/iydu_save'))data=null;
+    else if(url.endsWith('/rpc/iydu_sync_profile')){const body=route.request().postDataJSON();data=require('../cross-device-sync.js').equal(cloudRecord,body.p_expected_data);if(data)cloudRecord=body.p_data}
     else if(url.endsWith('/functions/v1/account-security')){
      const b=route.request().postDataJSON();actions.push(b.action);
      if(b.action==='request_deactivate')data={ok:true,id:'b04146d1-f2a4-4a04-bd46-70159554b90f'};

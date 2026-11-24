@@ -1,12 +1,13 @@
 'use strict';
 const assert=require('node:assert/strict');
-module.exports=async(browser,engine)=>{
+module.exports=async(browser,engine,origin)=>{
  for(const width of [320,1440]){
   const page=await browser.newPage({viewport:{width,height:900}});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   const user={id:'ab000000-0000-4000-8000-000000000011',email:'login-owner@example.invalid',email_confirmed_at:'2026-11-22T12:00:00Z',created_at:'2026-11-22T12:00:00Z',user_metadata:{username:'loginowner'},app_metadata:{providers:['email']}};
   const claims={sub:user.id,session_id:'ab100000-0000-4000-8000-000000000001'};
   const session={user,access_token:'fixture.'+Buffer.from(JSON.stringify(claims)).toString('base64url')+'.signature',refresh_token:'fixture-refresh'};
+  let profile={u:'loginowner',nick:'Login owner',authUid:user.id,email:user.email};
   let verified=false,loads=0,sends=0,allowCode,allowLoad;
   const codeGate=new Promise(resolve=>{allowCode=resolve}),profileGate=new Promise(resolve=>{allowLoad=resolve});
   await page.addInitScript(()=>localStorage.setItem('iydu.storage-notice.v1','test'));
@@ -29,9 +30,13 @@ module.exports=async(browser,engine)=>{
    }else if(url.pathname.endsWith('/iydu_quick_resume_status')){assert.equal(req.headers().authorization,'Bearer '+session.access_token);data={allowed:verified};
    }else if(url.pathname.endsWith('/iydu_load')){
     assert.equal(verified,true,'no profile call before email proof');loads++;await profileGate;
-    data=[{data:{u:'loginowner',nick:'Login owner',authUid:user.id,email:user.email}}];
+    data=[{data:profile}];
    }else if(url.pathname.endsWith('/iydu_progress_policy'))data='daily';
-   else if(url.pathname.endsWith('/iydu_save'))data=null;
+   else if(url.pathname.endsWith('/iydu_sync_profile')){
+    assert.ok(verified);const body=req.postDataJSON();
+    data=require('../cross-device-sync.js').equal(profile,body.p_expected_data);
+    if(data)profile=body.p_data;
+   }
    else throw Error('Unexpected login request '+url.pathname);
    await route.fulfill({status,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(data)});
   });
@@ -40,7 +45,7 @@ module.exports=async(browser,engine)=>{
    await page.locator('#u').fill(user.email);await page.locator('#p').fill('Fixture-Password-99!');await page.locator('#p').press('Enter');
    const modal=page.locator('#browser-verify-gate');await modal.waitFor({state:'visible'});
    await page.locator('#browser-verify-message').filter({hasText:'email service accepted'}).waitFor();
-   assert.equal(loads,0);assert.equal(await page.locator('.shell').count(),0);
+   assert.equal(loads,0);assert.equal(await page.locator('#busy-overlay:visible, #auth-busy:visible').count(),0);assert.equal(await page.locator('.shell').count(),0);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'login gate fits '+width);
    await page.locator('#browser-verify-code').fill('654321');await page.locator('#browser-verify-code').press('Enter');
    await page.locator('#browser-verify-message').filter({hasText:'incorrect'}).waitFor();assert.equal(loads,0);
@@ -49,11 +54,30 @@ module.exports=async(browser,engine)=>{
    await page.locator('#browser-verify-code').fill('123456');await page.locator('#browser-verify-code').press('Enter');
    await page.locator('#browser-verify-message').filter({hasText:'Verifying'}).waitFor();assert.equal(loads,0);
    allowCode();await page.locator('#browser-verify-message').filter({hasText:'Sign-in confirmed'}).waitFor();
-   allowLoad();await page.locator('.shell').waitFor();assert.equal(loads,1);assert.deepEqual(errors,[]);
+   allowLoad();await page.locator('.shell').waitFor();assert.ok(loads>=1);assert.deepEqual(errors,[]);
    const requestsBeforeReload=sends;
    await page.reload();await page.locator('#welcome-continue').waitFor();
    await page.evaluate(async()=>{const original=sbSession();const claims=JSON.parse(atob(original.access_token.split('.')[1]));claims.session_id='ab100000-0000-4000-8000-000000000099';const candidate={...original,access_token:'fixture.'+btoa(JSON.stringify(claims))+'.signature'};await activateCloudUser(candidate,'loginowner','password')});
    await page.locator('.shell').waitFor();assert.equal(sends,requestsBeforeReload,'reload/new auth does not request another email inside verified hour');assert.equal(await page.evaluate(()=>sbSession().access_token),session.access_token,'server-approved original session retained');assert.equal(await page.locator('#browser-verify-gate:not(.is-closing)').count(),0);
+
+   if(engine==='chromium'&&width===320){
+    const context=page.context();
+    await page.evaluate(()=>navigator.serviceWorker.ready);
+    await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+    await context.setOffline(true);await origin.disconnect();
+    await page.reload({waitUntil:'domcontentloaded'});await page.locator('#offline-entry').waitFor();
+    assert.equal(await page.locator('#offline-entry fieldset').isDisabled(),false);
+    await page.locator('#offline-body').fill('Saved offline at the library');
+    await page.locator('#offline-entry button').click();await page.locator('#pad-status').filter({hasText:'Saved on this device'}).waitFor();
+    await page.locator('#kind').selectOption('note');await page.locator('#day').fill('2031-03-31');await page.locator('#offline-body').fill('March note');
+    await page.locator('#offline-entry button').click();assert.equal(await page.evaluate(()=>IYOfflinePad.list(IYOfflinePad.owner()).length),2);
+    await origin.reconnect();await context.setOffline(false);
+    await page.locator('.shell').waitFor();
+    await page.waitForFunction(()=>A&&A.future?.['2031-03-31']==='March note'&&A.tasks.some(task=>task.t==='Saved offline at the library'));
+    await page.evaluate(async()=>{await IYCloud.flush();await IYCloud.check()});
+    await page.waitForFunction(()=>IYOfflinePad.list(IYOfflinePad.owner()).length===0);
+    assert.equal(profile.future['2031-03-31'],'March note');assert.equal(profile.tasks.filter(task=>task.t==='Saved offline at the library').length,1);
+   }
 
   }finally{await page.close()}
  }

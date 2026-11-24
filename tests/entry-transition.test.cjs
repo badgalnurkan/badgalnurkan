@@ -67,20 +67,15 @@ test('reduced motion bypasses the animated overlay and completes immediately',()
  const {f,roots,timers}=fixture(true);let calls=0;f.playWelcomeTransition(()=>calls++);
  assert.equal(roots.length,0);assert.equal(timers.size,0);assert.equal(calls,1);
 });
-test('the 1.6-second entry eases forward for 340ms and back for 240ms',()=>{
- assert.match(html,/--entry-total-ms:1600/);
- assert.match(html,/#login-portal\.entry-portal \.portal-disc\{[^}]*animation:entryCirclePass \.58s linear \.18s both!important/);
- const frames=html.match(/@keyframes entryCirclePass\{([^\n]+)\}/)[1];
- assert.match(frames,/58\.62069%\{transform:translate\(-50%,-50%\) scale\(1\.5\);animation-timing-function:var\(--motion-return\)\}/);
- assert.match(frames,/100%\{transform:translate\(-50%,-50%\) scale\(0\)\}/);
- assert.ok(Math.abs(580*.5862069-340)<.001);assert.ok(Math.abs(580*(1-.5862069)-240)<.001);
- assert.ok(Math.abs(.18+.58+.84-1.6)<.001);
+test('the greeting fits in a brief translucent transition',()=>{
+ assert.match(html,/--entry-total-ms:780/);assert.match(html,/entryGreeting \.64s [^}]*\.08s/);
+ assert.match(html,/#login-portal\.entry-portal\{pointer-events:none;background:color-mix/);
 });
 test('JavaScript completion uses the duration configured in CSS',()=>{
  const {f,context,timers}=fixture();
  context.getComputedStyle=()=>({getPropertyValue:()=> '2600'});
  assert.equal(f.uiMotionTime('--entry-total-ms',2000),2600);
- f.playWelcomeTransition();assert.equal([...timers.values()][0].delay,2800);
+ f.playWelcomeTransition();assert.equal([...timers.values()][0].delay,2670);
  context.getComputedStyle=()=>({getPropertyValue:()=> 'invalid'});
  assert.equal(f.uiMotionTime('--entry-total-ms',2000),2000);
 });

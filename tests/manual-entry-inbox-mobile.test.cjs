@@ -52,7 +52,7 @@ function inboxFixture(reduced=false){
  const button={disabled:false,classList:classes},list={innerHTML:'initial'};
  const account={notifications:[{id:'a'},{id:'b'}],noticeDelivered:{a:1,b:1}};
  const context={A:account,tr:()=>true,save:()=>{context.saves++},saves:0,updateNotificationBadge:()=>{context.badges++},badges:0,
-  ensureNoticeState:()=>context.A,notificationList:()=>'<p>empty or entries</p>',motionReveal:()=>{},
+  bindInboxRows(){},dismissPublicRelease(){},ensureNoticeState:()=>context.A,notificationList:()=>'<p>empty or entries</p>',motionReveal:()=>{},
   window:{matchMedia:()=>({matches:reduced})},
   document:{getElementById:id=>id==='notification-clear'?button:id==='notification-list'?list:null,querySelectorAll:()=>[]},
   setTimeout:(cb,delay)=>{timers.push({cb,delay})},dismissTopNotification:()=>{},openModal:()=>{}};

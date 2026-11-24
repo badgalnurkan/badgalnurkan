@@ -1,0 +1,368 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { merge, equal, create } = require('../cross-device-sync.js');
+
+function memoryStorage() {
+  const items = new Map();
+  return {
+    getItem: key => items.has(key) ? items.get(key) : null,
+    setItem: (key, value) => { items.set(key, String(value)); },
+    removeItem: key => { items.delete(key); },
+    key: index => [...items.keys()][index] || null,
+    get length() { return items.size; },
+    items
+  };
+}
+function server(initial = {}) {
+  let remote = structuredClone(initial);
+  const clone = value => structuredClone(value);
+  return {
+    load: async () => clone(remote),
+    cas: async (expected, next) => {
+      if (!equal(expected, remote)) return false;
+      remote = clone(next);
+      return true;
+    },
+    current: () => clone(remote)
+  };
+}
+const uid = n => '00000000-0000-4000-8000-0000000000' + String(n).padStart(2, '0');
+const tab = n => 'browser-' + String(n).padStart(8, '0');
+function engine(id, num, storage, remote, onRemote = () => {}) {
+  return create({ uid: uid(id), tabId: tab(num), storage,
+    load: remote.load, cas: remote.cas, onRemote });
+}
+
+test('deep equality ignores JSON object key ordering', () => {
+  assert.ok(equal({ a: 1, x: { z: 2, y: 3 } }, { x: { y: 3, z: 2 }, a: 1 }));
+  assert.ok(!equal({ a: [1, 2] }, { a: [2, 1] }));
+});
+test('disjoint calendar days merge without deleting either entry', () => {
+  const base = { journal: {} };
+  const local = { journal: { '2026-11-19': { text: 'desktop' } } };
+  const remote = { journal: { '2026-11-20': { text: 'phone' } } };
+  const result = merge(base, local, remote);
+  assert.deepEqual(result.conflicts, []);
+  assert.equal(result.merged.journal['2026-11-19'].text, 'desktop');
+  assert.equal(result.merged.journal['2026-11-20'].text, 'phone');
+});
+test('concurrent edits to one day never silently choose a winner', () => {
+  const base = { journal: { '2026-11-19': { text: 'original' } } };
+  const local = { journal: { '2026-11-19': { text: 'computer edit' } } };
+  const remote = { journal: { '2026-11-19': { text: 'phone edit' } } };
+  assert.deepEqual(merge(base, local, remote).conflicts,
+    ['journal.2026-11-19.text']);
+});
+test('deleting a day and editing same day is a conflict', () => {
+  const base = { journal: { '2026-11-19': { text: 'original' } } };
+  const local = { journal: {} };
+  const remote = { journal: { '2026-11-19': { text: 'new' } } };
+  assert.deepEqual(merge(base, local, remote).conflicts, ['journal.2026-11-19']);
+});
+test('two browsers converge on disjoint daily journals through atomic CAS', async () => {
+  const remote = server({ u: 'Test', journal: {} });
+  const a = engine(1, 1, memoryStorage(), remote);
+  const b = engine(1, 2, memoryStorage(), remote);
+  a.initialize(await remote.load());
+  b.initialize(await remote.load());
+  assert.ok(a.enqueue({ u: 'Test', journal: { '2026-11-19': { text: 'desktop' } } }));
+  assert.ok(b.enqueue({ u: 'Test', journal: { '2026-11-20': { text: 'phone' } } }));
+  assert.equal(await a.flush(), true);
+  assert.equal(await b.flush(), true);
+  assert.equal(await a.refresh(), true);
+  assert.deepEqual(Object.keys(remote.current().journal).sort(),
+    ['2026-11-19', '2026-11-20']);
+  assert.equal(a.pending(), null);
+  assert.equal(b.pending(), null);
+});
+test('same-day conflict retains local draft and a remote copy across reload', async () => {
+  const shared = memoryStorage();
+  const remote = server({ u: 'Test', journal: {} });
+  const a = engine(1, 1, memoryStorage(), remote);
+  const b = engine(1, 2, shared, remote);
+  a.initialize(await remote.load());
+  b.initialize(await remote.load());
+  a.enqueue({ u: 'Test', journal: { '2026-11-19': { text: 'computer' } } });
+  b.enqueue({ u: 'Test', journal: { '2026-11-19': { text: 'phone' } } });
+  assert.equal(await a.flush(), true);
+  assert.equal(await b.flush(), false);
+  assert.equal(b.getStatus(), 'conflict');
+  assert.equal(remote.current().journal['2026-11-19'].text, 'computer');
+  assert.equal(b.pending().local.journal['2026-11-19'].text, 'phone');
+  assert.ok(b.conflict().paths.length > 0);
+  const reopened = engine(1, 2, shared, remote);
+  assert.equal(reopened.initialize(await remote.load()).journal['2026-11-19'].text, 'phone');
+  assert.equal(reopened.pending().local.journal['2026-11-19'].text, 'phone');
+});
+test('network fails after server commit: retry identifies acknowledged data', async () => {
+  const storage = memoryStorage(), remote = server({ u: 'Test', journal: {} });
+  let once = true;
+  const flaky = {
+    load: remote.load,
+    cas: async (base, next) => {
+      const ok = await remote.cas(base, next);
+      if (once) { once = false; throw Error('response lost after commit'); }
+      return ok;
+    }
+  };
+  const a = engine(1, 1, storage, flaky);
+  a.initialize(await remote.load());
+  a.enqueue({ u: 'Test', journal: { '2026-11-19': { text: 'preserved' } } });
+  assert.equal(await a.flush(), false);
+  assert.ok(a.pending());
+  assert.equal(await a.flush(), true);
+  assert.equal(a.pending(), null);
+  assert.equal(remote.current().journal['2026-11-19'].text, 'preserved');
+});
+test('two tabs preserve independent pending drafts in the same storage', () => {
+  const storage = memoryStorage(), remote = server({ journal: {} });
+  const a = engine(1, 1, storage, remote);
+  const b = engine(1, 2, storage, remote);
+  a.initialize({ journal: {} });
+  b.initialize({ journal: {} });
+  a.enqueue({ journal: { '2026-11-19': { text: 'a' } } });
+  b.enqueue({ journal: { '2026-11-20': { text: 'b' } } });
+  assert.notEqual(a.keys.pending, b.keys.pending);
+  assert.equal(a.pending().local.journal['2026-11-19'].text, 'a');
+  assert.equal(b.pending().local.journal['2026-11-20'].text, 'b');
+});
+test('three user identities have independent pending data and cloud writes', async () => {
+  const storage = memoryStorage();
+  for (const i of [1, 2, 3]) {
+    const remote = server({ journal: {} });
+    const app = engine(i, 1, storage, remote);
+    app.initialize(await remote.load());
+    app.enqueue({ journal: { '2026-11-19': { text: 'user-' + i } } });
+    assert.equal(await app.flush(), true);
+    assert.equal(remote.current().journal['2026-11-19'].text, 'user-' + i);
+  }
+});
+test('storage failure never acknowledges a local draft', () => {
+  const remote = server({});
+  const bad = memoryStorage();
+  bad.setItem = () => { throw Error('QuotaExceededError'); };
+  const app = engine(1, 1, bad, remote);
+  app.initialize({});
+  assert.equal(app.enqueue({ journal: { test: 1 } }), false);
+  assert.equal(app.getStatus(), 'unsafe');
+});
+test('conflict cloud selection requires a durable recovery archive', async () => {
+  const storage = memoryStorage(), remote = server({ journal: {} });
+  const a = engine(1, 1, memoryStorage(), remote);
+  const b = engine(1, 2, storage, remote);
+  a.initialize(await remote.load()); b.initialize(await remote.load());
+  a.enqueue({ journal: { entry: 'A' } });
+  b.enqueue({ journal: { entry: 'B' } });
+  await a.flush();
+  await b.flush();
+  const archiveKey = await b.resolveWithRemote();
+  assert.ok(storage.getItem(archiveKey));
+  assert.equal(JSON.parse(storage.getItem(archiveKey)).pending.local.journal.entry, 'B');
+  assert.equal(b.pending(), null);
+  assert.equal(b.getBase().journal.entry, 'A');
+});
+test('remote refresh does not overwrite an unsynced local draft', async () => {
+  const remote = server({ journal: {} });
+  const app = engine(1, 1, memoryStorage(), remote);
+  app.initialize(await remote.load());
+  app.enqueue({ journal: { '2026-11-19': 'local' } });
+  await remote.cas({ journal: {} }, { journal: { '2026-11-20': 'remote' } });
+  assert.equal(await app.refresh(), true);
+  assert.equal(app.pending(), null);
+  assert.equal(remote.current().journal['2026-11-19'], 'local');
+  assert.equal(remote.current().journal['2026-11-20'], 'remote');
+});
+
+test('a new browser tab detects but never destroys an older unsynced draft', async () => {
+  const store = memoryStorage(), remote = server({ journal: {} });
+  const previous = engine(1, 1, store, remote);
+  previous.initialize(await remote.load());
+  previous.enqueue({ journal: { '2026-11-19': { text: 'unsent on closed tab' } } });
+  const nextTab = engine(1, 3, store, remote);
+  nextTab.initialize(await remote.load());
+  assert.equal(nextTab.getStatus(), 'other-pending');
+  assert.equal(nextTab.orphaned().length, 1);
+  assert.equal(nextTab.orphaned()[0].local.journal['2026-11-19'].text,
+    'unsent on closed tab');
+  assert.ok(previous.pending(), 'New tab discarded old pending data');
+  const otherUser = engine(2, 4, store, remote);
+  otherUser.initialize(await remote.load());
+  assert.equal(otherUser.orphaned().length, 0, 'Orphans leaked across user IDs');
+});
+test('deferring a remote refresh never moves the local CAS base forward', async () => {
+  const store = memoryStorage(), remote = server({ journal: { '2026-11-19': 'base' } });
+  let editing = true;
+  const app = create({
+    uid: uid(1), tabId: tab(1), storage: store, load: remote.load,
+    cas: remote.cas, onRemote: () => !editing
+  });
+  app.initialize(await remote.load());
+  await remote.cas({ journal: { '2026-11-19': 'base' } },
+    { journal: { '2026-11-19': 'remote change' } });
+  assert.equal(await app.refresh(), false);
+  assert.equal(app.getStatus(), 'remote-pending');
+  assert.equal(app.getBase().journal['2026-11-19'], 'base');
+  app.enqueue({ journal: { '2026-11-19': 'local edit' } });
+  assert.equal(await app.flush(), false);
+  assert.equal(app.getStatus(), 'conflict');
+  assert.equal(remote.current().journal['2026-11-19'], 'remote change');
+  assert.equal(app.pending().local.journal['2026-11-19'], 'local edit');
+  editing = false;
+});
+
+test('a conflicting edit arriving during acknowledged CAS stays recoverable', async () => {
+  const store = memoryStorage();
+  const original = { u: 'Test', journal: {} };
+  const remote = server(original);
+  let app, injected = false;
+  const racing = {
+    load: remote.load,
+    cas: async (expected, next) => {
+      const committed = await remote.cas(expected, next);
+      if (committed && !injected) {
+        injected = true;
+        const newerLocal = structuredClone(app.pending().local);
+        newerLocal.journal['2026-11-20'] = { text: 'new local edit' };
+        assert.equal(app.enqueue(newerLocal), true);
+      }
+      return committed;
+    }
+  };
+  app = engine(1, 1, store, racing);
+  app.initialize(await remote.load());
+  assert.equal(app.enqueue({ u: 'Test', journal: {
+    '2026-11-19': { text: 'desktop draft' }
+  } }), true);
+  assert.equal(await remote.cas(original, { u: 'Test', journal: {
+    '2026-11-20': { text: 'phone draft' }
+  } }), true);
+  assert.equal(await app.flush(), false);
+  assert.equal(app.getStatus(), 'conflict');
+  assert.equal(remote.current().journal['2026-11-19'].text, 'desktop draft');
+  assert.equal(remote.current().journal['2026-11-20'].text, 'phone draft');
+  assert.equal(app.pending().local.journal['2026-11-20'].text, 'new local edit');
+  assert.deepEqual(app.conflict().paths, ['journal.2026-11-20.text']);
+  assert.equal(app.conflict().remote.journal['2026-11-20'].text, 'phone draft');
+  const reopened = engine(1, 1, store, remote);
+  reopened.initialize(await remote.load());
+  assert.equal(reopened.pending().local.journal['2026-11-20'].text, 'new local edit');
+  assert.deepEqual(reopened.conflict().paths, ['journal.2026-11-20.text']);
+  const archiveKey = await reopened.resolveWithRemote();
+  assert.ok(store.getItem(archiveKey), 'Local draft not archived before resolution');
+  assert.equal(JSON.parse(store.getItem(archiveKey)).pending.local.journal['2026-11-20'].text,
+    'new local edit');
+});
+
+test('disjoint second edit during CAS rebases and saves without false conflict', async () => {
+  const store = memoryStorage();
+  const original = { u: 'Test', journal: {} };
+  const remote = server(original);
+  let app, injected = false;
+  const racing = {
+    load: remote.load,
+    cas: async (expected, next) => {
+      const committed = await remote.cas(expected, next);
+      if (committed && !injected) {
+        injected = true;
+        assert.equal(app.enqueue({ u: 'Test', journal: {
+          '2026-11-19': { text: 'first draft' },
+          '2026-11-21': { text: 'second edit during send' }
+        } }), true);
+      }
+      return committed;
+    }
+  };
+  app = engine(1, 1, store, racing);
+  app.initialize(await remote.load());
+  app.enqueue({ u: 'Test', journal: {
+    '2026-11-19': { text: 'first draft' }
+  } });
+  await remote.cas(original, { u: 'Test', journal: {
+    '2026-11-20': { text: 'different device' }
+  } });
+  assert.equal(await app.flush(), true);
+  assert.equal(app.pending(), null);
+  assert.equal(app.conflict(), null);
+  const days = remote.current().journal;
+  assert.equal(days['2026-11-19'].text, 'first draft');
+  assert.equal(days['2026-11-20'].text, 'different device');
+  assert.equal(days['2026-11-21'].text, 'second edit during send');
+});
+
+test('cloud conflict resolution refuses to discard draft while editor is focused', async () => {
+  const storage = memoryStorage();
+  const remote = server({ journal: {} });
+  const first = engine(1, 1, memoryStorage(), remote);
+  let editable = false;
+  const second = create({
+    uid: uid(1), tabId: tab(2), storage,
+    load: remote.load, cas: remote.cas,
+    onRemote: () => editable
+  });
+  first.initialize(await remote.load());
+  second.initialize(await remote.load());
+  first.enqueue({ journal: { '2026-11-20': { text: 'cloud note' } } });
+  second.enqueue({ journal: { '2026-11-20': { text: 'local note' } } });
+  assert.equal(await first.flush(), true);
+  assert.equal(await second.flush(), false);
+  assert.ok(second.conflict());
+  await assert.rejects(second.resolveWithRemote(), /SYNC_REMOTE_APPLY_DEFERRED/);
+  assert.equal(second.pending().local.journal['2026-11-20'].text, 'local note');
+  assert.ok(second.conflict(), 'Conflict details disappeared before remote could render');
+  assert.equal(second.getBase().journal['2026-11-20'], undefined,
+    'CAS base advanced despite remote view being deferred');
+  editable = true;
+  const archiveKey = await second.resolveWithRemote();
+  assert.equal(second.pending(), null);
+  assert.equal(second.conflict(), null);
+  assert.ok(storage.getItem(archiveKey));
+  assert.equal(second.getBase().journal['2026-11-20'].text, 'cloud note');
+});
+
+test('same-millisecond conflict resolutions never overwrite earlier recovery archives', async () => {
+  const store = memoryStorage(), remote = server({ journal: {} });
+  const app = create({
+    uid: uid(1), tabId: tab(1), storage: store,
+    load: remote.load, cas: remote.cas, now: () => 1700000000000
+  });
+  app.initialize(await remote.load());
+  const other = engine(1, 2, memoryStorage(), remote);
+  other.initialize(await remote.load());
+  app.enqueue({ journal: { '2026-11-19': 'first local' } });
+  other.enqueue({ journal: { '2026-11-19': 'first remote' } });
+  await other.flush();
+  assert.equal(await app.flush(), false);
+  const archiveA = await app.resolveWithRemote();
+  assert.ok(store.getItem(archiveA));
+  const newBase = await remote.load();
+  app.enqueue({ journal: { '2026-11-19': 'first remote',
+    '2026-11-20': 'second local' } });
+  await remote.cas(newBase, { journal: {
+    '2026-11-19': 'first remote', '2026-11-20': 'second remote'
+  } });
+  assert.equal(await app.flush(), false);
+  const archiveB = await app.resolveWithRemote();
+  assert.notEqual(archiveA, archiveB);
+  assert.equal(JSON.parse(store.getItem(archiveA)).pending.local.journal['2026-11-19'],
+    'first local');
+  assert.equal(JSON.parse(store.getItem(archiveB)).pending.local.journal['2026-11-20'],
+    'second local');
+});
+
+test('different task additions survive two devices with the same baseline and retain stable IDs',()=>{
+ const base={day:'2026-11-24',tasks:[{t:'Old task'}]},a={id:'a',t:'From desktop'},b={id:'b',t:'From phone'};
+ const result=merge(base,{...base,tasks:[...base.tasks,a]},{...base,tasks:[...base.tasks,b]});
+ assert.deepEqual(result.conflicts,[]);assert.deepEqual(result.merged.tasks,[...base.tasks,b,a]);
+});
+test('rollover prevents a stale offline task being attached to the wrong day',()=>{
+ const base={day:'2026-11-24',tasks:[]},local={...base,tasks:[{id:'a',t:'on Tuesday'}]},remote={day:'2026-11-25',tasks:[],hist:{'2026-11-24':[]}};
+ const result=merge(base,local,remote);assert.ok(result.conflicts.includes('day'));assert.deepEqual(result.merged.tasks,[]);
+});
+test('choosing a conflicting note preserves unrelated changes from each side and retains both originals',async()=>{
+ const base={future:{a:'Original'},x:0,y:0},db=server(base),st=memoryStorage(),m=engine(1,1,st,db);m.initialize(base);
+ m.enqueue({future:{a:'Local'},x:1,y:0});await db.cas(base,{future:{a:'Cloud'},x:0,y:2});
+ assert.equal(await m.flush(),false);assert.deepEqual(m.conflict().paths,['future.a']);assert.equal(await m.resolveFields(true),true);
+ assert.deepEqual(db.current(),{future:{a:'Local'},x:1,y:2});const backup=[...st.items].find(([k])=>k.includes('.kept.'));
+ assert.equal(JSON.parse(backup[1]).remote.future.a,'Cloud');
+});

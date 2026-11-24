@@ -1,3 +1,13 @@
+# 24 Kasım 2026 · Ay sonu, çevrimdışı kayıt ve günlük araçlar
+
+Aylık yanıtlar gönderildikten sonra aynı ayın son günü Türkiye saatiyle gece yarısına kadar düzenlenebilir. Raporun gönderim kilidi ve arşiv anahtarı korunur. İlk ayın uygunluğu kayıt tarihinden itibaren kullanıcının kendi görev, günlük veya tamamlanmış odak kaydına bağlıdır. Takvim ayın 28, 29, 30 veya 31 gün çekmesini, artık yıl kurallarını ve aralık-ocak geçişini kapsar.
+
+`npm test` ile 358 kontrol geçti. Eklenen kontroller iki cihazın bağımsız görevleri, aynı notun çakışan sürümleri, kullanıcıya ve güne göre ayrılmış çevrimdışı kayıtlar, veri tekrarının engellenmesi, arşiv, bildirim hareketleri, konu değişimi ve saat sınırlarını aşan Pomodoro aralıklarını kapsar. `python scripts/build-preview.py` izole önizlemeyi oluşturdu. PostgreSQL testinde iki kurgusal hesapla yeni kayıt, mevcut profil, eşzamanlı sürüm karşılaştırması, eski istemcinin geç kalmış yazısı, hesap erişimi ve tarayıcı doğrulaması sınandı. Şema dağıtımı toplu veri güncellemesi içermez.
+
+Tarayıcı senaryoları form üzerinden arşivden geri taşımayı, elle yazılan taslakla görev önerisini birlikte kullanmayı, kod girişini ve gece yarısına kadar aylık düzeltmeyi kapsar. Çevrimdışı yeniden açılış, önceden çevrimiçi giriş yapılan tarayıcıda görev ve not yazıp aynı hesaba eşitlemeyle sınanır. Haber kaynağı geçerli, güncel bir yanıt veremezse kaynaklı günlük bilgi gösterilir. Önceki sürümlerde silinmiş kayıtlar bu arşivde yeniden oluşturulamaz.
+
+---
+
 # 22 Kasım 2026 — Güvenlik başlıkları, yayından kaldırılan dosyalar ve kayıtlı kullanıcı adları (yayın adayı)
 
 - `vercel.json` tüm yanıtlara `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` ve `Permissions-Policy` ekler. CSP kaynakları sitenin kendi dosyaları, Google Fonts, Supabase projesi ve izin verilen veri/blob kaynaklarıyla sınırlar; çerçeveleme ve eklenti nesneleri kapalıdır. `<base>` adresi ve form gönderimleri aynı origin ile sınırlıdır. Mevcut satır içi betik ve `onclick` yapısı nedeniyle `'unsafe-inline'` korunur, `'unsafe-eval'` yoktur.

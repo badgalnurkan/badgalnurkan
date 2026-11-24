@@ -1338,7 +1338,7 @@ body{font-size:1rem!important}
   #login-portal.v13131-portal .portal-disc,#login-portal.v13131-portal .portal-ring{animation:none!important}
 }
 /* Shared web motion, inspired by Apple's motion guidance. */
-:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:1600}
+:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:780}
 #app{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main,.shell main.swap{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main.an{animation:pgIn .34s var(--motion-ease) both}
@@ -1470,7 +1470,7 @@ body{font-size:1rem!important}
 #login-portal.entry-portal .portal-brand{position:relative;z-index:2;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:entryBrandPass .58s linear .18s both!important}
 #login-portal.entry-portal .portal-title{font-family:var(--brand-title-font);font-size:clamp(1.1rem,4.5vw,1.65rem);font-weight:600;line-height:1.3;text-wrap:balance;text-align:center;color:var(--acc)}
 #login-portal.entry-portal .portal-ring{position:absolute;inset:-2px;display:block;width:auto;height:auto;border:2px solid var(--ln);border-top-color:var(--acc);border-right-color:var(--acc);border-radius:50%;animation:entrySpinner .9s linear infinite!important}
-#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .84s var(--motion-ease) .76s both!important}
+#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .64s var(--motion-ease) .08s both!important}
 @keyframes entryCirclePass{0%{transform:translate(-50%,-50%) scale(0);animation-timing-function:var(--motion-return)}58.62069%{transform:translate(-50%,-50%) scale(1.5);animation-timing-function:var(--motion-return)}100%{transform:translate(-50%,-50%) scale(0)}}
 @keyframes entryBrandPass{0%{opacity:1;transform:scale(1);animation-timing-function:var(--motion-return)}58.62069%{opacity:1;transform:scale(1.08);animation-timing-function:var(--motion-return)}100%{opacity:0;transform:scale(1)}}
 @keyframes entrySpinner{to{transform:rotate(360deg)}}
@@ -1710,6 +1710,8 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 .login-wrap.auth-recovery .box{width:100%;max-width:28rem;margin-inline:auto}
 .login-wrap.auth-register .signup-field-error{font-weight:750;color:var(--no);margin:.15rem 0 .6rem;font-size:.91rem}
 .signup-field-error:empty{display:none}
+#sync-details pre{max-height:12rem;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+#sync-status{font-size:.78rem}
 #signup-form [aria-invalid="true"]{border-color:var(--no);border-width:2px}
 #signup-form .signup-terms{display:flex;align-items:center;justify-content:center;gap:.7rem;margin:.8rem auto .3rem;max-width:29rem}
 #signup-form .signup-terms label{margin:0;cursor:pointer}
@@ -1718,6 +1720,17 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 #signup-terms:checked::after{content:'';width:.65rem;height:.32rem;border:solid var(--on-acc);border-width:0 0 2px 2px;transform:translateY(-.08rem) rotate(-45deg)}
 .entry-confirmed{display:block;font:600 .85rem/1.4 system-ui;margin-top:.45rem}
 .signup-docs{text-align:center;margin:.3rem 0 .8rem}
+/* The credential request never covers the verification dialog or captures input. */
+.login-busy-overlay{background:color-mix(in srgb,var(--bg) 24%,transparent);backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:none}
+body:has(#browser-verify-gate) #auth-busy{display:none}
+.login-busy-orbit{width:min(38vw,8rem);background:var(--card);font-size:1rem}
+#login-portal.entry-portal{pointer-events:none;background:color-mix(in srgb,var(--bg) 48%,transparent)}
+#login-portal.entry-portal .portal-disc{opacity:.24!important;animation-duration:.35s!important}
+#login-portal.entry-portal .portal-brand{animation-duration:.22s!important}
+.notification-banner{touch-action:none}
+.notification-banner.notice-to-inbox.is-leaving{animation:noticePark .2s ease-out both}
+@keyframes noticePark{to{opacity:0;transform:translateY(-110%)}}
+.notification-item{touch-action:pan-y}
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -1731,6 +1744,11 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 <script src="/turnstile-auth.js"></script>
 <script src="/quick-session.js"></script>
 <script src="/growing-text.js"></script>
+<script src="/day-tools.js"></script>
+<script src="/daily-facts.js"></script>
+<script src="/cross-device-sync.js"></script>
+<script src="/offline-pad.js"></script>
+<script src="/account-sync.js"></script>
 <script>
 const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
 const TITLE="Improvin' your day";
@@ -1753,7 +1771,10 @@ DB=DBraw&&DBraw.accounts?DBraw:{accounts:{},last:'',lastUser:'',lock:{},lang:'en
 if(!DB.lang)DB.lang='en';if(DB.beige===undefined)DB.beige=false;if(!DB.lastUser)DB.lastUser='';
 document.documentElement.lang=DB.lang;
 let pushT=null;
-function schedulePush(){clearTimeout(pushT);if(!A?.authUid)return;pushT=setTimeout(()=>{sbPush().then(ok=>{if(!ok&&A)console.warn('Cloud sync could not complete')})},850)}
+function schedulePush(){
+ clearTimeout(pushT);if(!A?.authUid||typeof IYCloud==='undefined'||!IYCloud.owns(A.authUid))return;
+ IYCloud.enqueue();if(navigator.onLine)pushT=setTimeout(()=>{sbPush().catch(()=>{})},650);
+}
 const save=()=>{
   try{
     if(A)A.updatedAt=Date.now();
@@ -1803,6 +1824,9 @@ window.addEventListener('storage',e=>{
     const same=current&&current.authUid===A.authUid;
     const moved=!same&&A.authUid?Object.values(nd.accounts).find(x=>x?.authUid===A.authUid):null;
     if(same||moved){
+      if(A.authUid&&typeof IYCloud!=='undefined'&&IYCloud.owns(A.authUid)){
+        DB.accounts[A.u]=A;IYCloud.check();return;
+      }
       A=norm(same?current:moved);
       if(view==='app')renderAppOrAuth();
     }else{
@@ -1864,6 +1888,7 @@ function softPaint(){
 }
 let pageSwapTimer=0;
 function goTo(v,p,push=true){
+  if(v!=='app'||p!=='rep')document.getElementById('monthly-correction')?.remove();
   if(v==='setup'&&view!=='setup')formDat.ack=false;
   if(typeof taskReorder!=='undefined'&&taskReorder)cancelTaskReorder();
   if(v==='app'&&p!==pg)resetMobileDockForPage();
@@ -2514,8 +2539,15 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-23-month-calendar-05';
+const SITE_RELEASE='2026-11-24-daily-tools-01';
 const SITE_CHANGES=[
+ {date:'2026-11-24',trTitle:'Ay sonu raporları ve günlük araçlar',enTitle:'Month-end reports and daily tools',items:[
+  ['Gönderdiğin aylık yanıtları ayın son günü Türkiye saatiyle gece yarısına kadar düzenleyebilirsin.','You can edit submitted monthly answers until midnight, Istanbul time, on the last day of the month.'],
+  ['Motivasyonun altında günlük bilgi, yapılacaklarda rastgele görev önerisi ve Pomodoro’da 28 günlük kişisel odak istatistikleri var.','Find a daily discovery below motivation, task suggestions in your to-do list, and 28-day personal focus statistics in Pomodoro.'],
+  ['Süresi dolan proje hatırlatmaları ve geleceğe notlar arşivden düzenlenebilir, geri taşınabilir veya silinebilir.','Expired project reminders and future notes can be edited, restored or deleted from the archive.'],
+  ['Bu cihazda giriş yaptıktan sonra çevrimdışı görev ve not kaydedebilirsin. Aynı kayıttaki çakışmalar eşitleme ekranında gösterilir.','After signing in on this device, you can save tasks and notes offline. Conflicting edits appear in the sync panel.'],
+  ['Giriş geçişi kısaldı. Bildirimi sağa kaydırmak siler, yukarı kaydırmak bildirim merkezinde tutar.','Sign-in transitions are shorter. Swipe a notification right to delete it or up to keep it in the inbox.']]},
+
   {date:'2026-11-23',trTitle:'Aylık rapor takvimi',enTitle:'Monthly report calendar',items:[
   ['İlk aylık rapor kayıt olduğun ayda açılır. O ay kayıt tarihinden itibaren bir görev, günlük veya tamamlanmış odak kaydı gerekir.','Your first monthly report opens in your signup month if you record a task, journal entry or completed focus session after joining.'],
   ['Aylık rapor kartında ilgili ayın adı, ayın son günündeki açılış ve sonraki ayın ilk günündeki kapanış Türkiye saatiyle gösterilir.','The monthly report shows its month, its opening on the final day and its closing on the first day of the following month in Istanbul time.']]},
@@ -2614,10 +2646,17 @@ function siteChangesContent(){
  return `<h2>${tr()?'Site güncellenmiştir!':'The site has been updated!'}</h2><p class="mut">${tr()?'Nelerin değiştiğini buradan takip edebilirsin.':'See what has changed here.'}</p><div class="release-list">${SITE_CHANGES.map(release=>`<article class="release-entry"><time datetime="${release.date}">${new Date(release.date+'T12:00').toLocaleDateString(tr()?'tr-TR':'en-GB',{day:'numeric',month:'long',year:'numeric'})}</time><h3>${tr()?release.trTitle:release.enTitle}</h3><ul>${release.items.map(pair=>`<li>${esc(pair[tr()?0:1])}</li>`).join('')}</ul></article>`).join('')}</div><button class="g" onclick="closeModal('release-details')">${tr()?'Kapat':'Close'}</button>`;
 }
 function noticeOwner(){return A||DB}
+// Release announcements are public and can be dismissed from either screen on this device.
+// Personal reminders remain in the verified account’s inbox.
+function dismissPublicRelease(id){
+ if(!id.startsWith('release:'))return;
+ (DB.dismissedReleases||={})[id]=true;
+ for(const owner of [DB,A])if(Array.isArray(owner?.notifications))owner.notifications=owner.notifications.filter(item=>item.id!==id);
+}
 function ensureNoticeState(){
  const owner=noticeOwner();
  if(!Array.isArray(owner.notifications))owner.notifications=[];
- owner.notifications=owner.notifications.filter(item=>item&&/^[a-zA-Z0-9:._-]{1,180}$/.test(String(item.id||''))&&['release','project','tasks','pomo-five','pomo-break','pomo-focus'].includes(item.type)&&Number.isFinite(Date.parse(item.at)));
+ owner.notifications=owner.notifications.filter(item=>item&&!(item.type==='release'&&DB.dismissedReleases?.[item.id])&&/^[a-zA-Z0-9:._-]{1,180}$/.test(String(item.id||''))&&['release','project','tasks','pomo-five','pomo-break','pomo-focus'].includes(item.type)&&Number.isFinite(Date.parse(item.at)));
  if(!owner.noticeDelivered||typeof owner.noticeDelivered!=='object'||Array.isArray(owner.noticeDelivered))owner.noticeDelivered={};
  if(!owner.notificationPrefs||typeof owner.notificationPrefs!=='object')owner.notificationPrefs={};
  return owner;
@@ -2632,7 +2671,7 @@ function notificationCopy(item){
  return {title:tr()?'Yeniden odaklanma zamanı':'Time to focus again',body:tr()?'Molan bitti; yeni odak oturumun başladı.':'Your break is over; a new focus session has started.'};
 }
 function notificationButton(){
- const owner=ensureNoticeState(),unread=owner.notifications.some(item=>!item.read)||!owner.noticeDelivered['release:'+SITE_RELEASE];
+ const owner=ensureNoticeState(),unread=owner.notifications.some(item=>!item.read)||(!owner.noticeDelivered['release:'+SITE_RELEASE]&&!DB.dismissedReleases?.['release:'+SITE_RELEASE]);
  return `<button type="button" id="notification-toggle" class="notification-toggle ${unread?'has-unread':''}" onclick="openNotifications()" aria-haspopup="dialog" aria-label="${tr()?'Bildirimler':'Notifications'}${unread?(tr()?', yeni bildirim var':', new notifications'):''}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg><span class="notification-dot" aria-hidden="true"></span></button>`;
 }
 function updateNotificationBadge(){
@@ -2652,26 +2691,33 @@ function dismissTopNotification(banner,direction=0){
 }
 function notificationSwipeDirection(dx,dy,width){
  const threshold=Math.max(44,Math.min(88,width*.18));
+ if(dy<=-threshold&&-dy>Math.abs(dx)*1.3)return 'up';
  return Math.abs(dx)>=threshold&&Math.abs(dx)>Math.abs(dy)*1.3?Math.sign(dx):0;
 }
-function bindNotificationSwipe(banner){
+function bindNotificationSwipe(banner,inbox=false){
  let start=null,blockClick=false;
- const arm=()=>{clearTimeout(banner._noticeTimer);banner._noticeTimer=setTimeout(()=>dismissTopNotification(banner),8000)};
+ const arm=()=>{if(inbox)return;clearTimeout(banner._noticeTimer);banner._noticeTimer=setTimeout(()=>dismissTopNotification(banner),8000)};
  const reset=()=>{banner.classList.remove('is-dragging');banner.style.transform='';banner.style.opacity='';start=null;arm()};
  const begin=(x,y,id)=>{if(banner.classList.contains('is-leaving'))return;clearTimeout(banner._noticeTimer);blockClick=false;start={x,y,id,active:false}};
  const move=(x,y,id)=>{
   if(!start||start.id!==id)return;const dx=x-start.x,dy=y-start.y;
-  if(!start.active&&Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)*.9){reset();return}
-  if(!start.active&&Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)*1.3){start.active=true;banner.style.animation='none';banner.classList.add('is-dragging');try{banner.setPointerCapture?.(id)}catch(_){}}
+  if(!start.active&&(inbox?Math.abs(dy):dy)>10&&(inbox?Math.abs(dy):dy)>Math.abs(dx)*.9){reset();return}
+  if(!start.active&&((Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)*1.3)||(-dy>10&&-dy>Math.abs(dx)*1.3))){start.active=-dy>Math.abs(dx)?'up':'side';banner.style.animation='none';banner.classList.add('is-dragging');try{banner.setPointerCapture?.(id)}catch(_){}}
   if(!start.active)return;
   const opacity=Math.max(.25,1-Math.abs(dx)/Math.max(1,banner.offsetWidth));
-  banner.style.transform=`translateX(${dx}px)`;banner.style.opacity=String(opacity);
+  banner.style.transform=start.active==='up'?`translateY(${Math.min(0,dy)}px)`:`translateX(${dx}px)`;banner.style.opacity=String(opacity);
   banner.style.setProperty('--notice-drag-x',dx+'px');banner.style.setProperty('--notice-drag-opacity',String(opacity));
  };
  const finish=(x,y,id)=>{
   if(!start||start.id!==id)return;const wasActive=start.active,direction=wasActive?notificationSwipeDirection(x-start.x,y-start.y,banner.offsetWidth):0;
   blockClick=wasActive;start=null;
-  if(direction)dismissTopNotification(banner,direction);else reset();
+  if(inbox){
+    reset();if(direction===1)banner._deleteNotice?.();
+  }else if(direction==='up'){banner.classList.add('notice-to-inbox');dismissTopNotification(banner)}
+  else if(direction){
+    dismissTopNotification(banner,direction);
+    if(direction===1&&banner._deleteNotice)banner._deleteNotice();
+  }else reset();
   try{if(banner.hasPointerCapture?.(id))banner.releasePointerCapture(id)}catch(_){}
  };
  banner.addEventListener('click',event=>{if(blockClick){blockClick=false;event.preventDefault();event.stopImmediatePropagation()}},true);
@@ -2691,27 +2737,36 @@ function bindNotificationSwipe(banner){
 }
 function showTopNotification(item){
  if(document.visibilityState!=='visible')return;
- if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',1600)+200);return}
+ if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',780)+70);return}
  let stack=document.getElementById('notification-banners');
  if(!stack){stack=document.createElement('div');stack.id='notification-banners';stack.className='notification-banners';stack.setAttribute('aria-live','polite');stack.setAttribute('aria-relevant','additions');document.body.appendChild(stack)}
  const copy=notificationCopy(item),banner=document.createElement('div');banner.className='notification-banner';banner.dataset.notificationId=item.id;
  banner.innerHTML=`<button class="notification-banner-main" onclick="openNotification('${item.id}')"><small>${tr()?'BİLDİRİM':'NOTIFICATION'}</small><strong>${esc(copy.title)}</strong><span>${esc(copy.body)}</span></button><button class="notification-banner-close" aria-label="${tr()?'Bildirimi gizle':'Dismiss alert'}" onclick="dismissTopNotification(this.parentElement)">×</button>`;
+ const recipient=noticeOwner();banner._noticeOwner=recipient;banner._deleteNotice=()=>{if(noticeOwner()===recipient)deleteNotification(item.id)};
  stack.appendChild(banner);while(stack.children.length>3)removeTopNotification(stack.firstElementChild);
  bindNotificationSwipe(banner);
 }
 function addNotification(id,type,data={},announce=true){
- const owner=ensureNoticeState();if(owner.noticeDelivered[id])return false;
+ const owner=ensureNoticeState();if(owner.noticeDelivered[id]||(type==='release'&&DB.dismissedReleases?.[id]))return false;
  const inbox=document.getElementById('notifications-modal');
  const item={id,type,data,at:new Date().toISOString(),read:!!inbox&&!inbox.classList?.contains('is-closing')};
  owner.noticeDelivered[id]=Date.now();owner.notifications.unshift(item);owner.notifications=owner.notifications.slice(0,200);
  save();updateNotificationBadge();
- if(document.getElementById('notification-list'))document.getElementById('notification-list').innerHTML=notificationList();
+ if(document.getElementById('notification-list')){document.getElementById('notification-list').innerHTML=notificationList();bindInboxRows()}
   const clearButton=document.getElementById('notification-clear');if(clearButton&&!clearButton.classList.contains('is-emptying'))clearButton.disabled=!owner.notifications.length;
  if(announce)showTopNotification(item);return true;
 }
 function ensureReleaseNotification(){addNotification('release:'+SITE_RELEASE,'release',{},true)}
 function notificationList(){
- return ensureNoticeState().notifications.map(item=>{const copy=notificationCopy(item);return `<article class="notification-item"><button class="notification-item-main" onclick="openNotification('${item.id}')"><strong>${esc(copy.title)}</strong><span>${esc(copy.body)}</span><time datetime="${esc(item.at)}">${new Date(item.at).toLocaleString(tr()?'tr-TR':'en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time></button></article>`}).join('')||`<p class="mut">${tr()?'Bildirimin yok. Yeni hatırlatmalar burada görünecek.':'No notifications. New reminders will appear here.'}</p>`;
+ return ensureNoticeState().notifications.map(item=>{const copy=notificationCopy(item);return `<article class="notification-item" data-notice="${esc(item.id)}"><button class="notification-item-main" onclick="openNotification('${item.id}')"><strong>${esc(copy.title)}</strong><span>${esc(copy.body)}</span><time datetime="${esc(item.at)}">${new Date(item.at).toLocaleString(tr()?'tr-TR':'en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time></button></article>`}).join('')||`<p class="mut">${tr()?'Bildirimin yok. Yeni hatırlatmalar burada görünecek.':'No notifications. New reminders will appear here.'}</p>`;
+}
+function bindInboxRows(){
+ const owner=noticeOwner();
+ for(const row of document.querySelectorAll?.('#notification-list [data-notice]')||[]){
+   if(row._deleteNotice)continue;
+   row._deleteNotice=()=>{if(noticeOwner()===owner)deleteNotification(row.dataset.notice)};
+   bindNotificationSwipe(row,true);
+ }
 }
 function notificationClearButton(){
  const label=tr()?'Tüm bildirimleri sil':'Clear all notifications';
@@ -2721,6 +2776,7 @@ function openNotifications(){
  const owner=ensureNoticeState();owner.notifications.forEach(item=>item.read=true);save();updateNotificationBadge();
  const prefs=owner.notificationPrefs;
  openModal('notifications-modal',`<div class="notification-heading"><h2>${tr()?'Bildirimler':'Notifications'}</h2>${notificationClearButton()}<button class="g s" onclick="closeModal('notifications-modal')" aria-label="${tr()?'Bildirimleri kapat':'Close notifications'}">×</button></div><div id="notification-list" class="notification-list">${notificationList()}</div>${A?`<details class="notification-preferences"><summary>${tr()?'Hatırlatma tercihleri':'Reminder preferences'}</summary>${[['projects',tr()?'Proje hatırlatmaları':'Project reminders'],['tasks',tr()?'Günlük görevler':'Daily tasks'],['pomo',tr()?'Pomodoro uyarıları':'Pomodoro alerts']].map(([key,label])=>`<label><input type="checkbox" ${prefs[key]===false?'':'checked'} onchange="setNotificationPreference('${key}',this.checked)">${label}</label>`).join('')}<p class="mut">${tr()?'Görev hatırlatmaları: Türkiye saatiyle 09.00, 14.00 ve 19.00. Site açıkken çalışır; geri döndüğünde yalnızca en son zaman dilimi hatırlatılır.':'Task reminders: 09:00, 14:00 and 19:00 Türkiye time. They run while the site is open; on return, only the latest time slot is shown.'}</p></details>`:''}`);
+ bindInboxRows();
 }
 function clearNotifications(){
  const owner=ensureNoticeState(),button=document.getElementById('notification-clear');
@@ -2729,11 +2785,12 @@ function clearNotifications(){
  const purge=()=>{
   if(ensureNoticeState()!==owner)return;
   const current=owner;
+  for(const id of ids)dismissPublicRelease(id);
   current.notifications=current.notifications.filter(item=>!ids.has(item.id));
   save();updateNotificationBadge();
   for(const banner of document.querySelectorAll?.('.notification-banner')||[])if(ids.has(banner.dataset.notificationId))dismissTopNotification(banner);
   const list=document.getElementById('notification-list');
-  if(list){list.innerHTML=notificationList();motionReveal(list)}
+  if(list){list.innerHTML=notificationList();bindInboxRows();motionReveal(list)}
  };
  const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  button.disabled=true;
@@ -2746,9 +2803,10 @@ function clearNotifications(){
 }
 function setNotificationPreference(key,enabled){if(A&&['projects','tasks','pomo'].includes(key)){ensureNoticeState().notificationPrefs[key]=!!enabled;save()}}
 function deleteNotification(id){
- const owner=ensureNoticeState();owner.notifications=owner.notifications.filter(item=>item.id!==id);save();updateNotificationBadge();
+ const owner=ensureNoticeState();dismissPublicRelease(id);owner.notifications=owner.notifications.filter(item=>item.id!==id);save();updateNotificationBadge();
  for(const banner of document.querySelectorAll?.('.notification-banner')||[])if(banner.dataset.notificationId===id)dismissTopNotification(banner);
- const list=document.getElementById('notification-list');if(list){list.innerHTML=notificationList();motionReveal(list)}
+ const list=document.getElementById('notification-list');if(list){list.innerHTML=notificationList();bindInboxRows();motionReveal(list)}
+ const clear=document.getElementById('notification-clear');if(clear)clear.disabled=!owner.notifications.length;
 }
 function openNotification(id){
  const item=ensureNoticeState().notifications.find(item=>item.id===id);if(!item)return;
@@ -2768,12 +2826,18 @@ function expireTimedRecords(now=Date.now()){
  for(const [key,value] of Object.entries(A.future||{})){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(key))continue;
   const meta=A.futureMeta?.[key]||{},created=Number(meta.createdAt),wasFuture=meta.expireAfterDay===key||(Number.isFinite(created)&&created>0&&istanbulDayKey(new Date(created))<key);
-  if(key<day&&wasFuture){delete A.future[key];if(A.futureMeta)delete A.futureMeta[key];changed=true}
-  else if(key>=day&&meta.expireAfterDay!==key){(A.futureMeta||={})[key]={...meta,expireAfterDay:key};changed=true}
+  if(key<day&&wasFuture){
+    const id='note:'+key+':'+(meta.createdAt||key);
+    (A.timedArchive||={})[id]||={kind:'note',day:key,text:value,meta:{...meta},expiredAt:now};
+    delete A.future[key];if(A.futureMeta)delete A.futureMeta[key];changed=true}
+  else if(key>day&&meta.expireAfterDay!==key){(A.futureMeta||={})[key]={...meta,expireAfterDay:key};changed=true}
  }
  for(const project of A.projects||[]){
   const due=projectReminderTime(project);
-  if(Number.isFinite(due)&&due<=now){project.reminderEnabled=false;delete project.reminderAt;changed=true}
+  if(Number.isFinite(due)&&due<=now){
+    const id=projectId(project),key='reminder:'+id+':'+due;
+    (A.timedArchive||={})[key]||={kind:'reminder',projectId:id,day:istanbulDayKey(new Date(due)),text:project.reminderLabel||project.n,expiredAt:now};
+    project.reminderEnabled=false;delete project.reminderAt;changed=true}
  }
  if(changed)save();return changed;
 }
@@ -2783,7 +2847,7 @@ function checkAppReminders(now=Date.now()){
  if(owner.notificationPrefs.projects!==false){
   for(const project of A.projects||[]){
    const due=projectReminderTime(project);if(!Number.isFinite(due)||due>now)continue;
-   addNotification('project:'+projectId(project)+':'+due,'project',{name:project.n});
+   addNotification('project:'+projectId(project)+':'+due,'project',{name:project.reminderLabel||project.n});
   }
  }
  const expired=expireTimedRecords(now);if(expired&&['home','pc'].includes(pg))renderPage();
@@ -2835,6 +2899,10 @@ function welcomeScreen(){
  <div class="welcome-footer-bar"><div>© 2026 nurkancanbulat</div><a class="welcome-contact" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=nurkancanbulat89%40gmail.com" target="_blank" rel="noopener noreferrer">${t('contact')} ↗</a><div class="social-links"><a href="https://tiktok.com/@badgalnurkan" target="_blank" rel="noopener">TikTok</a><a href="https://instagram.com/badgalnurkann" target="_blank" rel="noopener">Instagram</a><a href="https://x.com/badgalnurk" target="_blank" rel="noopener">X</a></div></div></div>`;
 }
 function renderAppOrAuth(){
+ for(const banner of document.querySelectorAll?.('.notification-banner')||[])if(banner._noticeOwner!==noticeOwner())removeTopNotification(banner);
+ const syncDialog=document.getElementById('sync-details');if(syncDialog&&syncDialog._owner!==A?.authUid)syncDialog.remove();
+ const archiveDialog=document.getElementById('timed-archive');if(archiveDialog&&archiveDialog._owner!==A)archiveDialog.remove();
+ const correction=document.getElementById('monthly-correction');if(correction&&(correction._reportOwner!==A||view!=='app'||pg!=='rep'))correction.remove();
  if(!A){document.getElementById('notification-banners')?.remove();document.getElementById('notifications-modal')?.remove()}
 
   if(A){try{sessionStorage.setItem('b1.view','app')}catch(e){}shell();return}
@@ -2948,7 +3016,7 @@ function playWelcomeTransition(cb,codeApproved=false){
   let cleaned=false,fallback=0;
   const cleanup=()=>{if(cleaned)return;cleaned=true;clearTimeout(fallback);root.remove();if(cb)cb()};
   root.addEventListener('animationend',e=>{if(e.target===root&&e.animationName==='entryPortalOut')cleanup()});
-  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',1600)+200);
+  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',780)+70);
 }
 function goHome(){reportDetail='';stopTimers();if(A?.loginMethod!=='google')sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 function backToLogin(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
@@ -2956,6 +3024,7 @@ function backToLogin(){reportDetail='';stopTimers();sbClear();A=null;A0=null;log
 function langBtns(short){return ['en','tr'].map(l=>`<button class="${DB.lang===l?'on':''}" onclick="pickLang('${l}')" title="${LANG_NAMES[l]}" aria-label="${LANG_NAMES[l]}">${short?l.toUpperCase():LANG_NAMES[l]}</button>`).join('')}
 function pickLang(l){setLang(l);renderAppOrAuth()}
 function openModal(id,html){
+  if(id==='browser-verify-gate')document.getElementById('auth-busy')?.remove();
   const previous=document.getElementById(id);if(previous){if(previous.classList.contains('is-closing'))previous.remove();else return;}
   const d=document.createElement('div');d.id=id;d.className='modal';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
   if(id==='day-modal')d.dataset.kind='day';
@@ -3078,7 +3147,8 @@ async function finishCloudEntry(j,preferredName,method,options,codeApproved,stil
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
   if(!fromLocal&&deviceAccountCount()>=MAX_DEVICE_ACCOUNTS){sbClear();throw Object.assign(Error('DEVICE_ACCOUNT_LIMIT'),{code:'DEVICE_ACCOUNT_LIMIT'})}
   const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
-  const a=norm(fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
+  const pending=typeof IYCloud==='undefined'?null:await IYCloud.start(uid,fromCloud);
+  const a=norm(pending||fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
   bindReportCalendar(a,j.user,!fromCloud&&!fromLocal);
   applyServerProgressPolicy(a,progressPolicy);
   a.u=username;a.authUid=uid;a.accountOrigin='cloud';a.email=String(j.user.email||a.email||'').toLowerCase();a.mail=a.email;
@@ -3091,6 +3161,7 @@ async function finishCloudEntry(j,preferredName,method,options,codeApproved,stil
   if(codeApproved)closeModal('browser-verify-gate');
   goTo('app','home');
   if(options.greet||codeApproved)playWelcomeTransition(undefined,codeApproved||options.codeApproved);
+  if(typeof IYCloud!=='undefined')IYCloud.afterEntry();
   if(!fromCloud)await sbPush();
   return a;
 }
@@ -3519,6 +3590,10 @@ function updateIstanbulClock(){
   const day=istanbulDayKey();
   if(trigger.dataset.day===day)return;
   if(pg==='rep')P.rep();
+  if(pg==='home'){
+    const fact=document.getElementById('daily-fact');
+    if(fact&&fact.dataset.day!==day){fact.outerHTML=IYFacts.card(day,tr());IYFacts.refresh(day,tr())}
+  }
   trigger.dataset.day=day;
   trigger.textContent=fmt(day);
   const mini=$('#mini-cal');
@@ -3638,9 +3713,9 @@ function shell(){
   const firstShell=!document.querySelector('.shell aside');
   document.querySelectorAll('body > #mini-cal').forEach(el=>el.remove());
   const oldBackdrop=document.getElementById('mini-backdrop');if(oldBackdrop)oldBackdrop.remove();
-  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" style="--nav-indicator-x:${Math.max(0,NAV.findIndex(([k])=>k===pg))*100}%" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')" aria-label="${esc(navLabel(k))}" title="${esc(navLabel(k))}">${navIcon(k)}<span class="nav-label">${navLabel(k)}</span><span class="nav-label-mobile" aria-hidden="true">${navShortLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button><button type="button" class="g s" id="sync-status" hidden onclick="IYCloud.renderDetails()"></button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" style="--nav-indicator-x:${Math.max(0,NAV.findIndex(([k])=>k===pg))*100}%" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')" aria-label="${esc(navLabel(k))}" title="${esc(navLabel(k))}">${navIcon(k)}<span class="nav-label">${navLabel(k)}</span><span class="nav-label-mobile" aria-hidden="true">${navShortLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
-  renderPage();setTimeout(checkAppReminders,0);
+  if(typeof IYCloud!=='undefined')IYCloud.badge();renderPage();setTimeout(checkAppReminders,0);
   requestAnimationFrame(()=>{centerNav(true);resetMobileDockForPage()});
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),650)}
   const cal=$('#mini-cal');if(cal&&cal.parentElement!==document.body)document.body.appendChild(cal);
@@ -3710,9 +3785,11 @@ P.home=()=>{
     return`<div class="task project-task"><span>${esc(p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
   }).join('');
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
+  ${IYFacts.card(istanbulDayKey(),tr())}
   <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="2000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/2000</span></div></div>
-  <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
+  <div class="card"><div class="row report-heading"><h2>${t('projectReminders')}</h2>${IYDayTools.archiveButton()}</div>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
+  IYFacts.refresh(istanbulDayKey(),tr());
 };
 function updateJournalCounter(el){const e=document.getElementById('journal-counter');if(e)e.textContent=String(el?.value?.length||0)+'/2000'}
 function saveJournal(){
@@ -3796,7 +3873,7 @@ P.todo=()=>{
     ?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.')
     :t('addTask');
   const todayTasksMarkup=renderedTodayTasks||`<p class="mut">${esc(emptyTodayText)}</p>`;
-  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div><button class="g s" type="button" onclick="IYDayTools.showSuggestion()">${tr()?'Rastgele görev':'Suggest a task'}</button><div id="task-suggestion" hidden><span aria-live="polite"></span> <button class="g s" type="button" onclick="IYDayTools.addSuggestion()">${tr()?'Listeye ekle':'Add to list'}</button></div></div>
   <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><textarea rows="1" class="task-compose" id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addTomorrowPlan()}"></textarea><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
@@ -3966,7 +4043,7 @@ function addT(){
     if(addTomorrowPlan(v))$('#nt')?.focus({preventScroll:true});
     return;
   }
-  A.tasks.push({t:v,s:'',createdAt:Date.now()});recordActivity();P.todo();
+  A.tasks.push({id:crypto.randomUUID(),t:v,s:'',createdAt:Date.now()});recordActivity();P.todo();
   $('#nt')?.focus({preventScroll:true});
 }
 function mk(i,status){
@@ -4055,7 +4132,7 @@ P.pc=()=>{
   }
   const monthKey=`${y}-${pad(mo+1)}`;
   const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}<small class="note-countdown">${futureNoteCountdown(k)}</small></b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}',false,true)">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><h2>${t('futureNotes')}</h2><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><div class="row report-heading"><h2>${t('futureNotes')}</h2>${IYDayTools.archiveButton()}</div><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
 };
 function newNote(){
   const d=String($('#fnd')?.value||'');
@@ -4356,6 +4433,38 @@ function reportActivityLine(a,b){
  if(focus)parts.push(tr()?`${focus} tamamlanmış odak oturumu`:`${focus} completed focus ${focus===1?'session':'sessions'}`);
  return parts.join(' · ');
 }
+function monthlyCorrectionFields(key){
+ const day=istanbulDayKey(),{period,opens}=reportWindow('month',day);
+ if(!A||day!==opens||key!==period.key||!A.ql?.[key])return [];
+ const fields=[];
+ const add=(group,records)=>{for(const question of Array.isArray(records)?records:[])fields.push({group,question})};
+ add('review',A.qs?.[key]);
+ if(A.planningLocks?.[key]&&!A.ql?.[period.pa.slice(0,7)])add('current',A.planningQs?.[key]);
+ if(A.reportPlanLinks?.[key]===period.nk&&A.planningLocks?.[period.nk])add('next',A.planningQs?.[period.nk]);
+ return fields;
+}
+function editMonthlyReport(button){
+ const card=button.closest('.report-month-card'),key=card?.dataset.month;
+ if(!card?.isConnected||card.dataset.owner!==String(A?.authUid||A?.u||''))return;
+ const fields=monthlyCorrectionFields(key);if(!fields.length)return;
+ const owner=A,initial=fields.map(({question})=>String(question.a||''));
+ const labels=tr()?{review:'Ay değerlendirmen',current:'Bu ayın planı',next:'Gelecek ayın planı'}:{review:'Month review',current:'This month’s plan',next:'Next month’s plan'};
+ const form=fields.map(({question,group},i)=>`${i===0||fields[i-1].group!==group?`<h3>${labels[group]}</h3>`:''}<label for="monthly-correction-${i}">${esc(reportQuestionText(question))}</label><textarea id="monthly-correction-${i}" rows="2" maxlength="400" required>${esc(initial[i])}</textarea>`).join('');
+ openModal('monthly-correction',`<h2>${tr()?'Aylık yanıtlarını düzenle':'Edit monthly answers'}</h2><form>${form}<p role="status"></p><div class="row"><button type="submit">${t('save')}</button><button type="button" class="g" onclick="closeModal('monthly-correction')">${t('cancel')}</button></div></form>`);
+ const modal=document.getElementById('monthly-correction');
+ modal._reportOwner=owner;modal.dataset.month=key;
+ modal.querySelector('form').onsubmit=event=>{
+   event.preventDefault();const current=monthlyCorrectionFields(key);
+   if(A!==owner||!current.length){modal.remove();return}
+   if(current.length!==fields.length||current.some(({question},i)=>question!==fields[i].question||String(question.a||'')!==initial[i])){
+     modal.querySelector('[role="status"]').textContent=tr()?'Yanıtlar başka bir yerde değişti. Güncel yanıtları açarak tekrar düzenle.':'Answers changed elsewhere. Reopen the editor to review the current answers.';return;
+   }
+   const inputs=[...modal.querySelectorAll('textarea')],missing=inputs.find(input=>!input.value.trim()||input.value.length>400);
+   if(missing){missing.focus();return}
+   current.forEach(({question},i)=>{question.a=inputs[i].value});
+   save();closeModal('monthly-correction');P.rep();
+ };
+}
 function monthlyReportCard(day,window){
  const {period,opens,closes,next}=window;
  const submitted=!!A.ql?.[period.key],open=reportQuestionsOpen('month',day);
@@ -4365,14 +4474,14 @@ function monthlyReportCard(day,window){
  const schedule=`<p class="mut report-month-window">${tr()?'Açılış':'Opens'} · ${midnight(opens)}<br>${tr()?'Kapanış':'Closes'} · ${midnight(closes)} (${tr()?'Türkiye saati':'Istanbul time'})</p>`;
  let status='';
  if(submitted){
-   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>`;
+   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>${day===opens&&monthlyCorrectionFields(period.key).length?`<button type="button" class="g report-correct" onclick="editMonthlyReport(this)">${tr()?'Düzenle':'Edit'}</button>`:''}`;
  }else if(open){
    status=`<p>${reportActivityLine(start,period.b)}</p><button class="g report-more" onclick="showReportDetail('month')">${tr()?'Soruları yanıtla':'Answer questions'} →</button>`;
  }else if(!start||!reportHasActivity(start,period.b)){
    status=`<p class="mut">${tr()?'Bu ay için henüz görev, günlük veya tamamlanmış odak kaydı yok.':'No tasks, journal entries or completed focus sessions recorded this month yet.'}</p>`;
  }
  const countdown=day<opens?`<p class="mut">${dd(day,opens)} ${t('daysLeft')}</p>${reportProgressBar(period.a,opens,day)}`:'';
- return `<section class="card report-month-card${open?' report-summary':submitted?' report-submitted':''}" data-month="${period.key}"><h2>${open?'':'🔒 '}${title}</h2>${schedule}${countdown}${status}</section>`;
+ return `<section class="card report-month-card${open?' report-summary':submitted?' report-submitted':''}" data-month="${period.key}" data-owner="${esc(A?.authUid||A?.u||'')}"><h2>${open?'':'🔒 '}${title}</h2>${schedule}${countdown}${status}</section>`;
 }
 function reportSummaryCard(kind){
  const td=istanbulDayKey(),window=reportWindow(kind,td);
@@ -4432,6 +4541,8 @@ function reportPlanningOverview(){
 P.rep=()=>{
  finishPendingReport();
  reportRenderedDay=istanbulDayKey();
+ const correction=document.getElementById('monthly-correction');
+ if(correction&&(correction._reportOwner!==A||!monthlyCorrectionFields(correction.dataset.month).length))correction.remove();
  if(reportRenderedDay.slice(5)!=='12-31'){
    const annualTasks=document.querySelector('#day-modal [data-annual-tasks]');
    if(annualTasks){
@@ -4717,7 +4828,7 @@ P.pomo=()=>{
   ${stopwatchView==='timer'?`<div id="sw" class="sw-display">${stopwatchFormat(swElapsed())}</div>`:`<div class="chrono-dial" role="img" aria-label="${tr()?'Analog kronometre':'Analog stopwatch'}">${CHRONO_TICKS}<div class="chrono-mini">${[0,10,20].map(v=>{const a=v*Math.PI/15;return `<span class="chrono-number" style="left:${50+37*Math.sin(a)}%;top:${50-37*Math.cos(a)}%">${v}</span>`}).join('')}<div id="chrono-sub-hand" class="chrono-hand" style="top:12%;height:40%"></div></div><div id="chrono-hand" class="chrono-hand"></div><div class="chrono-pivot"></div><div id="chrono-digital" class="chrono-digital">${stopwatchFormat(swElapsed())}</div></div>`}
   <div class="row stopwatch-actions"><button onclick="swStart()" ${A.stopwatch.running?'disabled':''}>${tr()?'Başlat':'Start'}</button><button class="g" onclick="swStop()" ${A.stopwatch.running?'':'disabled'}>${tr()?'Durdur':'Stop'}</button><button class="g" onclick="lap()" ${A.stopwatch.running?'':'disabled'}>Lap</button><button class="g" onclick="swR()">${t('reset')}</button></div><div class="laps">${laps}</div>
   <p class="mut" style="text-align:center">${tr()?'Sağa/sola kaydırarak kronometre ile saat arasında geçebilirsin.':'Swipe horizontally to switch between stopwatch and clock.'}</p></div>`);
-  document.getElementById('mn')?.insertAdjacentHTML('beforeend',focusHistoryCard());
+  document.getElementById('mn')?.insertAdjacentHTML('beforeend',focusHistoryCard()+IYDayTools.focusCard());
   pi();swRender();
 };
 
@@ -4847,7 +4958,7 @@ P.set=()=>{
       (cloud?'<button class="g s" data-user="'+esc(u)+'" onclick="forgetKnownProfile(this.dataset.user)">'+(tr()?'Bu cihazda unut':'Forget on device')+'</button>':'')+
       '</span>';
   }).join('');
-  M(`${m()}<div class="card"><h2>${t('account')}</h2><p class="mut">${tr()?'Üstteki yuvarlak profil düğmesinden de düzenleyebilirsin.':'You can also edit your profile in the top-right account menu.'}</p><label>${t('username')}</label><div class="row"><input id="su" value="${esc(A.u)}" maxlength="20" oninput="profileUsernameHint(this.value,'settings-name-hint')"><div id="settings-name-hint" aria-live="polite" style="flex-basis:100%"></div><button onclick="chg('u')">${t('change')}</button></div><label>${t('displayName')}</label><div class="row"><textarea id="sn" rows="1" maxlength="30">${esc(A.nick||'')}</textarea><button onclick="chg('n')">${t('change')}</button></div><label>${t('bio')}</label><textarea id="sb" maxlength="160" rows="3" onchange="A.bio=this.value.slice(0,160);save()">${esc(A.bio||'')}</textarea><p class="mut">${t('email')}: <b>${A.authUid?IYAccount.emailMarkup():esc(A.email||'')}</b></p>${profilePasswordLink()}</div>
+  M(`<div class="card" id="settings-sync" ${A.authUid?'':'hidden'}><button type="button" class="g" onclick="IYCloud.renderDetails()">${tr()?'Çevrimdışı kayıtlar ve eşitleme':'Offline entries and sync'}</button></div>${m()}<div class="card"><h2>${t('account')}</h2><p class="mut">${tr()?'Üstteki yuvarlak profil düğmesinden de düzenleyebilirsin.':'You can also edit your profile in the top-right account menu.'}</p><label>${t('username')}</label><div class="row"><input id="su" value="${esc(A.u)}" maxlength="20" oninput="profileUsernameHint(this.value,'settings-name-hint')"><div id="settings-name-hint" aria-live="polite" style="flex-basis:100%"></div><button onclick="chg('u')">${t('change')}</button></div><label>${t('displayName')}</label><div class="row"><textarea id="sn" rows="1" maxlength="30">${esc(A.nick||'')}</textarea><button onclick="chg('n')">${t('change')}</button></div><label>${t('bio')}</label><textarea id="sb" maxlength="160" rows="3" onchange="A.bio=this.value.slice(0,160);save()">${esc(A.bio||'')}</textarea><p class="mut">${t('email')}: <b>${A.authUid?IYAccount.emailMarkup():esc(A.email||'')}</b></p>${profilePasswordLink()}</div>
   <div class="card settings-theme"><h2>${t('theme')}</h2>${themePick(false,false)}</div>
   <div class="card"><h2>${t('lang')}</h2><div class="langbar" style="justify-content:flex-start">${langBtns()}</div></div>
   ${!A.authUid?`<div class="card"><h2>${t('password')}</h2><label>${t('currentPassword')}</label><input id="op" type="password" autocomplete="current-password"><label>${t('newPassword')}</label><input id="np" type="password" autocomplete="new-password"><button onclick="chPw()">${t('changePassword')}</button></div>`:''}
@@ -5415,13 +5526,17 @@ async function bootstrapCloudAuth(){
     msg=tr()?'Google aktarımı yarıda kesildi. Eski profilin korunuyor. Yeniden denemeden önce bulut hesabının durumunu kontrol et.':'Google migration was interrupted. Your legacy profile remains intact. Check your cloud account before trying again.';
     view='login';renderAppOrAuth();return;
   }
-  // An existing session is a candidate for Continue, never an automatic entry.
+  const returning=typeof IYOfflinePad==='undefined'?null:IYOfflinePad.takeReturn();
+  if(returning&&sbSession()?.user?.id===returning){
+    const google=sbSession().user.app_metadata?.providers?.includes('google')===true;
+    await restoreCloudOnLoad(returning,google);
+  }
   return;
 }
 
 const sbSession=()=>{try{return JSON.parse(getItem(SESS_KEY)||'null')}catch(e){return null}};
 function sbSave(session){if(session&&session.user&&session.access_token){setItem(SESS_KEY,JSON.stringify(session));window.IYQuickSession?.update(session)}}
-function sbClear(){setItem(SESS_KEY,'')}
+function sbClear(){if(typeof IYCloud!=='undefined')IYCloud.stop();setItem(SESS_KEY,'')}
 async function sb(path,opt={}){
   const session=sbSession();
   const headers={'apikey':SUPABASE_KEY,'Content-Type':'application/json',...(opt.headers||{})};
@@ -5446,27 +5561,17 @@ async function sbRefresh(){
   const session=sbSession();if(!session?.refresh_token)return false;
   try{
     const j=await sb('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:session.refresh_token}});
-    if(!j?.access_token||!j?.user?.id)return false;
+    if(!j?.access_token||j.user?.id!==session.user?.id||sbSession()?.refresh_token!==session.refresh_token)return false;
     sbSave({...j,at:Date.now()});return true;
-  }catch(_){sbClear();return false}
+  }catch(e){if([400,401,403].includes(e.status)&&sbSession()?.refresh_token===session.refresh_token)sbClear();return false}
 }
 async function sbCurrentUser(){
   try{return await sb('/auth/v1/user')}
   catch(e){if(e.status===401&&await sbRefresh())return sb('/auth/v1/user');throw e}
 }
 async function sbPush(){
-  const session=sbSession();
-  if(!A?.authUid||!session?.user?.id||A.authUid!==session.user.id)return false;
-  const sanitized=JSON.parse(JSON.stringify(A));sanitized.pw='';delete sanitized.salt;
-  try{
-    await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true;
-  }catch(e){
-    if(e.status===401&&await sbRefresh()){
-      const current=sbSession();if(current?.user?.id!==A.authUid)return false;
-      try{await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true}catch(_){return false}
-    }
-    return false;
-  }
+ if(!A?.authUid||sbSession()?.user?.id!==A.authUid||typeof IYCloud==='undefined')return false;
+ return IYCloud.flush();
 }
 async function sbPull(){
   const session=sbSession();if(!session?.user?.id)throw new Error('Not authenticated');
@@ -5515,7 +5620,8 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
     const meta=user.user_metadata||{};
-    const a=norm(remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
+    const pending=typeof IYCloud==='undefined'?null:await IYCloud.start(user.id,remote);
+    const a=norm(pending||remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
     bindReportCalendar(a,user,!remote&&!local);
     applyServerProgressPolicy(a,progressPolicy);
     a.authUid=user.id;a.accountOrigin='cloud';a.email=user.email||a.email;a.mail=a.email;a.pw='';delete a.salt;
@@ -5524,6 +5630,7 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     DB.accounts[a.u]=a;DB.lastUser=a.u;DB.last=a.nick;A=a;
     view='app';pg='home';restorePomodoroState();applyTheme();save();renderAppOrAuth();
     if(animateEntry)playWelcomeTransition();
+    if(typeof IYCloud!=='undefined')IYCloud.afterEntry();
     if(!remote)await sbPush();return true;
   }catch(e){
     // Do not auto-login from unverified localStorage contents.

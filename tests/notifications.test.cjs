@@ -24,3 +24,9 @@ test('a completed break emits a return-to-focus notice and respects disabled ale
 
 test('switching to a fresh account resets the five-minute delivery flag',()=>{const {context,f}=fixture();context.pm={noticeFive:true,iv:0};f.restorePomodoroState();assert.equal(context.pm.noticeFive,false)});
 test('restoring a paused saved session preserves its already-delivered warning',()=>{const {context,f}=fixture();context.A.pomo={w:25,b:5,ph:'w',left:250,run:false,n:0,lg:0,noticeFive:true};f.restorePomodoroState();assert.equal(context.pm.noticeFive,true);assert.equal(context.pm.left,250)});
+test('a dismissed public update stays dismissed at welcome and home while personal notices stay private',()=>{
+ const {f,context}=fixture(),owner=context.A;context.A=null;f.ensureReleaseNotification();context.A=owner;f.ensureReleaseNotification();
+ f.addNotification('p:mine','project',{name:'Private'});f.deleteNotification(owner.notifications.find(n=>n.type==='release').id);
+ context.A=null;f.ensureReleaseNotification();assert.doesNotMatch(f.notificationList(),/Private|Site güncellenmiştir/);
+ context.A=owner;assert.match(f.notificationList(),/Private/);assert.equal(owner.notifications.length,1);
+});
