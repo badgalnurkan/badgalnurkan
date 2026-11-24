@@ -297,3 +297,5 @@ Scope: index.html, tests/archive-productivity.test.cjs, tests/report-edit.test.c
 - No production Supabase data, existing user records or the main branch were modified by these commits.
 - At initial writing, the inline JavaScript passed V8 syntax compilation. Full npm test, the preview build, browser E2E, real-device checks, multi-device synchronization and production deployment remained unverified; consult pull-request CI for subsequent results.
 - The offline operation queue and conflict-safe server synchronization are not implemented by this branch. Do not describe these as complete.
+
+- Updated the login portal from 1,600 ms to 850 ms, preserving reduced-motion bypass. Updated the entry transition regression test accordingly; rerun CI on the new commit before release.
