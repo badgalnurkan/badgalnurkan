@@ -46,3 +46,9 @@ test('reduced motion removes a dismissed banner without an animation delay',()=>
 test('automatic expiry keeps the previous eight-second visibility window',()=>{
  const f=fixture();assert.equal([...f.timers.values()][0].delay,8000);f.flush();assert.ok(f.classes.has('is-leaving'));f.flush();assert.equal(f.banner.removed,true);
 });
+test('up files the alert without deleting the inbox item, and only right invokes deletion',()=>{
+ for(const [x,y,deletions] of [[150,-100,0],[38,20,0],[280,20,1]]){
+  const f=fixture();let removed=0;f.banner._deleteNotice=()=>removed++;f.down();f.move(x,y);f.up(x,y);f.flush();
+  assert.equal(removed,deletions);assert.equal(f.banner.removed,true);
+ }
+});

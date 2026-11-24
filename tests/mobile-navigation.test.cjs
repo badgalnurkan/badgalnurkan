@@ -100,7 +100,7 @@ function transitionFixture(reduced=false){
  const aside={querySelectorAll:()=>links};
  const context={A:{},view:'app',pg:'home',msg:'',selDay:null,pm:{run:false},TITLE:'App',NAV:navigation,
   setTimeout:fn=>{timers.set(++nextId,fn);return nextId},clearTimeout:id=>timers.delete(id),
-  document:{getElementById:()=>main,querySelector:selector=>selector==='main'?main:aside},
+  document:{getElementById:id=>id==='mn'?main:null,querySelector:selector=>selector==='main'?main:aside},
   window:{scrollY:0,matchMedia:()=>({matches:reduced}),scrollTo(){}},history:{pushState(){}},
   renderPage:()=>renders.push(context.pg),centerNav(){},softPaint(){renders.push('auth')},navLabel:key=>key,
   resetMobileDockForPage(){context.dockResets=(context.dockResets||0)+1},
@@ -120,7 +120,7 @@ test('reduced motion renders immediately without a transition timer',()=>{
  const f=transitionFixture(true);f.context.goTo('app','pc');assert.equal(f.timers.size,0);assert.deepEqual(f.renders,['pc']);
 });
 test('a detached main element never receives a delayed page render',()=>{
- const f=transitionFixture();f.context.goTo('app','pc');f.context.document.getElementById().isConnected=false;f.flush();
+ const f=transitionFixture();f.context.goTo('app','pc');f.context.document.getElementById('mn').isConnected=false;f.flush();
  assert.deepEqual(f.renders,[]);
 });
 

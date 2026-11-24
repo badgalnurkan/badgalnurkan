@@ -5,7 +5,10 @@ on:
       - 'index.html'
       - 'package.json'
       - 'account-security.*'
-      - 'recovery-browser.js'
+      - '*.js'
+      - 'api/**'
+      - 'offline.html'
+      - 'scripts/build-preview.py'
       - 'cookies.html'
       - 'supabase/**'
       - 'tests/account-security*'
@@ -18,7 +21,10 @@ on:
       - 'index.html'
       - 'package.json'
       - 'account-security.*'
-      - 'recovery-browser.js'
+      - '*.js'
+      - 'api/**'
+      - 'offline.html'
+      - 'scripts/build-preview.py'
       - 'cookies.html'
       - 'supabase/**'
       - 'tests/account-security*'
@@ -46,7 +52,7 @@ jobs:
             .match(/<script>([\s\S]*?)<\/script>/)?.[1];
           if(!source)throw Error('Cannot find HTML application script');
           new Function(source);
-          if(source.includes('iydu_save_cas'))throw Error('Unfinished auth sync accidentally included in hotfix');
+          for(const file of ['account-sync.js','cross-device-sync.js','offline-pad.js','sw.js','day-tools.js','daily-facts.js','api/daily-fact.js'])new Function(fs.readFileSync(file,'utf8'));
           console.log('PASS: index.html script syntax and isolated report patch');
           NODE
       - name: Test existing site and weekly/monthly unlocks
@@ -69,6 +75,24 @@ jobs:
             if(!r.ok||!d.ok)throw Error('Account backend not reachable');
           })().catch(e=>{console.error(e);process.exitCode=1});
           NODE
+  offline-database:
+    name: PostgreSQL offline sync and account isolation
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: psql -v ON_ERROR_STOP=1 -f tests/offline-sync-db.sql
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: fixture
   production-smoke:
     name: Verify deployed production files
     if: github.event_name == 'push'
@@ -85,6 +109,7 @@ jobs:
           const fs=require('node:fs'),crypto=require('node:crypto');
           const digest=buffer=>crypto.createHash('sha256').update(buffer).digest('hex');
           const files=[['index.html','/'],['recovery-browser.js','/recovery-browser.js'],['browser-verification.js','/browser-verification.js'],['turnstile-auth.js','/turnstile-auth.js'],['quick-session.js','/quick-session.js'],['account-security.js','/account-security.js'],['account-security.css','/account-security.css'],['cookies.html','/cookies.html'],['account-close.html','/account-close.html'],['account-close.js','/account-close.js']];
+          for(const name of ['growing-text.js','account-sync.js','cross-device-sync.js','offline-pad.js','sw.js','offline.html','day-tools.js','daily-facts.js'])files.push([name,'/'+name]);
           const expected=files.map(([filename,path])=>({filename,path,hash:digest(fs.readFileSync(filename))}));
           const base='https://badgalnurkan.com';
           const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
