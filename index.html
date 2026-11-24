@@ -2769,7 +2769,7 @@ function openNotification(id){
 }
 function projectId(project){if(!/^[a-zA-Z0-9_-]+$/.test(String(project.id||'')))project.id=window.crypto?.randomUUID?.()||('p'+Date.now().toString(36)+Math.random().toString(36).slice(2));return project.id}
 function projectReminderTime(project){
- if(project.reminderEnabled===false)return NaN;
+ if(project.reminderEnabled===false||project.archivedAt)return NaN;
  return Date.parse(project.reminderAt||(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(project.d)?project.d+'T09:00:00+03:00':''));
 }
 
