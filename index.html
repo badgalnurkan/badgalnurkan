@@ -2514,8 +2514,9 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-24-feature-review-05';
+const SITE_RELEASE='2026-11-24-cas-cloud-review-03';
 const SITE_CHANGES=[
+  {date:'2026-11-24',trTitle:'Bulut eşitleme çakışma denetimi (taslak)',enTitle:'Cloud sync conflict check (draft)',items:[['Girişten sonra okunan uzak veriyle karşılaştırmalı kayıt uygulanır. Çakışmada veri zorla üzerine yazılmaz; cihazdaki kayıt korunur. Çevrimdışı oturum dönüşündeki anlaşmazlıkların çözümü henüz tamamlanmadı.','Cloud saves compare against the last downloaded profile. Conflicts no longer force-overwrite remote data; the local copy remains. Offline re-entry conflict resolution is not yet complete.']]},
  {date:'2026-11-24',trTitle:'Daha hızlı giriş geçişi',enTitle:'Faster sign-in transition',items:[['Giriş onayından sonraki animasyon 1,6 saniyeden 0,85 saniyeye indirildi; düşük hareket tercihi korunur.','Reduced post-sign-in transition from 1.6 seconds to 0.85 seconds while respecting reduced-motion preferences.']]},
  {date:'2026-11-24',trTitle:'Rapor yanıtlarını düzenleme',enTitle:'Editing submitted report answers',items:[['Gönderilmiş haftalık veya aylık rapor yanıtları ilgili rapor gününde açıkça Düzenle seçilerek kaydedilebilir. Kaydetmeden çıkış yanıtları değiştirmez; sonraki gün düzenleme kapanır.','Submitted weekly or monthly report answers can be explicitly edited on their report day. Unsaved edits are discarded and editing closes the following day.']]},
  {date:'2026-11-24',trTitle:'Bildirim kaydırma hareketleri',enTitle:'Notification swipe gestures',items:[['Üst bildirimleri sağa kaydırarak gelen kutusundan silebilir, yukarı kaydırarak ekrandan kaldırıp bildirim merkezinde tutabilirsin.','Swipe top notifications right to delete them from the inbox, or up to dismiss the banner while keeping the inbox entry.']]},
@@ -5696,19 +5697,52 @@ async function sbCurrentUser(){
   try{return await sb('/auth/v1/user')}
   catch(e){if(e.status===401&&await sbRefresh())return sb('/auth/v1/user');throw e}
 }
+// A failed cloud write must never fall back to an unconditional profile replacement.
+// Baselines are scoped to the authenticated UUID and populated only by a verified cloud read.
+const cloudBaselines=new Map();
+const cloudPushInFlight=new Map();
+let lastCloudSyncWarning=0;
+function cloudProfilePayload(account){
+  const data=JSON.parse(JSON.stringify(account));
+  data.pw='';delete data.salt;
+  return data;
+}
+function cloudSyncNotice(){
+  if(typeof view==='undefined'||view!=='app'||typeof toast!=='function')return;
+  const now=Date.now();
+  if(now-lastCloudSyncWarning<15000)return;
+  lastCloudSyncWarning=now;
+  toast(tr()?'Değişiklik cihazda korundu ancak buluta eşitlenemedi. Başka cihazdan veri değiştirdiysen yeniden giriş yapmadan önce yedeğini al.':
+    'Your changes remain on this device, but cloud sync failed. Back up local changes before signing in again on another device.');
+}
 async function sbPush(){
-  const session=sbSession();
-  if(!A?.authUid||!session?.user?.id||A.authUid!==session.user.id)return false;
-  const sanitized=JSON.parse(JSON.stringify(A));sanitized.pw='';delete sanitized.salt;
-  try{
-    await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true;
-  }catch(e){
-    if(e.status===401&&await sbRefresh()){
-      const current=sbSession();if(current?.user?.id!==A.authUid)return false;
-      try{await sb('/rest/v1/rpc/iydu_save',{method:'POST',body:{p_username:A.u,p_nick:A.nick||A.u,p_data:sanitized}});return true}catch(_){return false}
-    }
-    return false;
-  }
+  const account=A,session=sbSession(),uid=account?.authUid;
+  if(!uid||!session?.access_token||session.user?.id!==uid)return false;
+  if(cloudPushInFlight.has(uid))return cloudPushInFlight.get(uid);
+  const baseline=cloudBaselines.get(uid);
+  if(typeof baseline!=='string'){cloudSyncNotice();return false}
+  const payload=cloudProfilePayload(account),sent=JSON.stringify(payload);
+  const body={p_expected_data:JSON.parse(baseline),p_data:payload};
+  const pending=(async()=>{
+    try{
+      let accepted;
+      try{accepted=await sb('/rest/v1/rpc/iydu_sync_profile',{method:'POST',body})}
+      catch(error){
+        if(error.status!==401||sbSession()?.user?.id!==uid||!await sbRefresh()||sbSession()?.user?.id!==uid)throw error;
+        accepted=await sb('/rest/v1/rpc/iydu_sync_profile',{method:'POST',body});
+      }
+      if(accepted!==true){cloudSyncNotice();return false}
+      // The RPC uses CAS and issues a fresh server-side sync UUID; it ignores that
+      // UUID in the value comparison. Never treat a conflict as permission to force-save.
+      if(sbSession()?.user?.id===uid)cloudBaselines.set(uid,sent);
+      if(A===account&&sbSession()?.user?.id===uid&&JSON.stringify(cloudProfilePayload(account))!==sent){
+        setTimeout(schedulePush,0);
+      }
+      return true;
+    }catch(error){cloudSyncNotice();return false}
+  })();
+  cloudPushInFlight.set(uid,pending);
+  try{return await pending}finally{if(cloudPushInFlight.get(uid)===pending)cloudPushInFlight.delete(uid)}
 }
 async function sbPull(){
   const session=sbSession();if(!session?.user?.id)throw new Error('Not authenticated');
@@ -5720,6 +5754,7 @@ async function sbPull(){
   if(profile!=null&&(typeof profile!=='object'||Array.isArray(profile)))throw new Error('Invalid cloud data');
   if(profile?.authUid!=null&&profile.authUid!==session.user.id)throw new Error('CLOUD_PROFILE_IDENTITY_MISMATCH');
   if(sbSession()?.user?.id!==session.user.id)throw new Error('Session changed during cloud read');
+  cloudBaselines.set(session.user.id,JSON.stringify(profile||{}));
   return profile&&Object.keys(profile).length?profile:null;
 }
 // The database owns the old/new-user cutoff; do not infer it from a missing
