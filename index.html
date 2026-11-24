@@ -1338,7 +1338,7 @@ body{font-size:1rem!important}
   #login-portal.v13131-portal .portal-disc,#login-portal.v13131-portal .portal-ring{animation:none!important}
 }
 /* Shared web motion, inspired by Apple's motion guidance. */
-:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:1600}
+:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:900}
 #app{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main,.shell main.swap{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main.an{animation:pgIn .34s var(--motion-ease) both}
@@ -1464,13 +1464,13 @@ body{font-size:1rem!important}
   .nav-shell aside a::after,.nav-shell aside a .nav-icon svg{transition:none}
 }
 
-/* Welcome entry: 180ms brand, 340ms forward, 240ms reverse, then 840ms greeting. */
-#login-portal.entry-portal{background:var(--bg);pointer-events:auto;animation:entryPortalOut calc(var(--entry-total-ms)*1ms) linear both!important}
-#login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .58s linear .18s both!important}
-#login-portal.entry-portal .portal-brand{position:relative;z-index:2;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:entryBrandPass .58s linear .18s both!important}
+/* Welcome entry: 80ms brand, 300ms circle, 520ms greeting. */
+#login-portal.entry-portal{background:color-mix(in srgb,var(--bg) 94%,transparent);pointer-events:auto;animation:entryPortalOut calc(var(--entry-total-ms)*1ms) linear both!important}
+#login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .30s linear .08s both!important}
+#login-portal.entry-portal .portal-brand{position:relative;z-index:2;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:entryBrandPass .30s linear .08s both!important}
 #login-portal.entry-portal .portal-title{font-family:var(--brand-title-font);font-size:clamp(1.1rem,4.5vw,1.65rem);font-weight:600;line-height:1.3;text-wrap:balance;text-align:center;color:var(--acc)}
 #login-portal.entry-portal .portal-ring{position:absolute;inset:-2px;display:block;width:auto;height:auto;border:2px solid var(--ln);border-top-color:var(--acc);border-right-color:var(--acc);border-radius:50%;animation:entrySpinner .9s linear infinite!important}
-#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .84s var(--motion-ease) .76s both!important}
+#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .52s var(--motion-ease) .38s both!important}
 @keyframes entryCirclePass{0%{transform:translate(-50%,-50%) scale(0);animation-timing-function:var(--motion-return)}58.62069%{transform:translate(-50%,-50%) scale(1.5);animation-timing-function:var(--motion-return)}100%{transform:translate(-50%,-50%) scale(0)}}
 @keyframes entryBrandPass{0%{opacity:1;transform:scale(1);animation-timing-function:var(--motion-return)}58.62069%{opacity:1;transform:scale(1.08);animation-timing-function:var(--motion-return)}100%{opacity:0;transform:scale(1)}}
 @keyframes entrySpinner{to{transform:rotate(360deg)}}
@@ -2691,7 +2691,7 @@ function bindNotificationSwipe(banner){
 }
 function showTopNotification(item){
  if(document.visibilityState!=='visible')return;
- if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',1600)+200);return}
+ if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',900)+200);return}
  let stack=document.getElementById('notification-banners');
  if(!stack){stack=document.createElement('div');stack.id='notification-banners';stack.className='notification-banners';stack.setAttribute('aria-live','polite');stack.setAttribute('aria-relevant','additions');document.body.appendChild(stack)}
  const copy=notificationCopy(item),banner=document.createElement('div');banner.className='notification-banner';banner.dataset.notificationId=item.id;
@@ -2948,7 +2948,7 @@ function playWelcomeTransition(cb,codeApproved=false){
   let cleaned=false,fallback=0;
   const cleanup=()=>{if(cleaned)return;cleaned=true;clearTimeout(fallback);root.remove();if(cb)cb()};
   root.addEventListener('animationend',e=>{if(e.target===root&&e.animationName==='entryPortalOut')cleanup()});
-  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',1600)+200);
+  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',900)+200);
 }
 function goHome(){reportDetail='';stopTimers();if(A?.loginMethod!=='google')sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 function backToLogin(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
@@ -3796,7 +3796,7 @@ P.todo=()=>{
     ?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.')
     :t('addTask');
   const todayTasksMarkup=renderedTodayTasks||`<p class="mut">${esc(emptyTodayText)}</p>`;
-  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button><button type="button" class="g" onclick="suggestRandomTask()">${tr()?'Rastgele görev':'Random task'}</button></div></div>
   <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><textarea rows="1" class="task-compose" id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addTomorrowPlan()}"></textarea><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
@@ -3958,6 +3958,15 @@ function fromBack(i){
   A.tasks.push({t:A.backlog[i],s:'',createdAt:Date.now()});A.backlog.splice(i,1);recordActivity();P.todo();
 }
 function delT(i){if(A.day!==today()){shell();return}if(!A.tasks[i])return;A.tasks.splice(i,1);archiveFinishedTasks();vibrateTask();recordActivity();P.todo()}
+const TASK_IDEAS=[['10 dakika kitap oku','Read for 10 minutes'],['Çalışma alanını düzenle','Tidy your workspace'],['Yarın için küçük bir hedef belirle','Set a small goal for tomorrow'],['Bir arkadaşına halini sor','Check in with a friend'],['Yeni bir kelime öğren','Learn a new word'],['Sevdiğin bir şarkıyı dinle','Listen to a favorite song'],['Kısa bir mola ver','Take a short break'],['Bugün öğrendiğin bir şeyi not al','Write down something you learned'],['Bir dosyanı düzenle','Organize one file'],['Yaratıcı bir fikir çiz veya yaz','Sketch or write a creative idea']];
+function suggestRandomTask(){
+ const field=document.getElementById('nt');if(!field)return;
+ if(field.value.trim()&&field.value!==field.dataset.suggestedValue){toast(tr()?'Önce yazdığın görevi ekle veya alanı temizle.':'Add your draft or clear the field first.');return}
+ const existing=new Set((A?.tasks||[]).map(task=>task.t));
+ const pool=TASK_IDEAS.map(idea=>idea[tr()?0:1]).filter(value=>value!==field.value&&!existing.has(value));
+ if(!pool.length)return;
+ field.value=pool[Math.floor(Math.random()*pool.length)];field.dataset.suggestedValue=field.value;fitTextField(field);field.focus();
+}
 function addT(){
   if(A.day!==today())roll();
   const v=String($('#nt')?.value||'').trim().slice(0,120);
@@ -4344,7 +4353,7 @@ function reportAvailability(kind,td=istanbulDayKey()){
 }
 function calendarReportPeriod(kind,day){
  if(kind==='week'){const a=mon(day);return{a,b:addD(a,6),pa:addD(a,-7),pb:addD(a,-1),key:a,nk:addD(a,7)}}
- if(kind==='month'){const [y,m]=day.split('-').map(Number),a=D(new Date(y,m-1,1));return{a,b:D(new Date(y,m,0)),pa:D(new Date(y,m-2,1)),pb:D(new Date(y,m-1,0)),key:a.slice(0,7),nk:D(new Date(y,m,1)).slice(0,7)}}
+ if(kind==='month'){const [y,m]=day.split('-').map(Number),date=(month,d)=>{const value=new Date(0);value.setUTCFullYear(y,month,d);return value.toISOString().slice(0,10)},a=date(m-1,1);return{a,b:date(m,0),pa:date(m-2,1),pb:date(m-1,0),key:a.slice(0,7),nk:date(m,1).slice(0,7)}}
  throw new RangeError('Invalid report period');
 }
 function reportActivityLine(a,b){
@@ -4356,6 +4365,22 @@ function reportActivityLine(a,b){
  if(focus)parts.push(tr()?`${focus} tamamlanmış odak oturumu`:`${focus} completed focus ${focus===1?'session':'sessions'}`);
  return parts.join(' · ');
 }
+const monthlyCorrectionOwners=new WeakMap();
+function canCorrectMonthlyReport(key,day=istanbulDayKey()){
+ return !!A&&/^\d{4}-\d{2}$/.test(key)&&day===reportWindow('month',day).opens&&key===day.slice(0,7)&&!!A.ql?.[key]&&Array.isArray(A.qs?.[key])&&A.qs[key].length>0;
+}
+function openMonthlyCorrection(key){
+ if(!canCorrectMonthlyReport(key))return;
+ openModal('monthly-correction',`<h2>${tr()?'Aylık yanıtları düzenle':'Edit monthly answers'}</h2><p class="mut">${tr()?'Gece yarısına kadar yanıtlarını düzeltebilirsin. Planların değişmez.':'Correct your answers until midnight. Your plans stay unchanged.'}</p><form onsubmit="event.preventDefault();saveMonthlyCorrection(this,'${key}')">${A.qs[key].map((q,i)=>`<label for="monthly-correction-${i}">${esc(reportQuestionForPeriod(q,key,'review'))}</label><textarea id="monthly-correction-${i}" name="answer" rows="3" maxlength="400" required>${esc(q.a||'')}</textarea>`).join('')}<div class="row"><button type="submit">${t('save')}</button><button type="button" class="g" onclick="closeModal('monthly-correction')">${t('cancel')}</button></div></form>`);
+ const modal=document.getElementById('monthly-correction');if(modal)monthlyCorrectionOwners.set(modal,A);
+}
+function saveMonthlyCorrection(form,key){
+ const modal=form.closest('#monthly-correction');
+ if(!modal||!modal.isConnected||monthlyCorrectionOwners.get(modal)!==A||!canCorrectMonthlyReport(key)){closeModal('monthly-correction');return false}
+ const answers=Array.from(form.querySelectorAll('textarea[name="answer"]'),field=>field.value.trim().slice(0,400));
+ const current=A.qs[key];if(answers.length!==current.length||answers.some(a=>!a))return false;
+ A.qs[key]=current.map((q,i)=>({...q,a:answers[i]}));save();closeModal('monthly-correction');P.rep();return true;
+}
 function monthlyReportCard(day,window){
  const {period,opens,closes,next}=window;
  const submitted=!!A.ql?.[period.key],open=reportQuestionsOpen('month',day);
@@ -4365,7 +4390,7 @@ function monthlyReportCard(day,window){
  const schedule=`<p class="mut report-month-window">${tr()?'Açılış':'Opens'} · ${midnight(opens)}<br>${tr()?'Kapanış':'Closes'} · ${midnight(closes)} (${tr()?'Türkiye saati':'Istanbul time'})</p>`;
  let status='';
  if(submitted){
-   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>`;
+   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>${canCorrectMonthlyReport(period.key,day)?`<button class="g s" onclick="openMonthlyCorrection('${period.key}')">${tr()?'Düzenle':'Edit'}</button>`:''}`;
  }else if(open){
    status=`<p>${reportActivityLine(start,period.b)}</p><button class="g report-more" onclick="showReportDetail('month')">${tr()?'Soruları yanıtla':'Answer questions'} →</button>`;
  }else if(!start||!reportHasActivity(start,period.b)){
@@ -4432,6 +4457,7 @@ function reportPlanningOverview(){
 P.rep=()=>{
  finishPendingReport();
  reportRenderedDay=istanbulDayKey();
+ if(document.getElementById('monthly-correction')&&!canCorrectMonthlyReport(reportRenderedDay.slice(0,7),reportRenderedDay))closeModal('monthly-correction');
  if(reportRenderedDay.slice(5)!=='12-31'){
    const annualTasks=document.querySelector('#day-modal [data-annual-tasks]');
    if(annualTasks){
