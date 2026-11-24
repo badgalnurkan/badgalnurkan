@@ -1,6 +1,6 @@
 'use strict';
 const IYCloud=(()=>{
- let handle=null,status='idle',timer=0,checkFlight=null;
+ let handle=null,status='idle',timer=0,retry=0,delay=1000,checkFlight=null,tabReady=null;
  const snapshot=a=>{const d=JSON.parse(JSON.stringify(a));d.pw='';delete d.salt;delete d.iyduSyncVersion;return d};
  const logical=a=>{const d=JSON.parse(JSON.stringify(a||{}));delete d.iyduSyncVersion;return d};
  const current=h=>handle===h&&sbSession()?.user?.id===h.uid;
@@ -8,9 +8,26 @@ const IYCloud=(()=>{
  const memory=new Map();
  const temporary={getItem:k=>memory.get(k)??null,setItem:(k,v)=>memory.set(k,v),removeItem:k=>memory.delete(k)};
  function tabId(){
-   try{const k='iydu.sync.tab.v2';let id=sessionStorage.getItem(k);if(!id){id=crypto.randomUUID();sessionStorage.setItem(k,id)}return id}catch{return crypto.randomUUID()}
+   if(tabReady)return tabReady;
+   const key='iydu.sync.tab.v2',fresh=()=>crypto.randomUUID();
+   const remember=id=>{try{sessionStorage.setItem(key,id)}catch{}return id};
+   let previous;try{previous=sessionStorage.getItem(key)}catch{}
+   if(!navigator.locks){const reloaded=performance.getEntriesByType('navigation')[0]?.type==='reload';return tabReady=Promise.resolve(remember(reloaded&&previous||fresh()))}
+   tabReady=new Promise(resolve=>{
+     const claim=id=>navigator.locks.request('iydu-sync-tab-'+id,{ifAvailable:true},lock=>{
+       if(!lock){claim(fresh());return}
+       resolve(remember(id));
+       return new Promise(release=>window.addEventListener('pagehide',release,{once:true}));
+     }).catch(()=>resolve(remember(fresh())));
+     claim(previous||fresh());
+   });
+   return tabReady;
  }
- function stop(){const uid=handle?.uid;handle=null;status='idle';clearTimeout(timer);IYOfflinePad.forget(uid);document.getElementById('sync-details')?.remove()}
+ function retrySoon(h){
+   if(retry||!matches(h)||!navigator.onLine||!['offline','pending'].includes(status))return;
+   retry=setTimeout(()=>{retry=0;if(matches(h))check()},delay);delay=Math.min(60000,delay*2);
+ }
+ function stop(){const uid=handle?.uid;handle=null;status='idle';clearTimeout(timer);clearTimeout(retry);retry=0;delay=1000;IYOfflinePad.forget(uid||sbSession()?.user?.id);document.getElementById('sync-details')?.remove()}
  function statusText(){
    if(!handle)return '';
    if(!handle.durable)return tr()?'Kalıcı cihaz depolaması kullanılamıyor.':'Device storage is unavailable.';
@@ -34,11 +51,13 @@ const IYCloud=(()=>{
        try{return await run()===true}catch(e){if(e.status!==401||!await sbRefresh()||!matches(h))throw e;return await run()===true}
      },
      onRemote:d=>secondary?true:applyCloud(h,d),
-     onStatus:s=>{if(current(h)&&!secondary){status=s;badge()}}
+     onStatus:s=>{if(current(h)&&!secondary){status=s;if(s==='synced'){clearTimeout(retry);retry=0;delay=1000}badge()}}
    });
  }
- function start(uid,remote){
-   const storage=store(),h={uid,storage:storage||temporary,durable:!!storage,id:tabId()};
+ async function start(uid,remote){
+   const id=await tabId();if(sbSession()?.user?.id!==uid)throw Error('ACCOUNT_CHANGED');
+   clearTimeout(retry);retry=0;delay=1000;
+   const storage=store(),h={uid,storage:storage||temporary,durable:!!storage,id};
    handle=h;checkFlight=null;h.engine=createEngine(h,h.id);
    const pending=h.engine.initialize(logical(remote));status=h.engine.getStatus();IYOfflinePad.remember(uid);if(pending?.authUid&&pending.authUid!==uid)throw Error('CLOUD_PROFILE_IDENTITY_MISMATCH');return pending;
  }
@@ -59,7 +78,7 @@ const IYCloud=(()=>{
    const h=handle;if(!h||!matches(h))return false;
    return h.engine.enqueue(snapshot(A));
  }
- async function flush(){const h=handle;if(!h||!matches(h)||!navigator.onLine)return false;return h.engine.flush()}
+ async function flush(){const h=handle;if(!h||!matches(h)||!navigator.onLine)return false;const ok=await h.engine.flush();if(!ok)retrySoon(h);return ok}
  function importPad(h){
    if(!matches(h))return;
    const entries=IYOfflinePad.list(h.uid);let added=false;
@@ -73,7 +92,7 @@ const IYCloud=(()=>{
    if(checkFlight)return checkFlight;
    const work=(async()=>{try{
      if(h.durable)importPad(h);await h.engine.refresh();if(matches(h)&&h.durable)importPad(h);
-   }catch{if(current(h)){status='offline';badge()}}})();
+   }catch{if(current(h)){status='offline';badge()}}finally{retrySoon(h)}})();
    checkFlight=work;try{await work}finally{if(checkFlight===work)checkFlight=null}
  }
  function afterEntry(){clearTimeout(timer);timer=setTimeout(()=>{badge();check()},50)}

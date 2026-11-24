@@ -10,7 +10,8 @@ self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
  if(request.method!=='GET'||url.origin!==self.location.origin)return;
  if(request.mode==='navigate'&&['/','/index.html'].includes(url.pathname)){
-   event.respondWith(fetch(request).catch(()=>caches.open(cacheName).then(c=>c.match('/offline.html'))));return;
+   const fallback=()=>caches.open(cacheName).then(c=>c.match('/offline.html'));
+   event.respondWith(self.navigator.onLine?fetch(request,{cache:'no-store'}).catch(fallback):fallback());return;
  }
  if(files.includes(url.pathname)&&!url.search)event.respondWith(fetch(request).catch(()=>caches.open(cacheName).then(c=>c.match(url.pathname))));
 });

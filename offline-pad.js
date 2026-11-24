@@ -4,6 +4,8 @@ const IYOfflinePad=(()=>{
  function owner(){try{return sessionStorage.getItem(marker)||localStorage.getItem(marker)||''}catch{return ''}}
  function remember(uid){try{sessionStorage.setItem(marker,uid);localStorage.setItem(marker,uid)}catch{}}
  function forget(uid){try{sessionStorage.removeItem(marker);if(!uid||localStorage.getItem(marker)===uid)localStorage.removeItem(marker)}catch{}}
+ function prepareReturn(uid){try{if(uid&&uid===owner())sessionStorage.setItem('iydu.offline.return.v1',uid)}catch{}}
+ function takeReturn(){try{const id=sessionStorage.getItem('iydu.offline.return.v1');sessionStorage.removeItem('iydu.offline.return.v1');return id===owner()?id:null}catch{return null}}
  function key(uid,id){return prefix+uid+'.'+id}
  function list(uid){
    if(!uid)return [];
@@ -39,7 +41,7 @@ const IYOfflinePad=(()=>{
    (account.activeDays||={})[new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Istanbul'}).format(e.at)]=true;
    (account.offlineDraftIds||={})[e.id]=true;return 'added';
  }
- return {owner,remember,forget,list,newEntry,apply,put,remove};
+ return {owner,remember,forget,prepareReturn,takeReturn,list,newEntry,apply,put,remove};
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=IYOfflinePad;
 if(typeof document!=='undefined'&&document.querySelector('#offline-entry')){
@@ -56,5 +58,6 @@ if(typeof document!=='undefined'&&document.querySelector('#offline-entry')){
    IYOfflinePad.newEntry(uid,form.elements.kind.value,form.elements.day.value,form.elements.body.value);form.elements.body.value='';
    message.textContent=tr('Bu cihazda saklandı. Aynı hesapla bağlantı kurulduğunda eşitlenecek.','Saved on this device. It will sync when this account reconnects.');
  }catch{message.textContent=tr('Kayıt saklanamadı. Metnin yazı alanında duruyor.','Could not save. Your text is still in the editor.')}};
- window.addEventListener('online',()=>{if(!form.elements.body.value.trim())location.replace('/');else message.textContent=tr('Bağlantı geri geldi. Metnini kaydettikten sonra uygulamaya dön.','Back online. Save your draft before returning to the app.')});
+ document.querySelector('a[href="/"]').addEventListener('click',()=>{if(navigator.onLine)IYOfflinePad.prepareReturn(uid)});
+ window.addEventListener('online',()=>{if(!form.elements.body.value.trim()){IYOfflinePad.prepareReturn(uid);location.replace('/')}else message.textContent=tr('Bağlantı geri geldi. Metnini kaydettikten sonra uygulamaya dön.','Back online. Save your draft before returning to the app.')});
 }

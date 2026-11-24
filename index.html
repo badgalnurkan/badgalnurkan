@@ -3147,7 +3147,7 @@ async function finishCloudEntry(j,preferredName,method,options,codeApproved,stil
   const fromLocal=Object.values(DB.accounts).find(x=>x.authUid===uid);
   if(!fromLocal&&deviceAccountCount()>=MAX_DEVICE_ACCOUNTS){sbClear();throw Object.assign(Error('DEVICE_ACCOUNT_LIMIT'),{code:'DEVICE_ACCOUNT_LIMIT'})}
   const username=String((fromCloud&&fromCloud.u)||meta.username||preferredName||(fromLocal&&fromLocal.u)||j.user.email.split('@')[0]);
-  const pending=typeof IYCloud==='undefined'?null:IYCloud.start(uid,fromCloud);
+  const pending=typeof IYCloud==='undefined'?null:await IYCloud.start(uid,fromCloud);
   const a=norm(pending||fromCloud||fromLocal||{u:username,nick:meta.nick||username,email:j.user.email});
   bindReportCalendar(a,j.user,!fromCloud&&!fromLocal);
   applyServerProgressPolicy(a,progressPolicy);
@@ -5526,7 +5526,11 @@ async function bootstrapCloudAuth(){
     msg=tr()?'Google aktarımı yarıda kesildi. Eski profilin korunuyor. Yeniden denemeden önce bulut hesabının durumunu kontrol et.':'Google migration was interrupted. Your legacy profile remains intact. Check your cloud account before trying again.';
     view='login';renderAppOrAuth();return;
   }
-  // An existing session is a candidate for Continue, never an automatic entry.
+  const returning=typeof IYOfflinePad==='undefined'?null:IYOfflinePad.takeReturn();
+  if(returning&&sbSession()?.user?.id===returning){
+    const google=sbSession().user.app_metadata?.providers?.includes('google')===true;
+    await restoreCloudOnLoad(returning,google);
+  }
   return;
 }
 
@@ -5616,7 +5620,7 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     const local=Object.values(DB.accounts).find(a=>a.authUid===user.id);
     const meta=user.user_metadata||{};
-    const pending=typeof IYCloud==='undefined'?null:IYCloud.start(user.id,remote);
+    const pending=typeof IYCloud==='undefined'?null:await IYCloud.start(user.id,remote);
     const a=norm(pending||remote||local||{u:meta.username||user.email?.split('@')[0]||'user',nick:meta.nick||meta.username||'User'});
     bindReportCalendar(a,user,!remote&&!local);
     applyServerProgressPolicy(a,progressPolicy);

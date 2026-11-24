@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-module.exports=async(browser,engine)=>{
+module.exports=async(browser,engine,origin)=>{
  for(const width of [320,1440]){
   const page=await browser.newPage({viewport:{width,height:900}});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -64,14 +64,14 @@ module.exports=async(browser,engine)=>{
     const context=page.context();
     await page.evaluate(()=>navigator.serviceWorker.ready);
     await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
-    await context.setOffline(true);
+    await context.setOffline(true);await origin.disconnect();
     await page.reload({waitUntil:'domcontentloaded'});await page.locator('#offline-entry').waitFor();
     assert.equal(await page.locator('#offline-entry fieldset').isDisabled(),false);
     await page.locator('#offline-body').fill('Saved offline at the library');
     await page.locator('#offline-entry button').click();await page.locator('#pad-status').filter({hasText:'Saved on this device'}).waitFor();
     await page.locator('#kind').selectOption('note');await page.locator('#day').fill('2031-03-31');await page.locator('#offline-body').fill('March note');
     await page.locator('#offline-entry button').click();assert.equal(await page.evaluate(()=>IYOfflinePad.list(IYOfflinePad.owner()).length),2);
-    await context.setOffline(false);await page.locator('#welcome-continue').waitFor();await page.locator('#welcome-continue').click();
+    await origin.reconnect();await context.setOffline(false);
     await page.locator('.shell').waitFor();
     await page.waitForFunction(()=>A&&A.future?.['2031-03-31']==='March note'&&A.tasks.some(task=>task.t==='Saved offline at the library'));
     await page.evaluate(async()=>{await IYCloud.flush();await IYCloud.check()});
