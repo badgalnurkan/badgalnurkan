@@ -1338,7 +1338,7 @@ body{font-size:1rem!important}
   #login-portal.v13131-portal .portal-disc,#login-portal.v13131-portal .portal-ring{animation:none!important}
 }
 /* Shared web motion, inspired by Apple's motion guidance. */
-:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:1600}
+:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:900}
 #app{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main,.shell main.swap{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main.an{animation:pgIn .34s var(--motion-ease) both}
@@ -1464,13 +1464,13 @@ body{font-size:1rem!important}
   .nav-shell aside a::after,.nav-shell aside a .nav-icon svg{transition:none}
 }
 
-/* Welcome entry: 180ms brand, 340ms forward, 240ms reverse, then 840ms greeting. */
+/* Welcome entry: 80ms brand, 350ms circle pass, then 470ms greeting. */
 #login-portal.entry-portal{background:var(--bg);pointer-events:auto;animation:entryPortalOut calc(var(--entry-total-ms)*1ms) linear both!important}
-#login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .58s linear .18s both!important}
-#login-portal.entry-portal .portal-brand{position:relative;z-index:2;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:entryBrandPass .58s linear .18s both!important}
+#login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .35s linear .08s both!important}
+#login-portal.entry-portal .portal-brand{position:relative;z-index:2;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:entryBrandPass .35s linear .08s both!important}
 #login-portal.entry-portal .portal-title{font-family:var(--brand-title-font);font-size:clamp(1.1rem,4.5vw,1.65rem);font-weight:600;line-height:1.3;text-wrap:balance;text-align:center;color:var(--acc)}
 #login-portal.entry-portal .portal-ring{position:absolute;inset:-2px;display:block;width:auto;height:auto;border:2px solid var(--ln);border-top-color:var(--acc);border-right-color:var(--acc);border-radius:50%;animation:entrySpinner .9s linear infinite!important}
-#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .84s var(--motion-ease) .76s both!important}
+#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .47s var(--motion-ease) .43s both!important}
 @keyframes entryCirclePass{0%{transform:translate(-50%,-50%) scale(0);animation-timing-function:var(--motion-return)}58.62069%{transform:translate(-50%,-50%) scale(1.5);animation-timing-function:var(--motion-return)}100%{transform:translate(-50%,-50%) scale(0)}}
 @keyframes entryBrandPass{0%{opacity:1;transform:scale(1);animation-timing-function:var(--motion-return)}58.62069%{opacity:1;transform:scale(1.08);animation-timing-function:var(--motion-return)}100%{opacity:0;transform:scale(1)}}
 @keyframes entrySpinner{to{transform:rotate(360deg)}}
@@ -1717,6 +1717,7 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 #signup-terms:checked{background:var(--acc);border-color:var(--acc)}
 #signup-terms:checked::after{content:'';width:.65rem;height:.32rem;border:solid var(--on-acc);border-width:0 0 2px 2px;transform:translateY(-.08rem) rotate(-45deg)}
 .entry-confirmed{display:block;font:600 .85rem/1.4 system-ui;margin-top:.45rem}
+.entry-confirmation-fixed{position:absolute;z-index:4;bottom:12%;left:1rem;right:1rem;text-align:center;font:600 .95rem/1.4 system-ui;color:var(--ink)}
 .signup-docs{text-align:center;margin:.3rem 0 .8rem}
 </style>
 <link rel="stylesheet" href="/account-security.css">
@@ -2514,8 +2515,9 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-23-month-calendar-05';
+const SITE_RELEASE='2026-11-24-calendar-daily-01';
 const SITE_CHANGES=[
+ {date:'2026-11-24',trTitle:'Aylık rapor ve günlük keşif',enTitle:'Monthly report and daily discovery',items:[['Aylık rapor yanıtları ayın son günü gece yarısına kadar düzenlenebilir.','Monthly report answers can be edited until midnight on the last day of the month.'],['Ana sayfaya kaynaklı günlük bilgi, görev listesine rastgele öneri eklendi.','Added sourced daily facts and random task suggestions.'],['Giriş geçişi kısaltıldı; kod onayı beklemeden gösterilir.','Shortened the entry animation and display code confirmation immediately.']]},
   {date:'2026-11-23',trTitle:'Aylık rapor takvimi',enTitle:'Monthly report calendar',items:[
   ['İlk aylık rapor kayıt olduğun ayda açılır. O ay kayıt tarihinden itibaren bir görev, günlük veya tamamlanmış odak kaydı gerekir.','Your first monthly report opens in your signup month if you record a task, journal entry or completed focus session after joining.'],
   ['Aylık rapor kartında ilgili ayın adı, ayın son günündeki açılış ve sonraki ayın ilk günündeki kapanış Türkiye saatiyle gösterilir.','The monthly report shows its month, its opening on the final day and its closing on the first day of the following month in Istanbul time.']]},
@@ -2691,7 +2693,7 @@ function bindNotificationSwipe(banner){
 }
 function showTopNotification(item){
  if(document.visibilityState!=='visible')return;
- if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',1600)+200);return}
+ if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',900)+200);return}
  let stack=document.getElementById('notification-banners');
  if(!stack){stack=document.createElement('div');stack.id='notification-banners';stack.className='notification-banners';stack.setAttribute('aria-live','polite');stack.setAttribute('aria-relevant','additions');document.body.appendChild(stack)}
  const copy=notificationCopy(item),banner=document.createElement('div');banner.className='notification-banner';banner.dataset.notificationId=item.id;
@@ -2944,11 +2946,12 @@ function playWelcomeTransition(cb,codeApproved=false){
   root.id='login-portal';root.className='entry-portal';
   root.setAttribute('role','status');root.setAttribute('aria-live','polite');root.setAttribute('aria-atomic','true');
   root.innerHTML=`<div class="portal-disc" aria-hidden="true"></div><div class="portal-brand" aria-hidden="true"><span class="portal-title">Improvin' your day.</span><span class="portal-ring"></span></div><p class="portal-greeting">${esc(greetText())}${codeApproved?`<small class="entry-confirmed">${tr()?'Giriş onaylandı.':'Sign-in confirmed.'}</small>`:''}</p>`;
+  if(codeApproved){root.insertAdjacentHTML('beforeend',`<p class="entry-confirmation-fixed" role="status">${tr()?'Giriş onaylandı.':'Sign-in confirmed.'}</p>`);root.querySelector('.entry-confirmed')?.remove()}
   document.body.appendChild(root);
   let cleaned=false,fallback=0;
   const cleanup=()=>{if(cleaned)return;cleaned=true;clearTimeout(fallback);root.remove();if(cb)cb()};
   root.addEventListener('animationend',e=>{if(e.target===root&&e.animationName==='entryPortalOut')cleanup()});
-  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',1600)+200);
+  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',900)+200);
 }
 function goHome(){reportDetail='';stopTimers();if(A?.loginMethod!=='google')sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 function backToLogin(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
@@ -3701,6 +3704,15 @@ let reportRenderedDay='';
 setInterval(()=>{if(A&&A.day!==today())shell();if(A&&view==='app'&&pg==='rep'&&reportRenderedDay!==istanbulDayKey())P.rep()},1000);
 
 const P={};const M=h=>{const main=$('#mn');if(main){main.innerHTML=h;fitTextFields(main);if(!main.classList.contains('an'))motionReveal(main)}};
+const DAILY_FACTS=[["Uzay","Space","Venüs'ün kendi ekseni etrafında dönmesi, Güneş çevresindeki bir turundan daha uzun sürer.","Venus takes longer to rotate once than to orbit the Sun.","NASA","https://science.nasa.gov/venus/venus-facts/"],["Okyanuslar","Oceans","Dünya yüzeyinin yaklaşık %71'i okyanuslarla kaplıdır.","The ocean covers about 71% of Earth’s surface.","NOAA","https://oceanservice.noaa.gov/facts/howmanyoceans.html"],["Tarih","History","Niépce, 1826–1827 yıllarında ilk kalıcı fotoğrafı elde etti.","Niépce produced the first permanent photograph in 1826–1827.","Library of Congress","https://www.loc.gov/item/today-in-history/november-18/"],["Fizik","Physics","Vakumda ışığın hızı tam olarak saniyede 299.792.458 metredir.","The speed of light in vacuum is exactly 299,792,458 meters per second.","NIST","https://www.nist.gov/pml/owm/si-units-length"],["Doğa","Nature","Buz, sıvı sudan daha az yoğun olduğu için yüzer.","Ice floats because it is less dense than liquid water.","USGS","https://www.usgs.gov/special-topics/water-science-school/properties-water"],["Matbaa","Printing","868 tarihli Elmas Sutra, günümüze ulaşmış eski Çin ahşap baskı örneklerindendir.","The Diamond Sutra, dated 868, is an early surviving Chinese woodblock print.","UNESCO","https://courier.unesco.org/en/articles/200-years-gutenberg-master-printers-koryo"],["Meteoroloji","Meteorology","Şimşeği gök gürültüsünden önce görürüz, çünkü ışık sesten daha hızlı yayılır.","We see lightning before hearing thunder because light travels faster than sound.","National Weather Service","https://www.weather.gov/fgz/Lightning"]];
+function dailyFact(day=istanbulDayKey()){
+ const index=Math.floor(Date.parse(day+'T00:00:00Z')/86400000);
+ return DAILY_FACTS[((index%DAILY_FACTS.length)+DAILY_FACTS.length)%DAILY_FACTS.length];
+}
+function dailyFactCard(){
+ const fact=dailyFact();if(!fact)return '';
+ return `<section class="card daily-fact"><div class="mut">${tr()?'Günün bilgisi':'Daily discovery'} · ${esc(fact[tr()?0:1])}</div><h3>${esc(fact[tr()?2:3])}</h3><a href="${fact[5]}" target="_blank" rel="noopener noreferrer">${tr()?'Kaynak':'Source'}: ${esc(fact[4])}</a></section>`;
+}
 P.home=()=>{
   expireTimedRecords();
   const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length;
@@ -3709,7 +3721,7 @@ P.home=()=>{
     const d=dd(today(),p.d);
     return`<div class="task project-task"><span>${esc(p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
   }).join('');
-  M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
+  M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>${dailyFactCard()}
   <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="2000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/2000</span></div></div>
   <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
@@ -3782,6 +3794,15 @@ function fixTodoData(){
   A.backlog=A.backlog.map(txt).filter(Boolean).slice(-10);
   if(!A.hist||typeof A.hist!=='object')A.hist={};
 }
+const TASK_SUGGESTIONS=[["Bir sonraki gün için üç küçük öncelik yaz","Write three small priorities for tomorrow"],["Masandaki gereksiz eşyaları toparla","Tidy unnecessary items on your desk"],["Öğrendiğin yeni bir şeyi not al","Write down something new you learned"],["Yarım kalan bir işi küçük bir adıma böl","Break an unfinished task into one small step"],["Okumak istediğin bir konu seç","Choose a topic you would like to read about"],["Bir arkadaşına teşekkür mesajı yaz","Write a thank-you message to a friend"],["Günün güzel bir anını günlüğüne yaz","Write a good moment from your day in your journal"],["Klasörlerinden birini düzenle","Organize one folder"],["Kısa bir mola planla","Plan a short break"],["Sevdiğin bir konuyla ilgili bir soru araştır","Research a question about a topic you enjoy"]];
+function suggestRandomTask(){
+ const input=document.getElementById('nt');if(!A||!input)return;
+ if(input.value.trim()&&input.value!==input.dataset.randomSuggestion){toast(tr()?'Yazdığın görev korunuyor. Yeni öneri için alanı temizle.':'Your draft is preserved. Clear the field for a new suggestion.');return}
+ const candidates=TASK_SUGGESTIONS.map(pair=>pair[tr()?0:1]).filter(v=>v!==input.value&&!(A.tasks||[]).some(task=>task.t===v));
+ if(!candidates.length)return;
+ const choice=candidates[Math.floor(Math.random()*candidates.length)];
+ input.value=choice;input.dataset.randomSuggestion=choice;input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();
+}
 P.todo=()=>{
   fixTodoData();
   if(archiveFinishedTasks())save();
@@ -3796,7 +3817,7 @@ P.todo=()=>{
     ?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.')
     :t('addTask');
   const todayTasksMarkup=renderedTodayTasks||`<p class="mut">${esc(emptyTodayText)}</p>`;
-  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div><button type="button" class="g s" onclick="suggestRandomTask()">${tr()?'Rastgele görev':'Random task'}</button></div>
   <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><textarea rows="1" class="task-compose" id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addTomorrowPlan()}"></textarea><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
@@ -4356,6 +4377,33 @@ function reportActivityLine(a,b){
  if(focus)parts.push(tr()?`${focus} tamamlanmış odak oturumu`:`${focus} completed focus ${focus===1?'session':'sessions'}`);
  return parts.join(' · ');
 }
+let monthlyEditDraft=null;
+function monthlyEditGroups(key,day=istanbulDayKey()){
+ const w=reportWindow('month',day);
+ if(!A?.ql?.[key]||w.period.key!==key||day!==w.opens)return [];
+ const groups=[['review',key]];
+ if(A.reportPlanLinks?.[key]===w.period.nk&&A.planningLocks?.[w.period.nk])groups.push(['plan',w.period.nk]);
+ return groups.flatMap(([scope,k])=>(reportQuestionStore(scope)[k]||[]).flatMap((question,i)=>question&&typeof question.a==='string'?[{scope,k,i,question}]:[]));
+}
+function openMonthlyEdit(key){
+ const fields=monthlyEditGroups(key);
+ if(!fields.length)return;
+ monthlyEditDraft={owner:A,key,fields,original:fields.map(f=>f.question.a)};
+ openModal('monthly-edit-modal',`<h2>${tr()?'Aylık raporu düzenle':'Edit monthly report'}</h2><p class="mut">${tr()?'Değişiklikler yalnızca ay bitmeden kaydedilebilir.':'Changes can only be saved before the month ends.'}</p>${fields.map((f,i)=>`<label for="month-edit-${i}">${esc(reportQuestionForPeriod(f.question,f.k,f.scope))}</label><textarea id="month-edit-${i}" rows="2" maxlength="400">${esc(f.question.a)}</textarea>`).join('')}<div class="row"><button onclick="saveMonthlyEdit()">${t('save')}</button><button class="g" onclick="closeModal('monthly-edit-modal')">${t('cancel')}</button></div>`);
+}
+function applyMonthlyEdit(draft,values,day=istanbulDayKey()){
+ if(!draft||draft.owner!==A||!Array.isArray(values))return false;
+ const fields=monthlyEditGroups(draft.key,day);
+ if(!fields.length||fields.length!==draft.fields.length||values.length!==fields.length||fields.some((f,i)=>f.question!==draft.fields[i].question||f.question.a!==draft.original[i])||values.some(v=>typeof v!=='string'||!v.trim()||v.length>400))return false;
+ fields.forEach((f,i)=>{f.question.a=values[i].trim()});
+ save();return true;
+}
+function saveMonthlyEdit(){
+ const draft=monthlyEditDraft;
+ const values=draft?.fields.map((_,i)=>document.getElementById('month-edit-'+i)?.value);
+ if(!applyMonthlyEdit(draft,values)){toast(tr()?'Yanıtlar boş, değişmiş veya düzenleme süresi dolmuş olabilir.':'Answers may be empty, changed, or outside the editing window.');return}
+ monthlyEditDraft=null;closeModal('monthly-edit-modal');P.rep();toast(t('saved'));
+}
 function monthlyReportCard(day,window){
  const {period,opens,closes,next}=window;
  const submitted=!!A.ql?.[period.key],open=reportQuestionsOpen('month',day);
@@ -4365,7 +4413,7 @@ function monthlyReportCard(day,window){
  const schedule=`<p class="mut report-month-window">${tr()?'Açılış':'Opens'} · ${midnight(opens)}<br>${tr()?'Kapanış':'Closes'} · ${midnight(closes)} (${tr()?'Türkiye saati':'Istanbul time'})</p>`;
  let status='';
  if(submitted){
-   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>`;
+   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>${monthlyEditGroups(period.key,day).length?`<button class="g s" onclick="openMonthlyEdit('${period.key}')">${tr()?'Düzenle':'Edit'}</button>`:''}`;
  }else if(open){
    status=`<p>${reportActivityLine(start,period.b)}</p><button class="g report-more" onclick="showReportDetail('month')">${tr()?'Soruları yanıtla':'Answer questions'} →</button>`;
  }else if(!start||!reportHasActivity(start,period.b)){
