@@ -2798,7 +2798,7 @@ function showTimedArchive(){
  openModal('timed-archive-modal','<h2>'+(tr()?'Süresi dolan kayıtlar':'Expired records')+'</h2><p class="mut">'
   +(tr()?'Kayıtlar otomatik silinmez. Geri yüklerken yeni bir tarih seç.':'Records are not automatically deleted. Choose a new date when restoring.')+'</p>'
   +'<div class="note-grid">'+(notes+projects||'<p class="mut">'+t('noRecords')+'</p>')+'</div>'
-  +'<button type="button" class="g" onclick="closeModal('+"'timed-archive-modal'"+')">'+(tr()?'Kapat':'Close')+'</button>');
+  +'<button type="button" class="g" onclick="closeModal(\'timed-archive-modal\')">'+(tr()?'Kapat':'Close')+'</button>');
 }
 function editTimedArchiveNote(index){
  const item=ensureTimedArchive().notes[index];if(!item)return;
@@ -2814,6 +2814,7 @@ function saveTimedArchiveNote(index){
  if(!item||!text){toast(tr()?'Not boş olamaz.':'Note cannot be empty.');return}
  item.text=text;item.editedAt=Date.now();save();showTimedArchive();
 }
+function validArchiveDate(key){return /^\d{4}-\d{2}-\d{2}$/.test(key)&&Number.isFinite(Date.parse(key+'T12:00:00+03:00'))&&new Date(key+'T12:00:00+03:00').toISOString().slice(0,10)===key;}
 function restoreTimedArchiveNote(index){
  const item=ensureTimedArchive().notes[index];if(!item)return;
  timedArchiveEditorOwner=A;
@@ -2825,7 +2826,7 @@ function restoreTimedArchiveNote(index){
 function saveRestoredTimedArchiveNote(index){
  if(!A||A!==timedArchiveEditorOwner)return;
  const item=ensureTimedArchive().notes[index],key=String(document.getElementById('timed-restore-date')?.value||'');
- if(!item||!/^\d{4}-\d{2}-\d{2}$/.test(key)||!Number.isFinite(Date.parse(key+'T12:00:00+03:00'))||key<today()){
+ if(!item||!validArchiveDate(key)||key<today()){
   toast(tr()?'Bugün veya sonrası için geçerli bir tarih seç.':'Choose a valid date today or later.');return;
  }
  if(A.future?.[key]){toast(tr()?'Bu tarihte zaten bir not bulunuyor.':'A note already exists on this date.');return}
@@ -2848,7 +2849,7 @@ function saveRestoredTimedArchiveProject(index){
  if(!A||A!==timedArchiveEditorOwner)return;
  const project=A.projects?.[index],name=String(document.getElementById('timed-project-name')?.value||'').trim().slice(0,40);
  const key=String(document.getElementById('timed-project-date')?.value||'');
- if(!project?.archivedAt||!name||!/^\d{4}-\d{2}-\d{2}$/.test(key)||!Number.isFinite(Date.parse(key+'T09:00:00+03:00'))||key<today()){
+ if(!project?.archivedAt||!name||!validArchiveDate(key)||key<today()){
   toast(tr()?'Proje adını ve yeni geçerli tarihi yaz.':'Enter a project name and a valid new date.');return;
  }
  project.n=name;project.d=key;project.reminderAt=new Date(key+'T09:00:00+03:00').toISOString();
