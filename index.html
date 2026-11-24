@@ -2811,7 +2811,7 @@ function timedArchiveCount(){
  return (Array.isArray(A?.timedArchive?.notes)?A.timedArchive.notes.length:0)
    +(Array.isArray(A?.projects)?A.projects.filter(p=>p&&p.archivedAt).length:0);
 }
-let timedArchiveEditorOwner=null;
+let timedArchiveEditorOwner=null,timedArchiveEditorItem=null;
 function showTimedArchive(){
  if(!A)return;
  expireTimedRecords();
@@ -2821,7 +2821,7 @@ function showTimedArchive(){
   +'<button type="button" class="g s" onclick="restoreTimedArchiveNote('+index+')">'+(tr()?'Geri yükle':'Restore')+'</button>'
   +'<button type="button" class="g s" onclick="confirmDeleteTimedArchiveNote('+index+')">'+t('delete')+'</button></div></article>').join('');
  const projects=(A.projects||[]).map((project,index)=>({project,index})).filter(x=>x.project?.archivedAt).map(({project,index})=>
-  '<article class="note-tile"><b>'+esc(project.n)+'</b><p>'+esc(project.d)+'</p><div class="row">'
+  '<article class="note-tile"><b>'+esc(project.reminderLabel||project.n)+'</b><p>'+esc(project.d)+'</p><div class="row">'
   +'<button type="button" class="g s" onclick="restoreTimedArchiveProject('+index+')">'+(tr()?'Düzenle / geri yükle':'Edit / restore')+'</button>'
   +'<button type="button" class="g s" onclick="confirmDeleteTimedArchiveProject('+index+')">'+t('delete')+'</button></div></article>').join('');
  openModal('timed-archive-modal','<h2>'+(tr()?'Süresi dolan kayıtlar':'Expired records')+'</h2><p class="mut">'
@@ -2831,14 +2831,14 @@ function showTimedArchive(){
 }
 function editTimedArchiveNote(index){
  const item=ensureTimedArchive().notes[index];if(!item)return;
- timedArchiveEditorOwner=A;
+ timedArchiveEditorOwner=A;timedArchiveEditorItem=item;
  openModal('timed-archive-editor','<h2>'+(tr()?'Arşivdeki notu düzenle':'Edit archived note')+'</h2>'
   +'<textarea id="timed-archive-text" rows="5" maxlength="500">'+esc(item.text)+'</textarea>'
   +'<div class="row"><button onclick="saveTimedArchiveNote('+index+')">'+t('save')+'</button>'
   +'<button class="g" onclick="showTimedArchive()">'+t('back')+'</button></div>');
 }
 function saveTimedArchiveNote(index){
- if(!A||A!==timedArchiveEditorOwner)return;
+ if(!A||A!==timedArchiveEditorOwner||timedArchiveEditorItem!==A.timedArchive?.notes?.[index])return;
  const item=ensureTimedArchive().notes[index],text=String(document.getElementById('timed-archive-text')?.value||'').trim().slice(0,500);
  if(!item||!text){toast(tr()?'Not boş olamaz.':'Note cannot be empty.');return}
  item.text=text;item.editedAt=Date.now();save();showTimedArchive();
@@ -2846,14 +2846,14 @@ function saveTimedArchiveNote(index){
 function validArchiveDate(key){return /^\d{4}-\d{2}-\d{2}$/.test(key)&&Number.isFinite(Date.parse(key+'T12:00:00+03:00'))&&new Date(key+'T12:00:00+03:00').toISOString().slice(0,10)===key;}
 function restoreTimedArchiveNote(index){
  const item=ensureTimedArchive().notes[index];if(!item)return;
- timedArchiveEditorOwner=A;
+ timedArchiveEditorOwner=A;timedArchiveEditorItem=item;
  openModal('timed-archive-restore','<h2>'+(tr()?'Notu geri yükle':'Restore note')+'</h2><p>'+esc(item.text)+'</p>'
   +'<label for="timed-restore-date">'+(tr()?'Yeni tarih':'New date')+'</label>'
   +'<input id="timed-restore-date" type="date" min="'+today()+'">'
   +'<button onclick="saveRestoredTimedArchiveNote('+index+')">'+(tr()?'Geri yükle':'Restore')+'</button>');
 }
 function saveRestoredTimedArchiveNote(index){
- if(!A||A!==timedArchiveEditorOwner)return;
+ if(!A||A!==timedArchiveEditorOwner||timedArchiveEditorItem!==A.timedArchive?.notes?.[index])return;
  const item=ensureTimedArchive().notes[index],key=String(document.getElementById('timed-restore-date')?.value||'');
  if(!item||!validArchiveDate(key)||key<today()){
   toast(tr()?'Bugün veya sonrası için geçerli bir tarih seç.':'Choose a valid date today or later.');return;
@@ -2868,45 +2868,45 @@ function saveRestoredTimedArchiveNote(index){
 }
 function restoreTimedArchiveProject(index){
  const project=A?.projects?.[index];if(!project?.archivedAt)return;
- timedArchiveEditorOwner=A;
+ timedArchiveEditorOwner=A;timedArchiveEditorItem=project;
  openModal('timed-project-restore','<h2>'+(tr()?'Proje hatırlatmasını geri yükle':'Restore project reminder')+'</h2>'
-  +'<label for="timed-project-name">'+(tr()?'Proje':'Project')+'</label><input id="timed-project-name" maxlength="40" value="'+esc(project.n)+'">'
+  +'<label for="timed-project-name">'+(tr()?'Hatırlatma metni':'Reminder text')+'</label><input id="timed-project-name" maxlength="40" value="'+esc(project.reminderLabel||project.n)+'">'
   +'<label for="timed-project-date">'+(tr()?'Yeni tarih':'New date')+'</label><input id="timed-project-date" type="date" min="'+today()+'">'
   +'<button onclick="saveRestoredTimedArchiveProject('+index+')">'+(tr()?'Geri yükle':'Restore')+'</button>');
 }
 function saveRestoredTimedArchiveProject(index){
- if(!A||A!==timedArchiveEditorOwner)return;
+ if(!A||A!==timedArchiveEditorOwner||timedArchiveEditorItem!==A.projects?.[index])return;
  const project=A.projects?.[index],name=String(document.getElementById('timed-project-name')?.value||'').trim().slice(0,40);
  const key=String(document.getElementById('timed-project-date')?.value||'');
  if(!project?.archivedAt||!name||!validArchiveDate(key)||key<today()){
   toast(tr()?'Proje adını ve yeni geçerli tarihi yaz.':'Enter a project name and a valid new date.');return;
  }
- project.n=name;project.d=key;project.reminderAt=new Date(key+'T09:00:00+03:00').toISOString();
+ project.reminderLabel=name;project.reminderAt=new Date(key+'T09:00:00+03:00').toISOString();
  project.reminderEnabled=true;delete project.archivedAt;delete project.reminderArchivedAt;
  recordActivity();closeModal('timed-project-restore');if(pg==='home')P.home();else if(pg==='pc')P.pc();
  toast(tr()?'Proje geri yüklendi.':'Project restored.');
 }
 function confirmDeleteTimedArchiveNote(index){
  if(!ensureTimedArchive().notes[index])return;
- timedArchiveEditorOwner=A;
+ timedArchiveEditorOwner=A;timedArchiveEditorItem=ensureTimedArchive().notes[index];
  openModal('timed-archive-delete','<h2>'+(tr()?'Arşivdeki not kalıcı silinsin mi?':'Permanently delete archived note?')+'</h2>'
  +'<div class="row"><button class="danger-logout" onclick="deleteTimedArchiveNote('+index+')">'+t('yes')+'</button>'
  +'<button class="g" onclick="showTimedArchive()">'+t('no')+'</button></div>');
 }
 function deleteTimedArchiveNote(index){
- if(!A||A!==timedArchiveEditorOwner||!ensureTimedArchive().notes[index])return;
+ if(!A||A!==timedArchiveEditorOwner||timedArchiveEditorItem!==A.timedArchive?.notes?.[index]||!ensureTimedArchive().notes[index])return;
  A.timedArchive.notes.splice(index,1);save();showTimedArchive();
 }
 function confirmDeleteTimedArchiveProject(index){
  if(!A?.projects?.[index]?.archivedAt)return;
- timedArchiveEditorOwner=A;
- openModal('timed-project-delete','<h2>'+(tr()?'Arşivdeki proje kalıcı silinsin mi?':'Permanently delete archived project?')+'</h2>'
+ timedArchiveEditorOwner=A;timedArchiveEditorItem=A.projects[index];
+ openModal('timed-project-delete','<h2>'+(tr()?'Arşivdeki hatırlatma kalıcı silinsin mi?':'Permanently delete this archived reminder?')+'</h2>'
  +'<div class="row"><button class="danger-logout" onclick="deleteTimedArchiveProject('+index+')">'+t('yes')+'</button>'
  +'<button class="g" onclick="showTimedArchive()">'+t('no')+'</button></div>');
 }
 function deleteTimedArchiveProject(index){
- if(!A||A!==timedArchiveEditorOwner||!A.projects?.[index]?.archivedAt)return;
- A.projects.splice(index,1);save();showTimedArchive();
+ if(!A||A!==timedArchiveEditorOwner||timedArchiveEditorItem!==A.projects?.[index]||!A.projects?.[index]?.archivedAt)return;
+ const project=A.projects[index];delete project.archivedAt;delete project.reminderArchivedAt;delete project.reminderLabel;project.reminderEnabled=false;save();showTimedArchive();
 }
 
 function expireTimedRecords(now=Date.now()){
@@ -2930,7 +2930,7 @@ function checkAppReminders(now=Date.now()){
  if(owner.notificationPrefs.projects!==false){
   for(const project of A.projects||[]){
    const due=projectReminderTime(project);if(!Number.isFinite(due)||due>now)continue;
-   addNotification('project:'+projectId(project)+':'+due,'project',{name:project.n});
+   addNotification('project:'+projectId(project)+':'+due,'project',{name:project.reminderLabel||project.n});
   }
  }
  const expired=expireTimedRecords(now);if(expired&&['home','pc'].includes(pg))renderPage();
@@ -3880,8 +3880,8 @@ P.home=()=>{
   const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length;
   const j=A.journal?.[today()]?.text||'';
   const pr=(A.projects||[]).map((p,i)=>({p,i})).filter(({p})=>!p?.archivedAt).map(({p,i})=>{
-    const d=dd(today(),p.d);
-    return`<div class="task project-task"><span>${esc(p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
+    const due=projectReminderTime(p),d=dd(today(),Number.isFinite(due)?istanbulDayKey(new Date(due)):p.d);
+    return`<div class="task project-task"><span>${esc(p.reminderLabel||p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
   }).join('');
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
   ${dailyFactCard()}<div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
@@ -5422,9 +5422,9 @@ function checkCloudDeletionConsent(){
   if(button)button.disabled=accountDeletionBusy||accountConnection(A)!=='cloud'||
     !pendingDeleteUid||A?.authUid!==pendingDeleteUid||email!==verified||phrase!=='DELETE MY ACCOUNT';
 }
-function removeDeletedAccountFromBrowser(uid,username){
+function removeDeletedAccountFromBrowser(uid,username,permanent=false){
   clearTimeout(pushT);pushT=null;
-  if(uid)cloudForgetDrafts(uid);
+  if(uid&&permanent){cloudForgetDrafts(uid);for(const e of IYOfflinePad.list(uid))IYOfflinePad.remove(uid,e.id);for(const k of Object.keys(localStorage))if(k.startsWith('iydu.resolved.v1.'+uid+'.'))localStorage.removeItem(k)}
   // Remove *only* the deleted identity. Preserve unrelated local profiles.
   for(const [key,account] of Object.entries(DB.accounts)){
     if(uid ? account?.authUid===uid : key===username && !accountCloudHints(account))delete DB.accounts[key];
@@ -5461,7 +5461,7 @@ async function deleteCloudConfirmed(){
     const uid=A.authUid,username=A.u;
     const result=await accountFunction('delete',{email,confirmation:'DELETE MY ACCOUNT'});
     if(!result?.ok||result.deleted!==true)throw Object.assign(new Error('SERVER_ERROR'),{code:'SERVER_ERROR'});
-    stopTimers();removeDeletedAccountFromBrowser(uid,username);pendingDeleteUid=null;
+    stopTimers();removeDeletedAccountFromBrowser(uid,username,true);pendingDeleteUid=null;
     closeModal('delete-cloud-modal');goTo('welcome','home');
     toast(tr()?'Hesap silindi. Diğer cihazlarda kalan kopyaları ayrıca temizle.':'Account deleted. Clear any remaining copies on other devices.');
   }catch(e){
@@ -5841,8 +5841,14 @@ function exportCloudDrafts(){
   if(!uid||sbSession()?.user?.id!==uid)return;
   try{
     const drafts=cloudDraftEntries(uid).map(d=>({base:exportDataSnapshot(d.base).account,profile:exportDataSnapshot(d.profile).account}));
-    if(!drafts.length){toast(tr()?'Bekleyen taslak yok.':'No pending drafts.');return}
-    const url=URL.createObjectURL(new Blob([JSON.stringify({format:'iydu-unsynced-drafts',version:1,drafts},null,2)],{type:'application/json'}));
+    const retained=[];
+    const prefix='iydu.resolved.v1.'+uid+'.';
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);if(!k||!k.startsWith(prefix))continue;
+      const v=JSON.parse(localStorage.getItem(k));if(v.profile?.authUid===uid&&v.cloud?.authUid===uid)retained.push({device:exportDataSnapshot(v.profile).account,cloud:exportDataSnapshot(v.cloud).account});
+    }
+    if(!drafts.length&&!retained.length){toast(tr()?'Bekleyen taslak yok.':'No pending drafts.');return}
+    const url=URL.createObjectURL(new Blob([JSON.stringify({format:'iydu-unsynced-drafts',version:2,drafts,retained},null,2)],{type:'application/json'}));
     const link=document.createElement('a');link.href=url;link.download='improvin-pending-drafts.json';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
   }catch(_){toast(tr()?'Taslaklar okunamadı.':'Could not read pending drafts.')}
 }

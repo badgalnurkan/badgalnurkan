@@ -51,6 +51,10 @@ const IYReconcile=(()=>{
   if(!active(uid))return false;
   importPad(uid,latest);
   const display=cloudContent(A);
+  const previous=cloudBaselines.get(uid);
+  if(!cloudDraftEntries(uid).length&&previous&&display!==cloudContent(JSON.parse(previous))){
+   if(!cloudStageDraft(A))return false;
+  }
   for(let i=0;i<20;i++){
    if(!active(uid))return false;
    const entries=cloudDraftEntries(uid),entry=entries[0];
@@ -102,13 +106,17 @@ const IYReconcile=(()=>{
   finally{if(work===task)work=null;badge()}})();
   work=task;return task.promise;
  }
+ const dateGroup=['day','tasks','completedBatches','hist','plans','backlog'];
  const field=(v,path)=>path==='$'?v:path.split('.').reduce((val,k)=>val?.[k],v);
  function show(){
   const uid=A?.authUid;if(!active(uid))return;
   document.getElementById('sync-review')?.remove();
   const old=issue?.uid===uid?issue:null;
   const print=v=>esc(v===undefined?text('Kaldırıldı','Removed'):typeof v==='string'?v:JSON.stringify(v,null,2));
-  const rows=old?old.paths.map((path,i)=>`<fieldset><legend>${esc(path)}</legend><label><input type="radio" name="choice-${i}" value="device" required> ${text('Cihazdaki','On this device')}</label><pre>${print(field(old.local,path))}</pre><label><input type="radio" name="choice-${i}" value="cloud" required> ${text('Buluttaki','In the cloud')}</label><pre>${print(field(old.remote,path))}</pre></fieldset>`).join(''):'';
+  const grouped=old?.paths.includes('day');
+  const paths=old?old.paths.filter(p=>!grouped||p==='day'||!dateGroup.includes(p.split('.')[0])):[];
+  const value=(doc,path)=>grouped&&path==='day'?Object.fromEntries(dateGroup.map(k=>[k,doc[k]])):field(doc,path);
+  const rows=old?paths.map((path,i)=>`<fieldset><legend>${esc(path)}</legend><label><input type="radio" name="choice-${i}" value="device" required> ${text('Cihazdaki','On this device')}</label><pre>${print(value(old.local,path))}</pre><label><input type="radio" name="choice-${i}" value="cloud" required> ${text('Buluttaki','In the cloud')}</label><pre>${print(value(old.remote,path))}</pre></fieldset>`).join(''):'';
   const notes=IYOfflinePad.list(uid).filter(e=>e.kind==='note'&&!A.offlineDraftIds?.[e.id]&&A.future?.[e.day]&&A.future[e.day]!==e.text);
   const dates=notes.map((e,i)=>`<article><b>${esc(e.day)}</b><p>${esc(e.text)}</p><label>${text('Bu tarihte başka not var. Bu nota yeni tarih seç.','Another note uses this date. Choose a date for this note.')} <input type="date" data-note="${i}"></label></article>`).join('');
   const count=cloudDraftEntries(uid).length;
@@ -116,7 +124,7 @@ const IYReconcile=(()=>{
   const modal=document.getElementById('sync-review');modal.dataset.owner=uid;
   const run=async choice=>{if(!active(uid))return;modal.remove();await check(choice);if(active(uid))show()};
   modal.querySelector('form').onsubmit=e=>{e.preventDefault();if(!old||issue!==old||!active(uid))return;
-   const values=new FormData(e.target),local=new Set(old.paths.filter((_,i)=>values.get('choice-'+i)==='device'));run({...old,local});
+   const values=new FormData(e.target),local=new Set(paths.filter((_,i)=>values.get('choice-'+i)==='device'));run({...old,local});
   };
   modal.querySelector('[data-retry]').onclick=()=>run(null);
   for(const input of modal.querySelectorAll('[data-note]'))input.onchange=()=>{

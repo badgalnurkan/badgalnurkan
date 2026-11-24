@@ -38,6 +38,8 @@ for(let i=0;i<3;i++){
  const session=await signIn(record),doc={authUid:session.user.id,u:'qa'+i,tasks:[{id:randomUUID(),t:'Private '+i}],future:{}};
  assert.ok(await write(session,{},doc));people.push({record,session,doc});
 }
+// The per-account code delivery cooldown also applies on a different device.
+await new Promise(resolve=>setTimeout(resolve,61000));
 const a=people[0],second=await signIn(a.record),base=await read(a.session);
 const desktop={...base,future:{'2030-05-01':'From desktop'}},phone={...base,future:{'2030-05-02':'From phone'}};
 const race=await Promise.all([write(a.session,base,desktop),write(second,base,phone)]);

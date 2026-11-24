@@ -5,10 +5,15 @@ const verifyLoginEmail=require('./login-email-gate.browser.cjs');
 const verifyGrowingText=require('./growing-text.browser.cjs');
 const {spawn}=require('node:child_process'),assert=require('node:assert/strict');
 (async()=>{
- const server=spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
- let browser;
+ const launchOrigin=()=>spawn(process.env.PYTHON||'python3',['-m','http.server','4173','--directory','dist'],{stdio:'ignore'});
+ const waitOrigin=async()=>{for(let n=0;n<50;n++){try{if((await fetch('http://127.0.0.1:4173')).ok)return}catch{}await new Promise(r=>setTimeout(r,100))}throw Error('Test origin could not start')};
+ let server=launchOrigin(),browser;
+ const origin={
+  disconnect:()=>new Promise(resolve=>{server.once('exit',resolve);server.kill()}),
+  reconnect:async()=>{server=launchOrigin();await waitOrigin()}
+ };
  try{
-  for(let n=0;n<50;n++){try{if((await fetch('http://127.0.0.1:4173')).ok)break}catch{}await new Promise(r=>setTimeout(r,100))}
+  await waitOrigin();
   const suite=process.env.IYD_BROWSER_SUITE;
   const uiEngines=[['chromium',chromium],['webkit',webkit]];
   const engines=suite==='chromium'?[['chromium',chromium]]:suite==='firefox'?[['firefox',firefox]]:suite==='ui'?uiEngines:[...uiEngines,['firefox',firefox]];
@@ -16,7 +21,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    browser=await type.launch(engine==='chromium'&&process.env.IYD_CHROMIUM_EXECUTABLE?{executablePath:process.env.IYD_CHROMIUM_EXECUTABLE}:{});
    await require('./turnstile-provider.browser.cjs')(browser);
    await verifyRecovery(browser,engine);
-   await verifyLoginEmail(browser,engine);
+   await verifyLoginEmail(browser,engine,origin);
    await require('./signup-fields.browser.cjs')(browser,engine);
    await verifyGrowingText(browser,engine);
    if(engine==='firefox'){await browser.close();continue}

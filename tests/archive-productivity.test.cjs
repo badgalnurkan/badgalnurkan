@@ -82,8 +82,8 @@ test('restoring an expired project updates its date without creating a duplicate
  c.nextDate='2026-11-30';c.nextName='Revised project';
  c.saveRestoredTimedArchiveProject(0);
  assert.equal(c.A.projects.length,1);
- assert.equal(c.A.projects[0].n,'Revised project');
- assert.equal(c.A.projects[0].d,'2026-11-30');
+ assert.equal(c.A.projects[0].n,'Old project');assert.equal(c.A.projects[0].reminderLabel,'Revised project');
+ assert.equal(c.A.projects[0].d,'2026-11-23');assert.equal(c.A.projects[0].reminderAt,'2026-11-30T06:00:00.000Z');
  assert.equal(c.A.projects[0].archivedAt,undefined);
  assert.equal(c.A.projects[0].reminderEnabled,true);
  assert.equal(c.A.projects[0].tasks[0].t,'Subtask');

@@ -76,7 +76,11 @@ test('archived project can be restored with a new date without losing project id
  c.A.projects=[project];c.restoreTimedArchiveProject(0);
  c.document.getElementById=id=>({value:id==='timed-project-name'?'After':'2026-12-05'});
  c.saveRestoredTimedArchiveProject(0);
- assert.equal(project.id,'project-1');assert.equal(project.n,'After');
- assert.equal(project.d,'2026-12-05');assert.equal(project.archivedAt,undefined);
+ assert.equal(project.id,'project-1');assert.equal(project.n,'Before');assert.equal(project.reminderLabel,'After');
+ assert.equal(project.d,'2026-11-20');assert.equal(project.reminderAt,'2026-12-05T06:00:00.000Z');assert.equal(project.archivedAt,undefined);
  assert.equal(project.reminderEnabled,true);assert.equal(project.tasks[0].t,'Keep');
+});
+test('permanent removal in the reminder archive never removes a project or its subtasks',()=>{
+ const c=fixture();c.A.projects=[{id:'p',n:'Project',tasks:[{t:'Subtask'}],archivedAt:1,reminderArchivedAt:1,reminderEnabled:false}];
+ c.confirmDeleteTimedArchiveProject(0);c.deleteTimedArchiveProject(0);assert.equal(c.A.projects.length,1);assert.equal(c.A.projects[0].tasks[0].t,'Subtask');assert.equal(c.A.projects[0].archivedAt,undefined);
 });
