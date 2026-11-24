@@ -46,3 +46,21 @@ test('reduced motion removes a dismissed banner without an animation delay',()=>
 test('automatic expiry keeps the previous eight-second visibility window',()=>{
  const f=fixture();assert.equal([...f.timers.values()][0].delay,8000);f.flush();assert.ok(f.classes.has('is-leaving'));f.flush();assert.equal(f.banner.removed,true);
 });
+
+test('swiping an alert upward hides its banner while preserving the inbox entry',()=>{
+ const f=fixture(),deleted=[];
+ f.context.deleteNotification=id=>deleted.push(id);
+ f.banner.dataset={notificationId:'inbox-1'};
+ f.down(150,160);f.move(150,70);f.up(150,70);
+ assert.equal(f.classes.has('is-leaving'),true);
+ assert.deepEqual(deleted,[]);
+ f.flush();assert.equal(f.banner.removed,true);
+});
+test('swiping right calls inbox deletion for a persisted alert',()=>{
+ const f=fixture(),deleted=[];
+ f.context.deleteNotification=id=>deleted.push(id);
+ f.banner.dataset={notificationId:'inbox-2'};
+ f.down(150,20);f.move(260,20);f.up(260,20);
+ assert.deepEqual(deleted,['inbox-2']);
+ assert.equal(f.classes.has('is-leaving'),true);
+});
