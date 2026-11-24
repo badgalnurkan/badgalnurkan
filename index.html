@@ -3701,6 +3701,16 @@ let reportRenderedDay='';
 setInterval(()=>{if(A&&A.day!==today())shell();if(A&&view==='app'&&pg==='rep'&&reportRenderedDay!==istanbulDayKey())P.rep()},1000);
 
 const P={};const M=h=>{const main=$('#mn');if(main){main.innerHTML=h;fitTextFields(main);if(!main.classList.contains('an'))motionReveal(main)}};
+const DAILY_DISCOVERIES=[["Uzay","Space","Ay, kendi ışığını üretmez; gördüğümüz ay ışığı Güneş'ten yansıyan ışıktır.","Moonlight is sunlight reflected by the Moon.","NASA","https://science.nasa.gov/moon/moonlight/"],["Okyanus","Ocean","Dünya'daki oksijen üretiminin yaklaşık yarısı okyanus kaynaklıdır.","Roughly half of Earth's oxygen production occurs in the ocean.","NOAA","https://oceanservice.noaa.gov/facts/ocean-oxygen.html"],["Teknoloji","Technology","World Wide Web, 1989 yılında CERN'de çalışan Tim Berners-Lee tarafından geliştirildi.","Tim Berners-Lee invented the World Wide Web at CERN in 1989.","CERN","https://home.cern/science/computing/the-birth-of-the-web"],["Su döngüsü","Water cycle","Yoğuşma, su buharının tekrar sıvı suya dönüşmesidir; bulut oluşumunda rol oynar.","Condensation turns water vapor into liquid water and helps form clouds.","USGS","https://www.usgs.gov/water-science-school/science/evaporation-and-water-cycle"],["Sanat ve tarih","Art and history","Antik Mısır'da papirüs bitkisinin gövdesinden elde edilen liflerle yazı yüzeyleri hazırlanırdı.","Ancient Egyptians made writing surfaces from strips of papyrus stalk fibers.","The Met","https://www.metmuseum.org/art/collection/search/544847"],["Ses tarihi","Sound history","1860'tan kalan bir fonotograf kaydı, Edison'un fonograf çalışmalarından önce yapılmıştır.","A surviving phonautograph recording from 1860 predates Edison's phonograph work.","Library of Congress","https://guides.loc.gov/recorded-sound-research/online-resources"]];
+function dailyDiscovery(day=istanbulDayKey()){
+ const ordinal=Math.floor(Date.parse(day+'T00:00:00Z')/86400000);
+ const index=Number.isFinite(ordinal)?((ordinal%DAILY_DISCOVERIES.length)+DAILY_DISCOVERIES.length)%DAILY_DISCOVERIES.length:0;
+ return DAILY_DISCOVERIES[index];
+}
+function dailyDiscoveryCard(){
+ const [topicTR,topicEN,factTR,factEN,source,url]=dailyDiscovery();
+ return '<section class="card"><small class="mut">'+(tr()?'Günün bilgisi':'Daily discovery')+' · '+esc(tr()?topicTR:topicEN)+'</small><p>'+esc(tr()?factTR:factEN)+'</p><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+(tr()?'Kaynak: ':'Source: ')+esc(source)+'</a></section>';
+}
 P.home=()=>{
   expireTimedRecords();
   const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length;
@@ -3709,7 +3719,7 @@ P.home=()=>{
     const d=dd(today(),p.d);
     return`<div class="task project-task"><span>${esc(p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
   }).join('');
-  M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
+  M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>${dailyDiscoveryCard()}
   <div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="2000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/2000</span></div></div>
   <div class="card"><h2>${t('projectReminders')}</h2>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
@@ -3796,7 +3806,7 @@ P.todo=()=>{
     ?(tr()?'Bugünkü görevlerin raporlara kaydedildi. Bundan sonraki yeni görevler yarına eklenir.':'Today is completed and archived. New tasks will be planned for tomorrow.')
     :t('addTask');
   const todayTasksMarkup=renderedTodayTasks||`<p class="mut">${esc(emptyTodayText)}</p>`;
-  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div></div>
+  M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button></div><button type="button" class="g s" onclick="suggestRandomTask()">${tr()?'Rastgele görev öner':'Suggest a random task'}</button></div>
   <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><textarea rows="1" class="task-compose" id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addTomorrowPlan()}"></textarea><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
   <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
 };
@@ -3958,6 +3968,18 @@ function fromBack(i){
   A.tasks.push({t:A.backlog[i],s:'',createdAt:Date.now()});A.backlog.splice(i,1);recordActivity();P.todo();
 }
 function delT(i){if(A.day!==today()){shell();return}if(!A.tasks[i])return;A.tasks.splice(i,1);archiveFinishedTasks();vibrateTask();recordActivity();P.todo()}
+const RANDOM_TASK_IDEAS=[["Bir sonraki gün için üç küçük öncelik yaz.","Write three small priorities for tomorrow."],["Masandaki bir alanı düzenle.","Tidy one small area of your desk."],["Okuduğun bir şeyin kısa özetini yaz.","Summarize something you read."],["Bir arkadaşına nazik bir mesaj gönder.","Send a kind message to a friend."],["Öğrenmek istediğin bir konu seç.","Choose a topic you would like to learn about."],["Beğendiğin bir dans veya müzik türünü keşfet.","Explore a dance or music genre you like."],["Yarım kalan küçük bir işi gözden geçir.","Review one small unfinished task."],["Bugün iyi giden bir şeyi not et.","Write down one thing that went well today."],["Kısa bir yaratıcı çizim yap.","Make a small creative drawing."],["Bir kitap veya film için merak listesi oluştur.","Make a list of books or films you are curious about."]];
+function suggestRandomTask(){
+ const input=$('#nt');if(!A||!input)return;
+ const previous=input.dataset.suggested||'';
+ const current=String(input.value||'').trim();
+ if(current&&current!==previous&&!window.confirm(tr()?'Yazdığın taslak yerine bir öneri getirilsin mi?':'Replace your draft with a suggestion?'))return;
+ const existing=new Set([...(A.tasks||[]).map(x=>x?.t),...(A.plans?.[addD(today(),1)]||[])].map(x=>String(x||'').trim().toLowerCase()));
+ const choices=RANDOM_TASK_IDEAS.map(pair=>pair[tr()?0:1]).filter(x=>x!==previous&&!existing.has(x.toLowerCase()));
+ if(!choices.length){toast(tr()?'Yeni öneri kalmadı. Kendi görevini yazabilirsin.':'No unused suggestions. You can write your own task.');return}
+ const text=choices[Math.floor(Math.random()*choices.length)];
+ input.value=text;input.dataset.suggested=text;fitTextField(input);input.focus();
+}
 function addT(){
   if(A.day!==today())roll();
   const v=String($('#nt')?.value||'').trim().slice(0,120);
@@ -4356,6 +4378,31 @@ function reportActivityLine(a,b){
  if(focus)parts.push(tr()?`${focus} tamamlanmış odak oturumu`:`${focus} completed focus ${focus===1?'session':'sessions'}`);
  return parts.join(' · ');
 }
+function monthlyReviewEditable(key,day=istanbulDayKey()){
+ return !!A&&day===reportWindow('month',day).opens&&key===day.slice(0,7)&&!!A.ql?.[key]&&Array.isArray(A.qs?.[key])&&A.qs[key].length>0;
+}
+function openMonthlyReviewEdit(key){
+ if(!monthlyReviewEditable(key))return;
+ const groups=[{scope:'review',key,questions:A.qs[key]}];
+ const next=A.reportPlanLinks?.[key];
+ if(next===reportWindow('month').period.nk&&A.planningLocks?.[next]&&Array.isArray(A.planningQs?.[next]))groups.push({scope:'plan',key:next,questions:A.planningQs[next]});
+ const content=groups.map((group,g)=>'<h3>'+ (group.scope==='review'?(tr()?'Aylık yanıtların':'Monthly answers'):(tr()?'Sonraki ay planların':'Next month plans'))+'</h3>'+group.questions.map((q,i)=>'<label for="month-edit-'+g+'-'+i+'">'+esc(reportQuestionForPeriod(q,group.key,group.scope))+'</label><textarea id="month-edit-'+g+'-'+i+'" data-month-edit rows="3" maxlength="400">'+esc(q.a||'')+'</textarea>').join('')).join('');
+ openModal('month-review-edit','<h2>'+ (tr()?'Raporu düzenle':'Edit report')+'</h2><p class="mut">'+(tr()?'Gece yarısına kadar düzenleyebilirsin. Kaydedilmiş rapor kilitli kalır.':'You can edit until midnight. The submitted report stays locked.')+'</p>'+content+'<p role="status" id="month-edit-error"></p><div class="row"><button onclick="saveMonthlyReviewEdit()">'+t('save')+'</button><button class="g" onclick="closeModal(\'month-review-edit\')">'+t('cancel')+'</button></div>');
+ const modal=document.getElementById('month-review-edit');
+ if(modal){modal._reviewOwner=A;modal._reviewKey=key;modal._reviewGroups=groups;modal._reviewOriginal=JSON.stringify(groups.map(g=>g.questions))}
+}
+function saveMonthlyReviewEdit(){
+ const modal=document.getElementById('month-review-edit');
+ if(!modal||modal.classList.contains('is-closing')||modal._reviewOwner!==A||!monthlyReviewEditable(modal._reviewKey)){closeModal('month-review-edit');return false}
+ const groups=modal._reviewGroups||[];
+ const current=groups.map(g=>reportQuestionStore(g.scope)[g.key]);
+ const error=modal.querySelector('#month-edit-error');
+ if(!groups.length||JSON.stringify(current)!==modal._reviewOriginal){if(error)error.textContent=tr()?'Yanıtların değişti. Pencereyi kapatıp yeniden aç.':'Answers changed. Close and reopen the editor.';return false}
+ const values=[...modal.querySelectorAll('[data-month-edit]')].map(e=>e.value.trim().slice(0,400));
+ if(values.length!==current.reduce((n,group)=>n+group.length,0)||values.some(v=>!v)){if(error)error.textContent=tr()?'Tüm cevapları doldur.':'Fill in every answer.';return false}
+ let i=0;for(const group of current)for(const q of group)q.a=values[i++];
+ save();closeModal('month-review-edit');P.rep();return true;
+}
 function monthlyReportCard(day,window){
  const {period,opens,closes,next}=window;
  const submitted=!!A.ql?.[period.key],open=reportQuestionsOpen('month',day);
@@ -4365,7 +4412,7 @@ function monthlyReportCard(day,window){
  const schedule=`<p class="mut report-month-window">${tr()?'Açılış':'Opens'} · ${midnight(opens)}<br>${tr()?'Kapanış':'Closes'} · ${midnight(closes)} (${tr()?'Türkiye saati':'Istanbul time'})</p>`;
  let status='';
  if(submitted){
-   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>`;
+   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>${monthlyReviewEditable(period.key,day)?`<button class="g s" onclick="openMonthlyReviewEdit('${period.key}')">${tr()?'Düzenle':'Edit'}</button>`:''}`;
  }else if(open){
    status=`<p>${reportActivityLine(start,period.b)}</p><button class="g report-more" onclick="showReportDetail('month')">${tr()?'Soruları yanıtla':'Answer questions'} →</button>`;
  }else if(!start||!reportHasActivity(start,period.b)){
@@ -4488,6 +4535,41 @@ function focusSummary(history,start,end){
   }
   return {seconds,sessions,perDay};
 }
+function personalFocusInsights(history,day=istanbulDayKey()){
+ const start=Date.parse(addD(day,-29)+'T00:00:00+03:00'),end=Date.parse(addD(day,1)+'T00:00:00+03:00');
+ const hours=Array(24).fill(0);let sessions=0;
+ const seen=new Set();
+ for(const r of Array.isArray(history)?history:[]){
+  if(r?.completed!==true||!Number.isFinite(r.at)||!Number.isFinite(r.seconds)||r.seconds<=0||r.seconds>36000||seen.has(r.at))continue;
+  seen.add(r.at);if(r.at>=start&&r.at<end)sessions++;
+  for(const p of Array.isArray(r.parts)?r.parts:[r]){
+   if(!Number.isFinite(p?.at)||!Number.isFinite(p.seconds)||p.seconds<=0||p.seconds>36000)continue;
+   let cursor=Math.max(start,p.at-p.seconds*1000),last=Math.min(end,p.at);
+   while(cursor<last){
+    const next=Math.min(last,(Math.floor(cursor/3600000)+1)*3600000);
+    const h=new Date(cursor+10800000).getUTCHours();
+    hours[h]+=(next-cursor)/1000;cursor=next;
+   }
+  }
+ }
+ const top=hours.reduce((best,n,i)=>n>hours[best]?i:best,0);
+ const weekdays=Array.from({length:7},()=>({days:0,total:0,unfinished:0}));
+ for(let d=addD(day,-29);d<day;d=addD(d,1)){
+  const tasks=items(d).filter(x=>String(x?.t||'').trim());if(!tasks.length)continue;
+  const bucket=weekdays[(new Date(d+'T12:00:00Z').getUTCDay()+6)%7];
+  bucket.days++;bucket.total+=tasks.length;bucket.unfinished+=tasks.filter(x=>!x.done).length;
+ }
+ const heavier=weekdays.map((v,i)=>({...v,i})).filter(v=>v.days>=2&&v.total>=5&&v.unfinished>0).sort((a,b)=>b.unfinished/b.total-a.unfinished/a.total||b.total-a.total)[0]||null;
+ return {sessions,hours,top,heavier};
+}
+function personalFocusCard(){
+ const data=personalFocusInsights(A?.focusHistory);
+ const days=tr()?['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar']:['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+ const hour=n=>String(n).padStart(2,'0')+':00';
+ const peak=data.sessions>=3&&data.hours[data.top]>0?hour(data.top)+'–'+hour((data.top+1)%24):null;
+ const heavy=data.heavier;
+ return '<div class="card" style="margin-top:1rem"><h3>'+(tr()?'Kişisel odak istatistikleri':'Personal focus insights')+'</h3><p class="mut">'+(tr()?'Son 30 gün · Türkiye saati. Bu değerler hislerini değil, kayıtlı seanslarını ve görevlerini gösterir.':'Last 30 days · Istanbul time. These reflect recorded sessions and tasks, not how you felt.')+'</p><p>'+(tr()?'En çok odak kaydettiğin saat: ':'Most recorded focus: ')+(peak|| (tr()?'Henüz yeterli veri yok.':'Not enough data yet.'))+'</p><p>'+(tr()?'Tamamlanmayan görev oranı en yüksek gün: ':'Highest unfinished-task share: ')+(heavy?days[heavy.i]+' · %'+Math.round(100*heavy.unfinished/heavy.total):(tr()?'Henüz yeterli veri yok.':'Not enough data yet.'))+'</p></div>';
+}
 function focusHistoryCard(){
   const now=today(),month=now.slice(0,7)+'-01',week=mon(now);
   const entries=new Map(Object.entries(focusSummary(A?.focusHistory,'',now).perDay));
@@ -4505,6 +4587,7 @@ function focusHistoryCard(){
     <p class="mut">${tr()?'Tamamladığın odak seansları ve çalışma süren.':'Your completed focus sessions and time spent focusing.'}</p>
     <div class="focus-history-totals"><div><small>${tr()?'Bu hafta':'This week'}</small><b>${time(w.seconds)}</b><span>${w.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div>
     <div><small>${tr()?'Bu ay':'This month'}</small><b>${time(m.seconds)}</b><span>${m.sessions} ${tr()?'tamamlanan seans':'completed sessions'}</span></div></div>
+    ${personalFocusCard()}
     <h3>${tr()?'Gün gün':'Day by day'}</h3>
     ${rows.length?rows.slice(0,3).join(''):`<p class="mut">${tr()?'Henüz tamamlanmış odak seansı yok.':'No completed focus sessions yet.'}</p>`}
     ${older.length?`<details class="focus-history-details"><summary><span class="expand">${tr()?'Daha fazlası':'More details'}</span><span class="collapse">${tr()?'Daha az göster':'Show less'}</span> <small>(${older.length})</small></summary><div class="focus-history-older" tabindex="0" role="region" aria-label="${tr()?'Önceki odak günleri':'Earlier focus days'}">${older.join('')}</div></details>`:''}
