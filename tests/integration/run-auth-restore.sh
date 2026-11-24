@@ -36,7 +36,12 @@ docker exec -u postgres "$container" pg_ctl -D "$recovery_dir/data" -l "$recover
 # Restore the original role definitions (without passwords), ownership, ACLs and database contents.
 # This socket is inside the private temporary directory; the test server has no TCP listener.
 docker exec -i -u postgres "$container" psql -h "$recovery_dir" -p 55432 -U "$bootstrap" -d postgres -v ON_ERROR_STOP=1 --quiet < "$state/fixture.roles.restore.sql"
-docker exec -u postgres "$container" psql -h "$recovery_dir" -p 55432 -U "$bootstrap" -d postgres -v ON_ERROR_STOP=1 -qc "DROP SCHEMA public;"
+# A full archive may omit CREATE SCHEMA public because initdb provides it.
+# Only remove the empty target schema when the archive explicitly recreates it.
+docker exec -i "$container" pg_restore --list < "$state/fixture.dump" > "$state/fixture.toc"
+if grep -Eq '^[0-9]+; [0-9]+ [0-9]+ SCHEMA - public ' "$state/fixture.toc"; then
+  docker exec -u postgres "$container" psql -h "$recovery_dir" -p 55432 -U "$bootstrap" -d postgres -v ON_ERROR_STOP=1 -qc "DROP SCHEMA public;"
+fi
 docker exec -i -u postgres "$container" pg_restore -h "$recovery_dir" -p 55432 -U "$bootstrap" --exit-on-error -d postgres < "$state/fixture.dump"
 after=$(docker exec -u postgres "$container" psql -h "$recovery_dir" -p 55432 -U "$bootstrap" -Atqc "$probe" postgres)
 test "$before" = "$after"
