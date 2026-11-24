@@ -1338,7 +1338,7 @@ body{font-size:1rem!important}
   #login-portal.v13131-portal .portal-disc,#login-portal.v13131-portal .portal-ring{animation:none!important}
 }
 /* Shared web motion, inspired by Apple's motion guidance. */
-:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:1600}
+:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:850}
 #app{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main,.shell main.swap{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main.an{animation:pgIn .34s var(--motion-ease) both}
@@ -1464,15 +1464,15 @@ body{font-size:1rem!important}
   .nav-shell aside a::after,.nav-shell aside a .nav-icon svg{transition:none}
 }
 
-/* Welcome entry: 180ms brand, 340ms forward, 240ms reverse, then 840ms greeting. */
+/* Compact entry: 100ms brand, 240ms forward, 160ms reverse, then 350ms greeting. */
 #login-portal.entry-portal{background:var(--bg);pointer-events:auto;animation:entryPortalOut calc(var(--entry-total-ms)*1ms) linear both!important}
-#login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .58s linear .18s both!important}
-#login-portal.entry-portal .portal-brand{position:relative;z-index:2;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:entryBrandPass .58s linear .18s both!important}
+#login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .4s linear .1s both!important}
+#login-portal.entry-portal .portal-brand{position:relative;z-index:2;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:entryBrandPass .4s linear .1s both!important}
 #login-portal.entry-portal .portal-title{font-family:var(--brand-title-font);font-size:clamp(1.1rem,4.5vw,1.65rem);font-weight:600;line-height:1.3;text-wrap:balance;text-align:center;color:var(--acc)}
 #login-portal.entry-portal .portal-ring{position:absolute;inset:-2px;display:block;width:auto;height:auto;border:2px solid var(--ln);border-top-color:var(--acc);border-right-color:var(--acc);border-radius:50%;animation:entrySpinner .9s linear infinite!important}
-#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .84s var(--motion-ease) .76s both!important}
-@keyframes entryCirclePass{0%{transform:translate(-50%,-50%) scale(0);animation-timing-function:var(--motion-return)}58.62069%{transform:translate(-50%,-50%) scale(1.5);animation-timing-function:var(--motion-return)}100%{transform:translate(-50%,-50%) scale(0)}}
-@keyframes entryBrandPass{0%{opacity:1;transform:scale(1);animation-timing-function:var(--motion-return)}58.62069%{opacity:1;transform:scale(1.08);animation-timing-function:var(--motion-return)}100%{opacity:0;transform:scale(1)}}
+#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .35s var(--motion-ease) .5s both!important}
+@keyframes entryCirclePass{0%{transform:translate(-50%,-50%) scale(0);animation-timing-function:var(--motion-return)}60%{transform:translate(-50%,-50%) scale(1.5);animation-timing-function:var(--motion-return)}100%{transform:translate(-50%,-50%) scale(0)}}
+@keyframes entryBrandPass{0%{opacity:1;transform:scale(1);animation-timing-function:var(--motion-return)}60%{opacity:1;transform:scale(1.08);animation-timing-function:var(--motion-return)}100%{opacity:0;transform:scale(1)}}
 @keyframes entrySpinner{to{transform:rotate(360deg)}}
 @keyframes entryGreeting{0%{opacity:0;letter-spacing:-.01em;transform:scale(.985)}35%,82%{opacity:1;letter-spacing:.045em;transform:scale(1)}100%{opacity:0;letter-spacing:.065em;transform:scale(1.01)}}
 @keyframes entryPortalOut{0%,90%{opacity:1}100%{opacity:0}}
@@ -2514,8 +2514,9 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-24-feature-review-04';
+const SITE_RELEASE='2026-11-24-feature-review-05';
 const SITE_CHANGES=[
+ {date:'2026-11-24',trTitle:'Daha hızlı giriş geçişi',enTitle:'Faster sign-in transition',items:[['Giriş onayından sonraki animasyon 1,6 saniyeden 0,85 saniyeye indirildi; düşük hareket tercihi korunur.','Reduced post-sign-in transition from 1.6 seconds to 0.85 seconds while respecting reduced-motion preferences.']]},
  {date:'2026-11-24',trTitle:'Rapor yanıtlarını düzenleme',enTitle:'Editing submitted report answers',items:[['Gönderilmiş haftalık veya aylık rapor yanıtları ilgili rapor gününde açıkça Düzenle seçilerek kaydedilebilir. Kaydetmeden çıkış yanıtları değiştirmez; sonraki gün düzenleme kapanır.','Submitted weekly or monthly report answers can be explicitly edited on their report day. Unsaved edits are discarded and editing closes the following day.']]},
  {date:'2026-11-24',trTitle:'Bildirim kaydırma hareketleri',enTitle:'Notification swipe gestures',items:[['Üst bildirimleri sağa kaydırarak gelen kutusundan silebilir, yukarı kaydırarak ekrandan kaldırıp bildirim merkezinde tutabilirsin.','Swipe top notifications right to delete them from the inbox, or up to dismiss the banner while keeping the inbox entry.']]},
  {date:'2026-11-24',trTitle:'Günün bilgisi, görev önerileri ve odak desenleri',enTitle:'Daily facts, task suggestions and focus patterns',items:[['Ana sayfaya kaynak bağlantılı günlük bilgi eklendi; yapılacaklar listesine rastgele görev önerisi ve Pomodoro analizine 30 günlük örüntü özeti eklendi.','Added a source-linked daily fact to Home, a random task suggestion button and a 30-day pattern summary to Pomodoro analysis.']]},
@@ -2702,7 +2703,7 @@ function bindNotificationSwipe(banner){
 }
 function showTopNotification(item){
  if(document.visibilityState!=='visible')return;
- if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',1600)+200);return}
+ if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',850)+200);return}
  let stack=document.getElementById('notification-banners');
  if(!stack){stack=document.createElement('div');stack.id='notification-banners';stack.className='notification-banners';stack.setAttribute('aria-live','polite');stack.setAttribute('aria-relevant','additions');document.body.appendChild(stack)}
  const copy=notificationCopy(item),banner=document.createElement('div');banner.className='notification-banner';banner.dataset.notificationId=item.id;
@@ -3067,7 +3068,7 @@ function playWelcomeTransition(cb,codeApproved=false){
   let cleaned=false,fallback=0;
   const cleanup=()=>{if(cleaned)return;cleaned=true;clearTimeout(fallback);root.remove();if(cb)cb()};
   root.addEventListener('animationend',e=>{if(e.target===root&&e.animationName==='entryPortalOut')cleanup()});
-  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',1600)+200);
+  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',850)+200);
 }
 function goHome(){reportDetail='';stopTimers();if(A?.loginMethod!=='google')sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 function backToLogin(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
