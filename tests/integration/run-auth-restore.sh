@@ -16,14 +16,24 @@ psql "$DB_URL" -v ON_ERROR_STOP=1 -qc "update iydu_private.browser_verification_
 node tests/integration/real-auth-sync.mjs
 container=$(docker ps --format '{{.Names}}' --filter 'name=supabase_db_' | head -1)
 test -n "$container"
-# The dump and the restore service run inside the disposable local database container.
+# Both source and recovery target are disposable CI PostgreSQL instances.
+# The second instance keeps the database name postgres, required by pg_cron.
 docker exec "$container" pg_dump -U postgres -Fc postgres > "$state/fixture.dump"
-docker exec "$container" createdb -U postgres -T template0 iyd_restore
-docker exec "$container" psql -U postgres -d iyd_restore -v ON_ERROR_STOP=1 -qc "DROP SCHEMA public;"
-# Restore the archive as the target owner; do not try to assume managed platform roles.
-docker exec -i "$container" pg_restore -U postgres --no-owner --exit-on-error -d iyd_restore < "$state/fixture.dump"
+docker exec "$container" pg_dumpall -U postgres --roles-only --no-role-passwords > "$state/fixture.roles.sql"
 probe="select (select count(*) from auth.users), (select count(*) from auth.sessions), (select count(*) from iydu_private.browser_verified_sessions), (select md5(string_agg(md5(data::text),',' order by user_id)) from public.user_data)"
 before=$(docker exec "$container" psql -U postgres -Atqc "$probe" postgres)
-after=$(docker exec "$container" psql -U postgres -Atqc "$probe" iyd_restore)
+recovery_dir=$(docker exec -u postgres "$container" mktemp -d /tmp/iydu-recovery.XXXXXX)
+preload=$(docker exec "$container" psql -U postgres -Atqc "show shared_preload_libraries" postgres)
+# Restrict the value embedded in the local test server's command line to library identifiers.
+[[ "$preload" =~ ^[a-zA-Z0-9_,.[:space:]\$-]*$ ]]
+docker exec -u postgres "$container" initdb --no-locale --encoding=UTF8 -A trust -U iydu_restore_admin -D "$recovery_dir/data" >/dev/null
+docker exec -u postgres "$container" pg_ctl -D "$recovery_dir/data" -l "$recovery_dir/server.log" -o "-k $recovery_dir -p 55432 -c listen_addresses='' -c shared_preload_libraries='$preload'" -w start >/dev/null
+# Restore the original role definitions (without passwords), ownership, ACLs and database contents.
+# This socket is inside the private temporary directory; the test server has no TCP listener.
+docker exec -i -u postgres "$container" psql -h "$recovery_dir" -p 55432 -U iydu_restore_admin -d postgres -v ON_ERROR_STOP=1 --quiet < "$state/fixture.roles.sql"
+docker exec -u postgres "$container" psql -h "$recovery_dir" -p 55432 -U iydu_restore_admin -d postgres -v ON_ERROR_STOP=1 -qc "DROP SCHEMA public;"
+docker exec -i -u postgres "$container" pg_restore -h "$recovery_dir" -p 55432 -U iydu_restore_admin --exit-on-error -d postgres < "$state/fixture.dump"
+after=$(docker exec -u postgres "$container" psql -h "$recovery_dir" -p 55432 -U iydu_restore_admin -Atqc "$probe" postgres)
 test "$before" = "$after"
-echo 'PASS: restored Auth accounts, sessions, verification records and exact profile documents in an independent database.'
+docker exec -u postgres "$container" pg_ctl -D "$recovery_dir/data" -w stop >/dev/null
+echo 'PASS: restored Auth accounts, sessions, verification records and exact profile documents in an independent PostgreSQL instance.'
