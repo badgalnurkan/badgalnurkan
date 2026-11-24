@@ -239,3 +239,18 @@ test('joining on any month-end includes a completed focus before midnight and cl
   assert.equal(c.canAnswerReport(end.slice(0,7)),false);
  }
 });
+
+test('monthly correction preserves locks, rejects stale edits and closes at midnight',()=>{
+ const c=active();c.current='2026-11-30';
+ const key='2026-11',next='2026-12';c.periodReportForm('month',key,next);
+ for(const group of [c.A.qs[key],c.A.planningQs[key],c.A.planningQs[next]])for(const q of group)q.a='Original';
+ assert.equal(c.submitPeriodReport('month',key),true);
+ assert.match(c.reportSummaryCard('month'),/openMonthlyEdit/);
+ const fields=c.monthlyEditGroups(key),draft={owner:c.A,key,fields,original:fields.map(f=>f.question.a)};
+ assert.equal(c.applyMonthlyEdit(draft,fields.map(()=> 'Corrected')),true);
+ assert.equal(c.A.ql[key],1);assert.equal(c.A.planningLocks[next],1);
+ assert.equal(c.applyMonthlyEdit(draft,fields.map(()=> 'Stale')),false);
+ const updated=c.monthlyEditGroups(key),fresh={owner:c.A,key,fields:updated,original:updated.map(f=>f.question.a)};
+ c.current='2026-12-01';assert.equal(c.applyMonthlyEdit(fresh,updated.map(()=> 'Too late')),false);
+ assert.equal(c.A.qs[key][0].a,'Corrected');
+});
