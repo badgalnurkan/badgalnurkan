@@ -83,13 +83,23 @@ const IYProfileMerge=(()=>{
     const merged = mergeNode(base, local, remote, [], conflicts, preferLocal);
     if(base.day&&local.day!==remote.day){
       const onOldDay=local.day===base.day?local:remote.day===base.day?remote:null;
-      const fields=['day','tasks','completedBatches','hist','plans','backlog'];
+      const fields=['day','tasks','completedBatches','hist','plans','backlog','backlogArchive'];
       if(!onOldDay||fields.slice(1).some(k=>!equal(onOldDay[k],base[k]))){
         for(const k of fields){
           if(!conflicts.includes(k))conflicts.push(k);
           const choice=(typeof preferLocal==='function'?preferLocal('day'):preferLocal)?local:remote;
           if(own(choice,k))merged[k]=clone(choice[k]);else delete merged[k];
         }
+      }
+    }
+    // Moving entries between active backlog and archive is one logical transaction.
+    // Conflicting concurrent changes must retain both exact alternatives.
+    const backlogFields=['backlog','backlogArchive'];
+    if(!conflicts.includes('day')&&backlogFields.some(k=>!equal(local[k],base[k]))&&backlogFields.some(k=>!equal(remote[k],base[k]))&&backlogFields.some(k=>!equal(local[k],remote[k]))){
+      for(const k of backlogFields){
+        if(!conflicts.includes(k))conflicts.push(k);
+        const choice=(typeof preferLocal==='function'?preferLocal('backlog'):preferLocal)?local:remote;
+        if(own(choice,k))merged[k]=clone(choice[k]);else delete merged[k];
       }
     }
     return { merged, conflicts };
