@@ -67,15 +67,15 @@ test('reduced motion bypasses the animated overlay and completes immediately',()
  const {f,roots,timers}=fixture(true);let calls=0;f.playWelcomeTransition(()=>calls++);
  assert.equal(roots.length,0);assert.equal(timers.size,0);assert.equal(calls,1);
 });
-test('the 850ms entry eases forward for 240ms and back for 160ms',()=>{
- assert.match(html,/--entry-total-ms:850/);
- assert.match(html,/#login-portal\.entry-portal \.portal-disc\{[^}]*animation:entryCirclePass \.4s linear \.1s both!important/);
+test('the 650ms entry uses a shorter 260ms pass and a 330ms greeting',()=>{
+ assert.match(html,/--entry-total-ms:650/);
+ assert.match(html,/#login-portal\.entry-portal \.portal-disc\{[^}]*animation:entryCirclePass \.26s linear \.06s both!important/);
  const frames=html.match(/@keyframes entryCirclePass\{([^\n]+)\}/)[1];
  assert.match(frames,/60%\{transform:translate\(-50%,-50%\) scale\(1\.5\);animation-timing-function:var\(--motion-return\)\}/);
  assert.match(frames,/100%\{transform:translate\(-50%,-50%\) scale\(0\)\}/);
- assert.ok(Math.abs(400*.6-240)<.001);
- assert.ok(Math.abs(400*(1-.6)-160)<.001);
- assert.ok(Math.abs(.1+.4+.35-.85)<.001);
+ assert.ok(Math.abs(260*.6-156)<.001);
+ assert.ok(Math.abs(260*(1-.6)-104)<.001);
+ assert.ok(Math.abs(.06+.26+.33-.65)<.001);
 });
 test('JavaScript completion uses the duration configured in CSS',()=>{
  const {f,context,timers}=fixture();
@@ -85,3 +85,5 @@ test('JavaScript completion uses the duration configured in CSS',()=>{
  context.getComputedStyle=()=>({getPropertyValue:()=> 'invalid'});
  assert.equal(f.uiMotionTime('--entry-total-ms',2000),2000);
 });
+
+test('approved code does not repeat the confirmation in the greeting',()=>{const {f,roots}=fixture();f.playWelcomeTransition(undefined,true);assert.match(roots[0].innerHTML,/Günaydın/);assert.doesNotMatch(roots[0].innerHTML,/Giriş onaylandı/)});
