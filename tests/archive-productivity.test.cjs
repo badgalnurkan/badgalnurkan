@@ -124,3 +124,45 @@ test('focus patterns count completed sessions and highlight unfinished tasks wit
  assert.equal(result.heavy.day,'2026-11-23');
  assert.equal(result.heavy.unfinished,2);
 });
+
+test('manual archive preserves full records, cancel is safe and account switches invalidate approval',()=>{
+ const c=archiveFixture();vm.runInContext(extract('let archiveRequest=null;','function st(a,b)'),c);
+ c.A.future['2026-11-29']='Private note';c.A.futureMeta['2026-11-29']={createdAt:123};c.A.projects=[{id:'p',n:'Project',d:'2026-11-30',tasks:[{t:'Subtask'}]}];
+ c.delNote('2026-11-29');c.cancelArchiveRequest();assert.equal(c.A.future['2026-11-29'],'Private note');assert.equal(c.A.timedArchive.notes.length,0);
+ c.delNote('2026-11-29');assert.equal(c.applyArchiveRequest(),true);assert.equal(c.A.future['2026-11-29'],undefined);assert.equal(c.A.timedArchive.notes[0].meta.createdAt,123);
+ c.confirmArchiveProject(0);const first=c.A;c.A={projects:[{n:'Other'}],future:{},timedArchive:{notes:[]}};assert.equal(c.applyArchiveRequest(),false);assert.equal(first.projects[0].archivedAt,undefined);
+ c.A=first;c.confirmArchiveProject(0);assert.equal(c.applyArchiveRequest(),true);assert.equal(first.projects[0].tasks[0].t,'Subtask');assert.equal(first.projects[0].reminderEnabled,false);
+});
+test('overflow archives oldest entries without loss and does not duplicate on later render',()=>{
+ const c={A:{tasks:[],backlog:Array.from({length:13},(_,i)=>'Task '+i),hist:{}},save(){c.saves++},saves:0,taskStatus:()=>''};
+ vm.createContext(c);vm.runInContext(extract('function fixTodoData(){','P.todo=()=>'),c);
+ c.fixTodoData();assert.equal(c.A.backlog.length,10);assert.deepEqual(Array.from(c.A.backlogArchive),['Task 0','Task 1','Task 2']);
+ c.fixTodoData();assert.equal(c.A.backlogArchive.length,3);assert.equal(c.saves,1);
+});
+test('archived backlog moves to today only in the selected account',()=>{
+ const c={A:{tasks:[],backlog:['Current'],backlogArchive:['Archived']},P:{todo(){}},allTodayTasksArchived:()=>false,rndHex:()=> 'test-id',recordActivity(){}};
+ vm.createContext(c);vm.runInContext(extract('function fromBack(','function delT('),c);c.fromBack(0,true);
+ assert.equal(c.A.tasks[0].t,'Archived');assert.deepEqual(c.A.backlog,['Current']);assert.equal(c.A.backlogArchive.length,0);
+});
+test('running and paused Pomodoro preserve phase, countdown, interval and focus parts while presets can reorder',()=>{
+ const c={pm:{w:25,b:5,ph:'w',left:1234,run:1,end:12345,n:0,iv:11,focusParts:[{seconds:5}]},A:{presets:[{w:25,b:5},{w:50,b:10}]},tr:()=>true,toast(){},save(){},P:{pomo(){}},clearInterval(){throw Error('active timer cleared')},persistPomodoroState(){throw Error('active timer overwritten')}};
+ vm.createContext(c);vm.runInContext(extract('function pomoInProgress(){','let editIdx=-1;'),c);const before=JSON.stringify(c.pm);
+ assert.equal(c.setP(50,10),false);assert.equal(JSON.stringify(c.pm),before);
+ assert.equal(c.movePreset(0,1),true);assert.equal(c.A.presets[0].w,50);assert.equal(JSON.stringify(c.pm),before);
+ c.pm.run=0;const paused=JSON.stringify(c.pm);assert.equal(c.setP(50,10),false);assert.equal(JSON.stringify(c.pm),paused);
+});
+test('calendar direct month jump retains the existing lower bound',()=>{
+ const elements={'#progress-year':{value:'2028'},'#progress-month':{value:'1'},'#progress-month-error':{}};
+ const c={A:{},P:{pc(){}},tr:()=>true,$:key=>elements[key],closeModal(){},calOff:0,Date};
+ vm.createContext(c);vm.runInContext(extract('function openProgressMonth(','function st(a,b)'),c);assert.equal(c.jumpProgressMonth(),true);
+ const now=new Date();assert.equal(c.calOff,(2028-now.getFullYear())*12+1-now.getMonth());
+ elements['#progress-year'].value='2026';elements['#progress-month'].value='9';const saved=c.calOff;assert.equal(c.jumpProgressMonth(),false);assert.equal(c.calOff,saved);
+});
+test('concurrent backlog/archive movements require a single decision rather than splitting records',()=>{
+ const merge=require('../profile-merge.js').merge;
+ const base={day:'2026-11-24',backlog:['one','two'],backlogArchive:[]};
+ const local={...base,backlog:['two'],backlogArchive:['one']};
+ const remote={...base,backlog:['one','two','three']};
+ const result=merge(base,local,remote,true);assert.ok(result.conflicts.includes('backlog'));assert.ok(result.conflicts.includes('backlogArchive'));
+ assert.deepEqual(result.merged.backlog,local.backlog);assert.deepEqual(result.merged.backlogArchive,local.backlogArchive);
+});

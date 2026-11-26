@@ -71,7 +71,8 @@ test('all twelve calendar months, leap February and Gregorian century boundaries
    assert.equal(c.reportQuestionsOpen('month'),true,end);
    c.A.ql[key]=1;
    assert.equal(c.canAnswerReport(key),false);
-   assert.match(c.reportSummaryCard('month'),new RegExp('datetime="'+nextEnd+'"'));
+   assert.match(c.reportSummaryCard('month'),new RegExp('>'+Math.round((Date.parse(nextEnd)-Date.parse(end))/86400000)+' daysLeft<'));
+   assert.doesNotMatch(c.reportSummaryCard('month'),/datetime=/);
    assert.equal(c.reportQuestionsOpen('month',next),false);
   }
  }
@@ -105,7 +106,8 @@ test('a saved monthly submission cannot create extra questions or reopen after r
  assert.equal(c.canAnswerReport('2026-12','plan'),false);
  assert.equal(c.reportPlanningOverview(),'');
  assert.doesNotMatch(c.periodReportForm('month','2026-11','2026-12'),/<textarea/);
- assert.match(c.periodReportDetail('month'),/datetime="2026-12-31"/);
+ assert.match(c.periodReportDetail('month'),/>31 daysLeft</);
+ assert.doesNotMatch(c.periodReportDetail('month'),/datetime=/);
  assert.equal(JSON.stringify(c.A),before);
 });
 
@@ -177,14 +179,14 @@ test('midnight archives a completed last field before blur, keeps incomplete dra
 });
 
 
-test('the monthly card always names the current month and its Istanbul midnights',()=>{
- const c=fixture().context;c.DB.lang='tr';c.current='2026-11-23';
+test('the monthly card names the current month and displays only the countdown while keeping its Istanbul boundaries',()=>{
+ const c=fixture().context;c.DB.lang='tr';c.current='2026-11-23';c.t=x=>x==='daysLeft'?'gün kaldı':x;
  for(const signup of ['2025-08-12','2026-11-14','2026-11-23']){
   c.A.reportStart=signup;c.A.reportJoinedAt=signup+'T10:00:00+03:00';
   const before=JSON.stringify(c.A),card=c.reportSummaryCard('month');
   assert.match(card,/data-month="2026-11"/);assert.match(card,/Kasım 2026<\/h2>/);
-  assert.match(card,/Açılış · <time datetime="2026-11-30T00:00:00\+03:00">30 Kasım 2026 00\.00<\/time>/);
-  assert.match(card,/Kapanış · <time datetime="2026-12-01T00:00:00\+03:00">1 Aralık 2026 00\.00<\/time>/);
+  assert.match(card,/7 gün kaldı/);assert.doesNotMatch(card,/Açılış|Kapanış|datetime=/);
+  const window=c.reportWindow('month',c.current);assert.equal(window.opens,'2026-11-30');assert.equal(window.closes,'2026-12-01');
   assert.doesNotMatch(card,/report-more/);
   assert.equal(JSON.stringify(c.A),before);
  }
@@ -197,8 +199,8 @@ test('monthly cards roll from each last day to the next first without skipping a
    const first=c.addD(end,1),key=end.slice(0,7);
    c.A.journal[end]={text:'My entry'};c.current=end;
    let card=c.reportSummaryCard('month');
-   assert.ok(card.includes('data-month="'+key+'"'));assert.ok(card.includes('datetime="'+end+'T00:00:00+03:00"'));
-   assert.ok(card.includes('datetime="'+first+'T00:00:00+03:00"'));assert.match(card,/report-more/);
+   assert.ok(card.includes('data-month="'+key+'"'));assert.equal(c.reportWindow('month',end).opens,end);
+   assert.equal(c.reportWindow('month',end).closes,first);assert.match(card,/report-more/);
    c.A.ql[key]=1;assert.doesNotMatch(c.reportSummaryCard('month'),/report-more/);
    c.current=first;card=c.reportSummaryCard('month');
    assert.ok(card.includes('data-month="'+first.slice(0,7)+'"'));assert.doesNotMatch(card,/report-more/);

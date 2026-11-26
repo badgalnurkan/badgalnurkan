@@ -1021,9 +1021,9 @@ footer .legal-links{margin:.15rem auto .3rem}
 .stopwatch-card>p.mut{margin:.15rem auto 0;font-size:.75rem}
 .caps-hint{color:var(--no);font-size:.82rem;margin:.25rem 0 .4rem}
 .caps-hint[hidden]{display:none!important}
-:root[data-beige=true] body{background:color-mix(in srgb,var(--bg) 84%,#efe0c9)}
-:root[data-beige=true] .card,:root[data-beige=true] .box,:root[data-beige=true] .note-tile{background:color-mix(in srgb,var(--card) 88%,#f6e9d8)}
-:root[data-beige=true] .mini-cal-grid .mini-dot:hover{background:color-mix(in srgb,var(--acc2) 70%,#f0dbc2)}
+:root[data-beige=true] body{background:color-mix(in srgb,var(--bg) 88%,var(--acc2))}
+:root[data-beige=true] .card,:root[data-beige=true] .box,:root[data-beige=true] .note-tile{background:color-mix(in srgb,var(--card) 93%,var(--acc2))}
+:root[data-beige=true] .mini-cal-grid .mini-dot:hover{background:color-mix(in srgb,var(--acc2) 70%,var(--card))}
 .pomo-overlay{animation:focusCircleIn .03s linear both;clip-path:circle(150vmax at 50% 50%)}
 .pomo-overlay.pomo-exit{animation:focusCircleOut .02s linear forwards;pointer-events:none}
 @keyframes focusCircleIn{from{clip-path:circle(0 at 50% 50%);opacity:.8}to{clip-path:circle(150vmax at 50% 50%);opacity:1}}
@@ -1338,7 +1338,7 @@ body{font-size:1rem!important}
   #login-portal.v13131-portal .portal-disc,#login-portal.v13131-portal .portal-ring{animation:none!important}
 }
 /* Shared web motion, inspired by Apple's motion guidance. */
-:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:850}
+:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:650}
 #app{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main,.shell main.swap{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main.an{animation:pgIn .34s var(--motion-ease) both}
@@ -1466,11 +1466,11 @@ body{font-size:1rem!important}
 
 /* Compact entry: 100ms brand, 240ms forward, 160ms reverse, then 350ms greeting. */
 #login-portal.entry-portal{background:var(--bg);pointer-events:auto;animation:entryPortalOut calc(var(--entry-total-ms)*1ms) linear both!important}
-#login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .4s linear .1s both!important}
-#login-portal.entry-portal .portal-brand{position:relative;z-index:2;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:entryBrandPass .4s linear .1s both!important}
+#login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .26s linear .06s both!important}
+#login-portal.entry-portal .portal-brand{position:relative;z-index:2;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:entryBrandPass .26s linear .06s both!important}
 #login-portal.entry-portal .portal-title{font-family:var(--brand-title-font);font-size:clamp(1.1rem,4.5vw,1.65rem);font-weight:600;line-height:1.3;text-wrap:balance;text-align:center;color:var(--acc)}
-#login-portal.entry-portal .portal-ring{position:absolute;inset:-2px;display:block;width:auto;height:auto;border:2px solid var(--ln);border-top-color:var(--acc);border-right-color:var(--acc);border-radius:50%;animation:entrySpinner .9s linear infinite!important}
-#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .35s var(--motion-ease) .5s both!important}
+#login-portal.entry-portal .portal-ring{position:absolute;inset:-2px;display:block;width:auto;height:auto;border:2px solid var(--ln);border-top-color:var(--acc);border-right-color:var(--acc);border-radius:50%;animation:entrySpinner .55s linear infinite!important}
+#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .33s var(--motion-ease) .32s both!important}
 @keyframes entryCirclePass{0%{transform:translate(-50%,-50%) scale(0);animation-timing-function:var(--motion-return)}60%{transform:translate(-50%,-50%) scale(1.5);animation-timing-function:var(--motion-return)}100%{transform:translate(-50%,-50%) scale(0)}}
 @keyframes entryBrandPass{0%{opacity:1;transform:scale(1);animation-timing-function:var(--motion-return)}60%{opacity:1;transform:scale(1.08);animation-timing-function:var(--motion-return)}100%{opacity:0;transform:scale(1)}}
 @keyframes entrySpinner{to{transform:rotate(360deg)}}
@@ -1717,6 +1717,11 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 #signup-terms:checked{background:var(--acc);border-color:var(--acc)}
 #signup-terms:checked::after{content:'';width:.65rem;height:.32rem;border:solid var(--on-acc);border-width:0 0 2px 2px;transform:translateY(-.08rem) rotate(-45deg)}
 .entry-confirmed{display:block;font:600 .85rem/1.4 system-ui;margin-top:.45rem}
+.preset-grip{touch-action:none;cursor:grab;flex:none}.preset-grip:active{cursor:grabbing}.preset-select{flex:1;min-width:0;text-align:start;box-shadow:none;white-space:normal}.progress-month-trigger{flex:1;min-width:0;font-family:var(--fs);font-weight:700;box-shadow:none}
+.backlog-archive summary{cursor:pointer;font-weight:700;color:var(--acc);padding:.4rem 0}.backlog-archive-list{margin-top:.7rem}.backlog-archive-list .task>span{overflow-wrap:anywhere;min-width:0}
+.sync-home button{max-width:100%;white-space:normal}
+#signup-code-status:not(:empty),#browser-verify-message:not(:empty){padding:.8rem 1rem;background:var(--card);border:1px solid var(--acc);border-radius:14px;color:var(--ink);font-weight:700;overflow-wrap:anywhere}
+@media(max-width:600px){header.top #sync-status:not([hidden]){grid-column:1/-1;grid-row:auto;justify-self:stretch;white-space:normal;min-width:0}.preset-select{font-size:.85rem;padding:.35rem}.preset-grip{min-width:44px;min-height:44px}}
 .signup-docs{text-align:center;margin:.3rem 0 .8rem}
 [hidden]#sync-status{display:none}#sync-review pre{max-height:12rem;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}#sync-review fieldset{min-width:0;border:1px solid var(--bd,#8885);margin:.6rem 0}#sync-review input[type=radio]{width:auto}
 </style>
@@ -2097,7 +2102,7 @@ function bindReportCalendar(account,user,newProfile=false){
   else if(newProfile&&created>=release)account.reportCalendarRule='full-period-v1';
 }
 function norm(a){
-  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},planningQs:{},planningLocks:{},ql:{},notifications:[],noticeDelivered:{},notificationPrefs:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},timedArchive:{notes:[]},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
+  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],backlogArchive:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},planningQs:{},planningLocks:{},ql:{},notifications:[],noticeDelivered:{},notificationPrefs:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},timedArchive:{notes:[]},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
   // Preserve when reporting began independently of the percentage counter.
   // Older accounts have no reportStart; use their saved pctFrom as a one-time
@@ -2146,7 +2151,7 @@ function roll(){
       A.hist[date]=[...(A.hist[date]||[]),...pending];
       A.backlog.push(...pending.map(task=>task.t));delete A.plans[date];
     }
-    while(A.backlog.length>10)A.backlog.shift();
+    if(A.backlog.length>10)(A.backlogArchive||=[]).push(...A.backlog.splice(0,A.backlog.length-10));
     A.tasks=Array.isArray(A.plans&&A.plans[t])?A.plans[t].map(t=>({t,s:'',createdAt:Date.now()})):[];if(A.plans)delete A.plans[t];A.day=t;if(A.completedBatches&&typeof A.completedBatches==='object')A.completedBatches={};save();
   }
 }
@@ -2187,7 +2192,7 @@ function hasProgressActivity(account,asOf){
  const values=value=>value&&typeof value==='object'&&!Array.isArray(value)?Object.values(value):[];
  const tasks=value=>Array.isArray(value)&&value.some(item=>text(item)||text(item?.t)||text(item?.n));
  if(Object.entries(account.activeDays||{}).some(([day,active])=>active===true&&validProgressDate(day)&&day<=asOf))return true;
- if(tasks(account.tasks)||tasks(account.backlog)||tasks(account.projects))return true;
+ if(tasks(account.tasks)||tasks(account.backlog)||tasks(account.backlogArchive)||tasks(account.projects))return true;
  if(['hist','completedBatches','plans'].some(key=>values(account[key]).some(tasks)))return true;
  if(values(account.journal).some(entry=>text(entry)||text(entry?.text))||values(account.future).some(text))return true;
  if(['qs','planningQs'].some(key=>values(account[key]).some(group=>Array.isArray(group)&&group.some(q=>text(q?.a)))))return true;
@@ -2730,7 +2735,7 @@ function bindNotificationSwipe(banner){
 }
 function showTopNotification(item){
  if(document.visibilityState!=='visible')return;
- if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',850)+200);return}
+ if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',650)+200);return}
  let stack=document.getElementById('notification-banners');
  if(!stack){stack=document.createElement('div');stack.id='notification-banners';stack.className='notification-banners';stack.setAttribute('aria-live','polite');stack.setAttribute('aria-relevant','additions');document.body.appendChild(stack)}
  const copy=notificationCopy(item),banner=document.createElement('div');banner.className='notification-banner';banner.dataset.notificationId=item.id;
@@ -3039,7 +3044,7 @@ function renderAppOrAuth(){
     </form><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`)+'</div>';
   else if(view==='signup-code'){
     if(!pendingSignup){view='setup';renderAppOrAuth();return}
-    h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${tr()?'E-posta doğrulama kodu':'Email verification code'}</h2>${m()}<p class="mut">${tr()?'Kod isteğin alındı, ancak e-posta teslimi henüz doğrulanmadı. Bu e-postayla zaten bir hesabın varsa yeni kod gelmeyebilir. Giriş yapmayı veya şifreni sıfırlamayı deneyebilirsin.':'Your request was accepted, but email delivery has not been confirmed. If you already have an account with this email, a new code may not arrive. Try signing in or resetting your password.'}</p><p><strong>${esc(pendingSignup.email)}</strong></p><label for="signup-code-input">${tr()?'6 haneli kod':'Six-digit code'}</label><input id="signup-code-input" inputmode="numeric" type="text" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();verifySignupCode()}">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('resend'):''}<div class="row"><button type="button" id="signup-code-submit" onclick="verifySignupCode()">${tr()?'Kodu doğrula':'Verify code'}</button><button class="g" type="button" id="signup-code-resend" onclick="resendSignupCode()">${tr()?'Yeni kod iste':'Resend code'}</button></div><button class="g s" type="button" id="signup-code-signin" onclick="signupOtpFinishWithSignIn(pendingSignup.email,tr()?'Mevcut hesabın varsa giriş yapabilir veya şifreni sıfırlayabilirsin.':'If you already have an account, sign in or reset your password.')">${tr()?'Giriş ekranına geç':'Go to sign in'}</button><button class="g s" type="button" onclick="pendingSignup=null;goTo('setup','home')">${tr()?'Geri dön':'Back'}</button><p id="signup-code-status" role="status" aria-live="polite"></p>`);
+    h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div></div>`+box(`<h2>${tr()?'E-posta doğrulama kodu':'Email verification code'}</h2>${m()}<p class="mut">${tr()?'Kod isteğin alındı, ancak e-posta teslimi henüz doğrulanmadı. Bu e-postayla zaten bir hesabın varsa yeni kod gelmeyebilir. Giriş yapmayı veya şifreni sıfırlamayı deneyebilirsin.':'Your request was accepted, but email delivery has not been confirmed. If you already have an account with this email, a new code may not arrive. Try signing in or resetting your password.'}</p><p><strong>${esc(pendingSignup.email)}</strong></p><p id="signup-code-status" role="status" aria-live="polite"></p><label for="signup-code-input">${tr()?'6 haneli kod':'Six-digit code'}</label><input id="signup-code-input" inputmode="numeric" type="text" pattern="[0-9]{6}" autocomplete="one-time-code" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();verifySignupCode()}">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('resend'):''}<div class="row"><button type="button" id="signup-code-submit" onclick="verifySignupCode()">${tr()?'Kodu doğrula':'Verify code'}</button><button class="g" type="button" id="signup-code-resend" onclick="resendSignupCode()">${tr()?'Yeni kod iste':'Resend code'}</button></div><button class="g s" type="button" id="signup-code-signin" onclick="signupOtpFinishWithSignIn(pendingSignup.email,tr()?'Mevcut hesabın varsa giriş yapabilir veya şifreni sıfırlayabilirsin.':'If you already have an account, sign in or reset your password.')">${tr()?'Giriş ekranına geç':'Go to sign in'}</button><button class="g s" type="button" onclick="pendingSignup=null;goTo('setup','home')">${tr()?'Geri dön':'Back'}</button>`);
   }
   else if(view==='forgot')h=`<div class="login-wrap auth-standard auth-recovery"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns()}</div></div>`+box(`<h2 class="auth-signin-title">${t('forgot')}</h2>${m()}<label for="u">${t('email')}</label><input id="u" type="email" autocomplete="email">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('recovery'):''}<div class="row"><button id="forgot-reset-submit" type="button" onclick="fSend('email')">${tr()?'Şifre sıfırlama bağlantısı':'Password reset link'}</button><button class="g" type="button" onclick="IYRecovery.resume(document.getElementById('u').value)">${tr()?'Onay kodunu gir':'Enter confirmation code'}</button></div><p class="mut">${tr()?'Kayıtlı adresine güvenli bir yenileme bağlantısı gönderilir.':'A secure reset link will be sent to your registered email.'}</p><div id="fz"></div><div style="margin-top:.6rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`)+'</div>';
   $('#app').innerHTML=h;fitTextFields($('#app'));ensureReleaseNotification();
@@ -3086,17 +3091,17 @@ function continueFromWelcome(){
 function playWelcomeTransition(cb,codeApproved=false){
   if(document.getElementById('login-portal'))return;
   const reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
-  if(reduced){if(codeApproved)toast(tr()?'Giriş onaylandı.':'Sign-in confirmed.');if(cb)cb();return}
+  if(reduced){if(cb)cb();return}
   document.getElementById('login-portal')?.remove();
   const root=document.createElement('div');
   root.id='login-portal';root.className='entry-portal';
   root.setAttribute('role','status');root.setAttribute('aria-live','polite');root.setAttribute('aria-atomic','true');
-  root.innerHTML=`<div class="portal-disc" aria-hidden="true"></div><div class="portal-brand" aria-hidden="true"><span class="portal-title">Improvin' your day.</span><span class="portal-ring"></span></div><p class="portal-greeting">${esc(greetText())}${codeApproved?`<small class="entry-confirmed">${tr()?'Giriş onaylandı.':'Sign-in confirmed.'}</small>`:''}</p>`;
+  root.innerHTML=`<div class="portal-disc" aria-hidden="true"></div><div class="portal-brand" aria-hidden="true"><span class="portal-title">Improvin' your day.</span><span class="portal-ring"></span></div><p class="portal-greeting">${esc(greetText())}</p>`;
   document.body.appendChild(root);
   let cleaned=false,fallback=0;
   const cleanup=()=>{if(cleaned)return;cleaned=true;clearTimeout(fallback);root.remove();if(cb)cb()};
   root.addEventListener('animationend',e=>{if(e.target===root&&e.animationName==='entryPortalOut')cleanup()});
-  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',850)+200);
+  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',650)+200);
 }
 function goHome(){reportDetail='';stopTimers();if(A?.loginMethod!=='google')sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 function backToLogin(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
@@ -3790,7 +3795,7 @@ function shell(){
   const oldBackdrop=document.getElementById('mini-backdrop');if(oldBackdrop)oldBackdrop.remove();
   $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button><button type="button" class="g s" id="sync-status" hidden onclick="IYReconcile.show()"></button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" style="--nav-indicator-x:${Math.max(0,NAV.findIndex(([k])=>k===pg))*100}%" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')" aria-label="${esc(navLabel(k))}" title="${esc(navLabel(k))}">${navIcon(k)}<span class="nav-label">${navLabel(k)}</span><span class="nav-label-mobile" aria-hidden="true">${navShortLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
-  if(typeof IYReconcile!=='undefined')IYReconcile.badge();renderPage();setTimeout(checkAppReminders,0);
+  renderPage();if(typeof IYReconcile!=='undefined')IYReconcile.badge();setTimeout(checkAppReminders,0);
   requestAnimationFrame(()=>{centerNav(true);resetMobileDockForPage()});
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),650)}
   const cal=$('#mini-cal');if(cal&&cal.parentElement!==document.body)document.body.appendChild(cal);
@@ -3881,10 +3886,10 @@ P.home=()=>{
   const j=A.journal?.[today()]?.text||'';
   const pr=(A.projects||[]).map((p,i)=>({p,i})).filter(({p})=>!p?.archivedAt).map(({p,i})=>{
     const due=projectReminderTime(p),d=dd(today(),Number.isFinite(due)?istanbulDayKey(new Date(due)):p.d);
-    return`<div class="task project-task"><span>${esc(p.reminderLabel||p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="A.projects.splice(${i},1);save();P.home()">${t('delete')}</button></div>`;
+    return`<div class="task project-task"><span>${esc(p.reminderLabel||p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="confirmArchiveProject(${i})">${t('delete')}</button></div>`;
   }).join('');
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
-  ${dailyFactCard()}<div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
+  ${dailyFactCard()}${A.authUid?`<div class="card sync-home"><button type="button" class="g" onclick="IYReconcile.show()">${tr()?'Bekleyen kayıtları incele':'Review pending entries'}</button></div>`:''}<div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="2000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/2000</span></div></div>
   <div class="card"><div class="row"><h2>${t('projectReminders')}</h2><button type="button" class="g s" onclick="showTimedArchive()">${tr()?'Arşiv':'Archive'} (${timedArchiveCount()})</button></div>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
   if(typeof IYFacts!=='undefined')IYFacts.refresh(istanbulDayKey(),tr());
@@ -3954,7 +3959,9 @@ function fixTodoData(){
   if(!Array.isArray(A.tasks))A.tasks=A.tasks&&typeof A.tasks==='object'?Object.values(A.tasks):[];
   A.tasks=A.tasks.filter(x=>x!=null).map(x=>{const state=taskStatus(x);return typeof x==='object'?{...x,t:txt(x),s:state==='pending'?'':state}:{t:txt(x),s:''}}).filter(x=>x.t);
   if(!Array.isArray(A.backlog))A.backlog=A.backlog&&typeof A.backlog==='object'?Object.values(A.backlog):[];
-  A.backlog=A.backlog.map(txt).filter(Boolean).slice(-10);
+  A.backlog=A.backlog.map(txt).filter(Boolean);
+  if(!Array.isArray(A.backlogArchive))A.backlogArchive=[];
+  if(A.backlog.length>10){A.backlogArchive.push(...A.backlog.splice(0,A.backlog.length-10));save()}
   if(!A.hist||typeof A.hist!=='object')A.hist={};
 }
 P.todo=()=>{
@@ -3965,6 +3972,7 @@ P.todo=()=>{
   const planned=(A.plans?.[next]||[]).map((name,i)=>`<div class="task"><span>${esc(name)}</span><button class="g s" onclick="removePlan(${i})">${t('delete')}</button></div>`).join('');
   const bl=A.backlog.map((bt,i)=>`<div class="task"><span>${esc(bt)}</span><button class="g s" onclick="fromBack(${i})">${t('addToToday')}</button><button class="g s" onclick="A.backlog.splice(${i},1);save();P.todo()">${t('delete')}</button></div>`).join('');
 
+  const archivedBacklog=(A.backlogArchive||[]).map((bt,i)=>({bt,i})).reverse().map(({bt,i})=>`<div class="task"><span>${esc(bt)}</span><button class="g s" onclick="fromBack(${i},true)">${t('addToToday')}</button></div>`).join('');
   const dayFinished=allTodayTasksArchived();
   const renderedTodayTasks=sortedTaskEntries.map(({task,index})=>tk(task,index)).join('');
   const emptyTodayText=dayFinished
@@ -3973,7 +3981,7 @@ P.todo=()=>{
   const todayTasksMarkup=renderedTodayTasks||`<p class="mut">${esc(emptyTodayText)}</p>`;
   M(`<div class="card"><h2>${t('today')} — ${fmt(today())}</h2><div class="task-sort-control"><label for="task-sort-mode">${tr()?'Sıralama':'Sort by'}</label><select id="task-sort-mode" class="task-sort-select" onchange="setTaskOrder(this.value)"><option value="manual" ${taskSortMode()==='manual'?'selected':''}>${tr()?'Manuel':'Manual'}</option><option value="alpha" ${taskSortMode()==='alpha'?'selected':''}>${tr()?'Alfabetik (A–Z)':'Alphabetical (A–Z)'}</option><option value="newest" ${taskSortMode()==='newest'?'selected':''}>${tr()?'En yeni eklenen':'Newest added'}</option><option value="reverse" ${taskSortMode()==='reverse'?'selected':''}>${tr()?'En sondan başa':'Last to first'}</option></select></div><div id="tl">${todayTasksMarkup}</div><div class="row" style="margin-top:.8rem"><textarea rows="1" class="task-compose" id="nt" maxlength="120" aria-label="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" placeholder="${dayFinished?(tr()?'Yarın için yeni görev':'New task for tomorrow'):t('newTask')}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addT()}"></textarea><button onclick="addT()">${dayFinished?(tr()?'Yarına ekle':'Add tomorrow'):t('add')}</button><button type="button" class="g s" onclick="suggestRandomTask()">${tr()?'Rastgele görev öner':'Suggest random task'}</button></div></div>
   <div class="card"><h2>${tr()?'Yarın için planlama':'Plan for tomorrow'} · ${fmt(next)}</h2><p class="mut">${tr()?'Bugünkü tüm görevleri tamamladığında buraya yazdıkların yarın açılır.':'Complete all of today\'s tasks to unlock tomorrow\'s list.'}</p><div id="tomorrow-plans">${planned||'<p class="mut">'+(tr()?'Henüz plan yok.':'No plans yet.')+'</p>'}</div><div class="tomorrow-plan-add"><textarea rows="1" class="task-compose" id="plan-input" ${dayFinished?'':'disabled'} maxlength="120" placeholder="${tr()?'Yarın ne yapacaksın?':'Tomorrow\'s task'}" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();addTomorrowPlan()}"></textarea><button onclick="addTomorrowPlan()" ${dayFinished?'':'disabled'}>${tr()?'Yarına ekle':'Add tomorrow'}</button></div>${dayFinished?'':`<small class="mut">${tr()?'Önce bugünkü görevlerin tümünü tamamla.':'Complete all of today\'s tasks first.'}</small>`}</div>
-  <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div>`);
+  <div class="card"><h2>${t('backlog')} (${A.backlog.length}/10)</h2>${bl||'<p class="mut">'+t('noRecords')+'</p>'}</div><section class="card backlog-archive"><details><summary>${tr()?'Birikim arşivi':'Backlog archive'} · ${(A.backlogArchive||[]).length}</summary><div class="backlog-archive-list">${archivedBacklog||'<p class="mut">'+t('noRecords')+'</p>'}</div></details></section>`);
 };
 function vibrateTask(){try{if(navigator.vibrate)navigator.vibrate(12)}catch(_){}}
 const tk=(x,i)=>`<div class="task ${x.s}" id="t${i}" data-task-index="${i}"><button type="button" class="g s task-grip" ${taskSortMode()!=='manual'?'disabled aria-disabled="true"':''} aria-label="${tr()?'Görevi taşı':'Reorder task'}" title="${tr()?'Sürükle veya ok tuşlarını kullan':'Drag or use arrow keys'}" onpointerdown="startTaskReorder(event,${i})" onpointermove="previewTaskReorder(event)" onpointerup="finishTaskReorder(event)" onpointercancel="cancelTaskReorder(event)" onlostpointercapture="cancelTaskReorder(event)" onkeydown="taskReorderKey(event,${i})">☰</button><span class="task-label">${esc(x.t)}</span><button class="ck ${x.s==='done'?'on':''}" aria-label="${t('done')}" onclick="mk(${i},'done')">✓</button><button class="xx ${x.s==='miss'?'on':''}" aria-label="${t('notDone')}" onclick="mk(${i},'miss')">✕</button><button class="g s" onclick="editTask(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s" onclick="delT(${i})">${t('delete')}</button></div>`;
@@ -4122,15 +4130,15 @@ function allTodayTasksArchived(){
   return A && A.day===today() && A.tasks.length===0 &&
     Array.isArray(A.completedBatches?.[today()]) && A.completedBatches[today()].length>0;
 }
-function fromBack(i){
-  if(!A.backlog[i])return;
+function fromBack(i,archived=false){
+  const list=archived?A?.backlogArchive:A?.backlog;if(!Array.isArray(list)||!Number.isInteger(i)||!list[i])return;
   if(allTodayTasksArchived()){
-    const task=A.backlog[i];
+    const task=list[i];
     // Planning can fail at the 100-task limit; never remove backlog before success.
     if(!pushTomorrowPlan(task))return;
-    A.backlog.splice(i,1);recordActivity();P.todo();return;
+    list.splice(i,1);recordActivity();P.todo();return;
   }
-  A.tasks.push({id:rndHex(16),t:A.backlog[i],s:'',createdAt:Date.now()});A.backlog.splice(i,1);recordActivity();P.todo();
+  A.tasks.push({id:rndHex(16),t:list[i],s:'',createdAt:Date.now()});list.splice(i,1);recordActivity();P.todo();
 }
 function delT(i){if(A.day!==today()){shell();return}if(!A.tasks[i])return;A.tasks.splice(i,1);archiveFinishedTasks();vibrateTask();recordActivity();P.todo()}
 function addT(){
@@ -4226,7 +4234,7 @@ function saveNote(k){
     A.future[k]=v;
     A.futureMeta[k]={...meta,createdAt:meta.createdAt||now,editedAt:previous&&previous!==v?now:(meta.editedAt||null),...(k>istanbulDayKey()?{expireAfterDay:k}:{})};
     if(previous!==v)recordActivity();else save();
-  }else{delete A.future[k];delete A.futureMeta[k];save()}
+  }else if(previous){closeModal('day-modal');delNote(k);return}else{save()}
   closeModal('day-modal');toast(t('noteSaved'));if(pg==='pc')P.pc();else renderPage();
 }
 function futureNoteCountdown(key){
@@ -4251,7 +4259,7 @@ P.pc=()=>{
   }
   const monthKey=`${y}-${pad(mo+1)}`;
   const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}<small class="note-countdown">${futureNoteCountdown(k)}</small></b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}',false,true)">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><h2 class="month-title" style="margin:0;flex:1;text-align:center">${monthName(mo)} ${y}</h2><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><div class="row"><h2>${t('futureNotes')}</h2><button type="button" class="g s" onclick="showTimedArchive()">${tr()?'Arşiv':'Archive'} (${timedArchiveCount()})</button></div><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><button type="button" class="g month-title progress-month-trigger" onclick="openProgressMonth(${y},${mo})" aria-haspopup="dialog" aria-label="${tr()?'Ay ve yıl seç':'Choose month and year'}">${monthName(mo)} ${y} ▾</button><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><div class="row"><h2>${t('futureNotes')}</h2><button type="button" class="g s" onclick="showTimedArchive()">${tr()?'Arşiv':'Archive'} (${timedArchiveCount()})</button></div><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
 };
 function newNote(){
   const d=String($('#fnd')?.value||'');
@@ -4263,7 +4271,42 @@ function newNote(){
   // Reuse the existing confirmation/save path to avoid unintended overwrites.
   const editor=$('#dn');if(editor&&draft){editor.value=draft;fitTextField(editor)}
 }
-function delNote(k){delete A.future[k];if(A.futureMeta)delete A.futureMeta[k];save();P.pc()}
+let archiveRequest=null;
+function confirmArchiveProject(index){
+ const item=A?.projects?.[index];if(!item||item.archivedAt)return;
+ archiveRequest={owner:A,item,index,kind:'project'};
+ openModal('archive-confirm',`<h2>${tr()?'Arşive taşımak istediğine emin misin?':'Move this to the archive?'}</h2><p>${esc(item.reminderLabel||item.n)}</p><div class="row"><button onclick="applyArchiveRequest()">${t('yes')}</button><button class="g" onclick="cancelArchiveRequest()">${t('no')}</button></div>`);
+}
+function delNote(k){
+ const value=A?.future?.[k];if(!value)return;
+ archiveRequest={owner:A,key:k,value,meta:A.futureMeta?.[k],kind:'note'};
+ openModal('archive-confirm',`<h2>${tr()?'Arşive taşımak istediğine emin misin?':'Move this to the archive?'}</h2><p>${esc(value)}</p><div class="row"><button onclick="applyArchiveRequest()">${t('yes')}</button><button class="g" onclick="cancelArchiveRequest()">${t('no')}</button></div>`);
+}
+function cancelArchiveRequest(){archiveRequest=null;closeModal('archive-confirm')}
+function applyArchiveRequest(){
+ const req=archiveRequest;archiveRequest=null;closeModal('archive-confirm');
+ if(!req||!A||req.owner!==A)return false;
+ const now=Date.now();
+ if(req.kind==='project'){
+  const item=A.projects?.[req.index];if(item!==req.item||item.archivedAt)return false;
+  const due=projectReminderTime(item);item.archivedAt=now;if(Number.isFinite(due))item.reminderArchivedAt=due;item.reminderEnabled=false;delete item.reminderAt;
+ }else{
+  if(A.future?.[req.key]!==req.value||A.futureMeta?.[req.key]!==req.meta)return false;
+  ensureTimedArchive().notes.push({key:req.key,text:String(req.value),meta:{...req.meta},archivedAt:now});
+  delete A.future[req.key];if(A.futureMeta)delete A.futureMeta[req.key];
+ }
+ save();toast(tr()?'Arşive taşındı.':'Moved to archive.');if(pg==='pc')P.pc();else P.home();return true;
+}
+function openProgressMonth(y,mo){
+ openModal('progress-month-picker',`<h2>${tr()?'Ay ve yıl seç':'Choose month and year'}</h2><label for="progress-year">${tr()?'Yıl':'Year'}</label><input id="progress-year" type="number" min="2026" max="9999" step="1" value="${y}"><label for="progress-month">${tr()?'Ay':'Month'}</label><select id="progress-month">${Array.from({length:12},(_,i)=>`<option value="${i}" ${i===mo?'selected':''}>${monthName(i)}</option>`).join('')}</select><p id="progress-month-error" role="status"></p><div class="row"><button onclick="jumpProgressMonth()">${tr()?'Git':'Go'}</button><button class="g" onclick="closeModal('progress-month-picker')">${t('cancel')}</button></div>`);
+}
+function jumpProgressMonth(){
+ const y=Number($('#progress-year')?.value),m=Number($('#progress-month')?.value);
+ if(!Number.isInteger(y)||!Number.isInteger(m)||y<2026||y>9999||m<0||m>11||(y===2026&&m<10)){
+  const err=$('#progress-month-error');if(err)err.textContent=tr()?'Kasım 2026 veya sonrası bir tarih seç.':'Choose November 2026 or later.';return false;
+ }
+ const n=new Date();calOff=(y-n.getFullYear())*12+m-n.getMonth();closeModal('progress-month-picker');P.pc();return true;
+}
 function st(a,b){let t=0,d=0,by=Object.create(null);for(let x=a;x<=b;x=addD(x,1)){items(x).forEach(i=>{if(!i.t.trim())return;t++;by[i.t]=by[i.t]||[0,0];by[i.t][1]++;if(i.done){d++;by[i.t][0]++}})}return{t,d,p:t?Math.round(d/t*100):0,by}}
 function periodDefaultQuestions(kind,key,scope='review'){
   // Stable variation by period: no regenerating or overwriting an answered question.
@@ -4483,7 +4526,7 @@ function reportProgressBar(start,end,day){
 function pendingReportCard(title,start,available){
  const td=istanbulDayKey(),left=Math.max(0,dd(td,available));
  return `<div class="card"><h2>🔒 ${title}</h2>
-   <p class="mut">${t('opensOn')} <time datetime="${available}">${reportDateLabel(available)}</time> — ${left} ${t('daysLeft')}</p>
+   <p class="mut">${left} ${t('daysLeft')}</p>
    ${reportProgressBar(start,available,td)}</div>`;
 }
 function answerArchiveUnlocked(now,periodKey){
@@ -4608,11 +4651,10 @@ function monthlyReportCard(day,window){
  const submitted=!!A.ql?.[period.key],open=reportQuestionsOpen('month',day);
  const start=reportActivityStart(period,day);
  const title=t('monthlyReport')+' · '+reportDateLabel(period.a,true);
- const midnight=date=>`<time datetime="${date}T00:00:00+03:00">${reportDateLabel(date)} ${tr()?'00.00':'00:00'}</time>`;
- const schedule=`<p class="mut report-month-window">${tr()?'Açılış':'Opens'} · ${midnight(opens)}<br>${tr()?'Kapanış':'Closes'} · ${midnight(closes)} (${tr()?'Türkiye saati':'Istanbul time'})</p>`;
+ const schedule='';
  let status='';
  if(submitted){
-   status=`<p class="mut report-next-month">${tr()?'Bu ayki yanıtların kaydedildi. Sonraki rapor':'Your answers are saved. Next report'} · <time datetime="${next}">${reportDateLabel(next)}</time></p>${canEditSubmittedReport('month',period.key,day)?`<button class="g s report-edit" onclick="startSubmittedReportEdit('month','${period.key}')">${tr()?'Düzenle':'Edit answers'}</button>`:''}`;
+   status=`<p class="mut report-next-month">${Math.max(0,dd(day,next))} ${t('daysLeft')}</p>${canEditSubmittedReport('month',period.key,day)?`<button class="g s report-edit" onclick="startSubmittedReportEdit('month','${period.key}')">${tr()?'Düzenle':'Edit answers'}</button>`:''}`;
  }else if(open){
    status=`<p>${reportActivityLine(start,period.b)}</p><button class="g report-more" onclick="showReportDetail('month')">${tr()?'Soruları yanıtla':'Answer questions'} →</button>`;
  }else if(!start||!reportHasActivity(start,period.b)){
@@ -4632,7 +4674,7 @@ function reportSummaryCard(kind){
     :!reportPeriodEligible(period,td)?(tr()?'Rapor, kayıt olduğun dönemi izleyen dönemden itibaren, o dönemde görev, günlük veya tamamlanmış odak kaydın varsa açılır.':'From the period after signup, reports open for periods with a task, journal entry or completed focus session.'):'';
   return `<section class="report-period-block${submitted?' report-submitted':''}">${pendingReportCard(title,period.a>since?period.a:since,next)}${reason?'<p class="mut">'+reason+'</p>':''}${canEditSubmittedReport(kind,period.key,td)?`<button class="g s report-edit" onclick="startSubmittedReportEdit('${kind}','${period.key}')">${tr()?'Düzenle':'Edit answers'}</button>`:''}</section>`;
  }
- return `<section class="card report-summary"><h2>${title}</h2><p class="mut">${fmt(period.a)} – ${fmt(period.b)}</p><p>${reportActivityLine(period.a,period.b)}</p><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Soruları yanıtla':'Answer questions'} →</button></section>`;
+ return `<section class="card report-summary"><h2>${title}</h2><p>${reportActivityLine(period.a,period.b)}</p><button class="g report-more" onclick="showReportDetail('${kind}')">${tr()?'Soruları yanıtla':'Answer questions'} →</button></section>`;
 }
 function periodTaskBreakdown(a,b){
  const days=[];for(let day=a;day<=b;day=addD(day,1)){
@@ -4984,7 +5026,7 @@ function lap(){
 P.pomo=()=>{
   editIdx=-1;
   if(!A.stopwatch||typeof A.stopwatch!=='object')A.stopwatch={elapsed:0,started:0,running:false};
-  const pr=A.presets.map((p,i)=>`<div class="tag ${pm.w===p.w&&pm.b===p.b?'on':''}"><span role="button" tabindex="0" style="cursor:pointer;flex:1" onclick="setP(${Number(p.w)},${Number(p.b)})"><b>${fmtDuration(p.w)}</b> ${t('focus')} / <b>${fmtDuration(p.b)}</b> ${t('break')}</span><span class="row"><button class="g s" onclick="editP(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s d" onclick="delP(${i})">${t('delete')}</button></span></div>`).join('');
+  const pr=A.presets.map((p,i)=>`<div data-preset-index="${i}" class="tag ${pm.w===p.w&&pm.b===p.b?'on':''}"><button type="button" class="g s preset-grip" aria-label="${tr()?'Süreyi taşı':'Reorder duration'}" title="${tr()?'Sürükle veya ok tuşlarını kullan':'Drag or use arrow keys'}" onpointerdown="startPresetReorder(event,${i})" onpointerup="finishPresetReorder(event)" onpointercancel="cancelPresetReorder()" onlostpointercapture="cancelPresetReorder()" onkeydown="presetReorderKey(event,${i})">☰</button><button type="button" class="g preset-select" onclick="setP(${Number(p.w)},${Number(p.b)})"><b>${fmtDuration(p.w)}</b> ${t('focus')} / <b>${fmtDuration(p.b)}</b> ${t('break')}</button><span class="row"><button class="g s" onclick="editP(${i})">${tr()?'Düzenle':'Edit'}</button><button class="g s d" onclick="delP(${i})">${t('delete')}</button></span></div>`).join('');
   const laps=(A.laps||[]).map((x,i)=>`<div class="lap-row"><span>Lap ${i+1}</span><b>${stopwatchFormat(x)}</b></div>`).reverse().join('');
   M(`<div class="card"><div class="mut" style="text-align:center" id="pl"></div><div class="tm ${pomoPhaseMinutes()>=60?'pomo-long-clock':''}" id="pt">${pomoClock()}</div><div class="row" style="justify-content:center"><button onclick="pS()">${pm.run?(tr()?'Duraklat':'Pause'):t('startPause')}</button><button class="g" onclick="pR()">${t('reset')}</button><button class="g" onclick="openPomoOverlay()">${tr()?'Odak ekranı':'Focus screen'}</button><button class="g" onclick="openPomoPip()">PiP</button><button class="g" onclick="pomoFullscreen()">${tr()?'Tam ekran':'Fullscreen'}</button></div><p id="pi" class="mut" style="text-align:center"></p></div>
   <div class="card"><h2>${t('focusAndBreak')}</h2>${pr||'<p class="mut">'+t('addLength')+'</p>'}<form class="row" onsubmit="event.preventDefault();addP()"><input id="cw" type="number" min="1" max="600" step="1" required aria-label="${t('focus')} (${t('minutes')})" placeholder="${t('focus')} (${t('minutes')})"><input id="cb" type="number" min="1" max="600" step="1" required aria-label="${t('break')} (${t('minutes')})" placeholder="${t('break')} (${t('minutes')})"><button type="submit">${tr()?'Ekle / Güncelle':'Add / Update'}</button></form><p class="mut">${t('afterFive')}</p></div>
@@ -5001,13 +5043,32 @@ function pi(){
   l.textContent=pm.ph==='w'?`${t('session')} ${pm.n%5+1}/5 · ${fmtDuration(pm.w)}`:(pm.lg?t('longBreak'):t('break'));
   e.textContent=pm.run?`${t('pomoEnds')}: ${clk(pm.left*1000)}`:(pm.w>60&&pm.ph==='w'?`${pm.w} ${t('minutes')} · ${t('alreadyEnds')} ${clk(pm.left*1000)}`:'');updatePomoOverlay();
 }
-function setP(w,b){if(pm.run)pTick(true);clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,end:0,n:0,lg:0,focusParts:[],noticeFive:false,iv:0};persistPomodoroState();document.title=TITLE;closePomoOverlay();P.pomo()}
+function pomoInProgress(){return !!(pm.run||pm.ph==='b'||pm.n||pm.left!==pm.w*60||pm.focusParts?.length)}
+let presetDrag=null;
+function movePreset(from,to){
+ if(!A||!Array.isArray(A.presets)||!Number.isInteger(from)||!Number.isInteger(to)||from<0||to<0||from>=A.presets.length||to>=A.presets.length||from===to)return false;
+ const [item]=A.presets.splice(from,1);A.presets.splice(to,0,item);save();P.pomo();return true;
+}
+function startPresetReorder(event,index){
+ if(presetDrag||event.isPrimary===false||event.button!==0||!A?.presets?.[index])return;
+ presetDrag={owner:A,item:A.presets[index],index,id:event.pointerId};try{event.currentTarget.setPointerCapture(event.pointerId)}catch{}
+}
+function cancelPresetReorder(){presetDrag=null}
+function finishPresetReorder(event){
+ const d=presetDrag;presetDrag=null;if(!d||d.id!==event.pointerId||d.owner!==A||A.presets[d.index]!==d.item)return;
+ const row=document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-preset-index]');if(row)movePreset(d.index,Number(row.dataset.presetIndex));
+}
+function presetReorderKey(event,index){
+ if(!['ArrowUp','ArrowDown'].includes(event.key))return;event.preventDefault();
+ const target=index+(event.key==='ArrowUp'?-1:1);if(movePreset(index,target))document.querySelector('[data-preset-index="'+target+'"] .preset-grip')?.focus();
+}
+function setP(w,b){if(pm.w===w&&pm.b===b)return false;if(pomoInProgress()){toast(tr()?'Aktif Pomodoro korunuyor. Yeni süre için önce sıfırla.':'Your current Pomodoro is preserved. Reset it before choosing a new duration.');return false}clearInterval(pm.iv);pm={...pm,w,b,ph:'w',left:w*60,run:0,end:0,n:0,lg:0,segmentStart:0,focusParts:[],noticeFive:false,iv:0};persistPomodoroState();document.title=TITLE;closePomoOverlay();P.pomo();return true}
 let editIdx=-1;
 function editP(i){const p=A.presets[i];$('#cw').value=p.w;$('#cb').value=p.b;editIdx=i}
 function delP(i){A.presets.splice(i,1);save();P.pomo()}
 function addP(){
   const w=Math.round(+$('#cw').value),b=Math.round(+$('#cb').value);
-  if(w>0&&b>0&&w<=600&&b<=600){if(editIdx>=0){A.presets[editIdx]={w,b};editIdx=-1}else A.presets.push({w,b});save();setP(w,b)}
+  if(w>0&&b>0&&w<=600&&b<=600){if(editIdx>=0){A.presets[editIdx]={w,b};editIdx=-1}else A.presets.push({w,b});save();if(!setP(w,b))P.pomo()}
 }
 function pTick(silent=false){
   if(!pm.run||!pm.end)return;
@@ -5577,7 +5638,7 @@ function v13PristineCloudProfile(a, uid){
     'googleConnected','updatedAt','legacyMigrationId','legacyMigratedAt']);
   if(Object.keys(a).some(k=>!keys.has(k)))return false;
   if(a.legacyMigrationId||a.legacyMigratedAt||Number(a.progressState?.base)>1)return false;
-  for(const key of ['tasks','backlog','projects','nc','uc','laps']){
+  for(const key of ['tasks','backlog','backlogArchive','projects','nc','uc','laps']){
     if(a[key]!=null&&(!Array.isArray(a[key])||a[key].length))return false;
   }
   for(const key of ['hist','future','futureMeta','plans','journal','activeDays','qs','ql','ver']){
