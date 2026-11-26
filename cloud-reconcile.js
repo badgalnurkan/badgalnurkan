@@ -10,7 +10,7 @@ const IYReconcile=(()=>{
  function busy(uid){return work?.uid===uid?work.promise:null}
  function state(uid){
   if(!active(uid))return '';
-  if(!navigator.onLine)return text('Çevrimdışı · bu cihazda','Offline · on this device');
+  if(!navigator.onLine)return text('Bekleyen kayıtlar · çevrimdışı','Pending entries · offline');
   if(cloudBlockedDrafts.has(uid))return text('Çakışan kayıtları incele','Review conflicting changes');
   return text('Bekleyen kayıtları incele','Review pending entries');
  }
@@ -121,7 +121,7 @@ const IYReconcile=(()=>{
   finally{if(work===task)work=null;badge()}})();
   work=task;return task.promise;
  }
- const dateGroup=['day','tasks','completedBatches','hist','plans','backlog'];
+ const dateGroup=['day','tasks','completedBatches','hist','plans','backlog','backlogArchive'];
  const field=(v,path)=>path==='$'?v:path.split('.').reduce((val,k)=>val?.[k],v);
  function show(){
   const uid=A?.authUid;if(!active(uid))return;
@@ -129,8 +129,9 @@ const IYReconcile=(()=>{
   const old=issue?.uid===uid?issue:null;
   const print=v=>esc(v===undefined?text('Kaldırıldı','Removed'):typeof v==='string'?v:JSON.stringify(v,null,2));
   const grouped=old?.paths.includes('day');
-  const paths=old?old.paths.filter(p=>!grouped||p==='day'||!dateGroup.includes(p.split('.')[0])):[];
-  const value=(doc,path)=>grouped&&path==='day'?Object.fromEntries(dateGroup.map(k=>[k,doc[k]])):field(doc,path);
+  const backlogGrouped=!grouped&&old?.paths.includes('backlog')&&old.paths.includes('backlogArchive');
+  const paths=old?old.paths.filter(p=>(!grouped||p==='day'||!dateGroup.includes(p.split('.')[0]))&&(!backlogGrouped||p!=='backlogArchive')):[];
+  const value=(doc,path)=>grouped&&path==='day'?Object.fromEntries(dateGroup.map(k=>[k,doc[k]])):backlogGrouped&&path==='backlog'?{backlog:doc.backlog,backlogArchive:doc.backlogArchive}:field(doc,path);
   const rows=old?paths.map((path,i)=>`<fieldset><legend>${esc(path)}</legend><label><input type="radio" name="choice-${i}" value="device" required> ${text('Cihazdaki','On this device')}</label><pre>${print(value(old.local,path))}</pre><label><input type="radio" name="choice-${i}" value="cloud" required> ${text('Buluttaki','In the cloud')}</label><pre>${print(value(old.remote,path))}</pre></fieldset>`).join(''):'';
   const notes=IYOfflinePad.list(uid).filter(e=>e.kind==='note'&&!A.offlineDraftIds?.[e.id]&&A.future?.[e.day]&&A.future[e.day]!==e.text);
   const dates=notes.map((e,i)=>`<article><b>${esc(e.day)}</b><p>${esc(e.text)}</p><label>${text('Bu tarihte başka not var. Bu nota yeni tarih seç.','Another note uses this date. Choose a date for this note.')} <input type="date" data-note="${i}"></label></article>`).join('');
