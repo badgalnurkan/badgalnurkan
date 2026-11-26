@@ -360,9 +360,9 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const changeDay=async value=>{
      await productivity.evaluate(date=>{const url=new URL(location.href);url.searchParams.set('date',date);history.replaceState(history.state,'',url);updateIstanbulClock()},value);
    };
-   const monthCard=productivity.locator('.report-month-card'),monthWindow=monthCard.locator('.report-month-window');
+   const monthCard=productivity.locator('.report-month-card');
    assert.match(await monthCard.locator('h2').innerText(),/Kasım 2026/);
-   assert.deepEqual(await monthWindow.locator('time').evaluateAll(times=>times.map(t=>t.dateTime)),['2026-11-30T00:00:00+03:00','2026-12-01T00:00:00+03:00']);
+   assert.match(await monthCard.innerText(),/7 gün kaldı/);assert.equal(await monthCard.locator('time').count(),0);
    assert.doesNotMatch(await monthCard.innerText(),/31 Aralık/);
    assert.equal(await productivity.locator('.period-questionnaire[data-period="2026-11"]').count(),0);
    await changeDay('2026-11-29');
@@ -384,11 +384,11 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const fields=monthly.locator('textarea');
    for(const field of await fields.all())await field.fill('Kasım yanıtım');
    await fields.last().press('Tab');await monthly.waitFor({state:'detached'});
-   assert.equal(await productivity.locator('.report-month-card.report-submitted .report-next-month time').getAttribute('datetime'),'2026-12-31');
+   assert.match(await productivity.locator('.report-month-card.report-submitted .report-next-month').innerText(),/31 gün kaldı/);
    await changeDay('2026-12-01');assert.equal(await productivity.locator('.period-questionnaire').count(),0);
    await productivity.locator('.report-month-card[data-month="2026-12"]').waitFor();
    assert.match(await monthCard.locator('h2').innerText(),/Aralık 2026/);
-   assert.deepEqual(await monthWindow.locator('time').evaluateAll(times=>times.map(t=>t.dateTime)),['2026-12-31T00:00:00+03:00','2027-01-01T00:00:00+03:00']);
+   assert.match(await monthCard.innerText(),/30 gün kaldı/);assert.equal(await monthCard.locator('time').count(),0);
 
    // Exercise the separate annual summary with a full-year enrollment.
    await productivity.evaluate(()=>{
