@@ -178,7 +178,7 @@ test('midnight archives a completed last field before blur, keeps incomplete dra
 
 
 test('the monthly card names the current month and displays only the countdown while keeping its Istanbul boundaries',()=>{
- const c=fixture().context;c.DB.lang='tr';c.current='2026-11-23';
+ const c=fixture().context;c.DB.lang='tr';c.current='2026-11-23';c.t=x=>x==='daysLeft'?'gün kaldı':x;
  for(const signup of ['2025-08-12','2026-11-14','2026-11-23']){
   c.A.reportStart=signup;c.A.reportJoinedAt=signup+'T10:00:00+03:00';
   const before=JSON.stringify(c.A),card=c.reportSummaryCard('month');
