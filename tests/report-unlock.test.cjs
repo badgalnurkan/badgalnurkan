@@ -71,7 +71,8 @@ test('all twelve calendar months, leap February and Gregorian century boundaries
    assert.equal(c.reportQuestionsOpen('month'),true,end);
    c.A.ql[key]=1;
    assert.equal(c.canAnswerReport(key),false);
-   assert.match(c.reportSummaryCard('month'),new RegExp('datetime="'+nextEnd+'"'));
+   assert.match(c.reportSummaryCard('month'),new RegExp('>'+Math.round((Date.parse(nextEnd)-Date.parse(end))/86400000)+' daysLeft<'));
+   assert.doesNotMatch(c.reportSummaryCard('month'),/datetime=/);
    assert.equal(c.reportQuestionsOpen('month',next),false);
   }
  }
@@ -105,7 +106,8 @@ test('a saved monthly submission cannot create extra questions or reopen after r
  assert.equal(c.canAnswerReport('2026-12','plan'),false);
  assert.equal(c.reportPlanningOverview(),'');
  assert.doesNotMatch(c.periodReportForm('month','2026-11','2026-12'),/<textarea/);
- assert.match(c.periodReportDetail('month'),/datetime="2026-12-31"/);
+ assert.match(c.periodReportDetail('month'),/>31 daysLeft</);
+ assert.doesNotMatch(c.periodReportDetail('month'),/datetime=/);
  assert.equal(JSON.stringify(c.A),before);
 });
 
