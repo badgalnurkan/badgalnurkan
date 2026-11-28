@@ -1885,7 +1885,7 @@ function softPaint(){
   },uiMotionTime('--motion-page-out-ms',160));
 }
 let pageSwapTimer=0;
-function goTo(v,p,push=true){
+function goTo(v,p,push=true,animate=true){
   if(v==='setup'&&view!=='setup')formDat.ack=false;
   if(typeof taskReorder!=='undefined'&&taskReorder)cancelTaskReorder();
   if(v==='app'&&p!==pg)resetMobileDockForPage();
@@ -1900,7 +1900,13 @@ function goTo(v,p,push=true){
   view=v;pg=p;msg='';selDay=null;
   if(push){try{history.pushState({v,p},'','')}catch(e){}}
   if(same){swapPage();return}
-  clearTimeout(pageSwapTimer);pageSwapTimer=0;softPaint();window.scrollTo(0,0);
+  clearTimeout(pageSwapTimer);pageSwapTimer=0;
+  if(animate)softPaint();
+  else{
+    clearTimeout(softPaintTimer);softPaintTimer=0;
+    $('#app')?.classList.remove('soft-out');paint();
+  }
+  window.scrollTo(0,0);
 }
 /* menu gecisi: header ve menu yerinde kalir, yalnizca sayfa icerigi yumusakca degisir */
 function swapPage(){
@@ -3251,8 +3257,9 @@ async function finishCloudEntry(j,preferredName,method,options,codeApproved,stil
   DB.accounts[a.u]=a;DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
   restorePomodoroState();applyTheme();save();loginDat={u:'',p:''};
   if(codeApproved)closeModal('browser-verify-gate');
-  goTo('app','home');
-  if(options.greet||codeApproved)playWelcomeTransition(undefined,codeApproved||options.codeApproved);
+  const greet=options.greet||codeApproved;
+  goTo('app','home',true,!greet);
+  if(greet)playWelcomeTransition(undefined,codeApproved||options.codeApproved);
   if(!fromCloud)await sbPush();
   cloudDraftStatus();if(typeof IYReconcile!=='undefined')IYReconcile.afterEntry(uid);
   return a;
@@ -3283,7 +3290,7 @@ async function login(){
         // Do not fall back to an unrelated local account when the cloud
         // credentials were accepted but profile/security activation failed.
         if(!serverAccepted&&localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
-          sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home');playWelcomeTransition();
+          sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home',true,false);playWelcomeTransition();
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
         if(e.code==='CAPTCHA_CANCELLED')return;
@@ -3319,7 +3326,7 @@ async function login(){
       }
     }
     if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
-      sbClear();A=norm(localAcc);A.accountOrigin='local';restorePomodoroState();applyTheme();save();goTo('app','home');playWelcomeTransition();
+      sbClear();A=norm(localAcc);A.accountOrigin='local';restorePomodoroState();applyTheme();save();goTo('app','home',true,false);playWelcomeTransition();
       toast(tr()?'Bu yalnızca yerel eski hesap. Diğer cihazlarda e-posta ile bulut hesabına giriş yapmalısın.':'Legacy local account only.');return;
     }
     msg=tr()?'Başka cihazda kayıtlıysan kullanıcı adı yerine e-posta adresinle giriş yap.':'Sign in with email on a new device.';
@@ -6112,8 +6119,7 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     if(window.IYBrowserGate&&!await IYBrowserGate.check(user,{preferredName:user.user_metadata?.username||'',method:user.app_metadata?.providers?.includes('google')?'google':'password'}))return true;
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     if(window.IYAccount&&!await IYAccount.checkAccess(user))return true;
-    const remote=await sbPull();
-    const progressPolicy=await sbProgressPolicy(user.id);
+    const [remote,progressPolicy]=await Promise.all([sbPull(),sbProgressPolicy(user.id)]);
     if(sbSession()?.user?.id!==user.id)return false;
     // A slow profile request must not carry a login across the 30-minute boundary.
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;

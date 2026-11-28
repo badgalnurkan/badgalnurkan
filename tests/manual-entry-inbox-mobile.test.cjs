@@ -32,7 +32,8 @@ test('greeting starts at valid manual auth submissions, without bypassing valida
  assert.ok(signIn.includes("activateCloudUser(j,raw,'password',{greet:true})"));
  assert.ok(signUp.includes("activateCloudUser(j,u,'password',{greet:true})"));
  const activation=extract('async function activateCloudUser(','async function login(){');
- assert.ok(activation.indexOf("goTo('app','home')")<activation.indexOf('playWelcomeTransition('));
+ const navigation=activation.indexOf("goTo('app','home',true,!greet)");
+ assert.ok(navigation>=0&&navigation<activation.indexOf('playWelcomeTransition('));
 
  const context={authBusy:false,loginDat:{u:'',p:''},DB:{accounts:{}},tr:()=>true,findUser:()=>null,
   $:id=>({value:id==='#u'?'person@example.com':'wrong-password'}),playWelcomeTransition:()=>{context.entries++},entries:0,
