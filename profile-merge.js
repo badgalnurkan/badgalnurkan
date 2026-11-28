@@ -22,6 +22,35 @@ const IYProfileMerge=(()=>{
     return false;
   }
 
+  function mergeProjectsWithDeletedReminders(base, local, remote, conflicts, preferLocal) {
+    const versions=[base===ABSENT?[]:base,local,remote];
+    if(!versions.every(Array.isArray))return null;
+    const deleted=new Set(versions.flatMap(projects=>projects.filter(item=>item?.reminderDeleted===true).map(item=>item.id)));
+    if(!deleted.size)return null;
+    if(!versions.every(projects=>projects.every(item=>object(item)&&typeof item.id==='string'&&item.id)
+      &&new Set(projects.map(item=>item.id)).size===projects.length))return null;
+
+    const [before,device,cloud]=versions.map(projects=>new Map(projects.map(item=>[item.id,item])));
+    const record=(version,id)=>{
+      const item=version.get(id);
+      if(!item)return ABSENT;
+      if(!deleted.has(id))return item;
+      const kept={...item,reminderDeleted:true,reminderEnabled:false};
+      for(const field of ['reminderAt','reminderLabel','archivedAt','reminderArchivedAt'])delete kept[field];
+      return kept;
+    };
+    const keepDevice=typeof preferLocal==='function'?preferLocal('projects'):preferLocal;
+    const projectConflicts=[],list=[];
+    for(const id of new Set([...cloud.keys(),...device.keys()])){
+      const item=mergeNode(record(before,id),record(device,id),record(cloud,id),['projects',id],projectConflicts,keepDevice);
+      if(item!==ABSENT)list.push(item);
+    }
+    const previousConflict=conflicts.indexOf('projects');
+    if(previousConflict!==-1)conflicts.splice(previousConflict,1);
+    if(projectConflicts.length)conflicts.push('projects');
+    return list;
+  }
+
   function mergeNode(base, local, remote, path, conflicts, preferLocal=false) {
     if (path.length===1 && path[0]==='iyduSyncVersion')return clone(remote);
     if (path.length===1 && path[0]==='updatedAt' && Number.isFinite(local) && Number.isFinite(remote))return Math.max(local,remote);
@@ -83,6 +112,8 @@ const IYProfileMerge=(()=>{
     if (![base, local, remote].every(object)) throw Error('SYNC_INVALID_DOCUMENT');
     const conflicts = [];
     const merged = mergeNode(base, local, remote, [], conflicts, preferLocal);
+    const projects=mergeProjectsWithDeletedReminders(base.projects??ABSENT,local.projects,remote.projects,conflicts,preferLocal);
+    if(projects)merged.projects=projects;
     if(base.day&&local.day!==remote.day){
       const onOldDay=local.day===base.day?local:remote.day===base.day?remote:null;
       const fields=['day','tasks','completedBatches','hist','plans','backlog','backlogArchive'];

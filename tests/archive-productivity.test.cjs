@@ -26,7 +26,7 @@ function archiveFixture(){
   }},
   istanbulDayKey:at=>new Date(at.getTime()+3*3600000).toISOString().slice(0,10)};
  vm.createContext(c);
- vm.runInContext(extract('function projectReminderTime(', 'function checkAppReminders('),c);
+ vm.runInContext(extract('function projectReminderDeleted(', 'function checkAppReminders('),c);
  return c;
 }
 test('expired notes and projects archive without erasing unrelated records',()=>{

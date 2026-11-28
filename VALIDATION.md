@@ -1,3 +1,11 @@
+# 28 Kasım 2026 · Proje hatırlatması, arşiv ve kalıcı silme
+
+- Hatırlatma tarihi değişince sayaç kayıtlı proje tarihini kullanır. Arşivde Evet veya Hayır onayı kapatır, silme arşiv listesini ve sayacı günceller.
+- `npm test` 388/388 geçti ve statik önizleme derlendi. Chromium'da 320 px genişlikte silme henüz buluta ulaşmadan sayfa yenilendi, silinen hatırlatma listelerde görünmedi ve ardından eşitleme tamamlandı. Aynı hatırlatmanın iki cihazda silme ve geri yükleme ile yarıştığı durumda proje içeriğinin korunduğu birleştirme testi geçti.
+- Senaryolarda örnek kayıtlar kullanıldı. Üretim veritabanı şeması ve kullanıcı kayıtları üzerinde doğrudan işlem yapılmadı.
+
+---
+
 # 28 Kasım 2026 · Giriş, eşitleme görünümü, takvim ve yıllık özet
 
 - `npm test` 385/385 başarılı. Statik önizleme derlendi. Testler aylık ve haftalık raporların mevcut kurallarını, Türkiye saatiyle 1–2 Ocak sınırlarını, ilk kısmi yılı, tek gönderimi ve cihazlar arası tam yıllık yanıtların korunmasını kapsar.

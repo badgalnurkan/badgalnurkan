@@ -279,3 +279,21 @@ test('concurrent annual submissions retain complete alternatives and different y
  assert.deepEqual(conflict.merged.annualReports,{2026:cloud,2027:device});
  assert.deepEqual(merge(base,local,remote,path=>path==='annualReports.2026').merged.annualReports,{2026:device,2027:device});
 });
+
+test('a permanent reminder deletion survives concurrent restoration and retains both projects’ other edits',()=>{
+ const {merge}=require('../profile-merge.js');
+ const archived={id:'p',n:'Project',d:'2026-11-29',archivedAt:1,reminderArchivedAt:1,reminderEnabled:false,tasks:[]};
+ const other={id:'other',n:'Other project'};
+ const base={projects:[archived,other]};
+ const device={projects:[{id:'p',n:archived.n,d:archived.d,reminderDeleted:true,reminderEnabled:false,tasks:[]},other]};
+ const cloud={projects:[
+  {id:'p',n:archived.n,d:archived.d,reminderLabel:'Custom',reminderEnabled:true,reminderAt:'2026-12-11T06:00:00Z',tasks:[{t:'Concurrent edit'}]},
+  {...other,n:'Updated elsewhere'}
+ ]};
+ const result=merge(base,device,cloud);
+ assert.deepEqual(result.conflicts,[]);
+ assert.deepEqual(result.merged.projects[0],{...device.projects[0],tasks:[{t:'Concurrent edit'}]});
+ assert.deepEqual(result.merged.projects[1],cloud.projects[1]);
+ assert.equal(merge(device,device,cloud).merged.projects[0].reminderDeleted,true);
+ assert.equal(cloud.projects[0].reminderEnabled,true);
+});

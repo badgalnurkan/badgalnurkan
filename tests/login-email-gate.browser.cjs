@@ -8,7 +8,7 @@ module.exports=async(browser,engine,origin)=>{
   const claims={sub:user.id,session_id:'ab100000-0000-4000-8000-000000000001'};
   const session={user,access_token:'fixture.'+Buffer.from(JSON.stringify(claims)).toString('base64url')+'.signature',refresh_token:'fixture-refresh'};
   let profile={u:'loginowner',nick:'Login owner',authUid:user.id,email:user.email};
-  let verified=false,loads=0,sends=0,allowSend,allowCode,allowLoad;
+  let verified=false,loads=0,sends=0,allowSend,allowCode,allowLoad,holdReminderDeletion=false;
   const sendGate=new Promise(resolve=>{allowSend=resolve});
   const codeGate=new Promise(resolve=>{allowCode=resolve}),profileGate=new Promise(resolve=>{allowLoad=resolve});
   await page.addInitScript(()=>localStorage.setItem('iydu.storage-notice.v1','test'));
@@ -35,7 +35,8 @@ module.exports=async(browser,engine,origin)=>{
    }else if(url.pathname.endsWith('/iydu_progress_policy'))data='daily';
    else if(url.pathname.endsWith('/iydu_sync_profile')){
     assert.ok(verified);const body=req.postDataJSON();
-    data=require('../profile-merge.js').equal(profile,body.p_expected_data);
+    const deletingReminder=body.p_data.projects?.some(project=>project.reminderDeleted===true);
+    data=!(holdReminderDeletion&&deletingReminder)&&require('../profile-merge.js').equal(profile,body.p_expected_data);
     if(data)profile=body.p_data;
    }
    else throw Error('Unexpected login request '+url.pathname);
@@ -100,6 +101,57 @@ module.exports=async(browser,engine,origin)=>{
     assert.equal(profile.future['2031-04-30'],'From this phone');assert.equal(profile.future['2031-03-31'],'March note');
     assert.equal(await page.evaluate(()=>Object.keys(localStorage).filter(key=>key.startsWith('iydu.resolved.v1.'+A.authUid+'.')).length),1);
     console.log('PASS chromium: browser reopened with the server stopped, two offline entries reconciled; same-field choices retain both original versions');
+
+    await panel.getByRole('button',{name:'Back',exact:true}).click();
+    await panel.waitFor({state:'detached'});
+    const dates=await page.evaluate(()=>({project:addD(today(),4),reminder:addD(today(),1)+'T23:00'}));
+    await page.locator('#pn').fill('Reminder regression fixture');
+    await page.locator('#pd').fill(dates.project);
+    await page.locator('.project-add button[type=submit]').click();
+    const project=page.locator('.project-task').filter({hasText:'Reminder regression fixture'});
+    assert.match(await project.innerText(),/4 days/);
+    await project.getByRole('button',{name:'Reminder',exact:true}).click();
+    const settings=page.locator('#project-reminder-settings');
+    await settings.locator('#project-remind-at').fill(dates.reminder);
+    await settings.getByRole('button',{name:'Save',exact:true}).click();
+    await settings.waitFor({state:'detached'});
+    assert.match(await project.innerText(),/4 days/);
+    await project.getByRole('button',{name:'Delete',exact:true}).click();
+    await page.locator('#archive-confirm').getByRole('button',{name:'Yes',exact:true}).click();
+    await project.waitFor({state:'detached'});
+    await page.waitForFunction(()=>!cloudDraftEntries(A.authUid).length);
+    assert.ok(profile.projects.find(item=>item.n==='Reminder regression fixture')?.archivedAt);
+    const archiveTrigger=page.getByRole('button',{name:'Archive (1)',exact:true});
+    await archiveTrigger.click();
+    const archive=page.locator('#timed-archive-modal'),archivedProject=archive.locator('.note-tile').filter({hasText:'Reminder regression fixture'});
+    const confirm=page.locator('#timed-project-delete');
+    await archivedProject.getByRole('button',{name:'Delete',exact:true}).click();
+    await confirm.getByRole('button',{name:'No',exact:true}).click();
+    await confirm.waitFor({state:'detached'});
+    assert.equal(await archivedProject.count(),1);
+    await archivedProject.getByRole('button',{name:'Delete',exact:true}).click();
+    holdReminderDeletion=true;
+    await confirm.getByRole('button',{name:'Yes',exact:true}).click();
+    await confirm.waitFor({state:'detached'});
+    await archivedProject.waitFor({state:'detached'});
+    assert.equal(await archive.isVisible(),true);
+    assert.ok(profile.projects.find(item=>item.n==='Reminder regression fixture')?.archivedAt,'cloud still holds the previous version');
+    await archive.getByRole('button',{name:'Close',exact:true}).click();
+    assert.equal(await page.getByRole('button',{name:'Archive (0)',exact:true}).count(),1);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('#welcome-continue').waitFor();
+    await page.evaluate(()=>activateCloudUser(sbSession(),'loginowner','password'));
+    await page.locator('.shell').waitFor();
+    assert.equal(await project.count(),0,'deleted reminder stays hidden when reopening with an unsynced deletion');
+    assert.equal(await page.getByRole('button',{name:'Archive (0)',exact:true}).count(),1);
+    holdReminderDeletion=false;
+    await page.waitForFunction(()=>!cloudDraftEntries(A.authUid).length);
+    const savedProject=profile.projects.find(item=>item.n==='Reminder regression fixture');
+    assert.equal(savedProject.reminderDeleted,true);
+    assert.equal(savedProject.d,dates.project);
+    assert.equal(savedProject.reminderAt,undefined);
+    console.log('PASS chromium: editing keeps the project date, confirmation closes, and reminder deletion survives reload and sync');
+
 
    }
 

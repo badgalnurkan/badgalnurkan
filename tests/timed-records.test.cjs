@@ -1,14 +1,15 @@
 'use strict';
 const fs=require('node:fs'),vm=require('node:vm'),test=require('node:test'),assert=require('node:assert/strict');
 const html=fs.readFileSync('index.html','utf8');
+class FixedDate extends Date{static now(){return Date.parse('2026-11-24T12:00:00+03:00')}}
 function fixture(){
- const c={A:{projects:[],future:{},futureMeta:{},journal:{'2026-11-18':{text:'Keep'}}},Date,save(){c.saves++},recordActivity(){c.saves++},saves:0,
+ const c={A:{projects:[],future:{},futureMeta:{},journal:{'2026-11-18':{text:'Keep'}}},Date:FixedDate,save(){c.saves++},recordActivity(){c.saves++},saves:0,
   today:()=>c.todayKey||'2026-11-24',istanbulDayKey:at=>new Date(at.getTime()+10800000).toISOString().slice(0,10),
-  tr:()=>true,t:x=>x,esc:x=>String(x),toast(x){c.toasts.push(x)},toasts:[],openModal(id,markup){c.modal={id,markup}},closeModal(){},
-  document:{getElementById:()=>null},P:{home(){},pc(){}},pg:'home'
+  tr:()=>true,t:x=>x,esc:x=>String(x),toast(x){c.toasts.push(x)},toasts:[],openModal(id,markup){c.modal={id,markup}},closeModal(id){c.closed=id},
+  document:{getElementById:()=>null,querySelector:()=>null},P:{home(){},pc(){}},pg:'home'
  };
  vm.createContext(c);
- const start=html.indexOf('function projectReminderTime('),end=html.indexOf('function checkAppReminders(',start);
+ const start=html.indexOf('function projectReminderDeleted('),end=html.indexOf('function checkAppReminders(',start);
  assert.ok(start>=0&&end>start);
  vm.runInContext(html.slice(start,end),c);
  return c;
@@ -74,7 +75,7 @@ test('archived project can be restored with a new date without losing project id
  const c=fixture();
  const project={id:'project-1',n:'Before',d:'2026-11-20',archivedAt:Date.now(),reminderEnabled:false,tasks:[{t:'Keep'}]};
  c.A.projects=[project];c.restoreTimedArchiveProject(0);
- c.document.getElementById=id=>({value:id==='timed-project-name'?'After':'2026-12-05'});
+ c.document.getElementById=id=>({'timed-project-name':{value:'After'},'timed-project-date':{value:'2026-12-05'}}[id]||null);
  c.saveRestoredTimedArchiveProject(0);
  assert.equal(project.id,'project-1');assert.equal(project.n,'Before');assert.equal(project.reminderLabel,'After');
  assert.equal(project.d,'2026-11-20');assert.equal(project.reminderAt,'2026-12-05T06:00:00.000Z');assert.equal(project.archivedAt,undefined);
@@ -82,5 +83,28 @@ test('archived project can be restored with a new date without losing project id
 });
 test('permanent removal in the reminder archive never removes a project or its subtasks',()=>{
  const c=fixture();c.A.projects=[{id:'p',n:'Project',tasks:[{t:'Subtask'}],archivedAt:1,reminderArchivedAt:1,reminderEnabled:false}];
- c.confirmDeleteTimedArchiveProject(0);c.deleteTimedArchiveProject(0);assert.equal(c.A.projects.length,1);assert.equal(c.A.projects[0].tasks[0].t,'Subtask');assert.equal(c.A.projects[0].archivedAt,undefined);
+ c.confirmDeleteTimedArchiveProject(0);
+ c.cancelDeleteTimedArchiveProject();assert.equal(c.closed,'timed-project-delete');assert.equal(c.timedArchiveCount(),1);
+ c.confirmDeleteTimedArchiveProject(0);assert.equal(c.deleteTimedArchiveProject(0),true);
+ assert.equal(c.closed,'timed-project-delete');assert.equal(c.timedArchiveCount(),0);
+ const project=JSON.parse(JSON.stringify(c.A.projects[0]));
+ assert.equal(c.A.projects.length,1);assert.equal(project.tasks[0].t,'Subtask');assert.equal(project.archivedAt,undefined);
+ assert.equal(project.reminderDeleted,true);assert.equal(c.projectReminderDeleted(project),true);
+ assert.equal(c.deleteTimedArchiveProject(0),false);assert.equal(c.saves,1);
+});
+test('a legacy deleted reminder stays hidden while a deliberately paused reminder has its schedule',()=>{
+ const c=fixture();
+ assert.equal(c.projectReminderDeleted({d:'2026-11-26',reminderEnabled:false}),true);
+ assert.equal(c.projectReminderDeleted({d:'2026-11-26',reminderEnabled:false,reminderAt:'2026-11-26T06:00:00Z'}),false);
+ assert.equal(c.projectReminderDeleted({d:'2026-11-26',reminderEnabled:false,archivedAt:2,reminderArchivedAt:1}),false);
+ assert.equal(c.projectReminderDeleted({d:'2026-11-26'}),false);
+});
+test('confirming a stale deletion cannot affect another account’s active archive',()=>{
+ const c=fixture();
+ const first={id:'p',n:'First',d:'2026-11-26',reminderEnabled:false,archivedAt:1};
+ const second={...first,n:'Second'};c.A.projects=[first];
+ c.confirmDeleteTimedArchiveProject(0);c.A={projects:[second]};
+ assert.equal(c.deleteTimedArchiveProject(0),false);
+ assert.equal(c.closed,'timed-project-delete');assert.equal(c.saves,0);
+ assert.equal(first.archivedAt,1);assert.equal(second.archivedAt,1);
 });
