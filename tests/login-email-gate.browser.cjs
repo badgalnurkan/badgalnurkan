@@ -61,6 +61,9 @@ module.exports=async(browser,engine,origin)=>{
    await page.locator('#browser-verify-message').filter({hasText:'Verifying'}).waitFor();assert.equal(loads,0);
    allowCode();await page.locator('#browser-verify-message').filter({hasText:'Sign-in confirmed'}).waitFor();
    allowLoad();await page.locator('.shell').waitFor();assert.ok(loads>=1);assert.deepEqual(errors,[]);
+   if(engine==='chromium'&&width===320){
+    await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+   }
    const requestsBeforeReload=sends;
    await page.reload();await page.locator('#welcome-continue').waitFor();
    await page.evaluate(async()=>{const original=sbSession();const claims=JSON.parse(atob(original.access_token.split('.')[1]));claims.session_id='ab100000-0000-4000-8000-000000000099';const candidate={...original,access_token:'fixture.'+btoa(JSON.stringify(claims))+'.signature'};await activateCloudUser(candidate,'loginowner','password')});
@@ -68,8 +71,7 @@ module.exports=async(browser,engine,origin)=>{
 
    if(engine==='chromium'&&width===320){
     const context=page.context();
-    await page.evaluate(()=>navigator.serviceWorker.ready);
-    await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+    assert.equal(await page.evaluate(()=>!!navigator.serviceWorker.controller),true,'reload remains controlled by the installed service worker');
     await context.setOffline(true);await origin.disconnect();
     await page.reload({waitUntil:'domcontentloaded'});await page.locator('#offline-entry').waitFor();
     assert.equal(await page.locator('#offline-entry fieldset').isDisabled(),false);
