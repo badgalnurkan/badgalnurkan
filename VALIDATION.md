@@ -1,3 +1,11 @@
+# 28 Kasım 2026 · Giriş, eşitleme görünümü, takvim ve yıllık özet
+
+- `npm test` 385/385 başarılı. Statik önizleme derlendi. Testler aylık ve haftalık raporların mevcut kurallarını, Türkiye saatiyle 1–2 Ocak sınırlarını, ilk kısmi yılı, tek gönderimi ve cihazlar arası tam yıllık yanıtların korunmasını kapsar.
+- Tarayıcı senaryoları geciken kod isteği, 320 px ekranda eşitleme, bağlantı kesintisinden dönüş, yıl seçimi, Bugün düğmesi ve Pomodoro ekran geçişlerini kapsar. E-posta ve kullanıcı verisi için izole test verileri kullanılır.
+- Üretim ve QA Supabase ortamlarında `iydu_sync_profile` yalnızca kimliği doğrulanmış kullanıcılara açık. Üretimde giriş doğrulaması ve hesap e-postası uçları posta taşıyıcısının hazır olduğunu bildirdi. Bu kontrolde canlı posta teslimi denenmedi ve herhangi bir veritabanı şeması veya kullanıcı kaydı değiştirilmedi.
+
+---
+
 # 24 Kasım 2026 — Supabase CAS istemcisi ve güvenli yayın kapısı (taslak PR #65)
 
 - **Geliştirme dalı:** `feature/2026-11-24-archive-and-productivity`; `main` dalı ve mevcut canlı site bu taslakta değiştirilmedi.

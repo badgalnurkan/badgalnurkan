@@ -75,7 +75,7 @@ test('repeated sends while one is pending send once and sign-out rejects its sta
  f.ctx.IYBrowserGate.signOut();f.release();await first;
  assert.equal(f.calls.filter(x=>x.action==='request').length,1);
  assert.equal(f.loads(),0);assert.equal(f.ctx.IYBrowserGate.isPending(),false);
- assert.equal(f.elements['browser-verify-message'].textContent,'');
+ assert.equal(f.elements['browser-verify-message'].textContent,'Requesting your sign-in code…');
 });
 test('a replaced Auth session cannot reuse a pending code',async()=>{
  const f=fixture();await f.ctx.activateCloudUser(f.authenticated);

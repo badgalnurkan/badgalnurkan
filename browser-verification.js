@@ -96,6 +96,7 @@ window.IYBrowserGate=(()=>{
  async function request(){
   const at=pending;if(busy||!at)return false;
   lock(true);
+  status(text('Giriş kodu isteniyor…','Requesting your sign-in code…'));
   try{
    const result=await api(at,'request');
    if(result.alreadyVerified===true)return await enter(at);

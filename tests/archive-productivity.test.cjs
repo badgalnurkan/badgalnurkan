@@ -153,10 +153,11 @@ test('running and paused Pomodoro preserve phase, countdown, interval and focus 
 });
 test('calendar direct month jump retains the existing lower bound',()=>{
  const elements={'#progress-year':{value:'2028'},'#progress-month':{value:'1'},'#progress-month-error':{}};
- const c={A:{},P:{pc(){}},tr:()=>true,$:key=>elements[key],closeModal(){},calOff:0,Date};
+ const c={A:{},P:{pc(){}},tr:()=>true,$:key=>elements[key],closeModal(){},document:{querySelector:()=>null},calOff:0,Date,today:()=>day};
  vm.createContext(c);vm.runInContext(extract('function openProgressMonth(','function st(a,b)'),c);assert.equal(c.jumpProgressMonth(),true);
- const now=new Date();assert.equal(c.calOff,(2028-now.getFullYear())*12+1-now.getMonth());
+ const now=new Date(day+'T12:00');assert.equal(c.calOff,(2028-now.getFullYear())*12+1-now.getMonth());
  elements['#progress-year'].value='2026';elements['#progress-month'].value='9';const saved=c.calOff;assert.equal(c.jumpProgressMonth(),false);assert.equal(c.calOff,saved);
+ c.jumpProgressToday();assert.equal(c.calOff,0);
 });
 test('concurrent backlog/archive movements require a single decision rather than splitting records',()=>{
  const merge=require('../profile-merge.js').merge;

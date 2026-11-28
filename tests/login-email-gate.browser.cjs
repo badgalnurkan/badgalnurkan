@@ -8,7 +8,8 @@ module.exports=async(browser,engine,origin)=>{
   const claims={sub:user.id,session_id:'ab100000-0000-4000-8000-000000000001'};
   const session={user,access_token:'fixture.'+Buffer.from(JSON.stringify(claims)).toString('base64url')+'.signature',refresh_token:'fixture-refresh'};
   let profile={u:'loginowner',nick:'Login owner',authUid:user.id,email:user.email};
-  let verified=false,loads=0,sends=0,allowCode,allowLoad;
+  let verified=false,loads=0,sends=0,allowSend,allowCode,allowLoad;
+  const sendGate=new Promise(resolve=>{allowSend=resolve});
   const codeGate=new Promise(resolve=>{allowCode=resolve}),profileGate=new Promise(resolve=>{allowLoad=resolve});
   await page.addInitScript(()=>localStorage.setItem('iydu.storage-notice.v1','test'));
   await page.route('https://flcfqwndqfmbritaywfb.supabase.co/**',async route=>{
@@ -22,7 +23,7 @@ module.exports=async(browser,engine,origin)=>{
     if(body.action==='status')data={ok:true,verified:verified&&req.headers().authorization==='Bearer '+session.access_token,expiresAt:new Date(Date.now()+3600000).toISOString()};
     else if(body.action==='request'){
      if(++sends>1){status=429;data={code:'RATE_LIMITED'}}
-     else data={ok:true,id:'ab200000-0000-4000-8000-000000000001',expiresIn:600};
+     else{await sendGate;data={ok:true,id:'ab200000-0000-4000-8000-000000000001',expiresIn:600}}
     }else if(body.action==='confirm'){
      if(body.code==='123456'){await codeGate;verified=true;data={ok:true,verified:true}}
      else{status=400;data={code:'INVALID_CHALLENGE'}}
@@ -44,7 +45,12 @@ module.exports=async(browser,engine,origin)=>{
    await page.goto('http://127.0.0.1:4173/');await page.locator('#welcome-continue').click();
    await page.locator('#u').fill(user.email);await page.locator('#p').fill('Fixture-Password-99!');await page.locator('#p').press('Enter');
    const modal=page.locator('#browser-verify-gate');await modal.waitFor({state:'visible'});
+   await page.locator('#browser-verify-message').filter({hasText:'Requesting your sign-in code'}).waitFor();
+   assert.equal(await page.locator('#auth-busy:visible').count(),0,'code screen usable while email request is in flight');
+   await page.locator('#browser-verify-code').fill('6');
+   allowSend();
    await page.locator('#browser-verify-message').filter({hasText:'email service accepted'}).waitFor();
+   assert.equal(await page.locator('#browser-verify-code').inputValue(),'6');
    assert.equal(loads,0);assert.equal(await page.locator('#busy-overlay:visible, #auth-busy:visible').count(),0);assert.equal(await page.locator('.shell').count(),0);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'login gate fits '+width);
    await page.locator('#browser-verify-code').fill('654321');await page.locator('#browser-verify-code').press('Enter');
@@ -79,8 +85,13 @@ module.exports=async(browser,engine,origin)=>{
     assert.equal(profile.future['2031-03-31'],'March note');assert.equal(profile.tasks.filter(task=>task.t==='Saved offline at the library').length,1);
     await page.evaluate(async()=>{await IYReconcile.check()});
     profile=structuredClone(profile);profile.future['2031-04-30']='From a second device';
-    await page.evaluate(async()=>{A.future['2031-04-30']='From this phone';save();await IYReconcile.check();IYReconcile.show()});
-    const panel=page.locator('#sync-review'),row=panel.locator('fieldset').filter({hasText:'future.2031-04-30'});
+    await page.evaluate(async()=>{A.future['2031-04-30']='From this phone';save();await IYReconcile.check()});
+    const entryPoint=page.getByRole('button',{name:'Review pending entries',exact:true});
+    assert.equal(await page.locator('[onclick="IYReconcile.show()"]').count(),1);
+    await entryPoint.click();
+    const panel=page.locator('#sync-review'),row=panel.locator('fieldset').filter({hasText:'Future notes · 30 April 2031'});
+    assert.equal(await panel.locator('pre, code').count(),0);
+    assert.ok(await panel.evaluate(el=>el.firstElementChild.scrollWidth<=el.firstElementChild.clientWidth+1));
     await row.getByText('From a second device',{exact:true}).waitFor();await row.getByText('From this phone',{exact:true}).waitFor();
     await row.locator('input[value=device]').check();await panel.locator('button[type=submit]').click();
     await page.waitForFunction(()=>!cloudBlockedDrafts.has(A.authUid)&&A.future['2031-04-30']==='From this phone');

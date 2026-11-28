@@ -22,6 +22,19 @@ test('random suggestions avoid duplicates without editing existing tasks',()=>{
  assert.equal(c.A.tasks[1].s,'');assert.equal(c.saves,1);
  assert.equal(c.suggestRandomTask(),true);assert.notEqual(c.A.tasks[1].t,c.A.tasks[2].t);
 });
+test('suggestions rotate after deletion and skip recent task history',()=>{
+ const c=context();
+ c.A.hist['2026-11-23']=[{t:'Read for 15 minutes'}];
+ vm.runInContext(part('const TASK_SUGGESTIONS=','/* sis: tamamlanmamis gecmis gunler */'),c);
+ const suggested=new Set();
+ for(let i=0;i<24;i++){
+  assert.equal(c.suggestRandomTask(),true);
+  const task=c.A.tasks.pop().t;
+  assert.notEqual(task,'Read for 15 minutes');
+  assert.equal(suggested.has(task),false);
+  suggested.add(task);
+ }
+});
 test('suggestions go to tomorrow only after today has been archived',()=>{
  const c=context({allTodayTasksArchived:()=>true});
  vm.runInContext(part('const TASK_SUGGESTIONS=','/* sis: tamamlanmamis gecmis gunler */'),c);

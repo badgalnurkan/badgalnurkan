@@ -67,15 +67,13 @@ test('reduced motion bypasses the animated overlay and completes immediately',()
  const {f,roots,timers}=fixture(true);let calls=0;f.playWelcomeTransition(()=>calls++);
  assert.equal(roots.length,0);assert.equal(timers.size,0);assert.equal(calls,1);
 });
-test('the 650ms entry uses a shorter 260ms pass and a 330ms greeting',()=>{
- assert.match(html,/--entry-total-ms:650/);
- assert.match(html,/#login-portal\.entry-portal \.portal-disc\{[^}]*animation:entryCirclePass \.26s linear \.06s both!important/);
- const frames=html.match(/@keyframes entryCirclePass\{([^\n]+)\}/)[1];
- assert.match(frames,/60%\{transform:translate\(-50%,-50%\) scale\(1\.5\);animation-timing-function:var\(--motion-return\)\}/);
- assert.match(frames,/100%\{transform:translate\(-50%,-50%\) scale\(0\)\}/);
- assert.ok(Math.abs(260*.6-156)<.001);
- assert.ok(Math.abs(260*(1-.6)-104)<.001);
- assert.ok(Math.abs(.06+.26+.33-.65)<.001);
+test('brand, greeting and code view use a short lead and a shared fade',()=>{
+ assert.match(html,/--entry-total-ms:620;--entry-fade-ms:180/);
+ assert.ok(html.includes('animation:surfaceFadeOut .09s var(--motion-ease) .05s both'));
+ assert.ok(html.includes('animation:surfaceFadeIn var(--entry-fade) var(--motion-ease) .12s both'));
+ assert.ok(html.includes('@keyframes entryPortalOut{0%,71%{opacity:1}100%{opacity:0}}'));
+ assert.ok(html.includes('#browser-verify-gate:not(.is-closing) .card{animation:surfaceFadeIn var(--entry-fade)'));
+ assert.doesNotMatch(source,/auth-busy|login-busy-overlay/);
 });
 test('JavaScript completion uses the duration configured in CSS',()=>{
  const {f,context,timers}=fixture();

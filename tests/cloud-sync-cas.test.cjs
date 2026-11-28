@@ -268,3 +268,14 @@ test('a malformed outbox record never gets silently removed or uploaded',()=>{
  assert.throws(()=>f.drafts.cloudResumeProfile('owner-one',original),/Invalid account outbox record/);
  assert.ok(f.storage.getItem(key));
 });
+
+test('concurrent annual submissions retain complete alternatives and different years merge',()=>{
+ const {merge}=require('../profile-merge.js');
+ const device={answers:['Device 1','Device 2','Device 3'],submittedAt:'2027-01-01T12:00:00Z'};
+ const cloud={answers:['Cloud 1','Cloud 2','Cloud 3'],submittedAt:'2027-01-01T12:05:00Z'};
+ const base={annualReports:{}},local={annualReports:{2026:device}},remote={annualReports:{2026:cloud,2027:device}};
+ const conflict=merge(base,local,remote);
+ assert.deepEqual(conflict.conflicts,['annualReports.2026']);
+ assert.deepEqual(conflict.merged.annualReports,{2026:cloud,2027:device});
+ assert.deepEqual(merge(base,local,remote,path=>path==='annualReports.2026').merged.annualReports,{2026:device,2027:device});
+});
