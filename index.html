@@ -2542,9 +2542,12 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-28-ui-annual-summary';
+const SITE_RELEASE='2026-11-28-project-reminder-repair';
 const SITE_CHANGES=[
- {date:SITE_RELEASE.slice(0,10),trTitle:'Daha hızlı giriş, takvim ve yıllık özet',enTitle:'Faster sign-in, calendar and annual summary',items:[
+ {date:SITE_RELEASE.slice(0,10),trTitle:'Proje hatırlatmaları ve arşiv',enTitle:'Project reminders and archive',items:[
+ ['Hatırlatma zamanı düzenlendiğinde proje tarihi ve kalan gün bilgisi korunur.','Editing a reminder preserves the project date and countdown.'],
+ ['Arşivde silme onayı kapanır ve kalıcı silinen hatırlatmalar yeniden açıldığında listelere dönmez.','Archive confirmations close and permanently deleted reminders stay off the lists after reopening.']]},
+ {date:'2026-11-28',trTitle:'Daha hızlı giriş, takvim ve yıllık özet',enTitle:'Faster sign-in, calendar and annual summary',items:[
  ['Giriş kodu ekranı beklerken kullanılabilir. Karşılama ve Pomodoro geçişleri yumuşatıldı.','The sign-in code screen stays visible while you wait. Greeting and Pomodoro transitions are smoother.'],
  ['Bekleyen kayıtları ana sayfadan okunabilir cihaz ve bulut sürümleriyle inceleyebilirsin.','Review pending entries from Home with readable device and cloud versions.'],
  ['İlerleme takviminde yılı listeden seçebilir, Bugün ile geri dönebilirsin. Görev önerileri çeşitlendirildi.','Pick a year from the progress calendar and return with Today. Task suggestions have more variety.'],
@@ -2814,8 +2817,14 @@ function openNotification(id){
  goTo('app',item.type==='tasks'?'todo':item.type.startsWith('pomo')?'pomo':'home');
 }
 function projectId(project){if(!/^[a-zA-Z0-9_-]+$/.test(String(project.id||'')))project.id=window.crypto?.randomUUID?.()||('p'+Date.now().toString(36)+Math.random().toString(36).slice(2));return project.id}
+function projectReminderDeleted(project){
+ // Older versions cleared the dates and archive state after a permanent deletion.
+ return project.reminderDeleted===true||(
+  project.reminderEnabled===false&&!project.reminderAt&&!project.archivedAt&&!project.reminderArchivedAt
+ );
+}
 function projectReminderTime(project){
- if(project.reminderEnabled===false||project.archivedAt)return NaN;
+ if(project.reminderEnabled===false||project.archivedAt||project.reminderDeleted===true)return NaN;
  return Date.parse(project.reminderAt||(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(project.d)?project.d+'T09:00:00+03:00':''));
 }
 
@@ -2826,8 +2835,9 @@ function ensureTimedArchive(){
 }
 function timedArchiveCount(){
  return (Array.isArray(A?.timedArchive?.notes)?A.timedArchive.notes.length:0)
-   +(Array.isArray(A?.projects)?A.projects.filter(p=>p&&p.archivedAt).length:0);
+   +(Array.isArray(A?.projects)?A.projects.filter(p=>p?.archivedAt&&!projectReminderDeleted(p)).length:0);
 }
+function timedArchiveButtonText(){return (tr()?'Arşiv':'Archive')+' ('+timedArchiveCount()+')'}
 let timedArchiveEditorOwner=null,timedArchiveEditorItem=null;
 function showTimedArchive(){
  if(!A)return;
@@ -2837,14 +2847,20 @@ function showTimedArchive(){
   +'<button type="button" class="g s" onclick="editTimedArchiveNote('+index+')">'+(tr()?'Düzenle':'Edit')+'</button>'
   +'<button type="button" class="g s" onclick="restoreTimedArchiveNote('+index+')">'+(tr()?'Geri yükle':'Restore')+'</button>'
   +'<button type="button" class="g s" onclick="confirmDeleteTimedArchiveNote('+index+')">'+t('delete')+'</button></div></article>').join('');
- const projects=(A.projects||[]).map((project,index)=>({project,index})).filter(x=>x.project?.archivedAt).map(({project,index})=>
+ const projects=(A.projects||[]).map((project,index)=>({project,index})).filter(x=>x.project?.archivedAt&&!projectReminderDeleted(x.project)).map(({project,index})=>
   '<article class="note-tile"><b>'+esc(project.reminderLabel||project.n)+'</b><p>'+esc(project.d)+'</p><div class="row">'
   +'<button type="button" class="g s" onclick="restoreTimedArchiveProject('+index+')">'+(tr()?'Düzenle / geri yükle':'Edit / restore')+'</button>'
   +'<button type="button" class="g s" onclick="confirmDeleteTimedArchiveProject('+index+')">'+t('delete')+'</button></div></article>').join('');
+ const records=notes+projects||'<p class="mut">'+t('noRecords')+'</p>';
+ const archive=document.getElementById('timed-archive-modal');
+ if(archive&&!archive.classList.contains('is-closing')){
+  archive.querySelector('.note-grid').innerHTML=records;
+  return;
+ }
  openModal('timed-archive-modal','<h2>'+(tr()?'Süresi dolan kayıtlar':'Expired records')+'</h2><p class="mut">'
   +(tr()?'Kayıtlar otomatik silinmez. Geri yüklerken yeni bir tarih seç.':'Records are not automatically deleted. Choose a new date when restoring.')+'</p>'
-  +'<div class="note-grid">'+(notes+projects||'<p class="mut">'+t('noRecords')+'</p>')+'</div>'
-  +'<button type="button" class="g" onclick="closeModal(\'timed-archive-modal\')">'+(tr()?'Kapat':'Close')+'</button>');
+  +'<div class="note-grid">'+records+'</div>'
+  +'<button type="button" class="g" id="timed-archive-close" onclick="closeModal(\'timed-archive-modal\')">'+(tr()?'Kapat':'Close')+'</button>');
 }
 function editTimedArchiveNote(index){
  const item=ensureTimedArchive().notes[index];if(!item)return;
@@ -2884,7 +2900,7 @@ function saveRestoredTimedArchiveNote(index){
  toast(tr()?'Not geri yüklendi.':'Note restored.');
 }
 function restoreTimedArchiveProject(index){
- const project=A?.projects?.[index];if(!project?.archivedAt)return;
+ const project=A?.projects?.[index];if(!project?.archivedAt||projectReminderDeleted(project))return;
  timedArchiveEditorOwner=A;timedArchiveEditorItem=project;
  openModal('timed-project-restore','<h2>'+(tr()?'Proje hatırlatmasını geri yükle':'Restore project reminder')+'</h2>'
   +'<label for="timed-project-name">'+(tr()?'Hatırlatma metni':'Reminder text')+'</label><input id="timed-project-name" maxlength="40" value="'+esc(project.reminderLabel||project.n)+'">'
@@ -2895,12 +2911,14 @@ function saveRestoredTimedArchiveProject(index){
  if(!A||A!==timedArchiveEditorOwner||timedArchiveEditorItem!==A.projects?.[index])return;
  const project=A.projects?.[index],name=String(document.getElementById('timed-project-name')?.value||'').trim().slice(0,40);
  const key=String(document.getElementById('timed-project-date')?.value||'');
- if(!project?.archivedAt||!name||!validArchiveDate(key)||key<today()){
-  toast(tr()?'Proje adını ve yeni geçerli tarihi yaz.':'Enter a project name and a valid new date.');return;
+ const time=Date.parse(key+'T09:00:00+03:00');
+ if(!project?.archivedAt||projectReminderDeleted(project)||!name||!validArchiveDate(key)||time<=Date.now()){
+  toast(tr()?'Hatırlatma metnini ve Türkiye saatiyle 09.00 henüz geçmemiş bir tarih seç.':'Enter reminder text and choose a date whose 09:00 Türkiye time is still ahead.');return;
  }
- project.reminderLabel=name;project.reminderAt=new Date(key+'T09:00:00+03:00').toISOString();
+ project.reminderLabel=name;project.reminderAt=new Date(time).toISOString();
  project.reminderEnabled=true;delete project.archivedAt;delete project.reminderArchivedAt;
  recordActivity();closeModal('timed-project-restore');if(pg==='home')P.home();else if(pg==='pc')P.pc();
+ showTimedArchive();document.getElementById('timed-archive-close')?.focus?.({preventScroll:true});
  toast(tr()?'Proje geri yüklendi.':'Project restored.');
 }
 function confirmDeleteTimedArchiveNote(index){
@@ -2915,15 +2933,31 @@ function deleteTimedArchiveNote(index){
  A.timedArchive.notes.splice(index,1);save();showTimedArchive();
 }
 function confirmDeleteTimedArchiveProject(index){
- if(!A?.projects?.[index]?.archivedAt)return;
- timedArchiveEditorOwner=A;timedArchiveEditorItem=A.projects[index];
+ const project=A?.projects?.[index];
+ if(!project?.archivedAt||projectReminderDeleted(project))return;
+ timedArchiveEditorOwner=A;timedArchiveEditorItem=project;
  openModal('timed-project-delete','<h2>'+(tr()?'Arşivdeki hatırlatma kalıcı silinsin mi?':'Permanently delete this archived reminder?')+'</h2>'
  +'<div class="row"><button class="danger-logout" onclick="deleteTimedArchiveProject('+index+')">'+t('yes')+'</button>'
- +'<button class="g" onclick="showTimedArchive()">'+t('no')+'</button></div>');
+ +'<button class="g" onclick="cancelDeleteTimedArchiveProject()">'+t('no')+'</button></div>');
+}
+function cancelDeleteTimedArchiveProject(){
+ const opener=document.getElementById('timed-project-delete')?._returnFocus;
+ timedArchiveEditorOwner=null;timedArchiveEditorItem=null;
+ closeModal('timed-project-delete');
+ opener?.focus({preventScroll:true});
 }
 function deleteTimedArchiveProject(index){
- if(!A||A!==timedArchiveEditorOwner||timedArchiveEditorItem!==A.projects?.[index]||!A.projects?.[index]?.archivedAt)return;
- const project=A.projects[index];delete project.archivedAt;delete project.reminderArchivedAt;delete project.reminderLabel;project.reminderEnabled=false;save();showTimedArchive();
+ const project=A?.projects?.[index];
+ if(!A||A!==timedArchiveEditorOwner||project!==timedArchiveEditorItem||!project?.archivedAt||projectReminderDeleted(project)){
+  cancelDeleteTimedArchiveProject();return false;
+ }
+ project.reminderDeleted=true;project.reminderEnabled=false;
+ delete project.archivedAt;delete project.reminderArchivedAt;delete project.reminderAt;delete project.reminderLabel;
+ save();cancelDeleteTimedArchiveProject();showTimedArchive();
+ const trigger=document.querySelector('[data-timed-archive-trigger]');
+ if(trigger)trigger.textContent=timedArchiveButtonText();
+ document.getElementById('timed-archive-close')?.focus({preventScroll:true});
+ return true;
 }
 
 function expireTimedRecords(now=Date.now()){
@@ -2958,17 +2992,29 @@ function checkAppReminders(now=Date.now()){
   if(slot!==undefined&&count)addNotification('tasks:'+get('year')+'-'+get('month')+'-'+get('day')+':'+slot,'tasks',{count,items:pending.slice(0,2).map(task=>task.t)});
  }
 }
+let projectReminderEditor=null;
 function editProjectReminder(index){
- const project=A?.projects?.[index];if(!project)return;projectId(project);
+ const project=A?.projects?.[index];
+ if(!project||project.archivedAt||projectReminderDeleted(project))return;
+ projectReminderEditor={owner:A,project};projectId(project);
  const date=new Date(projectReminderTime({...project,reminderEnabled:true}));
  const value=Number.isFinite(date.getTime())?new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16):'';
  openModal('project-reminder-settings',`<h2>${tr()?'Proje hatırlatması':'Project reminder'}</h2><p>${esc(project.n)}</p><label for="project-remind-at">${tr()?'Hatırlatma zamanı (cihazının yerel saati)':'Reminder time (your device’s local time)'}</label><input id="project-remind-at" type="datetime-local" value="${value}"><label class="reminder-enabled"><input id="project-remind-enabled" type="checkbox" ${project.reminderEnabled===false?'':'checked'}>${tr()?'Hatırlatmayı aç':'Enable reminder'}</label><p id="project-reminder-error" role="status"></p><div class="row"><button onclick="saveProjectReminder('${project.id}')">${t('save')}</button><button class="g" onclick="closeModal('project-reminder-settings')">${tr()?'Kapat':'Close'}</button></div>`);
 }
 function saveProjectReminder(id){
- const project=A?.projects?.find(p=>p.id===id);if(!project)return;
- const time=new Date(document.getElementById('project-remind-at').value).getTime(),enabled=document.getElementById('project-remind-enabled').checked;
- if(enabled&&!Number.isFinite(time)){document.getElementById('project-reminder-error').textContent=tr()?'Geçerli tarih ve saat seç.':'Choose a valid date and time.';return}
- if(Number.isFinite(time))project.reminderAt=new Date(time).toISOString();project.reminderEnabled=enabled;save();closeModal('project-reminder-settings');if(pg==='home')P.home();checkAppReminders();
+ const project=A?.projects?.find(p=>p.id===id);
+ if(!project||projectReminderEditor?.owner!==A||projectReminderEditor.project!==project||project.archivedAt||projectReminderDeleted(project))return;
+ const input=document.getElementById('project-remind-at'),toggle=document.getElementById('project-remind-enabled');
+ if(!input||!toggle)return;
+ const time=Date.parse(input.value),enabled=toggle.checked;
+ if(enabled&&(!Number.isFinite(time)||time<=Date.now())){
+  document.getElementById('project-reminder-error').textContent=tr()?'Gelecekte bir tarih ve saat seç.':'Choose a date and time in the future.';
+  input.focus();return;
+ }
+ const due=Number.isFinite(time)?time:projectReminderTime({...project,reminderEnabled:true});
+ if(Number.isFinite(due))project.reminderAt=new Date(due).toISOString();
+ project.reminderEnabled=enabled;projectReminderEditor=null;
+ save();closeModal('project-reminder-settings');if(pg==='home')P.home();checkAppReminders();
 }
 setInterval(checkAppReminders,30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkAppReminders();if(A&&pm.run)pTick(true)}});
@@ -3899,14 +3945,17 @@ P.home=()=>{
   expireTimedRecords();
   const q=getDailyQuote(),it=items(today()),dn=it.filter(x=>x.done).length;
   const j=A.journal?.[today()]?.text||'';
-  const pr=(A.projects||[]).map((p,i)=>({p,i})).filter(({p})=>!p?.archivedAt).map(({p,i})=>{
-    const due=projectReminderTime(p),d=dd(today(),Number.isFinite(due)?istanbulDayKey(new Date(due)):p.d);
-    return`<div class="task project-task"><span>${esc(p.reminderLabel||p.n)} · ${d>=0?d+(tr()?' gün':' days'):(tr()?'gecikti':'overdue')}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="confirmArchiveProject(${i})">${t('delete')}</button></div>`;
+  const pr=(A.projects||[]).map((p,i)=>({p,i})).filter(({p})=>p&&!p.archivedAt&&!projectReminderDeleted(p)).map(({p,i})=>{
+    const days=dd(today(),p.d),due=projectReminderTime(p);
+    const countdown=days>0?days+(tr()?' gün':days===1?' day':' days'):days===0?(tr()?'Bugün':'Today'):days<0?(tr()?'gecikti':'overdue'):'';
+    const custom=Number.isFinite(due)&&due!==Date.parse(p.d+'T09:00:00+03:00')
+      ?`<small class="mut" style="display:block">${tr()?'Hatırlatma':'Reminder'} · ${esc(journalDate(due))}</small>`:'';
+    return`<div class="task project-task"><span>${esc(p.reminderLabel||p.n)}${countdown?' · '+countdown:''}${custom}</span><button class="g s" onclick="editProjectReminder(${i})">${tr()?'Hatırlatma':'Reminder'}</button><button class="g s" onclick="confirmArchiveProject(${i})">${t('delete')}</button></div>`;
   }).join('');
   M(`<div class="card"><div class="mut">${t('quoteOfTheDay')}</div><h2>“${esc(q)}”</h2></div>
   ${dailyFactCard()}${A.authUid?`<div class="card sync-home"><button type="button" class="g" onclick="IYReconcile.show()">${tr()?'Bekleyen kayıtları incele':'Review pending entries'}</button></div>`:''}<div class="card"><h2>${t('dailyReport')} — ${fmt(today())}</h2><p>${dn}/${it.length} ${t('tasksDone')} · ${t('total')} <b>%${pct()}</b></p><div class="bar"><i style="width:${it.length?dn/it.length*100:0}%"></i></div><p class="mut">${t('pctHint')}</p></div>
   <div class="card"><h2>${tr()?'Kısa günlük':'Daily journal'}</h2><p class="mut">${tr()?'Bugünün kısa notu; Raporlar → Geçmiş özet bölümünde saklanır.':'Today\'s note appears in Reports → Past summary.'}</p><textarea id="journal-input" rows="4" maxlength="2000" oninput="updateJournalCounter(this)" placeholder="${tr()?'Bugün neler oldu?':'How was your day?'}"></textarea><div class="row"><button onclick="saveJournal()">${t('save')}</button><span class="mut" id="journal-counter" aria-live="polite">0/2000</span></div></div>
-  <div class="card"><div class="row"><h2>${t('projectReminders')}</h2><button type="button" class="g s" onclick="showTimedArchive()">${tr()?'Arşiv':'Archive'} (${timedArchiveCount()})</button></div>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
+  <div class="card"><div class="row"><h2>${t('projectReminders')}</h2><button type="button" class="g s" data-timed-archive-trigger onclick="showTimedArchive()">${timedArchiveButtonText()}</button></div>${pr||'<p class="mut">'+t('noProjects')+'</p>'}<form class="project-add" novalidate onsubmit="event.preventDefault();addProj()"><textarea id="pn" rows="1" maxlength="40" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();this.form.requestSubmit()}" aria-label="${t('projectName')}" aria-describedby="project-add-error" placeholder="${t('projectName')}" required></textarea><div class="project-date-field"><label for="pd">${tr()?'Proje tarihi':'Project date'}</label><input id="pd" type="date" min="${today()}" aria-label="${tr()?'Proje tarihi':'Project date'}" aria-describedby="project-add-error" required></div><button type="submit">${t('add')}</button><p id="project-add-error" class="project-add-error" role="status" aria-live="polite"></p></form><p class="mut reminder-help">${tr()?'Varsayılan hatırlatma: proje günü Türkiye saatiyle 09.00. Her projenin Hatırlatma düğmesinden saati değiştirebilirsin.':'Default reminder: 09:00 Türkiye time on the project date. Use each project’s Reminder button to change it.'}</p></div>`);
   if(typeof IYFacts!=='undefined')IYFacts.refresh(istanbulDayKey(),tr());
 };
 function updateJournalCounter(el){const e=document.getElementById('journal-counter');if(e)e.textContent=String(el?.value?.length||0)+'/2000'}
@@ -4289,7 +4338,7 @@ P.pc=()=>{
   }
   const monthKey=`${y}-${pad(mo+1)}`;
   const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}<small class="note-countdown">${futureNoteCountdown(k)}</small></b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}',false,true)">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><button type="button" class="g month-title progress-month-trigger" onclick="openProgressMonth(${y},${mo})" aria-haspopup="dialog" aria-label="${tr()?'Ay ve yıl seç':'Choose month and year'}">${monthName(mo)} ${y} ▾</button><button class="g" ${calOff>=mx?'disabled':''} aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="progress-today"><button type="button" class="g s" onclick="jumpProgressToday()">${tr()?'Bugün':'Today'}</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><div class="row"><h2>${t('futureNotes')}</h2><button type="button" class="g s" onclick="showTimedArchive()">${tr()?'Arşiv':'Archive'} (${timedArchiveCount()})</button></div><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><button type="button" class="g month-title progress-month-trigger" onclick="openProgressMonth(${y},${mo})" aria-haspopup="dialog" aria-label="${tr()?'Ay ve yıl seç':'Choose month and year'}">${monthName(mo)} ${y} ▾</button><button class="g" ${calOff>=mx?'disabled':''} aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="progress-today"><button type="button" class="g s" onclick="jumpProgressToday()">${tr()?'Bugün':'Today'}</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><div class="row"><h2>${t('futureNotes')}</h2><button type="button" class="g s" data-timed-archive-trigger onclick="showTimedArchive()">${timedArchiveButtonText()}</button></div><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
 };
 function newNote(){
   const d=String($('#fnd')?.value||'');
@@ -4303,7 +4352,7 @@ function newNote(){
 }
 let archiveRequest=null;
 function confirmArchiveProject(index){
- const item=A?.projects?.[index];if(!item||item.archivedAt)return;
+ const item=A?.projects?.[index];if(!item||item.archivedAt||projectReminderDeleted(item))return;
  archiveRequest={owner:A,item,index,kind:'project'};
  openModal('archive-confirm',`<h2>${tr()?'Arşive taşımak istediğine emin misin?':'Move this to the archive?'}</h2><p>${esc(item.reminderLabel||item.n)}</p><div class="row"><button onclick="applyArchiveRequest()">${t('yes')}</button><button class="g" onclick="cancelArchiveRequest()">${t('no')}</button></div>`);
 }
@@ -4318,7 +4367,7 @@ function applyArchiveRequest(){
  if(!req||!A||req.owner!==A)return false;
  const now=Date.now();
  if(req.kind==='project'){
-  const item=A.projects?.[req.index];if(item!==req.item||item.archivedAt)return false;
+  const item=A.projects?.[req.index];if(item!==req.item||item.archivedAt||projectReminderDeleted(item))return false;
   const due=projectReminderTime(item);item.archivedAt=now;if(Number.isFinite(due))item.reminderArchivedAt=due;item.reminderEnabled=false;delete item.reminderAt;
  }else{
   if(A.future?.[req.key]!==req.value||A.futureMeta?.[req.key]!==req.meta)return false;
