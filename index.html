@@ -507,9 +507,6 @@ button{transition:background .25s,transform .18s,box-shadow .22s}
 .account-chip{background:var(--acc);border:1px solid var(--acc2);color:#fff;display:inline-flex;align-items:center;gap:.45rem;padding:.35rem .7rem;box-shadow:none;max-width:12rem}
 .account-chip .avatar{background:#ffffff30;border-radius:50%;width:2rem;height:2rem;display:grid;place-items:center;flex-shrink:0}
 .account-chip .account-name{min-width:0;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;font-size:.85rem}
-.login-busy-overlay{position:fixed;inset:0;z-index:20010;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 96%,transparent);backdrop-filter:blur(8px);animation:fi .18s ease both}
-.login-busy-orbit{width:min(78vw,19rem);aspect-ratio:1;border-radius:50%;border:2px solid var(--acc2);display:grid;place-items:center;padding:1.5rem;text-align:center;font-family:var(--fs);font-size:clamp(1.2rem,5vw,1.8rem);color:var(--acc);animation:breath 1.65s ease-in-out infinite;box-shadow:0 0 0 16px color-mix(in srgb,var(--acc) 9%,transparent)}
-@keyframes breath{0%,100%{opacity:.65;transform:scale(.94)}50%{opacity:1;transform:scale(1.04)}}
 .pomo-overlay{position:fixed;inset:0;z-index:20000;background:color-mix(in srgb,var(--bg) 91%,transparent);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);display:flex;align-items:center;justify-content:center;padding:clamp(1rem,4vw,3rem);animation:overlayIn .38s cubic-bezier(.18,.77,.23,1) both}
 @keyframes overlayIn{from{opacity:0;transform:scale(1.05)}to{opacity:1;transform:scale(1)}}
 .pomo-panel{display:flex;flex-direction:column;align-items:center;gap:1rem;width:100%;max-width:40rem;text-align:center}
@@ -527,7 +524,7 @@ button{transition:background .25s,transform .18s,box-shadow .22s}
 .clock-label{text-align:center;font-family:var(--fs);font-size:1.5rem}
 @media(max-width:600px){header.top .top-brand{font-size:clamp(.8rem,3.7vw,1rem)!important}.top-tools{gap:.25rem}.top-clock{font-size:.72rem}.account-chip{padding:.28rem}.account-chip .account-name{display:none}.account-chip .avatar{width:1.8rem;height:1.8rem}.pomo-ring{width:min(85vw,60vh);height:min(85vw,60vh)}.card{padding:1rem}.task{align-items:center}button{min-height:2.7rem}}
 @media(max-height:510px) and (orientation:landscape){.pomo-ring{width:min(39vw,70vh);height:min(39vw,70vh)}.pomo-panel{gap:.35rem}.pomo-overlay{overflow:auto}}
-@media(prefers-reduced-motion:reduce){.login-busy-orbit,.login-busy-overlay,.pomo-overlay{animation:none!important}.pomo-ring{transition:none}}
+@media(prefers-reduced-motion:reduce){.pomo-overlay{animation:none!important}.pomo-ring{transition:none}}
 /* v3 - accessible, predictable layout across phones, tablets, desktop and TV */
 :root{--ui-mid:clamp(.95rem,.93rem + .14vw,1.04rem)}
 body,button,input,select,textarea{font-size:var(--ui-mid)}
@@ -554,9 +551,6 @@ button{line-height:1.35}
 /* Circular app reveal only after successful sign-in: no looping pulse. */
 #app.circular-enter{animation:circularAppEnter .9s cubic-bezier(.77,0,.175,1) both}
 @keyframes circularAppEnter{0%{clip-path:circle(0 at 50% 50%);opacity:.25}18%{clip-path:circle(5rem at 50% 50%);opacity:.9}100%{clip-path:circle(150vmax at 50% 50%);opacity:1}}
-.login-busy-overlay{background:color-mix(in srgb,var(--bg) 91%,transparent)}
-.login-busy-orbit{width:min(68vw,16rem);aspect-ratio:1;border:1px solid var(--ln);box-shadow:0 0 0 10px color-mix(in srgb,var(--acc) 7%,transparent);animation:none;opacity:1;position:relative}
-.login-busy-orbit:before{content:'';position:absolute;inset:-3px;border-radius:50%;border:3px solid transparent;border-top-color:var(--acc);animation:spinSubtle 1.1s linear infinite}
 @keyframes spinSubtle{to{transform:rotate(360deg)}}
 #journal-counter{font-variant-numeric:tabular-nums}
 .note-tile small{align-self:flex-end;font-size:.77rem}
@@ -609,7 +603,7 @@ button{line-height:1.35}
 .project-add input[type=date]::-webkit-date-and-time-value,#project-reminder-settings input[type=datetime-local]::-webkit-date-and-time-value{min-width:0;text-align:left}
 @media(max-width:360px){header.top .top-tools{gap:.17rem}.chrono-controls button{min-height:3.75rem;min-width:3.75rem}}
 @media(min-width:1600px){html{font-size:clamp(16px,1vw,18px)}.shell{max-width:86rem}}
-@media(prefers-reduced-motion:reduce){#app.circular-enter,.modal,.modal .card,.modal[data-kind=day] .card,.login-busy-orbit:before{animation:none!important}}
+@media(prefers-reduced-motion:reduce){#app.circular-enter,.modal,.modal .card,.modal[data-kind=day] .card{animation:none!important}}
 html{font-size:clamp(15.5px, .4vw + 13.8px, 17.5px)}
 body{line-height:1.55}
 main,.shell,.card{min-width:0}
@@ -946,7 +940,6 @@ main .card{animation-duration:.25s;animation-delay:0s!important}
 }
 @keyframes portalSoftVeil{0%{opacity:0}30%{opacity:.92}100%{opacity:0}}
 @keyframes portalSoftRing{0%{opacity:0;transform:rotate(0) scale(.85)}30%{opacity:1;transform:rotate(140deg) scale(1)}100%{opacity:0;transform:rotate(270deg) scale(.95)}}
-.login-busy-overlay{-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);background:color-mix(in srgb,var(--bg) 80%,transparent)}
 /* V7: clear contact options; one opens a mail app, one opens Gmail in browser. */
 .contact-actions{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.55rem;margin-top:1rem}
 .contact-actions a{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:.9rem;font-weight:700;min-height:2.6rem;padding:.5rem 1rem;border:1px solid var(--ln);border-radius:999px;transition:background .16s,color .16s,border-color .16s,transform .16s}
@@ -1024,13 +1017,12 @@ footer .legal-links{margin:.15rem auto .3rem}
 :root[data-beige=true] body{background:color-mix(in srgb,var(--bg) 88%,var(--acc2))}
 :root[data-beige=true] .card,:root[data-beige=true] .box,:root[data-beige=true] .note-tile{background:color-mix(in srgb,var(--card) 93%,var(--acc2))}
 :root[data-beige=true] .mini-cal-grid .mini-dot:hover{background:color-mix(in srgb,var(--acc2) 70%,var(--card))}
-.pomo-overlay{animation:focusCircleIn .03s linear both;clip-path:circle(150vmax at 50% 50%)}
-.pomo-overlay.pomo-exit{animation:focusCircleOut .02s linear forwards;pointer-events:none}
-@keyframes focusCircleIn{from{clip-path:circle(0 at 50% 50%);opacity:.8}to{clip-path:circle(150vmax at 50% 50%);opacity:1}}
-@keyframes focusCircleOut{from{clip-path:circle(150vmax at 50% 50%);opacity:1}to{clip-path:circle(0 at 50% 50%);opacity:.8}}
+@keyframes surfaceFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes surfaceFadeOut{from{opacity:1}to{opacity:0}}
+.pomo-overlay,#browser-verify-gate:not(.is-closing),#browser-verify-gate:not(.is-closing) .card{animation:surfaceFadeIn var(--entry-fade) var(--motion-ease) both}
+.pomo-overlay.pomo-exit{animation:surfaceFadeOut var(--entry-fade) var(--motion-ease) both;pointer-events:none}
 @media(min-width:1700px){.stopwatch-card .chrono-dial{width:min(19rem,30vh)}.stopwatch-card .sw-display{font-size:3.5rem}}
 @media(max-width:390px){.stopwatch-card .stopwatch-actions{gap:.3rem}.stopwatch-card .stopwatch-actions>button{padding:.4rem .55rem;font-size:.87rem}}
-@media(prefers-reduced-motion:reduce){.pomo-overlay,.pomo-overlay.pomo-exit{animation:none!important;clip-path:none!important}}
 
 
 /* V13.1.2 — Typography, notices, calendar and device-aware spacing.
@@ -1281,9 +1273,7 @@ footer .legal-links{margin:.15rem auto .3rem}
 /* V13.1.3.1 — theme-aware login portal, concise responsive type and consistent font stacks. */
 :root{--brand-title-font:var(--fs);--v13131-portal-lead:.18s;--v13131-circle-duration:.05s}
 /* The header, auth spinner and after-login brand now all use the same display family. */
-header.top .top-brand,.login-busy-orbit,#login-portal .portal-title{font-family:var(--brand-title-font)!important}
-.login-busy-orbit{font-weight:600;line-height:1.18}
-.login-busy-orbit span{display:block;position:relative;z-index:1;max-width:100%;overflow-wrap:break-word}
+header.top .top-brand,#login-portal .portal-title{font-family:var(--brand-title-font)!important}
 /* 180ms brand prelude then exactly 30ms expansion + 20ms contraction. */
 #login-portal.v13131-portal{
   position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;
@@ -1338,7 +1328,7 @@ body{font-size:1rem!important}
   #login-portal.v13131-portal .portal-disc,#login-portal.v13131-portal .portal-ring{animation:none!important}
 }
 /* Shared web motion, inspired by Apple's motion guidance. */
-:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:650}
+:root{--motion-ease:cubic-bezier(.22,.61,.36,1);--motion-spring:cubic-bezier(.22,1.06,.36,1);--motion-return:cubic-bezier(.4,0,.2,1);--motion-page-out-ms:160;--motion-surface-close-ms:240;--entry-total-ms:620;--entry-fade-ms:180;--entry-fade:calc(var(--entry-fade-ms)*1ms)}
 #app{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main,.shell main.swap{transition:opacity calc(var(--motion-page-out-ms)*1ms) var(--motion-ease)}
 .shell main.an{animation:pgIn .34s var(--motion-ease) both}
@@ -1464,18 +1454,14 @@ body{font-size:1rem!important}
   .nav-shell aside a::after,.nav-shell aside a .nav-icon svg{transition:none}
 }
 
-/* Compact entry: 100ms brand, 240ms forward, 160ms reverse, then 350ms greeting. */
-#login-portal.entry-portal{background:var(--bg);pointer-events:auto;animation:entryPortalOut calc(var(--entry-total-ms)*1ms) linear both!important}
-#login-portal.entry-portal .portal-disc{position:absolute;inset:auto;left:50%;top:50%;width:100vmax;height:100vmax;border-radius:50%;clip-path:none!important;opacity:1!important;background:color-mix(in srgb,var(--card) 60%,var(--acc2))!important;transform:translate(-50%,-50%) scale(0);animation:entryCirclePass .26s linear .06s both!important}
-#login-portal.entry-portal .portal-brand{position:relative;z-index:2;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:entryBrandPass .26s linear .06s both!important}
+/* Short brand reveal, then a greeting and the same fade used by the code form. */
+#login-portal.entry-portal{background:var(--bg);pointer-events:auto;animation:entryPortalOut calc(var(--entry-total-ms)*1ms) var(--motion-ease) both!important}
+#login-portal.entry-portal .portal-brand{position:relative;display:grid;place-items:center;width:clamp(10rem,40vw,15rem);aspect-ratio:1;padding:1.25rem;border-radius:50%;background:var(--card);border:1px solid var(--ln);box-shadow:var(--sh);animation:surfaceFadeOut .09s var(--motion-ease) .05s both!important}
 #login-portal.entry-portal .portal-title{font-family:var(--brand-title-font);font-size:clamp(1.1rem,4.5vw,1.65rem);font-weight:600;line-height:1.3;text-wrap:balance;text-align:center;color:var(--acc)}
 #login-portal.entry-portal .portal-ring{position:absolute;inset:-2px;display:block;width:auto;height:auto;border:2px solid var(--ln);border-top-color:var(--acc);border-right-color:var(--acc);border-radius:50%;animation:entrySpinner .55s linear infinite!important}
-#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;z-index:3;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:entryGreeting .33s var(--motion-ease) .32s both!important}
-@keyframes entryCirclePass{0%{transform:translate(-50%,-50%) scale(0);animation-timing-function:var(--motion-return)}60%{transform:translate(-50%,-50%) scale(1.5);animation-timing-function:var(--motion-return)}100%{transform:translate(-50%,-50%) scale(0)}}
-@keyframes entryBrandPass{0%{opacity:1;transform:scale(1);animation-timing-function:var(--motion-return)}60%{opacity:1;transform:scale(1.08);animation-timing-function:var(--motion-return)}100%{opacity:0;transform:scale(1)}}
+#login-portal.entry-portal .portal-greeting{position:absolute;display:block!important;width:min(92vw,32rem);max-width:none;margin:0;padding:0 1rem;font-family:var(--v13121-century);font-size:clamp(1.35rem,5.8vw,2.6rem);font-weight:700;line-height:1.35;text-align:center;color:var(--ink);text-wrap:balance;animation:surfaceFadeIn var(--entry-fade) var(--motion-ease) .12s both!important}
 @keyframes entrySpinner{to{transform:rotate(360deg)}}
-@keyframes entryGreeting{0%{opacity:0;letter-spacing:-.01em;transform:scale(.985)}35%,82%{opacity:1;letter-spacing:.045em;transform:scale(1)}100%{opacity:0;letter-spacing:.065em;transform:scale(1.01)}}
-@keyframes entryPortalOut{0%,90%{opacity:1}100%{opacity:0}}
+@keyframes entryPortalOut{0%,71%{opacity:1}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){
   :root{--motion-page-out-ms:0;--motion-surface-close-ms:0}
   .shell main.an,.mobile-menu[open],.mobile-menu[open].is-closing,.modal:not(.is-closing) .card{animation:none!important;transition:none!important}
@@ -1721,9 +1707,22 @@ main#mn.an{animation:menuFadeIn 165ms cubic-bezier(.2,.65,.3,1) both}
 .backlog-archive summary{cursor:pointer;font-weight:700;color:var(--acc);padding:.4rem 0}.backlog-archive-list{margin-top:.7rem}.backlog-archive-list .task>span{overflow-wrap:anywhere;min-width:0}
 .sync-home button{max-width:100%;white-space:normal}
 #signup-code-status:not(:empty),#browser-verify-message:not(:empty){padding:.8rem 1rem;background:var(--card);border:1px solid var(--acc);border-radius:14px;color:var(--ink);font-weight:700;overflow-wrap:anywhere}
-@media(max-width:600px){header.top #sync-status:not([hidden]){grid-column:1/-1;grid-row:auto;justify-self:stretch;white-space:normal;min-width:0}.preset-select{font-size:.85rem;padding:.35rem}.preset-grip{min-width:44px;min-height:44px}}
+@media(max-width:600px){.preset-select{font-size:.85rem;padding:.35rem}.preset-grip{min-width:44px;min-height:44px}}
 .signup-docs{text-align:center;margin:.3rem 0 .8rem}
-[hidden]#sync-status{display:none}#sync-review pre{max-height:12rem;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}#sync-review fieldset{min-width:0;border:1px solid var(--bd,#8885);margin:.6rem 0}#sync-review input[type=radio]{width:auto}
+.auth-operation-status{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
+#sync-review fieldset{min-width:0;border:1px solid var(--ln);border-radius:16px;margin:1rem 0;padding:.8rem}
+.sync-option-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:.7rem}
+.sync-option{padding:.7rem;border:1px solid var(--ln);border-radius:12px;min-width:0;overflow-wrap:anywhere}
+.sync-option label{display:flex;align-items:center;gap:.5rem;min-height:44px;font-weight:700;cursor:pointer}
+.sync-option input[type=radio]{width:auto;margin:0;accent-color:var(--acc)}
+.sync-option ul{margin:.3rem 0;padding-inline-start:1.15rem}
+.sync-entry-text{white-space:pre-wrap}
+.progress-year-nav{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:.4rem}
+.progress-year-nav select{margin:.3rem 0}
+.progress-today{display:flex;justify-content:center;margin:.55rem 0}
+.annual-questionnaire label{display:block;margin-top:.65rem}
+.stopwatch-face{display:grid;align-items:center;min-height:min(65vw,18rem,42vh)}
+@media(prefers-reduced-motion:reduce){.pomo-overlay.pomo-exit,#browser-verify-gate:not(.is-closing),#browser-verify-gate:not(.is-closing) .card{animation:none!important}}
 </style>
 <link rel="stylesheet" href="/account-security.css">
 <meta name="referrer" content="no-referrer">
@@ -1886,7 +1885,7 @@ function softPaint(){
   },uiMotionTime('--motion-page-out-ms',160));
 }
 let pageSwapTimer=0;
-function goTo(v,p,push=true){
+function goTo(v,p,push=true,animate=true){
   if(v==='setup'&&view!=='setup')formDat.ack=false;
   if(typeof taskReorder!=='undefined'&&taskReorder)cancelTaskReorder();
   if(v==='app'&&p!==pg)resetMobileDockForPage();
@@ -1901,7 +1900,13 @@ function goTo(v,p,push=true){
   view=v;pg=p;msg='';selDay=null;
   if(push){try{history.pushState({v,p},'','')}catch(e){}}
   if(same){swapPage();return}
-  clearTimeout(pageSwapTimer);pageSwapTimer=0;softPaint();window.scrollTo(0,0);
+  clearTimeout(pageSwapTimer);pageSwapTimer=0;
+  if(animate)softPaint();
+  else{
+    clearTimeout(softPaintTimer);softPaintTimer=0;
+    $('#app')?.classList.remove('soft-out');paint();
+  }
+  window.scrollTo(0,0);
 }
 /* menu gecisi: header ve menu yerinde kalir, yalnizca sayfa icerigi yumusakca degisir */
 function swapPage(){
@@ -2102,7 +2107,7 @@ function bindReportCalendar(account,user,newProfile=false){
   else if(newProfile&&created>=release)account.reportCalendarRule='full-period-v1';
 }
 function norm(a){
-  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],backlogArchive:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},planningQs:{},planningLocks:{},ql:{},notifications:[],noticeDelivered:{},notificationPrefs:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},timedArchive:{notes:[]},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
+  const d={ver:{},tasks:[],day:today(),hist:{},backlog:[],backlogArchive:[],projects:[],presets:[{w:25,b:5},{w:50,b:10}],qs:{},planningQs:{},planningLocks:{},ql:{},annualReports:{},notifications:[],noticeDelivered:{},notificationPrefs:{},nc:[],uc:[],theme:'light',bio:'',email:'',phone:'',future:{},futureMeta:{},timedArchive:{notes:[]},pomo:null,fog:true,pctFrom:today(),activeDays:{},plans:{},completedBatches:{},journal:{},laps:[],stopwatch:{elapsed:0,started:0,running:false}};
   for(const k in d)if(a[k]===undefined||a[k]===null)a[k]=d[k];
   // Preserve when reporting began independently of the percentage counter.
   // Older accounts have no reportStart; use their saved pctFrom as a one-time
@@ -2537,11 +2542,18 @@ function welcomeDisplayName(){
   return name?(tr()?'Hoş geldin, ':'Welcome, ')+esc(name):t('welcome');
 }
 /* One inbox for release news, project dates, tasks and focus reminders. */
-const SITE_RELEASE='2026-11-24-offline-recovery-07';
+const SITE_RELEASE='2026-11-28-ui-annual-summary';
 const SITE_CHANGES=[
+ {date:SITE_RELEASE.slice(0,10),trTitle:'Daha hızlı giriş, takvim ve yıllık özet',enTitle:'Faster sign-in, calendar and annual summary',items:[
+ ['Giriş kodu ekranı beklerken kullanılabilir. Karşılama ve Pomodoro geçişleri yumuşatıldı.','The sign-in code screen stays visible while you wait. Greeting and Pomodoro transitions are smoother.'],
+ ['Bekleyen kayıtları ana sayfadan okunabilir cihaz ve bulut sürümleriyle inceleyebilirsin.','Review pending entries from Home with readable device and cloud versions.'],
+ ['İlerleme takviminde yılı listeden seçebilir, Bugün ile geri dönebilirsin. Görev önerileri çeşitlendirildi.','Pick a year from the progress calendar and return with Today. Task suggestions have more variety.'],
+ ['2026 yıllık özeti, Türkiye saatiyle 1 Ocak 2027 boyunca açık. Yanıtlar gönderildiğinde kilitlenir.','The 2026 annual summary is open on January 1, 2027 in Türkiye time. Answers lock on submission.']]},
+ {date:'2026-11-26',trTitle:'Pomodoro ve arşiv iyileştirmeleri',enTitle:'Pomodoro and archive improvements',items:[
+ ['Aktif Pomodoro korunur. Süreler sıralanabilir, proje hatırlatmaları ve geleceğe notlar onayla arşivlenebilir.','Active Pomodoros are preserved, presets can be reordered, and reminders and future notes can be archived with confirmation.']]},
  {date:'2026-11-24',trTitle:'Çevrimdışı görev ve notlar, eşitleme ve günün haberi',enTitle:'Offline entries, sync and daily reporting',items:[
  ['Bu cihazda giriş yaptıktan sonra bağlantı kesilirse görev ve not kaydedebilirsin. Aynı hesap doğrulandığında kayıtlar eşitlenir.','After signing in on this device, you can record tasks and notes offline. They sync when the same account reconnects and is verified.'],
- ['Aynı alanda iki farklı değişiklik varsa Ayarlar → Verilerim → Eşitlemeyi incele bölümünde iki sürümü karşılaştırabilirsin.','Compare conflicting fields in Settings → My data → Review sync.'],
+ ['Aynı alanda iki farklı değişiklik varsa iki sürümü karşılaştırabilirsin.','Compare both versions when a field has conflicting changes.'],
  ['Günün bilgisinin altında, günün konusuyla ilgili güncel bir haber bulunduğunda kaynağı ve tarihi gösterilir.','When a recent story is available for the daily topic, its publisher and date appear below the daily discovery.']]},
 
   {date:'2026-11-24',trTitle:'Bekleyen eşitleme taslakları',enTitle:'Pending sync drafts',items:[['Cihazdaki bekleyen kayıtlar hesaba özel taslaklarda tutulur. Bağımsız alanlar yeniden girişte birleştirilebilir; belirsiz çakışmalarda otomatik kayıt durur ve taslaklar dışa aktarılabilir.','Pending changes are stored in account-specific drafts. Independent fields can merge on sign-in; ambiguous conflicts pause automatic sync and allow draft export.']]},
@@ -2735,7 +2747,7 @@ function bindNotificationSwipe(banner){
 }
 function showTopNotification(item){
  if(document.visibilityState!=='visible')return;
- if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',650)+200);return}
+ if(document.getElementById('login-portal')){const recipient=noticeOwner();setTimeout(()=>{if(noticeOwner()===recipient)showTopNotification(item)},uiMotionTime('--entry-total-ms',620)+200);return}
  let stack=document.getElementById('notification-banners');
  if(!stack){stack=document.createElement('div');stack.id='notification-banners';stack.className='notification-banners';stack.setAttribute('aria-live','polite');stack.setAttribute('aria-relevant','additions');document.body.appendChild(stack)}
  const copy=notificationCopy(item),banner=document.createElement('div');banner.className='notification-banner';banner.dataset.notificationId=item.id;
@@ -3019,7 +3031,7 @@ function renderAppOrAuth(){
       ${googleRemembered?`<button type="button" class="g s remember-manual" data-user="${esc(rem)}" onclick="useAccount(this.dataset.user)">${tr()?'Kullanıcı adı ve şifreyle giriş yap':'Sign in with username and password'}</button>`:``}
     </div>`:``;
     const otherList=others.length?`<div style="margin-top:.9rem"><small class="mut">${t('savedUsers')}</small><div class="saved-list">${others.map(k=>`<button data-user="${esc(k)}" onclick="useAccount(this.dataset.user)">@${esc(k)}</button>`).join('')}</div></div>`:'';
-    h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Google ile kayıtlı olsan da kendi uygulama şifrenle giriş yapabilirsin. Henüz şifren yoksa e-postanı doğrulayarak oluşturabilirsin.':'You can sign in with your own app password, even if you registered with Google. If you have not set one, create one after verifying your email.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('login'):''}<div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" data-user="${esc(rem||'')}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':'signInWithGoogle()'}">${googleRemembered?(tr()?esc(DB.accounts[rem].email||DB.accounts[rem].mail)+' ile devam et':'Continue with '+esc(DB.accounts[rem].email||DB.accounts[rem].mail)):(tr()?'Google ile devam et':'Continue with Google')}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
+    h=`<div class="login-wrap ${googleRemembered?'auth-google-remembered':'auth-standard'}"><div class="auth-brand">Improvin' your day.</div>`+`<div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+boxWide(`<h2 class="auth-signin-title">${t('signInTitle')}</h2>${m()}${remCard}${googleRemembered?`<p class="mut" style="font-size:.85rem;margin:-.25rem 0 .8rem">${tr()?'Google ile kayıtlı olsan da kendi uygulama şifrenle giriş yapabilirsin. Henüz şifren yoksa e-postanı doğrulayarak oluşturabilirsin.':'You can sign in with your own app password, even if you registered with Google. If you have not set one, create one after verifying your email.'}</p>`:''}<label>${tr()?'Kullanıcı adı veya e-posta':'Username or email'}</label><input id="u" autocomplete="username" autocapitalize="none" inputmode="email" value="${esc(loginDat.u)}" oninput="loginDat.u=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();$('#p').focus()}">${rem?`<div class="not-you-wrap" style="text-align:right"><a class="lg-link" role="button" tabindex="0" onclick="otherUser()">${t('notYou')}</a></div>`:''}<label>${t('password')}</label><input id="p" type="password" autocomplete="current-password" onkeyup="showCapsLock(event)" onkeydown="showCapsLock(event);if(event.key==='Enter'){event.preventDefault();login()}" oninput="loginDat.p=''" placeholder="${rem?esc(DB.accounts[rem].nick||rem)+' · '+t('password'):''}">${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('login'):''}<div class="row"><button id="login-submit" onclick="login()">${t('login')}</button><span class="auth-operation-status" id="login-operation-status" role="status"></span><button class="g" onclick="goTo('forgot','home')">${t('forgot')}</button><button class="g" onclick="goTo('setup','home')">${t('newAccount')}</button></div>${otherList}<div class="google-auth-row"><button class="g google-signin" data-user="${esc(rem||'')}" onclick="${googleRemembered?'continueWithRememberedGoogle(this.dataset.user)':'signInWithGoogle()'}">${googleRemembered?(tr()?esc(DB.accounts[rem].email||DB.accounts[rem].mail)+' ile devam et':'Continue with '+esc(DB.accounts[rem].email||DB.accounts[rem].mail)):(tr()?'Google ile devam et':'Continue with Google')}</button></div>${legalLinks()}<div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goHome()">← ${t('welcome')}</a></div>`)+`</div>`;
   }
   else if(view==='setup')h=`<div class="login-wrap auth-register"><div class="auth-brand">Improvin' your day.</div><div class="login-top">${themePick()}<div class="langbar">${langBtns(true)}</div>${notificationButton()}</div>`+box(`
     <h2 class="auth-register-title">${t('newAccountTitle')}</h2>${m()}
@@ -3040,7 +3052,7 @@ function renderAppOrAuth(){
       <div class="signup-terms"><input id="signup-terms" type="checkbox" required aria-describedby="error-signup-terms" ${formDat.ack?'checked':''} onchange="formDat.ack=this.checked">
       <label for="signup-terms">${tr()?'KVKK aydınlatma metnini ve gizlilik politikasını okudum. Kullanım koşullarını kabul ediyorum.':'I have read the KVKK notice and privacy policy and accept the terms of use.'}</label></div>
       <p class="legal-inline signup-docs"><a href="kvkk.html" target="_blank" rel="noopener">KVKK</a> · <a href="privacy.html" target="_blank" rel="noopener">${tr()?'Gizlilik':'Privacy'}</a> · <a href="terms.html" target="_blank" rel="noopener">${tr()?'Koşullar':'Terms'}</a></p>${signupErrorSlot('signup-terms')}
-      ${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('signup'):''}<div class="row"><button id="register-submit" type="submit">${t('create')}</button><button type="button" class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div>
+      ${typeof IYTurnstile!=='undefined'?IYTurnstile.markup('signup'):''}<div class="row"><button id="register-submit" type="submit">${t('create')}</button><span class="auth-operation-status" id="register-operation-status" role="status"></span><button type="button" class="g" onclick="A=A0||A;A0=null;goTo(A?'app':'welcome','home')">${t('back')}</button></div>
     </form><div style="margin-top:1rem"><a class="lg-link" role="button" tabindex="0" onclick="goTo('login','home')">← ${t('loginBack')}</a></div>`)+'</div>';
   else if(view==='signup-code'){
     if(!pendingSignup){view='setup';renderAppOrAuth();return}
@@ -3096,12 +3108,12 @@ function playWelcomeTransition(cb,codeApproved=false){
   const root=document.createElement('div');
   root.id='login-portal';root.className='entry-portal';
   root.setAttribute('role','status');root.setAttribute('aria-live','polite');root.setAttribute('aria-atomic','true');
-  root.innerHTML=`<div class="portal-disc" aria-hidden="true"></div><div class="portal-brand" aria-hidden="true"><span class="portal-title">Improvin' your day.</span><span class="portal-ring"></span></div><p class="portal-greeting">${esc(greetText())}</p>`;
+  root.innerHTML=`<div class="portal-brand" aria-hidden="true"><span class="portal-title">Improvin' your day.</span><span class="portal-ring"></span></div><p class="portal-greeting">${esc(greetText())}</p>`;
   document.body.appendChild(root);
   let cleaned=false,fallback=0;
   const cleanup=()=>{if(cleaned)return;cleaned=true;clearTimeout(fallback);root.remove();if(cb)cb()};
   root.addEventListener('animationend',e=>{if(e.target===root&&e.animationName==='entryPortalOut')cleanup()});
-  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',650)+200);
+  fallback=setTimeout(cleanup,uiMotionTime('--entry-total-ms',620)+200);
 }
 function goHome(){reportDetail='';stopTimers();if(A?.loginMethod!=='google')sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='welcome';pg='home';try{history.replaceState({v:'welcome',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
 function backToLogin(){reportDetail='';stopTimers();sbClear();A=null;A0=null;loginDat={u:'',p:''};msg='';view='login';pg='home';try{history.replaceState({v:'login',p:'home'},'','')}catch(e){}renderAppOrAuth();window.scrollTo(0,0)}
@@ -3160,11 +3172,13 @@ let authBusy=false, nameTimer=0;
 const emailPattern=/^[^@\s]{1,64}@[^@\s]{1,190}\.[^@\s]{2,}$/;
 function loginBusy(on){
   authBusy=on;
-  const btn=document.getElementById(view==='setup'?'register-submit':'login-submit');
-  if(btn)btn.disabled=on;
-  let ov=document.getElementById('auth-busy');
-  if(on&&!ov){ov=document.createElement('div');ov.id='auth-busy';ov.className='login-busy-overlay';ov.innerHTML='<div class="login-busy-orbit" role="status" aria-live="polite"><span>Improvin\' your day.</span></div>';document.body.appendChild(ov)}
-  if(!on&&ov)ov.remove();
+  const register=view==='setup';
+  const btn=document.getElementById(register?'register-submit':'login-submit');
+  if(!btn)return;
+  btn.disabled=on;
+  btn.textContent=on?(tr()?'Doğrulanıyor…':'Verifying…'):t(register?'create':'login');
+  const status=document.getElementById(register?'register-operation-status':'login-operation-status');
+  if(status)status.textContent=on?btn.textContent:'';
 }
 let nameSuggestionChoices=[];
 function suggestNameHtml(name){
@@ -3243,8 +3257,9 @@ async function finishCloudEntry(j,preferredName,method,options,codeApproved,stil
   DB.accounts[a.u]=a;DB.last=a.nick||a.u;DB.lastUser=a.u;A=a;
   restorePomodoroState();applyTheme();save();loginDat={u:'',p:''};
   if(codeApproved)closeModal('browser-verify-gate');
-  goTo('app','home');
-  if(options.greet||codeApproved)playWelcomeTransition(undefined,codeApproved||options.codeApproved);
+  const greet=options.greet||codeApproved;
+  goTo('app','home',true,!greet);
+  if(greet)playWelcomeTransition(undefined,codeApproved||options.codeApproved);
   if(!fromCloud)await sbPush();
   cloudDraftStatus();if(typeof IYReconcile!=='undefined')IYReconcile.afterEntry(uid);
   return a;
@@ -3275,7 +3290,7 @@ async function login(){
         // Do not fall back to an unrelated local account when the cloud
         // credentials were accepted but profile/security activation failed.
         if(!serverAccepted&&localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
-          sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home');playWelcomeTransition();
+          sbClear();A=norm(localAcc);A.accountOrigin='local';DB.lastUser=A.u;restorePomodoroState();applyTheme();save();goTo('app','home',true,false);playWelcomeTransition();
           toast(tr()?'Eski yerel hesabın açıldı; başka cihazlarla eşitlenmez.':'Legacy local account: no cross-device sync.');return;
         }
         if(e.code==='CAPTCHA_CANCELLED')return;
@@ -3311,7 +3326,7 @@ async function login(){
       }
     }
     if(localAcc&&!accountCloudHints(localAcc)&&await pwMatch(localAcc,password)){
-      sbClear();A=norm(localAcc);A.accountOrigin='local';restorePomodoroState();applyTheme();save();goTo('app','home');playWelcomeTransition();
+      sbClear();A=norm(localAcc);A.accountOrigin='local';restorePomodoroState();applyTheme();save();goTo('app','home',true,false);playWelcomeTransition();
       toast(tr()?'Bu yalnızca yerel eski hesap. Diğer cihazlarda e-posta ile bulut hesabına giriş yapmalısın.':'Legacy local account only.');return;
     }
     msg=tr()?'Başka cihazda kayıtlıysan kullanıcı adı yerine e-posta adresinle giriş yap.':'Sign in with email on a new device.';
@@ -3793,9 +3808,9 @@ function shell(){
   const firstShell=!document.querySelector('.shell aside');
   document.querySelectorAll('body > #mini-cal').forEach(el=>el.remove());
   const oldBackdrop=document.getElementById('mini-backdrop');if(oldBackdrop)oldBackdrop.remove();
-  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button><button type="button" class="g s" id="sync-status" hidden onclick="IYReconcile.show()"></button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" style="--nav-indicator-x:${Math.max(0,NAV.findIndex(([k])=>k===pg))*100}%" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')" aria-label="${esc(navLabel(k))}" title="${esc(navLabel(k))}">${navIcon(k)}<span class="nav-label">${navLabel(k)}</span><span class="nav-label-mobile" aria-hidden="true">${navShortLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
+  $('#app').innerHTML=`<header class="top"><button type="button" class="brand-logo-trigger" onclick="goHome()" title="${tr()?'Karşılama ekranına dön':'Back to welcome'}" aria-label="${tr()?'Karşılama ekranına dön':'Back to welcome'}"><img class="brand-mark" src="${BRAND_LOGO}" alt="Bad Gal Nurkan" decoding="async"></button><div class="header-title-group"><button type="button" class="top-brand" onclick="reportDetail='';goTo('app','home')" title="${tr()?'Ana sayfaya dön':'Go to home'}">Improvin' your day.</button><span class="brand-credit">made by bad gal nurkan.</span></div><div class="top-tools"><span class="top-clock" aria-label="${tr()?'Türkiye saati':'Türkiye time'}"><span id="istanbul-clock">${istanbulTime()}</span><button type="button" class="clock-lang" aria-label="${tr()?'Switch to English':'Türkçe kullan'}" onclick="switchHeaderLang()">${DB.lang==='tr'?'TR':'EN'}</button></span><button id="top-date-trigger" class="g s" data-day="${headerDay}" onclick="toggleMiniCal(event)" aria-expanded="false" aria-controls="mini-cal" title="${t('calendar')}">${fmt(headerDay)}</button>${notificationButton()}<button class="account-chip" onclick="openProfile()" aria-label="${tr()?'Hesabı düzenle':'Edit profile'}"><span class="avatar">${esc((A.u||'?').charAt(0).toLocaleUpperCase('tr-TR'))}</span><span class="account-name">${esc(A.nick||A.u)}<small style="display:block">@${esc(A.u)}</small></span></button></div><div id="mini-cal" class="mini-popup" role="dialog" aria-label="${t('calendar')}" aria-hidden="true"><b class="mini-month-title">${monthName(mo)} ${y}</b><div class="mini-cal-grid">${mc}</div></div></header><div class="shell"><div class="nav-shell"><aside id="nav-aside" class="${firstShell?'intro':''}" style="--nav-indicator-x:${Math.max(0,NAV.findIndex(([k])=>k===pg))*100}%" role="navigation" aria-label="${tr()?'Ana menü':'Main navigation'}" onkeydown="navKeydown(event)"><div class="lg" role="button" tabindex="0" onclick="openProfile()"><small>${t('welcomeBack')}</small>${esc(A.nick||A.u)}</div>${NAV.map(([k])=>`<a role="button" tabindex="0" data-k="${k}" class="${pg===k?'on':''}" ${pg===k?'aria-current="page"':''} onclick="navGo(this,'app','${k}')" aria-label="${esc(navLabel(k))}" title="${esc(navLabel(k))}">${navIcon(k)}<span class="nav-label">${navLabel(k)}</span><span class="nav-label-mobile" aria-hidden="true">${navShortLabel(k)}</span></a>`).join('')}</aside><button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" onclick="openNavMenu()" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="${tr()?'Tüm sayfaları aç':'Open all pages'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg><span>${tr()?'Menü':'Menu'}</span></button></div><main id="mn" tabindex="-1" aria-label="${navLabel(pg)}"></main></div><footer><div class="mut" style="font-size:.75rem">© 2026 nurkancanbulat — All rights reserved.</div></footer>`;
   if(pg!=='pomo'||!pm.run)document.title=TITLE;
-  renderPage();if(typeof IYReconcile!=='undefined')IYReconcile.badge();setTimeout(checkAppReminders,0);
+  renderPage();setTimeout(checkAppReminders,0);
   requestAnimationFrame(()=>{centerNav(true);resetMobileDockForPage()});
   if(firstShell){const as=document.querySelector('aside.intro');if(as)setTimeout(()=>as.classList.remove('intro'),650)}
   const cal=$('#mini-cal');if(cal&&cal.parentElement!==document.body)document.body.appendChild(cal);
@@ -4188,22 +4203,37 @@ function addTomorrowPlan(text){
 function removePlan(i){if(A.day!==today()){shell();return}ensurePlans();const next=addD(today(),1);if(A.plans[next])A.plans[next].splice(i,1);save();P.todo()}
 
 const TASK_SUGGESTIONS={
- tr:['15 dakika kitap oku','Yarın için üç öncelik yaz','Çalışma alanını 5 dakika düzenle','Kısa bir yürüyüş yap','Bugünkü bir başarını not et','Ertelediğin bir işi küçük adımlara böl','Öğrenmek istediğin bir konuyu araştır','Bir arkadaşına hâl hatır sor','Çalışma notlarını gözden geçir','Yarınki programını kontrol et','Bir bardak su iç','Bugünkü yapılacaklarını gözden geçir'],
- en:['Read for 15 minutes','Write three priorities for tomorrow','Tidy your desk for five minutes','Go for a short walk','Note one achievement from today','Break a postponed task into smaller steps','Research a subject you want to learn','Check in with a friend','Review your study notes','Check tomorrow’s schedule','Drink a glass of water','Review today’s to-do list']
+ tr:['15 dakika kitap oku','Yarın için üç öncelik yaz','Çalışma alanını 5 dakika düzenle','Kısa bir yürüyüş yap','Bugünkü bir başarını not et','Ertelediğin bir işi küçük adımlara böl','Öğrenmek istediğin bir konuyu araştır','Bir arkadaşına hâl hatır sor','Çalışma notlarını gözden geçir','Yarınki programını kontrol et','Bir bardak su iç','Bugünkü yapılacaklarını gözden geçir','Takvimindeki yaklaşan bir tarihi kontrol et','Çalışmaya başlamadan önce malzemelerini hazırla','Öğrendiğin bir şeyi kendi cümlelerinle anlat','Bir dosya klasörünü düzenle','Yarım kalan bir okumanın iki sayfasını bitir','Bir hedef için ilk adımı yaz','Çalışma arasında birkaç dakika esne','Önemli bir notu tekrar oku','Yarın yanında götüreceğin şeyleri hazırla','Bugün zor gelen bir şeyi kısa bir notla anlat','Beş dakikada tamamlayabileceğin bir işi bitir','Uzun süredir bekleyen bir mesaja yanıt ver','Bir sonraki odak oturumunun hedefini belirle','Bu hafta öğrendiğin üç şeyi listele','Yeni öğrendiğin bir kavram için örnek bul','Kısa bir tekrar oturumu planla'],
+ en:['Read for 15 minutes','Write three priorities for tomorrow','Tidy your desk for five minutes','Go for a short walk','Note one achievement from today','Break a postponed task into smaller steps','Research a subject you want to learn','Check in with a friend','Review your study notes','Check tomorrow’s schedule','Drink a glass of water','Review today’s to-do list','Check an upcoming date in your calendar','Get your materials ready before studying','Explain something you learned in your own words','Organize one folder','Finish two pages of an unfinished reading','Write down the first step toward a goal','Stretch for a few minutes between work sessions','Revisit an important note','Pack what you need to bring tomorrow','Write a short note about something you found hard today','Finish a task that takes five minutes','Reply to a message you have been putting off','Set a goal for your next focus session','List three things you learned this week','Find an example of a concept you just learned','Plan a short review session']
 };
+const recentTaskSuggestions=new WeakMap();
 function suggestRandomTask(){
  if(!A||A.day!==today())return false;
  const finished=allTodayTasksArchived();
  if(finished)ensurePlans();
  const next=addD(today(),1),existing=finished?(A.plans[next]||[]):(A.tasks||[]).map(task=>task.t);
- const pool=TASK_SUGGESTIONS[tr()?'tr':'en'].filter(task=>!existing.some(value=>String(value).toLocaleLowerCase()===task.toLocaleLowerCase()));
+ const lang=tr()?'tr':'en',normalize=value=>String(value||'').trim().toLocaleLowerCase(lang);
+ const current=new Set(existing.map(normalize));
+ const pool=TASK_SUGGESTIONS[lang].filter(task=>!current.has(normalize(task)));
  if(!pool.length){toast(tr()?'Tüm önerileri zaten ekledin.':'You have already added every suggestion.');return false}
- const text=pool[Math.floor(Math.random()*pool.length)];
+ const recent=recentTaskSuggestions.get(A)||[];
+ const cutoff=addD(A.day,-14),past=new Set();
+ for(const days of [A.hist,A.completedBatches,A.plans]){
+  for(const [day,entries] of Object.entries(days||{})){
+   if(day<cutoff||day>next||!Array.isArray(entries))continue;
+   for(const item of entries)past.add(normalize(typeof item==='string'?item:item?.t||item?.text||item?.title));
+  }
+ }
+ const unused=pool.filter(task=>!recent.includes(task));
+ const fresh=unused.filter(task=>!past.has(normalize(task)));
+ const choices=fresh.length?fresh:unused.length?unused:[recent.find(task=>pool.includes(task))];
+ const text=choices[Math.floor(Math.random()*choices.length)];
  if(finished){
   if(!Array.isArray(A.plans[next]))A.plans[next]=[];
   if(A.plans[next].length>=100){toast(tr()?'Yarın için en fazla 100 plan.':'Up to 100 plans for tomorrow.');return false}
   A.plans[next].push(text);
  }else A.tasks.push({id:rndHex(16),t:text,s:'',createdAt:Date.now()});
+ recentTaskSuggestions.set(A,[...recent.filter(task=>task!==text),text]);
  recordActivity();P.todo();return true;
 }
 
@@ -4216,7 +4246,7 @@ function dayTaskRow(task){
  return `<div class="task day-task ${status}" data-task-status="${status}"><span>${esc(task.t)}</span><b>${symbol} ${label}</b></div>`;
 }
 function openDay(k,fromReport=false,noteOnly=false){
-  if(fromReport&&!annualReportOpen()){P.rep();return}
+  if(fromReport&&(!annualReportOpen()||k>annualReportPeriod().end)){P.rep();return}
   closeMiniCal();
   if(k<today()&&!A.fog&&!fromReport&&!noteOnly){toast(tr()?'Geçmiş günü açmak için Önceki günler görünümünü etkinleştir.':'Turn Fog past days on to open past dates.');return}
   selDay=k;
@@ -4243,8 +4273,8 @@ function futureNoteCountdown(key){
 }
 P.pc=()=>{
   expireTimedRecords();
-  const n=new Date(),mn=(2026-n.getFullYear())*12+10-n.getMonth();
-  if(calOff<mn)calOff=mn;
+  const n=new Date(today()+'T12:00'),mn=(2026-n.getFullYear())*12+10-n.getMonth(),mx=(9999-n.getFullYear())*12+11-n.getMonth();
+  calOff=Math.max(mn,Math.min(mx,calOff));
   const base=new Date(n.getFullYear(),n.getMonth()+calOff,1),y=base.getFullYear(),mo=base.getMonth(),days=new Date(y,mo+1,0).getDate();
   const labels=tr()?['Pzt','Sal','Çar','Per','Cum','Cmt','Paz']:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const leading=(new Date(y,mo,1).getDay()+6)%7;
@@ -4259,7 +4289,7 @@ P.pc=()=>{
   }
   const monthKey=`${y}-${pad(mo+1)}`;
   const noteList=Object.keys(A.future||{}).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k.slice(0,7)===monthKey).sort().map(k=>`<article class="note-tile future-note-tile"><b class="note-date">${fmt(k)}<small class="note-countdown">${futureNoteCountdown(k)}</small></b>${A.futureMeta?.[k]?.editedAt?`<small class="mut">${tr()?'Düzenlendi:':'Edited:'} ${journalDate(A.futureMeta[k].editedAt)}</small>`:''}<p>${esc(A.future[k])}</p><div class="row"><button class="g s" onclick="openDay('${k}',false,true)">${t('editNote')}</button><button class="g s" onclick="delNote('${k}')">${t('delete')}</button></div></article>`).join('');
-  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><button type="button" class="g month-title progress-month-trigger" onclick="openProgressMonth(${y},${mo})" aria-haspopup="dialog" aria-label="${tr()?'Ay ve yıl seç':'Choose month and year'}">${monthName(mo)} ${y} ▾</button><button class="g" aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><div class="row"><h2>${t('futureNotes')}</h2><button type="button" class="g s" onclick="showTimedArchive()">${tr()?'Arşiv':'Archive'} (${timedArchiveCount()})</button></div><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
+  M(`<div class="card"><div class="row" style="align-items:baseline;gap:1.2rem"><span class="pct-big">%${pct()}</span><span class="mut" style="font-size:1rem">${fmt(today())}</span></div><p class="mut" style="margin:.4rem 0 0;font-size:.82rem">${t('pctTitle')}<small class="mut" style="display:block;margin-top:.35rem;line-height:1.6">${t('pctHint')}</small></p><div class="row" style="margin-top:.8rem"><button class="g s ${A.fog?'':'on'}" onclick="A.fog=!A.fog;save();shell()">${t('fogToggle')}: ${A.fog?t('on'):t('off')}</button><button class="g s" onclick="toggleBeige()">${tr()?'Bej görünüm':'Beige look'}: ${DB.beige?t('on'):t('off')}</button></div></div><div class="card calendar-panel"><div class="row month-nav"><button class="g" ${calOff<=mn?'disabled':''} aria-label="${tr()?'Önceki ay':'Previous month'}" onclick="calOff--;P.pc()">‹</button><button type="button" class="g month-title progress-month-trigger" onclick="openProgressMonth(${y},${mo})" aria-haspopup="dialog" aria-label="${tr()?'Ay ve yıl seç':'Choose month and year'}">${monthName(mo)} ${y} ▾</button><button class="g" ${calOff>=mx?'disabled':''} aria-label="${tr()?'Sonraki ay':'Next month'}" onclick="calOff++;P.pc()">›</button></div><div class="progress-today"><button type="button" class="g s" onclick="jumpProgressToday()">${tr()?'Bugün':'Today'}</button></div><div class="cal progress-calendar">${c}</div><p class="mut" style="font-size:.82rem;margin:.8rem 0 0">${t('pastDaysFog')} ${t('futureDays')}</p></div><div class="card"><div class="row"><h2>${t('futureNotes')}</h2><button type="button" class="g s" onclick="showTimedArchive()">${tr()?'Arşiv':'Archive'} (${timedArchiveCount()})</button></div><p class="mut">${t('futureNoteHint')}</p><div class="note-grid">${noteList||'<p class="mut">'+t('noNote')+'</p>'}</div><div class="future-add-row"><label for="fnd">${tr()?'Not tarihi seç':'Choose a note date'}</label><div class="future-fields"><input id="fnd" type="date" aria-label="${tr()?'Not tarihi':'Note date'}"><div class="future-note-compose"><textarea id="fn-text" rows="1" maxlength="500" autocomplete="off" aria-label="${tr()?'Geleceğe not metni':'Future note text'}" placeholder="${tr()?'Notunuzu buraya yazabilirsiniz':'Write your note here'}"></textarea><button type="button" onclick="newNote()">${t('addFutureNote')}</button></div></div></div></div>`);
 };
 function newNote(){
   const d=String($('#fnd')?.value||'');
@@ -4298,14 +4328,54 @@ function applyArchiveRequest(){
  save();toast(tr()?'Arşive taşındı.':'Moved to archive.');if(pg==='pc')P.pc();else P.home();return true;
 }
 function openProgressMonth(y,mo){
- openModal('progress-month-picker',`<h2>${tr()?'Ay ve yıl seç':'Choose month and year'}</h2><label for="progress-year">${tr()?'Yıl':'Year'}</label><input id="progress-year" type="number" min="2026" max="9999" step="1" value="${y}"><label for="progress-month">${tr()?'Ay':'Month'}</label><select id="progress-month">${Array.from({length:12},(_,i)=>`<option value="${i}" ${i===mo?'selected':''}>${monthName(i)}</option>`).join('')}</select><p id="progress-month-error" role="status"></p><div class="row"><button onclick="jumpProgressMonth()">${tr()?'Git':'Go'}</button><button class="g" onclick="closeModal('progress-month-picker')">${t('cancel')}</button></div>`);
+ openModal('progress-month-picker',`<h2>${tr()?'Ay ve yıl seç':'Choose month and year'}</h2><form onsubmit="event.preventDefault();jumpProgressMonth()">
+ <label for="progress-year">${tr()?'Yıl':'Year'}</label>
+ <div class="progress-year-nav">
+ <button type="button" class="g s" id="progress-years-prev" aria-label="${tr()?'Önceki yıllar':'Earlier years'}" onclick="changeProgressYears(-1)">‹</button>
+ <select id="progress-year" onchange="updateProgressMonths()"></select>
+ <button type="button" class="g s" id="progress-years-next" aria-label="${tr()?'Sonraki yıllar':'Later years'}" onclick="changeProgressYears(1)">›</button>
+ </div>
+ <label for="progress-month">${tr()?'Ay':'Month'}</label><select id="progress-month">${Array.from({length:12},(_,i)=>`<option value="${i}" ${i===mo?'selected':''}>${monthName(i)}</option>`).join('')}</select>
+ <p id="progress-month-error" role="status"></p>
+ <div class="row"><button type="submit">${tr()?'Git':'Go'}</button><button type="button" class="g" onclick="jumpProgressToday()">${tr()?'Bugün':'Today'}</button><button type="button" class="g" onclick="closeModal('progress-month-picker')">${t('cancel')}</button></div></form>`);
+ setProgressYears(y);
+ $('#progress-year').focus();
+}
+function setProgressYears(year){
+ const start=2026+Math.floor((year-2026)/20)*20,end=Math.min(9999,start+19);
+ const select=$('#progress-year');
+ select.dataset.start=start;
+ select.innerHTML=Array.from({length:end-start+1},(_,i)=>`<option value="${start+i}">${start+i}</option>`).join('');
+ select.value=String(year);
+ $('#progress-years-prev').disabled=start===2026;
+ $('#progress-years-next').disabled=end===9999;
+ updateProgressMonths();
+}
+function changeProgressYears(direction){
+ const start=Number($('#progress-year').dataset.start);
+ const next=direction<0?start-1:start+20;
+ if(next<2026||next>9999)return;
+ setProgressYears(next);
+ $('#progress-year').focus();
+}
+function updateProgressMonths(){
+ const min=Number($('#progress-year').value)===2026?10:0;
+ const month=$('#progress-month');
+ const selected=Number(month.value);
+ for(const option of month.options)option.disabled=Number(option.value)<min;
+ if(selected<min)month.value=String(min);
+}
+function jumpProgressToday(){
+ calOff=0;closeModal('progress-month-picker');P.pc();
+ document.querySelector('.progress-today button')?.focus({preventScroll:true});
 }
 function jumpProgressMonth(){
- const y=Number($('#progress-year')?.value),m=Number($('#progress-month')?.value);
- if(!Number.isInteger(y)||!Number.isInteger(m)||y<2026||y>9999||m<0||m>11||(y===2026&&m<10)){
+ const year=$('#progress-year')?.value,month=$('#progress-month')?.value,y=Number(year),m=Number(month);
+ if(!year||!month||!Number.isInteger(y)||!Number.isInteger(m)||y<2026||y>9999||m<0||m>11||(y===2026&&m<10)){
   const err=$('#progress-month-error');if(err)err.textContent=tr()?'Kasım 2026 veya sonrası bir tarih seç.':'Choose November 2026 or later.';return false;
  }
- const n=new Date();calOff=(y-n.getFullYear())*12+m-n.getMonth();closeModal('progress-month-picker');P.pc();return true;
+ const n=new Date(today()+'T12:00');calOff=(y-n.getFullYear())*12+m-n.getMonth();closeModal('progress-month-picker');P.pc();
+ document.querySelector('.progress-month-trigger')?.focus({preventScroll:true});return true;
 }
 function st(a,b){let t=0,d=0,by=Object.create(null);for(let x=a;x<=b;x=addD(x,1)){items(x).forEach(i=>{if(!i.t.trim())return;t++;by[i.t]=by[i.t]||[0,0];by[i.t][1]++;if(i.done){d++;by[i.t][0]++}})}return{t,d,p:t?Math.round(d/t*100):0,by}}
 function periodDefaultQuestions(kind,key,scope='review'){
@@ -4530,7 +4600,8 @@ function pendingReportCard(title,start,available){
    ${reportProgressBar(start,available,td)}</div>`;
 }
 function answerArchiveUnlocked(now,periodKey){
- return /^\d{4}-12-31$/.test(now)&&/^\d{4}-\d{2}(?:-\d{2})?$/.test(periodKey)&&now.slice(0,4)===periodKey.slice(0,4);
+ const period=annualReportPeriod(now);
+ return now===period.opens&&/^\d{4}(?:-\d{2}(?:-\d{2})?)?$/.test(periodKey)&&Number(periodKey.slice(0,4))===period.year;
 }
 function periodReportForm(kind,key,next){
   const weekly=kind==='week';
@@ -4583,8 +4654,8 @@ let reportDetail='';
 function showReportDetail(key){if(!['summary','summary-older','journals','answers','answers-older','week','month','week-previous','month-previous'].includes(key))return;reportDetail=key;P.rep();window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'})}
 function reportBack(){reportDetail='';P.rep()}
 function archivePeriodList(keys,day,section){
-  const archiveYear=Number(day.slice(0,4));
-  const older=keys.filter(key=>/^\d{4}-\d{2}(?:-\d{2})?$/.test(key)&&Number(key.slice(0,4))<archiveYear);
+  const archiveYear=annualReportPeriod(day).year;
+  const older=keys.filter(key=>/^\d{4}(?:-\d{2}(?:-\d{2})?)?$/.test(key)&&Number(key.slice(0,4))<archiveYear);
   const showOlder=reportDetail===section+'-older';
   const periods=showOlder?older:keys.filter(key=>answerArchiveUnlocked(day,key));
   const link=!showOlder&&older.length?`<button class="g s" onclick="showReportDetail('${section}-older')">${tr()?'Daha eski yıllar':'Earlier years'}</button>`:'';
@@ -4600,9 +4671,14 @@ function reportDetailView(){
   const day=istanbulDayKey();
   if(reportDetail.startsWith('answers')){
     if(!annualAnswersOpen(day))return header+annualReportCard();
-    const keys=[...new Set([...Object.keys(A.ql||{}),...Object.keys(A.planningLocks||{})])].filter(k=>A.ql?.[k]||A.planningLocks?.[k]);
+    const keys=[...new Set([...Object.keys(A.ql||{}),...Object.keys(A.planningLocks||{}),...Object.keys(A.annualReports||{})])]
+      .filter(k=>A.ql?.[k]||A.planningLocks?.[k]||Array.isArray(A.annualReports?.[k]?.answers));
     const {periods,link}=archivePeriodList(keys,day,'answers');
     const rows=periods.map(k=>{
+      const annual=A.annualReports?.[k];
+      if(/^\d{4}$/.test(k)&&Array.isArray(annual?.answers)){
+        return `<article class="note-tile"><b>${tr()?'Yıllık özet':'Annual summary'} · ${esc(k)}</b>${ANNUAL_QUESTIONS.map((question,i)=>`<div><b>${question[tr()?0:1]}</b><p>${esc(annual.answers[i]||'')}</p></div>`).join('')}</article>`;
+      }
       const qs=A.ql?.[k]&&Array.isArray(A.qs[k])?A.qs[k]:[];
       const plans=(A.planningLocks?.[k]||A.ql?.[k])&&Array.isArray(A.planningQs?.[k])?A.planningQs[k]:[];
       const next=A.reportPlanLinks?.[k];
@@ -4614,7 +4690,9 @@ function reportDetailView(){
   }
   if(!annualReportOpen(day))return header+annualReportCard();
   const days=Object.keys(A.hist||{}).filter(k=>k.length===10&&Array.isArray(A.hist[k]));
-  if(A.day===day&&items(day).length&&!days.includes(day))days.push(day);
+  for(const date of [...Object.keys(A.completedBatches||{}),A.day]){
+    if(date&&date<=annualReportPeriod(day).end&&items(date).length&&!days.includes(date))days.push(date);
+  }
   const {periods,link}=archivePeriodList(days,day,'summary');
   const groups=new Map();for(const day of periods){const month=day.slice(0,7);if(!groups.has(month))groups.set(month,[]);groups.get(month).push(day)}
   const cards=[...groups].map(([month,days])=>{
@@ -4691,24 +4769,48 @@ function periodReportDetail(kind,previous=false){
  if(previous||!reportQuestionsOpen(kind,td))return header+reportSummaryCard(kind);
  return header+periodTaskBreakdown(reportActivityStart(period,td),period.b)+`<section class="card">${periodReportForm(kind,period.key,period.nk)}</section>`;
 }
+const ANNUAL_QUESTIONS=[
+ ['Geride kalan yılda hangi ilerlemenle gurur duyuyorsun?','What progress are you proud of this year?'],
+ ['Geride kalan yılda öğrendiğin hangi şeyi sürdürmek istiyorsun?','What did you learn this year that you want to carry forward?'],
+ ['Başlayan yılda neye öncelik vermek istiyorsun?','What do you want to prioritize in the year ahead?']
+];
+function annualReportPeriod(day=istanbulDayKey()){
+ const year=Number(day.slice(0,4))-(day.slice(5)==='01-01'?1:0);
+ return {year,start:year+'-01-01',end:year+'-12-31',opens:(year+1)+'-01-01',closes:(year+1)+'-01-02'};
+}
 function annualReportOpen(day=istanbulDayKey()){
- const a=day.slice(0,4)+'-01-01',b=day.slice(0,4)+'-12-31';
- const joined=Date.parse(A?.reportJoinedAt||'');
- return day===b&&!!A&&reportAvailability('month',day).since<=a&&(!Number.isFinite(joined)||joined<=Date.parse(a+'T00:00:00+03:00'))&&reportHasActivity(a,b);
+ const period=annualReportPeriod(day);
+ if(!A||day<period.opens||day>=period.closes)return false;
+ const {since}=reportAvailability('month',day);
+ return since<=period.end&&reportHasActivity(since>period.start?since:period.start,period.end);
 }
 function annualAnswersOpen(day=istanbulDayKey()){
- if(!A||day.slice(5)!=='12-31')return false;
+ if(!A||day.slice(5)!=='01-01')return false;
  return annualReportOpen(day)||Object.keys(A.ql||{}).some(key=>A.ql[key]&&answerArchiveUnlocked(day,key));
 }
-function annualReportCard(){
- const day=istanbulDayKey(),year=Number(day.slice(0,4)),title=tr()?'Yıllık özet':'Annual summary';
- if(!annualReportOpen(day)){
-   const since=reportAvailability('month',day).since,joined=Date.parse(A?.reportJoinedAt||'');
-   const firstYear=Number(since.slice(0,4))+(since.slice(5)!=='01-01'||Number.isFinite(joined)&&joined>Date.parse(since.slice(0,4)+'-01-01T00:00:00+03:00')?1:0);
-   const next=Math.max(firstYear,day.slice(5)==='12-31'?year+1:year)+'-12-31';
-   return `<section class="card"><h2>🔒 ${title}</h2><p class="mut">${tr()?'Sonraki yıllık özet':'Next annual summary'} · <time datetime="${next}">${reportDateLabel(next)}</time>. ${tr()?'Tam bir takvim yılında en az bir görev, günlük veya tamamlanmış odak kaydı gerekir.':'Opens for a full calendar year with a task, journal entry or completed focus session.'}</p></section>`;
+function submitAnnualReport(form){
+ const day=istanbulDayKey(),period=annualReportPeriod(day),year=String(period.year);
+ if(!A||!form?.isConnected||form.dataset.year!==year||form.dataset.reportOwner!==(A.authUid||A.u||'')
+   ||A.annualReports?.[year]||!annualReportOpen(day))return false;
+ const answers=ANNUAL_QUESTIONS.map((_,i)=>String(form.elements['annual-answer-'+i]?.value||'').trim().slice(0,400));
+ if(answers.some(answer=>!answer)){
+  toast(tr()?'Tüm soruların yanıtlarını doldur.':'Complete every answer.');
+  form.elements['annual-answer-'+answers.indexOf('')]?.focus();return false;
  }
- return `<section class="card"><h2>${title} · ${year}</h2><p>${reportActivityLine(year+'-01-01',year+'-12-31')}</p><button class="g" onclick="showReportDetail('answers')">${tr()?'Yanıtlarını incele':'Review your answers'}</button></section>`;
+ (A.annualReports||={})[year]={answers,submittedAt:new Date().toISOString()};
+ save();P.rep();return true;
+}
+function annualReportCard(){
+ const day=istanbulDayKey(),period=annualReportPeriod(day),title=tr()?'Yıllık özet':'Annual summary';
+ const heading=`${title} · ${period.year}`;
+ if(!annualReportOpen(day)){
+   return `<section class="card annual-report"><h2>🔒 ${heading}</h2><p class="mut">${tr()?'Yanıtlama günü':'Answer day'} · <time datetime="${period.opens}">${reportDateLabel(period.opens)}</time> · ${tr()?'Türkiye saatiyle':'Türkiye time'}</p><p class="mut">${tr()?'Bu yılda en az bir görev, günlük veya tamamlanmış odak kaydı gerekir.':'This year needs at least one task, journal entry or completed focus session.'}</p></section>`;
+ }
+ const submitted=A.annualReports?.[period.year];
+ const next=(period.year+2)+'-01-01';
+ if(submitted)return `<section class="card annual-report"><h2>🔒 ${heading}</h2>${reportLockedNotice()}<p class="mut">${tr()?'Sonraki yıllık özet':'Next annual summary'} · <time datetime="${next}">${reportDateLabel(next)}</time></p></section>`;
+ const questions=ANNUAL_QUESTIONS.map((question,i)=>`<label for="annual-answer-${i}">${question[tr()?0:1]}</label><textarea id="annual-answer-${i}" name="annual-answer-${i}" rows="2" maxlength="400" required></textarea>`).join('');
+ return `<section class="card annual-report"><h2>${heading}</h2><p>${reportActivityLine(period.start,period.end)}</p><p class="mut">${tr()?'Türkiye saatiyle 2 Ocak 00.00’da kapanır. Gönderdiğinde yanıtların kilitlenir.':'Closes on January 2 at 00:00 Türkiye time. Answers lock on submission.'}</p><form class="annual-questionnaire" data-year="${period.year}" data-report-owner="${esc(A.authUid||A.u||'')}" onsubmit="event.preventDefault();submitAnnualReport(this)">${questions}<button type="submit">${tr()?'Gönder':'Submit'}</button></form></section>`;
 }
 function reportPlanningOverview(){
   const day=istanbulDayKey();
@@ -4721,7 +4823,7 @@ function reportPlanningOverview(){
 P.rep=()=>{
  finishPendingReport();
  reportRenderedDay=istanbulDayKey();
- if(reportRenderedDay.slice(5)!=='12-31'){
+ if(!annualReportOpen(reportRenderedDay)){
    const annualTasks=document.querySelector('#day-modal [data-annual-tasks]');
    if(annualTasks){
      annualTasks.remove();
@@ -4916,7 +5018,14 @@ function beep(){
   }catch(_){}
 }
 function pomoPhaseLabel(){return pm.ph==='w'?(tr()?'Odak zamanı':'Focus time'):(pm.lg?t('longBreak'):t('break'))}
-function closePomoOverlay(){const el=$('#pomo-overlay');if(!el)return;el.classList.add('pomo-exit');setTimeout(()=>el.remove(),20)}
+function closePomoOverlay(){
+ const el=$('#pomo-overlay');if(!el||el.classList.contains('pomo-exit'))return;
+ el.classList.add('pomo-exit');
+ if(window.matchMedia?.('(prefers-reduced-motion:reduce)').matches){el.remove();return}
+ const cleanup=()=>{clearTimeout(fallback);el.remove()};
+ const fallback=setTimeout(cleanup,uiMotionTime('--entry-fade-ms',180)+50);
+ el.addEventListener('animationend',event=>{if(event.target===el&&event.animationName==='surfaceFadeOut')cleanup()});
+}
 function updatePomoOverlay(){
   const el=$('#pomo-overlay');if(!el){updatePomoPip();return}
   const total=Math.max(1,(pm.ph==='w'?pm.w:(pm.lg?Math.max(pm.b,...(A?.presets||[]).map(p=>Number(p.b)||0)):pm.b))*60);
@@ -5012,9 +5121,22 @@ function updateClockFace(){
   const sub=document.getElementById('chrono-sub-hand');
   if(sub)sub.style.setProperty('--deg',(ms%1800000)/1800000*360+'deg');
 }
+function stopwatchFace(){
+  return stopwatchView==='timer'?`<div id="sw" class="sw-display">${stopwatchFormat(swElapsed())}</div>`:`<div class="chrono-dial" role="img" aria-label="${tr()?'Analog kronometre':'Analog stopwatch'}">${CHRONO_TICKS}<div class="chrono-mini">${[0,10,20].map(v=>{const a=v*Math.PI/15;return `<span class="chrono-number" style="left:${50+37*Math.sin(a)}%;top:${50-37*Math.cos(a)}%">${v}</span>`}).join('')}<div id="chrono-sub-hand" class="chrono-hand" style="top:12%;height:40%"></div></div><div id="chrono-hand" class="chrono-hand"></div><div class="chrono-pivot"></div><div id="chrono-digital" class="chrono-digital">${stopwatchFormat(swElapsed())}</div></div>`;
+}
 function swMode(mode){
-  stopwatchView=mode==='clock'?'clock':'timer';
-  if(pg==='pomo')P.pomo();
+  const next=mode==='clock'?'clock':'timer';
+  if(next===stopwatchView)return;
+  stopwatchView=next;
+  if(pg!=='pomo')return;
+  const face=document.querySelector('.stopwatch-face');
+  if(!face)return;
+  face.innerHTML=stopwatchFace();
+  for(const button of document.querySelectorAll('[data-stopwatch-mode]')){
+    const selected=button.dataset.stopwatchMode===next;
+    button.classList.toggle('g',!selected);button.setAttribute('aria-pressed',String(selected));
+  }
+  motionReveal(face);swRender();
 }
 function swTouchStart(ev){swTouchX=null;if(ev.target.closest('button,input,textarea'))return;swTouchX=ev.touches?.[0]?.clientX??null}
 function swTouchEnd(ev){if(swTouchX==null)return;const delta=(ev.changedTouches?.[0]?.clientX??swTouchX)-swTouchX;swTouchX=null;if(delta>43)swMode('timer');else if(delta< -43)swMode('clock')}
@@ -5030,8 +5152,8 @@ P.pomo=()=>{
   const laps=(A.laps||[]).map((x,i)=>`<div class="lap-row"><span>Lap ${i+1}</span><b>${stopwatchFormat(x)}</b></div>`).reverse().join('');
   M(`<div class="card"><div class="mut" style="text-align:center" id="pl"></div><div class="tm ${pomoPhaseMinutes()>=60?'pomo-long-clock':''}" id="pt">${pomoClock()}</div><div class="row" style="justify-content:center"><button onclick="pS()">${pm.run?(tr()?'Duraklat':'Pause'):t('startPause')}</button><button class="g" onclick="pR()">${t('reset')}</button><button class="g" onclick="openPomoOverlay()">${tr()?'Odak ekranı':'Focus screen'}</button><button class="g" onclick="openPomoPip()">PiP</button><button class="g" onclick="pomoFullscreen()">${tr()?'Tam ekran':'Fullscreen'}</button></div><p id="pi" class="mut" style="text-align:center"></p></div>
   <div class="card"><h2>${t('focusAndBreak')}</h2>${pr||'<p class="mut">'+t('addLength')+'</p>'}<form class="row" onsubmit="event.preventDefault();addP()"><input id="cw" type="number" min="1" max="600" step="1" required aria-label="${t('focus')} (${t('minutes')})" placeholder="${t('focus')} (${t('minutes')})"><input id="cb" type="number" min="1" max="600" step="1" required aria-label="${t('break')} (${t('minutes')})" placeholder="${t('break')} (${t('minutes')})"><button type="submit">${tr()?'Ekle / Güncelle':'Add / Update'}</button></form><p class="mut">${t('afterFive')}</p></div>
-  <div class="card stopwatch-card" data-swipe-stopwatch="true" ontouchstart="swTouchStart(event)" ontouchend="swTouchEnd(event)"><h2>${t('stopwatch')}</h2><div class="row sw-mode-controls" style="justify-content:center"><button class="${stopwatchView==='timer'?'':'g'} s" onclick="swMode('timer')">${tr()?'Kronometre':'Stopwatch'}</button><button class="${stopwatchView==='clock'?'':'g'} s" onclick="swMode('clock')">${tr()?'Saat':'Clock'}</button></div>
-  ${stopwatchView==='timer'?`<div id="sw" class="sw-display">${stopwatchFormat(swElapsed())}</div>`:`<div class="chrono-dial" role="img" aria-label="${tr()?'Analog kronometre':'Analog stopwatch'}">${CHRONO_TICKS}<div class="chrono-mini">${[0,10,20].map(v=>{const a=v*Math.PI/15;return `<span class="chrono-number" style="left:${50+37*Math.sin(a)}%;top:${50-37*Math.cos(a)}%">${v}</span>`}).join('')}<div id="chrono-sub-hand" class="chrono-hand" style="top:12%;height:40%"></div></div><div id="chrono-hand" class="chrono-hand"></div><div class="chrono-pivot"></div><div id="chrono-digital" class="chrono-digital">${stopwatchFormat(swElapsed())}</div></div>`}
+  <div class="card stopwatch-card" data-swipe-stopwatch="true" ontouchstart="swTouchStart(event)" ontouchend="swTouchEnd(event)"><h2>${t('stopwatch')}</h2><div class="row sw-mode-controls" style="justify-content:center"><button class="${stopwatchView==='timer'?'':'g'} s" data-stopwatch-mode="timer" aria-pressed="${stopwatchView==='timer'}" onclick="swMode('timer')">${tr()?'Kronometre':'Stopwatch'}</button><button class="${stopwatchView==='clock'?'':'g'} s" data-stopwatch-mode="clock" aria-pressed="${stopwatchView==='clock'}" onclick="swMode('clock')">${tr()?'Saat':'Clock'}</button></div>
+  <div class="stopwatch-face">${stopwatchFace()}</div>
   <div class="row stopwatch-actions"><button onclick="swStart()" ${A.stopwatch.running?'disabled':''}>${tr()?'Başlat':'Start'}</button><button class="g" onclick="swStop()" ${A.stopwatch.running?'':'disabled'}>${tr()?'Durdur':'Stop'}</button><button class="g" onclick="lap()" ${A.stopwatch.running?'':'disabled'}>Lap</button><button class="g" onclick="swR()">${t('reset')}</button></div><div class="laps">${laps}</div>
   <p class="mut" style="text-align:center">${tr()?'Sağa/sola kaydırarak kronometre ile saat arasında geçebilirsin.':'Swipe horizontally to switch between stopwatch and clock.'}</p></div>`);
   document.getElementById('mn')?.insertAdjacentHTML('beforeend',focusHistoryCard());
@@ -5191,7 +5313,7 @@ P.set=()=>{
   ${ac?`<div class="card"><h2>${tr()?'Bu cihazdaki diğer profiller':'Other profiles on this device'}</h2>${ac}</div>`:''}
   <div class="card"><h2>${t('resetSystem')}</h2><p class="mut">${tr()?'Görevler, notlar, günlükler, ilerleme ve raporlar sıfırlanır. Hesap kimliğin kalır.':'Tasks, journals, progress and reports will be reset. Account identity is retained.'}</p><button style="background:var(--no)" onclick="resetSys()">${t('reset')}</button></div>
   ${accountConnection(A)==='local'?`<div class="card legacy-migrate-card"><h2>${tr()?'V13 · Yerel hesabı Google’a taşı':'V13 · Move local account to Google'}</h2><p class="legacy-migrate-warning">${tr()?'Eski hesabının görevlerini, günlüklerini, notlarını ve mevcut ilerleme hesabını bir Google oturumuyla Supabase’e taşı. Önce JSON yedeği alacağız. Google hesabında yalnızca otomatik oluşturulmuş boş bir profil varsa, bu profil açık onayınla aktarılabilir. Google hesabının gerçek verileri varsa işlem durur; hiçbir şey birleştirilmez.':'Move your legacy tasks, journals, notes, and progress to Supabase using a Google sign-in. First download a JSON backup. An automatically created empty Google profile may be replaced with your consent. If that profile contains user data, migration stops without merging or overwriting anything.'}</p><div class="legacy-migrate-actions"><button onclick="v13ShowMigration()">${tr()?'Google hesabına taşı':'Move to Google'}</button></div></div>`:''}
-  <div class="card"><h2>${tr()?'Verilerim ve hesabım':'My data and account'}</h2>${accountConnectionHtml(A)}<p class="mut account-data-help">${tr()?'Yüklü hesabının görevlerini, notlarını, günlüklerini ve ilerleme kayıtlarını JSON dosyası olarak dışa aktar. Bu dosya hassas bilgiler içerebilir; güvenli bir yerde sakla.':'Export your loaded tasks, notes, journals and progress as a JSON file. The file may contain private information, so store it securely.'}</p><div class="account-data-actions"><button class="g" onclick="exportMyData()">${tr()?'Verilerimi indir (JSON)':'Download my data (JSON)'}</button>${A.authUid?'<button type="button" class="g" onclick="IYReconcile.show()">'+(tr()?'Eşitlemeyi incele':'Review sync')+'</button><button class="g" onclick="exportCloudDrafts()">'+(tr()?'Bekleyen taslakları indir':'Download pending drafts')+'</button>':''}<button class="g d" onclick="delAcc()">${accountRemovalButtonLabel(A)}</button></div><p class="mut account-data-help">${accountConnection(A)==='cloud'?(tr()?'Bulut hesabını silmek için yakın zamanda giriş, açık onay ve sunucu doğrulaması gerekir.':'Cloud account deletion requires a recent sign-in, explicit confirmation and server verification.'):accountConnection(A)==='local'?(tr()?'Bu cihazdaki profil kopyasını kaldırmak bulut hesabı silmez.':'Removing this device profile never deletes a cloud account.'):(tr()?'Bağlantı belirsizken silme kapalıdır. Önce yeniden giriş yap.':'Deletion is blocked until the account connection is verified.')}</p></div>
+  <div class="card"><h2>${tr()?'Verilerim ve hesabım':'My data and account'}</h2>${accountConnectionHtml(A)}<p class="mut account-data-help">${tr()?'Yüklü hesabının görevlerini, notlarını, günlüklerini ve ilerleme kayıtlarını JSON dosyası olarak dışa aktar. Bu dosya hassas bilgiler içerebilir; güvenli bir yerde sakla.':'Export your loaded tasks, notes, journals and progress as a JSON file. The file may contain private information, so store it securely.'}</p><div class="account-data-actions"><button class="g" onclick="exportMyData()">${tr()?'Verilerimi indir (JSON)':'Download my data (JSON)'}</button>${A.authUid?'<button class="g" onclick="exportCloudDrafts()">'+(tr()?'Bekleyen taslakları indir':'Download pending drafts')+'</button>':''}<button class="g d" onclick="delAcc()">${accountRemovalButtonLabel(A)}</button></div><p class="mut account-data-help">${accountConnection(A)==='cloud'?(tr()?'Bulut hesabını silmek için yakın zamanda giriş, açık onay ve sunucu doğrulaması gerekir.':'Cloud account deletion requires a recent sign-in, explicit confirmation and server verification.'):accountConnection(A)==='local'?(tr()?'Bu cihazdaki profil kopyasını kaldırmak bulut hesabı silmez.':'Removing this device profile never deletes a cloud account.'):(tr()?'Bağlantı belirsizken silme kapalıdır. Önce yeniden giriş yap.':'Deletion is blocked until the account connection is verified.')}</p></div>
   ${A.authUid?IYAccount.settingsMarkup():''}
   <div class="card"><h2>${tr()?'Oturum':'Session'}</h2><p class="mut">${tr()?'Hesabından güvenli şekilde çıkış yap.':'Sign out of your account.'}</p><button class="danger-logout" onclick="confirmLogout()">${t('logout')}</button></div>`);
 };
@@ -5997,8 +6119,7 @@ async function restoreCloudOnLoad(expectedUid='',requireRecentGoogle=false,anima
     if(window.IYBrowserGate&&!await IYBrowserGate.check(user,{preferredName:user.user_metadata?.username||'',method:user.app_metadata?.providers?.includes('google')?'google':'password'}))return true;
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;
     if(window.IYAccount&&!await IYAccount.checkAccess(user))return true;
-    const remote=await sbPull();
-    const progressPolicy=await sbProgressPolicy(user.id);
+    const [remote,progressPolicy]=await Promise.all([sbPull(),sbProgressPolicy(user.id)]);
     if(sbSession()?.user?.id!==user.id)return false;
     // A slow profile request must not carry a login across the 30-minute boundary.
     if(requireRecentGoogle&&!await sbGoogleQuickResumeAllowed())return false;

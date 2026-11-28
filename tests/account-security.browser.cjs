@@ -198,7 +198,7 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    const productivity=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2});
    const productivityErrors=[];
    productivity.on('pageerror',error=>productivityErrors.push(error.message));
-   await productivity.goto('http://127.0.0.1:4173/review-app.html?lang=tr');
+   await productivity.goto('http://127.0.0.1:4173/review-app.html?lang=tr&date=2026-11-20');
    await productivity.locator('#storage-notice button').click();
    await productivity.locator('#storage-notice').waitFor({state:'detached'});
 
@@ -390,26 +390,52 @@ const {spawn}=require('node:child_process'),assert=require('node:assert/strict')
    assert.match(await monthCard.locator('h2').innerText(),/Aralık 2026/);
    assert.match(await monthCard.innerText(),/30 gün kaldı/);assert.equal(await monthCard.locator('time').count(),0);
 
-   // Exercise the separate annual summary with a full-year enrollment.
+   // Exercise a partial first year and both independent January 1 locks.
    await productivity.evaluate(()=>{
-     A.reportStart='2026-01-01';A.reportJoinedAt='2026-01-01T00:00:00+03:00';
      A.hist['2026-12-30']=[{t:'December task',done:true}];A.hist['2025-12-31']=[{t:'Older task',done:true}];
    });
    await changeDay('2026-12-31');await productivity.locator('.period-questionnaire[data-period="2026-12"]').waitFor();
+   await productivity.locator('.annual-report time[datetime="2027-01-01"]').waitFor();
+   assert.equal(await productivity.locator('.annual-questionnaire').count(),0);
+   await changeDay('2027-01-01');
+   const annual=productivity.locator('.annual-questionnaire[data-year="2026"]');
+   await annual.waitFor();
+   for(const field of await annual.locator('textarea').all())await field.fill('2026 yıllık yanıtım');
+   await annual.getByRole('button',{name:'Gönder'}).click();
+   await annual.waitFor({state:'detached'});
+   await productivity.locator('.annual-report time[datetime="2028-01-01"]').waitFor();
    await productivity.evaluate(()=>showReportDetail('answers'));await productivity.getByText('Haftalık yanıtım',{exact:true}).first().waitFor();
+   assert.equal(await productivity.getByText('2026 yıllık yanıtım',{exact:true}).count(),3);
    await productivity.evaluate(()=>showReportDetail('summary'));
    await productivity.locator("#mn button[onclick=\"openDay('2026-12-30',true)\"]").waitFor();
    assert.equal(await productivity.locator("#mn button[onclick=\"openDay('2025-12-31',true)\"]").count(),0);
    await productivity.locator("#mn button[onclick=\"openDay('2026-12-30',true)\"]").click();
    await productivity.locator('#day-modal [data-annual-tasks]').waitFor();
    await productivity.locator('#day-modal #dn').fill('Takvim notu taslağım');
-   await changeDay('2027-01-01');
+   await changeDay('2027-01-02');
    assert.equal(await productivity.locator('#day-modal [data-annual-tasks]').count(),0,engine+' annual detail locks at midnight');
    assert.equal(await productivity.locator('#day-modal #dn').inputValue(),'Takvim notu taslağım',engine+' independent note draft is retained');
    await productivity.evaluate(()=>closeModal('day-modal'));await productivity.locator('#day-modal').waitFor({state:'detached'});
-   assert.equal(await productivity.locator('time[datetime="2027-12-31"]').count(),1);
+   assert.equal(await productivity.locator('time[datetime="2028-01-01"]').count(),1);
    await productivity.evaluate(()=>showReportDetail('month-previous'));assert.equal(await productivity.locator('.period-questionnaire').count(),0);
+   await productivity.goto('http://127.0.0.1:4173/review-app.html?page=pc&lang=tr&date=2026-11-28');
+   await productivity.locator('.progress-month-trigger').click();
+   const calendarPicker=productivity.locator('#progress-month-picker');
+   await calendarPicker.locator('#progress-year').selectOption('2028');
+   await calendarPicker.locator('#progress-month').selectOption('1');
+   await calendarPicker.getByRole('button',{name:'Git',exact:true}).click();
+   assert.match(await productivity.locator('.progress-month-trigger').innerText(),/Şubat 2028/);
+   await productivity.locator('.progress-today button').click();
+   assert.match(await productivity.locator('.progress-month-trigger').innerText(),/Kasım 2026/);
+   assert.equal(await productivity.locator('.progress-calendar .dot.td > span').textContent(),'28');
    await productivity.goto('http://127.0.0.1:4173/review-app.html?page=pomo&lang=en&date=2026-11-18');
+   await productivity.locator('#cw').fill('63');
+   await productivity.getByRole('button',{name:'Clock',exact:true}).click();
+   assert.equal(await productivity.locator('.chrono-dial').count(),1);
+   assert.equal(await productivity.locator('#cw').inputValue(),'63',engine+' stopwatch mode preserves unsaved preset');
+   await productivity.getByRole('button',{name:'Focus screen',exact:true}).click();
+   await productivity.getByRole('button',{name:'Minimize',exact:true}).click();
+   await productivity.locator('#pomo-overlay').waitFor({state:'detached'});
    await productivity.evaluate(()=>{A.focusHistory=Array.from({length:6},(_,i)=>({at:new Date(2026,i===5?9:10,i===5?31:18-i,12).getTime(),seconds:(i+1)*60,completed:true}));P.pomo()});
    const analysis=productivity.locator('.focus-history'),more=analysis.locator('summary'),dateRows=analysis.locator('.focus-day:visible');
    const totals=await analysis.locator('.focus-history-totals').innerText();assert.equal(await dateRows.count(),3);

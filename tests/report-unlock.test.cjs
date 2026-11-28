@@ -38,9 +38,37 @@ test('submission locks the period; old or out-of-window answer actions are rejec
  assert.equal(c.submitPeriodReport('week',key),true);assert.equal(c.A.ql[key],1);assert.equal(c.submitPeriodReport('week',key),false);assert.doesNotMatch(c.reportSummaryCard('week'),/Answer questions/);
  c.current='2026-11-23';assert.equal(c.canAnswerReport(key),false);assert.doesNotMatch(c.periodReportDetail('week',true),/period-questionnaire/);
 });
-test('annual summary and historical answers open only December 31 for a full active year',()=>{
- const c=active();c.current='2026-12-31';assert.equal(c.annualReportOpen(),true);assert.equal(c.answerArchiveUnlocked('2026-12-31','2026-11'),true);assert.equal(c.answerArchiveUnlocked('2027-01-01','2026-11'),false);c.current='2027-01-01';assert.equal(c.annualReportOpen(),false);
- c.current='2026-12-31';c.A.reportStart='2026-02-01';assert.equal(c.annualReportOpen(),false);c.A.reportStart='2025-01-01';c.A.hist={};assert.equal(c.annualReportOpen(),false);
+test('a partial first year is eligible and the report opens once on January 1',()=>{
+ const c=active();c.A.reportStart='2026-11-10';c.A.reportJoinedAt='2026-11-10T14:00:00+03:00';
+ c.current='2026-12-31';assert.equal(c.annualReportOpen(),false);assert.match(c.annualReportCard(),/2026.*datetime="2027-01-01"/);
+ c.current='2027-01-01';assert.equal(c.annualReportOpen(),true);
+ assert.equal(c.answerArchiveUnlocked(c.current,'2026-11'),true);
+ assert.equal(c.answerArchiveUnlocked(c.current,'2027-01'),false);
+ c.A.hist={};c.A.journal={ '2027-01-01':{text:'New year'} };assert.equal(c.annualReportOpen(),false);
+ c.A.hist={'2026-11-05':[{t:'Before signup'}]};assert.equal(c.annualReportOpen(),false);
+ c.A.hist['2026-12-31']=[{t:'Last day'}];assert.equal(c.annualReportOpen(),true);
+ c.current='2027-01-02';assert.equal(c.annualReportOpen(),false);assert.match(c.annualReportCard(),/2027.*datetime="2028-01-01"/);
+});
+test('annual submission validates all answers once, rejects stale forms and survives reload',()=>{
+ const c=active();
+ c.A.authUid='owner-one';c.current='2027-01-01';
+ const elements=Object.fromEntries(['First',' ','Third'].map((value,i)=>['annual-answer-'+i,{value,focus(){}}]));
+ const form={isConnected:true,dataset:{year:'2026',reportOwner:'owner-one'},elements};
+ c.toast=()=>{};
+ assert.match(c.annualReportCard(),/annual-questionnaire/);
+ assert.equal(c.submitAnnualReport(form),false);
+ elements['annual-answer-1'].value='Second';
+ c.current='2027-01-02';assert.equal(c.submitAnnualReport(form),false);
+ c.current='2027-01-01';form.dataset.reportOwner='owner-two';assert.equal(c.submitAnnualReport(form),false);
+ form.dataset.reportOwner='owner-one';assert.equal(c.submitAnnualReport(form),true);assert.equal(c.saves,1);
+ c.A=JSON.parse(JSON.stringify(c.A));elements['annual-answer-1'].value='Changed';
+ assert.equal(c.submitAnnualReport(form),false);
+ assert.deepEqual(c.A.annualReports['2026'].answers,['First','Second','Third']);
+ assert.doesNotMatch(c.annualReportCard(),/annual-questionnaire/);
+ c.reportDetail='answers';assert.match(c.reportDetailView(),/Second/);
+ c.current='2027-01-02';assert.doesNotMatch(c.reportDetailView(),/Second/);
+ c.A.journal['2027-12-31']={text:'New activity'};c.current='2028-01-01';c.reportDetail='';
+ assert.match(c.annualReportCard(),/data-year="2027"/);assert.deepEqual(c.A.annualReports['2026'].answers,['First','Second','Third']);
 });
 test('monthly defaults and next-month plans remain separate and retain three questions',()=>{
  const c=active();c.current='2026-11-30';c.reportPlanningOverview();assert.equal(c.A.qs['2026-11'].length,3);assert.equal(c.A.planningQs['2026-11'].length,3);assert.equal(c.A.planningQs['2026-12'].length,3);assert.equal(c.canAnswerReport('2026-12','plan'),true);assert.equal(c.canAnswerReport('2026-12','review'),false);
@@ -118,7 +146,7 @@ test('the annual summary and answer archive select just the current active year 
   const k=year+'-11';c.A.ql[k]=1;c.A.qs[k]=[{q:'Question',a:'Answer for '+year}];
  }
  const before=JSON.stringify(c.A);
- for(const [instant,expected] of [['2026-12-30T20:59:59Z',false],['2026-12-30T21:00:00Z',true],['2026-12-31T20:59:59Z',true],['2026-12-31T21:00:00Z',false]]){
+ for(const [instant,expected] of [['2026-12-31T20:59:59Z',false],['2026-12-31T21:00:00Z',true],['2027-01-01T20:59:59Z',true],['2027-01-01T21:00:00Z',false]]){
   c.current=c.istanbulDayKey(new Date(instant));assert.equal(c.annualReportOpen(),expected);
   c.reportDetail='answers';const archive=c.reportDetailView();
   assert.equal(archive.includes('Answer for 2026'),expected);
@@ -129,7 +157,7 @@ test('the annual summary and answer archive select just the current active year 
   c.reportDetail='answers-older';assert.equal(c.reportDetailView().includes('Answer for 2025'),expected);
   c.reportDetail='summary-older';assert.equal(c.reportDetailView().includes('2025-12-31'),expected);
  }
- c.current='2027-12-31';c.reportDetail='answers';
+ c.current='2028-01-01';c.reportDetail='answers';
  assert.match(c.reportDetailView(),/Answer for 2027/);assert.doesNotMatch(c.reportDetailView(),/Answer for 2026/);
  assert.equal(JSON.stringify(c.A),before);
 });
@@ -148,7 +176,7 @@ test('a submitted week belongs to its owner and is readable in their first year-
  c.A.authUid='owner-one';c.periodReportForm('week',key,next);
  for(const questions of [c.A.qs[key],c.A.planningQs[key],c.A.planningQs[next]])questions.forEach(q=>q.a='My week');
  assert.equal(c.submitPeriodReport('week',key,true),true);
- c.current='2026-12-31';c.reportDetail='answers';assert.equal(c.annualReportOpen(),false);
+ c.current='2027-01-01';c.reportDetail='answers';assert.equal(c.annualReportOpen(),true);
  assert.match(c.reportDetailView(),/My week/);
  const form={dataset:{reportOwner:'owner-one'},isConnected:true},control={closest:()=>form};
  assert.equal(c.currentReportForm(control),true);

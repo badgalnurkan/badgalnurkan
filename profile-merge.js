@@ -57,7 +57,9 @@ const IYProfileMerge=(()=>{
       return merged.sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,200);
     }
     if((path[0]==='noticeDelivered'||path[path.length-1]==='updatedAt')&&Number.isFinite(local)&&Number.isFinite(remote))return Math.max(local,remote);
-    if (object(local) && object(remote) && (base === ABSENT || object(base))) {
+    // Keep the answers and submission timestamp from the same annual form.
+    const annualSubmission=path.length===2&&path[0]==='annualReports';
+    if (!annualSubmission && object(local) && object(remote) && (base === ABSENT || object(base))) {
       const before = base === ABSENT ? {} : base;
       const merged = {};
       const keys = new Set([...Object.keys(before), ...Object.keys(local), ...Object.keys(remote)]);
